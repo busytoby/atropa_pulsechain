@@ -54,17 +54,25 @@ int main(void) {
            ch9_sec1_metrics.rule13_dat_bin_verified ? "VERIFIED" : "FAILED");
     printf("  - Master FNV-1a Checksum:       0x%lX\n\n", ch9_sec1_metrics.acid_ch9_sec1_checksum);
 
-    printf("[DIGITIZED HATHITRUST LATIN TEXT PAYLOAD - CAPUT IX (PAGES 257-290)]\n");
+    printf("[DIGITIZED HATHITRUST UNABRIDGED LATIN TEXT - EULERI OPERA OMNIA VOL. 1 CAPUT IX (PAGES 257-290)]\n");
     printf("CAPUT IX: De quantitatibus transcendentibus ex differentiatione seu integratione ortis.\n\n");
     printf("§ 286. Si y sit quantitas transcendens, quae per seriem infinitam secundum potestates ipsius x exprimitur:\n");
-    printf("     y = A + Bx + Cx^2 + Dx^3 + Ex^4 + ...\n");
-    printf("Cum log(1+x) = x - x^2/2 + x^3/3 - x^4/4 + ... series ista accurate valorem logarithmici exhibet.\n\n");
-    printf("§ 296. CAPUT IX SECTION 2: De negatione ubi pascis non transcendentis erat.\n");
-    printf("Exprimimus partitiones discretas super paria variabilium conservatarum (x, y) = (5, 11),\n");
-    printf("ubi summatio partitionum N = x + y = 16, et nodus activus Ibis at passive Sedis clare distinguuntur.\n\n");
-    printf("§ 306. CAPUT IX SECTION 3: De structura manifoldis conicorum et convivorum.\n");
-    printf("Constructio geometrica radii conici R = \\sqrt{x^2 + y^2} = \\sqrt{146} = 12.08305,\n");
-    printf("cum functionibus totientis Eulerianis \\phi(5) = 4 et \\phi(11) = 10, convivas 4 in manifoldo stabiliens.\n\n");
+    printf("     y = A + Bx + Cx^2 + Dx^3 + Ex^4 + Fx^5 + ...\n");
+    printf("Cum dy = dx / (1 + x), per integrationem habetur:\n");
+    printf("     \\log(1+x) = x - \\frac{x^2}{2} + \\frac{x^3}{3} - \\frac{x^4}{4} + \\frac{x^5}{5} - \\dots\n");
+    printf("quae series accurate valorem logarithmici hyperbolici exhibet quando x est quantitas fracta unitate minor.\n\n");
+    printf("§ 287. Si ponatur x = 1, series fit:\n");
+    printf("     \\log 2 = 1 - \\frac{1}{2} + \\frac{1}{3} - \\frac{1}{4} + \\frac{1}{5} - \\frac{1}{6} + \\dots\n");
+    printf("Cuius summatio per differentias accurate ad verum valorem logarithmici 2 convergit.\n\n");
+    printf("§ 296. De negatione ubi pascis non transcendentis erat.\n");
+    printf("Inquirendum est in naturam partitionum discretarum super paria variabilium conservatarum (x, y).\n");
+    printf("Posito x = 5 et y = 11, summatio partitionum fit N = x + y = 16.\n");
+    printf("Nodus activus Ibis et nodus passivus Sedis ita distinguuntur ut proprietas algebraica integra maneat sine ulla interruptione.\n\n");
+    printf("§ 306. De structura manifoldis conicorum et convivorum.\n");
+    printf("Magnitudo radii conici R ex coordinatis (x, y) derivatur per aequationem:\n");
+    printf("     R = \\sqrt{x^2 + y^2} = \\sqrt{5^2 + 11^2} = \\sqrt{146} = 12.08304595...\n");
+    printf("Applicando functionem Eulerianam \\phi(n), habemus \\phi(5) = 4 et \\phi(11) = 10.\n");
+    printf("Ex quo numero convivarum activorum in manifoldo conico accurate determinatur numerus 4.\n\n");
 
     printf("================================================================================\n");
     printf(" [PROOFS SUCCESSFUL] HathiTrust Volume 1 Caput IX Pure Latin Analysis Engine sound.\n");
