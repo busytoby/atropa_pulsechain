@@ -3497,6 +3497,8 @@ typedef struct {
     uint64_t totient_phi_y;                // Exact totient register retention phi_y
     uint64_t totient_phi_y2;               // Exact totient register retention phi_y2
     uint32_t plane_angle_deg;              // Plane inclination angle relative to base (0=circle, 45=ellipse, 90=parabola/hyperbola)
+    uint64_t log2_course_scaled;           // Log 2 course convergence: \log 2 = 1 - 1/2 + 1/3 - 1/4 + ... (e.g. 693147 scaled)
+    bool is_attendeeship_course_unity;     // True: Log 2 course guides attendeeship to unity (1)
     bool is_plane_intersection_sound;      // True: Conic intersection generated without decay
     bool is_stanag_vfio_wmq_mounted;       // True: WMQ SCSI registers bound to ACID WAL
     uint64_t ch9_sec4_wal_checksum;        // 64-bit FNV-1a Checksum preserving Ch 9 Sec 4 WAL state

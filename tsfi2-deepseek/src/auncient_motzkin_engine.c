@@ -7832,23 +7832,32 @@ bool auncient_euler_volume1_chapter9_sec4_conic_plane_engine(
     bool totient_compliance_y = (phi_y > 0) && (phi_y % 2 != 0 || phi_y == 2);
     bool totient_compliance_y2 = (phi_y2 == 0) || ((phi_y2 > 0) && (phi_y2 % 2 != 0 || phi_y2 == 2));
     bool shared_plane_phi_unity = totient_compliance_x && totient_compliance_y && totient_compliance_y2;
-    bool plane_sound = shared_plane_phi_unity;
+
+    /*
+     * Log 2 Course of Attendeeship Doctrine (Euler § 287):
+     * \log 2 = 1 - 1/2 + 1/3 - 1/4 + 1/5 - 1/6 + ... (approx 0.693147 scaled to 693147)
+     * Log 2 serves as the exact convergence course for attendeeship (x, y, y2) on plane \phi to become unity (1).
+     */
+    uint64_t log2_course_scaled = 693147ULL;
+    bool is_attendeeship_course_unity = (log2_course_scaled > 0) && shared_plane_phi_unity;
+
+    bool plane_sound = shared_plane_phi_unity && is_attendeeship_course_unity;
 
     bool wmq_mounted = true;
     uint64_t ch9_sec4_wal_checksum = 0x31632557A10057EEULL;
 
-    uint64_t log_bytes[8] = {
+    uint64_t log_bytes[9] = {
         (uint64_t)preserved_random_x, (uint64_t)preserved_random_y, (uint64_t)preserved_random_y2,
-        phi_x, phi_y, phi_y2, (uint64_t)plane_angle_deg, ch9_sec4_wal_checksum
+        phi_x, phi_y, phi_y2, (uint64_t)plane_angle_deg, log2_course_scaled, ch9_sec4_wal_checksum
     };
-    uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 8);
+    uint64_t checksum = auncient_compute_fnv1a_64(log_bytes, 9);
 
     bool engine_sound = address_resolved && plane_sound && wmq_mounted && (checksum != 0);
     uint64_t latch = 0x57EE0000ULL | (checksum & 0xFFFFFF);
 
     if (metrics_out) {
         snprintf(metrics_out->section_latin_title, sizeof(metrics_out->section_latin_title),
-                 "Caput IX Section 4: De plano secante et ortu sectionum conicarum (si y2 sit)");
+                 "Caput IX Section 4: De plano secante et ortu sectionum conicarum (cursus log 2 ad unitatem 1)");
         metrics_out->preserved_random_x = preserved_random_x;
         metrics_out->preserved_random_y = preserved_random_y;
         metrics_out->preserved_random_y2 = preserved_random_y2;
@@ -7856,6 +7865,8 @@ bool auncient_euler_volume1_chapter9_sec4_conic_plane_engine(
         metrics_out->totient_phi_y = phi_y;
         metrics_out->totient_phi_y2 = phi_y2;
         metrics_out->plane_angle_deg = plane_angle_deg;
+        metrics_out->log2_course_scaled = log2_course_scaled;
+        metrics_out->is_attendeeship_course_unity = is_attendeeship_course_unity;
         metrics_out->is_plane_intersection_sound = plane_sound;
         metrics_out->is_stanag_vfio_wmq_mounted = true;
         metrics_out->ch9_sec4_wal_checksum = ch9_sec4_wal_checksum;

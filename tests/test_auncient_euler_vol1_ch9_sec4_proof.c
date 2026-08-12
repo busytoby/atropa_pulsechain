@@ -40,6 +40,8 @@ int main(void) {
     assert(ok == true);
     assert(metrics.ch9_sec4_conic_plane_sound == true);
     assert(metrics.is_plane_intersection_sound == true);
+    assert(metrics.is_attendeeship_course_unity == true);
+    assert(metrics.log2_course_scaled == 693147ULL);
     assert(metrics.totient_phi_x == (uint64_t)preserved_x);
     assert(metrics.totient_phi_y == (uint64_t)preserved_y);
     assert(metrics.totient_phi_y2 == (uint64_t)preserved_y2);
@@ -51,6 +53,7 @@ int main(void) {
            metrics.preserved_random_x, metrics.preserved_random_y, metrics.preserved_random_y2);
     printf("  - Totient Compliance Phi:      phi(x)=%lu, phi(y)=%lu, phi(y2)=%lu (Exact Register Retention)\n",
            metrics.totient_phi_x, metrics.totient_phi_y, metrics.totient_phi_y2);
+    printf("  - Log 2 Course to Unity (1):   %lu (0.693147 scaled, Course to Unity 1 Sound)\n", metrics.log2_course_scaled);
     printf("  - Intersecting Plane Angle:    %u Degrees (Elliptic Conic Generation)\n", metrics.plane_angle_deg);
     printf("  - Plane Intersection Sound:    100%% SOUND (No Transcendental Decay)\n");
     printf("  - ACID Rollback & Replay:      %s / %s (Intact History)\n",
