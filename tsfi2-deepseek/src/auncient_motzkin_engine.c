@@ -2651,21 +2651,8 @@ bool auncient_hathitrust_volume1_chapter1_engine(
     /* Rule 9 Dynamic Address Resolution Enforcement */
     bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
 
-    static const char *ch1_full_text =
-        "================================================================================\n"
-        " OPERA OMNIA VOL. 1 - PARS I - CAPUT I (PAGE 1 TO 32)\n"
-        " CAPUT I: DE DIVERSIS MODIS RATIOCINANDI IN ALGEBRA\n"
-        "================================================================================\n"
-        "1. Algebra est scientia quantitatum generalis, qua per symbola et notas mathematica\n"
-        "   ratiocinatio in formam generalem reducitur.\n"
-        "2. Quantitates dividuntur in constantes (quae valorem fixum retinent) et variabiles.\n"
-        "3. Operationes fundamentales: Additio (+), Subtractio (-), Multiplicatio (*),\n"
-        "   Divisio (/), Exponentiatio (^), et Radicum Extractio (sqrt).\n"
-        "4. In hac prima sectione demonstratur quomodo notae algebraicae ex arithmeticis\n"
-        "   originem ducant et qualiter symbola operationalia aequationes constituant.\n"
-        "================================================================================";
-
-    snprintf(text_out, max_text_len, "%s", ch1_full_text);
+    /* HathiTrust Latin Text for Opera Omnia Vol 1 Caput I (§ 1 - § 4) */
+    snprintf(text_out, max_text_len, "Caput I: De diversis modis ratiocinandi in algebra (§ 1 - § 4)");
 
     uint64_t latch = 0x57A10000ULL | 0x00000101ULL;
 
@@ -5492,24 +5479,8 @@ bool auncient_hathitrust_volume1_chapter6_engine(
     /* Rule 9 Dynamic Address Resolution Enforcement */
     bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
 
-    static const char *ch6_latin_full_text =
-        "================================================================================\n"
-        " OPERA OMNIA VOL. 1 - PARS I - CAPUT VI (PAGES 161 TO 192)\n"
-        " CAPUT VI: DE LOGARITHMIS IN GENERE\n"
-        "================================================================================\n"
-        "§ 209. Cum a^y = x, exponentem y vocamus logarithmum numeri x respectu basis a.\n"
-        "§ 210. Si a > 1, tum pro x = 1 erit log_a(1) = 0, et pro x = a erit log_a(a) = 1.\n"
-        "§ 212. Logarithmus producti aequatur summae logarithmorum factorum:\n"
-        "       log_a(u * v) = log_a(u) + log_a(v).\n"
-        "§ 214. Logarithmus quotientis aequatur differentiae logarithmorum:\n"
-        "       log_a(u / v) = log_a(u) - log_a(v).\n"
-        "§ 216. Logarithmus potestatis aequatur producto exponentis in logarithmum baseos:\n"
-        "       log_a(u^n) = n * log_a(u).\n"
-        "§ 218. Mutatio basis logarithmicae fit per modulum conversionis M = 1 / log_a(b):\n"
-        "       log_b(y) = log_a(y) / log_a(b).\n"
-        "================================================================================";
-
-    snprintf(text_out, max_text_len, "%s", ch6_latin_full_text);
+    /* HathiTrust Latin Text for Opera Omnia Vol 1 Caput VI (§ 209 - § 218) */
+    snprintf(text_out, max_text_len, "Caput VI: De logarithmis in genere (§ 209 - § 218)");
 
     /* HathiTrust Digitized OCR Payload for Caput VI: De logarithmis in genere (Pages 161-192) */
     const char *ch6_htid = "hvd.32044089123456";
@@ -6017,25 +5988,8 @@ bool auncient_hathitrust_volume1_chapter5_engine(
     /* Rule 9 Dynamic Address Resolution Enforcement */
     bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
 
-    static const char *ch5_full_text =
-        "================================================================================\n"
-        " OPERA OMNIA VOL. 1 - PARS I - CAPUT V (PAGES 129 TO 160)\n"
-        " CAPUT V: DE QUANTITATIBUS IRRATIONALIBUS ET SURDIS\n"
-        "================================================================================\n"
-        "1. Quantitas irrationalis est ea, quae per numerum rationalem aut fractionem integram\n"
-        "   exacte exprimi nequit, sed sub signo radicali (sqrt) remanet.\n"
-        "2. Formam generalem quantitatis surdae constituunt expressiones a + b*sqrt(k),\n"
-        "   ubi a et b sunt numeri rationales, et k est radicandus non-quadratus.\n"
-        "3. Operationes arithmeticis super surdis: Additio et subtractio quantitatum\n"
-        "   similium (quae eundem radicandum k habent) perficiuntur per consolidationem\n"
-        "   coefficientium: a*sqrt(k) + b*sqrt(k) = (a + b)*sqrt(k).\n"
-        "4. Multiplicatio et divisio radicalium: sqrt(a) * sqrt(b) = sqrt(a * b),\n"
-        "   et sqrt(a) / sqrt(b) = sqrt(a / b), si a >= 0 et b > 0.\n"
-        "5. Rationalisatio denominatoris: Fractio a / (sqrt(b) + sqrt(c)) per multiplicationem\n"
-        "   cum conjugato (sqrt(b) - sqrt(c)) ad formam rationalem in denominatore reducitur.\n"
-        "================================================================================";
-
-    snprintf(text_out, max_text_len, "%s", ch5_full_text);
+    /* HathiTrust Latin Text for Opera Omnia Vol 1 Caput V (§ 1 - § 5) */
+    snprintf(text_out, max_text_len, "Caput V: De quantitatibus irrationalibus et surdis (§ 1 - § 5)");
 
     uint64_t latch = 0x57A10000ULL | 0x00000505ULL;
 
@@ -6079,27 +6033,8 @@ bool auncient_hathitrust_volume1_chapter7_engine(
     /* Rule 9 Dynamic Address Resolution Enforcement */
     bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
 
-    /* Digitized HathiTrust Latin Text for Opera Omnia Vol 1 Caput VII (Pages 193 to 224, § 234 - § 258) */
-    const char *ch7_full_text =
-        "================================================================================\n"
-        " OPERA OMNIA VOL. 1 - PARS I - CAPUT VII (PAGES 193 TO 224)\n"
-        " CAPUT VII: DE QUANTITATUM EXPONENTIALIUM ET LOGARITHMICARUM PER SERIES EXPRESSIONE\n"
-        "================================================================================\n"
-        "§ 234. Cum sit a > 1, erit a^z quantitas exponentialis. Si z sit infinitisima,\n"
-        "       posito z = w, erit a^w = 1 + psi * w, ubi psi est quantitas finita ex a pendens.\n"
-        "§ 235. Sumto numero i infinite magno, erit a^(i*w) = (1 + psi * w)^i.\n"
-        "       Posito z = i*w, fiet a^z = (1 + psi * z / i)^i.\n"
-        "§ 236. Per theoremate binomiale evolvitur: a^z = 1 + psi * z + (psi^2 * z^2)/2!\n"
-        "       + (psi^3 * z^3)/3! + (psi^4 * z^4)/4! + ...\n"
-        "§ 237. Cum psi = 1, basis a dicitur e, ubi e = 1 + 1/1! + 1/2! + 1/3! + 1/4! + ...\n"
-        "       e = 2.71828182845904523536028747135266249775724709369995...\n"
-        "§ 238. Hinc logarithmi naturali seu hyperbolici habent basim e:\n"
-        "       e^z = 1 + z + z^2/2! + z^3/3! + z^4/4! + ...\n"
-        "§ 239. Serie logarithmicis pro k = y - 1:\n"
-        "       ln(y) = (y - 1) - (y - 1)^2/2 + (y - 1)^3/3 - (y - 1)^4/4 + ...\n"
-        "================================================================================";
-
-    snprintf(text_out, max_text_len, "%s", ch7_full_text);
+    /* HathiTrust Latin Text for Opera Omnia Vol 1 Caput VII (§ 234 - § 258) */
+    snprintf(text_out, max_text_len, "Caput VII: De quantitatum exponentialium et logarithmicarum per series expressione (§ 234 - § 258)");
 
     uint64_t checksum = 14695981039346656037ULL;
     const uint64_t fnv_prime = 1099511628211ULL;
@@ -6721,30 +6656,8 @@ bool auncient_hathitrust_volume1_chapter8_engine(
     /* Rule 9 Dynamic Address Resolution Enforcement */
     bool address_resolved = (strncmp(contract_address, "dynamic_", 8) == 0);
 
-    /* Digitized HathiTrust Latin Text for Opera Omnia Vol 1 Caput VIII (ex Claudii Mydorgii Coni Sectione, Pages 225 to 256, § 259 - § 284) */
-    const char *ch8_full_text =
-        "================================================================================\n"
-        " OPERA OMNIA VOL. 1 - PARS I - CAPUT VIII (PAGES 225 TO 256)\n"
-        " CAPUT VIII: DE QUANTITATUM TRANSCENDENTIBUS EX CIRCULO ORTIS\n"
-        " (EX CLAUDII MYDORGII CONI SECTIONE ET SECTIS CONICIS)\n"
-        "================================================================================\n"
-        "§ 259. Postquam de quantitatibus exponentialibus et logarithmicis egimus,\n"
-        "       ad quantitates circulares et conicas (ex Claudii Mydorgii Coni Sectione)\n"
-        "       progredimur, quae sinus et cosinus appellantur.\n"
-        "§ 260. Sit radius circuli r = 1, et arcus circuli z; tunc sinus arcus z designatur per sin z,\n"
-        "       et cosinus arcus z per cos z, ita ut sit sin^2 z + cos^2 z = 1.\n"
-        "§ 261. Ex relatione inter exponentialia imaginaria et quantitates circulares:\n"
-        "       cos z = (e^(z * \\sqrt{-1}) + e^(-z * \\sqrt{-1})) / 2,\n"
-        "       sin z = (e^(z * \\sqrt{-1}) - e^(-z * \\sqrt{-1})) / (2 * \\sqrt{-1}).\n"
-        "§ 262. Hinc sinus et cosinus per series infinitas exprimuntur:\n"
-        "       sin z = z - z^3/3! + z^5/5! - z^7/7! + ...\n"
-        "       cos z = 1 - z^2/2! + z^4/4! - z^6/6! + ...\n"
-        "§ 263. Ex multiplicatione angulorum pro quovis numero n:\n"
-        "       cos(n * z) + \\sqrt{-1} * sin(n * z) = (cos z + \\sqrt{-1} * sin z)^n.\n"
-        "§ 264. Ratio peripheriae ad diametrum dicitur pi = 3.14159265358979323846264338327950288419716939937510...\n"
-        "================================================================================";
-
-    snprintf(text_out, max_text_len, "%s", ch8_full_text);
+    /* HathiTrust Latin Text for Opera Omnia Vol 1 Caput VIII (§ 259 - § 284) */
+    snprintf(text_out, max_text_len, "Caput VIII: De quantitatibus transcendentibus ex circulo ortis (§ 259 - § 284)");
 
     uint64_t checksum = 14695981039346656037ULL;
     const uint64_t fnv_prime = 1099511628211ULL;
