@@ -7824,14 +7824,15 @@ bool auncient_euler_volume1_chapter9_sec4_conic_plane_engine(
     uint64_t phi_y2 = (uint64_t)preserved_random_y2;
 
     /*
-     * Section 4 Intersecting Plane Generation (De plano secante et ortu sectionum conicarum):
-     * The intersecting plane generates conic sections (circle, ellipse, parabola, hyperbola)
-     * over qualified attendees (x, y, y2) without decaying primary originative states.
+     * Shared Plane Phi Unity Doctrine (Planum secans commune \phi):
+     * Primary originative variables x, y, and y2 share the unified plane \phi.
+     * Their totient compliance structures co-exist on plane \phi without orthogonal division.
      */
     bool totient_compliance_x = (phi_x > 0) && (phi_x % 2 != 0 || phi_x == 2);
     bool totient_compliance_y = (phi_y > 0) && (phi_y % 2 != 0 || phi_y == 2);
     bool totient_compliance_y2 = (phi_y2 == 0) || ((phi_y2 > 0) && (phi_y2 % 2 != 0 || phi_y2 == 2));
-    bool plane_sound = totient_compliance_x && totient_compliance_y && totient_compliance_y2;
+    bool shared_plane_phi_unity = totient_compliance_x && totient_compliance_y && totient_compliance_y2;
+    bool plane_sound = shared_plane_phi_unity;
 
     bool wmq_mounted = true;
     uint64_t ch9_sec4_wal_checksum = 0x31632557A10057EEULL;
