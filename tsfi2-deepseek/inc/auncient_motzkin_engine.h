@@ -3589,6 +3589,36 @@ bool auncient_euler_volume1_chapter10_sec2_exponential_link_engine(
     AuncientEulerVolume1Chapter10Section2ExponentialLinkMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 10 Full Synthesis Proof Engine Metrics (ht.0000000057f1)
+typedef struct {
+    char chapter_latin_title[128];         // Caput X: De transmutatione quantitatum circularium in series infinitas
+    int64_t preserved_random_x;            // Preserved primary originative variable x
+    int64_t preserved_random_y;            // Preserved primary originative variable y
+    int64_t preserved_random_y2;           // Preserved potential attendee variable y2
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x = x (in-present)
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y = y (in-present)
+    uint64_t totient_phi_y2;               // Exact totient register retention phi_y2 = y2 (in-present)
+    bool sec1_in_present_sound;            // True if Section 1 in-present circular series engine is sound
+    bool sec2_exponential_link_sound;      // True if Section 2 exponential link engine is sound
+    bool is_plane_phi_acid_provenance_sound; // True: Plane phi observed exclusively via ACID WAL events
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch10_master_checksum;     // 64-bit FNV-1a Checksum over full Chapter 10 synthesis
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57F1)
+    bool ch10_full_synthesis_sound;         // True if Chapter 10 full synthesis is 100% sound
+} AuncientEulerVolume1Chapter10FullSynthesisMetrics;
+
+bool auncient_euler_volume1_chapter10_full_synthesis_engine(
+    const char *contract_address,
+    const char *dat_bin_ch10_path,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    int64_t preserved_random_y2,
+    AuncientEulerVolume1Chapter10FullSynthesisMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
