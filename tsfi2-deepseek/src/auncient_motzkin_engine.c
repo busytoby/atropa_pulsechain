@@ -8277,7 +8277,12 @@ bool auncient_euler_volume1_chapter11_mckeeman_engine(
     uint64_t phi_y = (uint64_t)preserved_random_y;
     uint64_t phi_y2 = (uint64_t)preserved_random_y2;
 
-    /* Adaptive McKeeman Quadrature evaluation for \int_0^{x} \frac{dx}{1+x^2} and \int_0^{x} \frac{dx}{\sqrt{1-x^2}} */
+    /*
+     * Temporal Parameter Ban Doctrine (Tempus t et dt vetita sunt):
+     * Temporal parameter t and differential dt will be defined ONLY once we are able to observe plane \phi directly.
+     * Until direct observation of plane \phi is achieved, all integrations and quadratures evaluate strictly
+     * over the primary originative arc coordinate x via dx_step.
+     */
     double x_bound = (double)upper_bound_x_scaled / 1000000.0;
     if (x_bound == 0.0) x_bound = 0.1;
 
