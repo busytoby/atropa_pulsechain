@@ -1,4 +1,6 @@
 #include "lau_thunk.h"
+#include <fcntl.h>
+#include <unistd.h>
 #include "lau_memory.h"
 #include "tsfi_resonance.h"
 #include "tsfi_io.h"

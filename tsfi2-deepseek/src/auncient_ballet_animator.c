@@ -36,18 +36,42 @@ bool auncient_ballet_register_bear(const char *name, const char *dna_seed_block,
     return true;
 }
 
+/* Standard Bonnet Three-Term Recurrence Solver for Orderly Legendre Polynomials */
+static float auncient_legendre_evaluate(int n, float x) {
+    if (x > 1.0f) x = 1.0f;
+    if (x < -1.0f) x = -1.0f;
+
+    if (n == 0) return 1.0f;
+    if (n == 1) return x;
+
+    float p_prev2 = 1.0f; // P_0(x)
+    float p_prev1 = x;    // P_1(x)
+    float p_curr = x;
+
+    for (int k = 1; k < n; k++) {
+        p_curr = ((2.0f * k + 1.0f) * x * p_prev1 - (float)k * p_prev2) / (float)(k + 1);
+        p_prev2 = p_prev1;
+        p_prev1 = p_curr;
+    }
+
+    return p_curr;
+}
+
 void auncient_ballet_step_pose(AuncientBalletBear *bear, float t) {
     if (!bear) return;
 
-    // Simulate ballet joint movements (harmonic sway)
-    bear->joint_angle_hip = 0.4f * sinf(t * 3.0f);
-    bear->joint_angle_shoulder = 0.6f * cosf(t * 2.5f);
+    // Bounded phase input x(t) = cos(w * t)
+    float x = cosf(t * 2.0f);
 
-    // Rule 10 physics: Verlet constraints apply ONLY to FET discharge cycles (charge decay)
+    // Orderly Legendre basis joint animations
+    bear->joint_angle_hip = 0.4f * auncient_legendre_evaluate(1, x);      // P_1(x) linear sway
+    bear->joint_angle_shoulder = 0.6f * auncient_legendre_evaluate(2, x); // P_2(x) quadratic flex
+
+    // Rule 10 physics: Verlet FET discharge cycle charge decay modulated by P_3(x)
+    float p3 = auncient_legendre_evaluate(3, x);
     for (int i = 0; i < 16; i++) {
-        // Decay charge exponentially over time steps
         float rate = 0.05f * (i + 1);
-        bear->verlet_charge_decay[i] = expf(-rate * t);
+        bear->verlet_charge_decay[i] = expf(-rate * t) * (0.8f + 0.2f * p3);
     }
 }
 

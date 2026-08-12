@@ -283,6 +283,7 @@ int main(void)
 	assert(run_prover("./tests/test_deep_acid_compliance_prover", "Deep 4-Layer Hardware ACID Engine") == 0);
 	assert(run_prover("./tests/test_hardware_mitigation_coverage_suite", "8-Layer Hardware Mitigation Suite") == 0);
 	assert(run_prover("./tests/test_real_vm_xdc_session", "Kermit over STANAG XDC Session Probe") == 0);
+	assert(run_prover("./tests/bench_quantum_chem_ls_algebra_prover", "Quantum Chemistry Ls-Algebraic ZMM Benchmark") == 0);
 
 	printf("\n=============================================================\n");
 	printf("   MASTER VERIFICATION SUMMARY: %u / %u PROVERS PASSED (100%%) \n",

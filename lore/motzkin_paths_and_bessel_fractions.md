@@ -20,7 +20,7 @@ The total number of such paths of length $n$ is exactly the Motzkin number $M_n$
 In analysis, Bessel functions of the first kind ($J_v(x)$) can be represented as continued fractions. Specifically, the ratio of successive Bessel functions satisfies:
 $$\frac{J_v(x)}{J_{v-1}(x)} = \frac{x/2}{v + \frac{-x^2/4}{v + 1 + \frac{-x^2/4}{v + 2 + \dots}}}$$
 
-By setting $z = -x^2/4$, this continued fraction is a specific instance of a **Jacobi-type continued fraction (J-fraction)**:
+By setting $z = -x^2/4$, this continued fraction is a specific instance of a **continued fraction (J-fraction)**:
 $$J(z) = \frac{1}{1 - b_0 z - \frac{\lambda_1 z^2}{1 - b_1 z - \frac{\lambda_2 z^2}{1 - \dots}}}$$
 
 ---

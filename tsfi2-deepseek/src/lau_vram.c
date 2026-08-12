@@ -1,4 +1,6 @@
 #include "lau_vram.h"
+#include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 
 void lau_vram_init(LauVRAM *vram) {

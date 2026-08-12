@@ -301,7 +301,7 @@ int tsfi_decode_fieldata(const uint8_t *in, int len, char *out, int max_len) {
     if (!in || !out || max_len <= 0 || len < 0) return -1;
     int limit = len < max_len - 1 ? len : max_len - 1;
     for (int i = 0; i < limit; i++) {
-        uint8_t f = in[i];
+        uint8_t f = in[i] & 0x3F; /* Zero-pad high bits 6 & 7 to guarantee safe 8-bit character sensing */
         char c = '?';
         if (f >= 0x06 && f <= 0x1F) c = 'A' + (f - 0x06);
         else if (f >= 0x30 && f <= 0x39) c = '0' + (f - 0x30);

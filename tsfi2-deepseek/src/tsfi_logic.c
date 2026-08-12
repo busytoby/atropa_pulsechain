@@ -118,8 +118,9 @@ void master_logic_epoch(int *ver) {
                 if (g_ws->active_sessions[i]) {
                     TsfiWavelet *W = (TsfiWavelet *)g_ws->active_sessions[i];
                     if ((uintptr_t)W > 0x10000 && W->telemetry.trait == TSFI_TRAIT_FILE) {
-                        if (W->telemetry.current_seal_level == 1) {
-                            // Spider demonstrates interest by actively waiting for the content fill
+                        static int last_logged_seal[4] = {-1, -1, -1, -1};
+                        if (W->telemetry.current_seal_level == 1 && last_logged_seal[i] != 1) {
+                            last_logged_seal[i] = 1;
                             tsfi_io_printf(stdout, "[SPIDER] Portfolio Scan: Actively guarding Layer 1 FILE '%s'. Awaiting Content Fill.\n", W->file_cell.filename);
                         }
                     }

@@ -16,8 +16,7 @@ static const uint8_t font_5x7[128][8] = {
 };
 
 static uint8_t get_font_pixel(char character, int col, int row) {
-    uint8_t c = (uint8_t)character;
-    if (c >= 128) c = 0;
+    uint8_t c = (uint8_t)character & 0x7F; /* Zero-pad sub-8-bit character code for safe video font display */
     uint8_t pattern = font_5x7[c][row & 7];
     if (pattern == 0 && c != ' ') {
         // Fallback pattern for non-blank unmapped characters

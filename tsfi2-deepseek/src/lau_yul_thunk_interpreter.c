@@ -90,15 +90,10 @@ bool run_yul_bytecode(YulEvmContext *ctx, const uint8_t *bytecode, size_t size, 
 
     while (pc < size) {
         uint8_t op = bytecode[pc];
-        if (name && strcmp(name, "cpu6502") != 0) {
-            pthread_mutex_lock(&s_yul_trace_mutex);
-            s_yul_trace_history[s_yul_trace_head].pc = pc;
-            s_yul_trace_history[s_yul_trace_head].op = op;
-            s_yul_trace_head = (s_yul_trace_head + 1) % TRACE_HISTORY_SIZE;
-            if (s_yul_trace_count < TRACE_HISTORY_SIZE) {
-                s_yul_trace_count++;
-            }
-            pthread_mutex_unlock(&s_yul_trace_mutex);
+        if (name && name[0] != 'c') {
+            uint32_t head = atomic_fetch_add((_Atomic uint32_t *)&s_yul_trace_head, 1) % TRACE_HISTORY_SIZE;
+            s_yul_trace_history[head].pc = pc;
+            s_yul_trace_history[head].op = op;
         }
         if (op >= 0x60 && op <= 0x7f) { // PUSH1..PUSH32
             int push_bytes = op - 0x5f;

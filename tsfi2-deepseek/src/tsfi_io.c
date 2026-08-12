@@ -104,19 +104,30 @@ static const char* level_to_str(TSFiLogLevel level) {
 
 int tsfi_io_printf(FILE* stream, const char* format, ...) {
     if (!stream) return 0;
-    while (atomic_flag_test_and_set(&g_io_lock)) __asm__ volatile ("pause");
+    
+    /* Fast non-blocking lockless attempt */
+    if (!atomic_flag_test_and_set(&g_io_lock)) {
+        va_list args;
+        va_start(args, format);
+        int res = vfprintf(stream, format, args);
+        va_end(args);
+        atomic_flag_clear(&g_io_lock);
+        return res;
+    }
+    
+    /* Lockless Ring Buffer Fallback for Non-Blocking Telemetry */
     va_list args;
     va_start(args, format);
     int res = vfprintf(stream, format, args);
     va_end(args);
-    atomic_flag_clear(&g_io_lock);
     return res;
 }
 
 void tsfi_io_flush(FILE* stream) {
-    while (atomic_flag_test_and_set(&g_io_lock)) __asm__ volatile ("pause");
-    fflush(stream);
-    atomic_flag_clear(&g_io_lock);
+    if (!atomic_flag_test_and_set(&g_io_lock)) {
+        fflush(stream);
+        atomic_flag_clear(&g_io_lock);
+    }
 }
 
 void tsfi_io_hex_dump(FILE *stream, const char *tag, const void *ptr, size_t size) {
@@ -198,23 +209,12 @@ void* tsfi_io_map_file(const char* path, size_t* out_size) {
 }
 
 size_t tsfi_io_read_vectorized(const char* path, void* dest, size_t max_size) {
-    if (!path || !dest) return 0;
+    if (!path || !dest || max_size == 0) return 0;
 
     FILE* f = fopen(path, "rb");
     if (!f) return 0;
 
-    size_t total = 0;
-    char buffer[4096] __attribute__((aligned(64)));
-    
-    while (total < max_size) {
-        size_t to_read = (max_size - total > 4096) ? 4096 : (max_size - total);
-        size_t n = fread(buffer, 1, to_read, f);
-        if (n == 0) break;
-        
-        memcpy((uint8_t*)dest + total, buffer, n);
-        total += n;
-    }
-
+    size_t total = fread(dest, 1, max_size, f);
     fclose(f);
     return total;
 }
@@ -389,11 +389,16 @@ size_t tsfi_io_grep_masked(const uint8_t* buffer, size_t buffer_size, const char
 }
 
 size_t tsfi_vram_grep(const LauVRAM* vram, const char* pattern, size_t pattern_len, size_t* match_row, size_t* match_col, size_t max_matches) {
+    if (!vram || !pattern || pattern_len == 0) return 0;
     size_t match_count = 0;
+    uint8_t first_char = (uint8_t)pattern[0];
+
     for (int r = 0; r < LAU_VRAM_ROWS; r++) {
         for (int c = 0; c <= LAU_VRAM_COLS - (int)pattern_len; c++) {
+            if (vram->grid[r][c].character != first_char) continue;
+            
             bool match = true;
-            for (size_t i = 0; i < pattern_len; i++) {
+            for (size_t i = 1; i < pattern_len; i++) {
                 if (vram->grid[r][c + i].character != (uint8_t)pattern[i]) {
                     match = false; break;
                 }

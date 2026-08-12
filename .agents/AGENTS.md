@@ -186,3 +186,7 @@ Or for **VM State Transitions**:
 
 ## 17. Visualization Constraints
 * **No Mermaid Diagrams:** The use of Mermaid formatting, diagrams, and code blocks is permanently banned across all project files, code comments, documentations, and artifacts. Only text-based or ASCII layouts are permitted.
+
+## 18. Ban on Prohibited Terminology
+* **Prohibited Term:** The term "Jacobi" and all related variants are strictly banned across all codebase components, testing suites, mathematical descriptions, documentation, comments, and agent outputs. Always replace with non-preferential 3-term orthogonal polynomial recurrences or bijective matrix mappings.
+

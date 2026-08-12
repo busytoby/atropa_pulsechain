@@ -207,6 +207,11 @@ static int ar_stf_helper(void *manifold, const TSFiDirective *tx_ptr, uint64_t m
 static void ar_transfer_combined(void *manifold, uint8_t *map, const TSFiDirective *tx_ptr, uint64_t *global_heat, uintptr_t chain_id, uintptr_t tx_idx, uintptr_t resonance_k) {
     if (!manifold || !tx_ptr) return;
 
+    /* 4-Layer ACID Atomicity: Create shadow leaf backups before state mutation */
+    AR_AccountLeaf *leaves = (AR_AccountLeaf *)manifold;
+    AR_AccountLeaf src_backup = leaves[tx_ptr->src_leaf];
+    AR_AccountLeaf dst_backup = leaves[tx_ptr->dst_leaf];
+
     if (map) {
         int bit_src = tx_ptr->src_leaf / 4;
         map[bit_src / 8] |= (1 << (bit_src % 8));
@@ -216,6 +221,12 @@ static void ar_transfer_combined(void *manifold, uint8_t *map, const TSFiDirecti
 
     if (global_heat) atomic_fetch_add((_Atomic uint64_t*)global_heat, tx_ptr->gas_limit);
     int success = ar_stf_helper(manifold, tx_ptr, (uint64_t)chain_id, (uint64_t)resonance_k);
+
+    /* 4-Layer ACID Transactional Rollback if State Transition Fails */
+    if (!success) {
+        leaves[tx_ptr->src_leaf] = src_backup;
+        leaves[tx_ptr->dst_leaf] = dst_backup;
+    }
 
     TSFiReceipt *r = &((TSFiReceipt *)((AR_AccountLeaf*)manifold + TSFI_STATE_LEAVES))[(uint64_t)tx_idx % TSFI_RECEIPT_LEAVES];
     r->status = success;

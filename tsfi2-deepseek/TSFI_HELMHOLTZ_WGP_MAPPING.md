@@ -37,7 +37,7 @@ We map the conceptual "Helmholtz" structures to RDNA4 hardware resources via `la
 | **The List** (`HELMHOLTZ_LIST`) | **LDS** (Local Data Share) | `LAU_TYPE_HELMHOLTZ` Payload (Shared) | The "Circuit" or "DNA" of the autonomy. Defines the sequence of operations. |
 | **The Operator** (`STEP`) | **SGPRs** (Scalar Regs) | `TSFiHelmholtzOperator` (Uniform) | The "Law" or constant parameters (Frequency, secret) loaded for the whole wave. |
 | **The State** (`WaveSystem`) | **VGPRs** (Vector Regs) | `TSFiHelmholtzState` (Per-Thread) | The "Matter" or active data (Field $u$, Status, FTW flag). Unique per thread. |
-| **The Wiring** (`WIRE_JACOBIAN`) | **DMA / BDA** | `LauWiredHeader` | The bijective link between the CPU handle and the GPU address. |
+| **The Wiring** (`WIRE_BIJECTIVE`) | **DMA / BDA** | `LauWiredHeader` | The bijective link between the CPU handle and the GPU address. |
 
 ## 4. Autonomous Execution Model
 

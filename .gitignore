@@ -383,8 +383,18 @@ frontend/compiled_yul.json
 /tests/siggraph_frame.ppm
 /tests/test_auncient_siggraph_discharge
 /tests/siggraph_physics.dat.bin
-/tests/test_auncient_siggraph_presenter
-/tests/test_auncient_tws_improved
+/tests/test_*
+/tests/*_prover
+/tests/bench_*
+/tests/render_vaesen_*
+/tests/pre_render_vaesen_*
+/tests/compact_model_weight_builder
+/tools/build_custom_cpm_tomie_model_c
+/tools/tsfi2_cflow_stochastic_profiler
+/tools/tsfi2_top_functions_analyzer
+/tools/tsfi2_top_internal_functions_analyzer
+/tsfi_lfm_agent_daemon
+/tsfi_lfm_agent_repl
 /tests/tws_audit.dat.bin
 /tests/test_auncient_dataplane_multiplexer
 /tests/test_auncient_dataplane_pll_integration
@@ -760,3 +770,7 @@ tests/test_cbt021_inmemory_pds
 hathitrust_cache_*.json
 hathitrust_cache_oai_*.xml
 
+# Code Review Reports and Artifacts
+/tests/tsfi2_code_listings.tex
+/tests/tsfi2_code_review_ast.json
+/tests/tsfi2_deepseek_stochastic_cflow_report.dat.bin

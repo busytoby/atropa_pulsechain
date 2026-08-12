@@ -558,8 +558,8 @@ bool tsfi_xplos_shell_tape(const char *cmd) {
                 if (ch2 != EOF) {
                     val2 |= (ch2 >> 4) & 0x0F;
                 }
-                fputc(fd_map[val1], f_out);
-                fputc(fd_map[val2], f_out);
+                fputc(fd_map[val1 & 0x3F], f_out);
+                fputc(fd_map[val2 & 0x3F], f_out);
                 count += 2;
                 if (ch2 == EOF) break;
             }
@@ -1338,4 +1338,53 @@ bool tsfi_xplos_shell_tape(const char *cmd) {
     }
 
     return false;
+}
+
+/* Capstan Shaft Merkle Tree Transaction Receipt Scribe Engine */
+bool tsfi_capstan_merkle_receipt_scribe(
+    const char *contract_address,
+    const char *dat_bin_merkle_path,
+    const uint8_t *merkle_root_hash,
+    uint32_t sector_id
+) {
+    if (!contract_address || !dat_bin_merkle_path || !merkle_root_hash || sector_id == 0) return false;
+
+    /* Rule 13 Media Format Enforcement */
+    size_t len = strlen(dat_bin_merkle_path);
+    if (len < 8 || strcmp(dat_bin_merkle_path + len - 8, ".dat.bin") != 0) {
+        return false;
+    }
+
+    /* Rule 9 Address Resolution Enforcement */
+    if (strncmp(contract_address, "dynamic_", 8) != 0) {
+        return false;
+    }
+
+    // Step 1: Engage Pinch Roller Solenoid (Clamp Engaged) & Release Mechanical Brake
+    g_capstan_solenoid = 1;
+    g_capstan_brake = 0;
+    g_capstan_control = 1; // Motor Forward Spin
+
+    // Step 2: Write Merkle Root Payload to Sector Data Register
+    g_capstan_encoder = sector_id;
+    g_sector_data_reg = merkle_root_hash[0];
+
+    // Step 3: Perform Read-After-Write (RAW) Parity Verification
+    if (g_raw_head_status == 0) {
+        // Rollback: Reverse Capstan Motor to Rewind to Preceding Sector IRG
+        g_capstan_control = 2; // Reverse Spin
+        g_capstan_encoder = sector_id - 1;
+        g_capstan_control = 0; // Motor Stop
+        g_capstan_brake = 1;   // Lock Caliper Brake
+        g_capstan_solenoid = 0;
+        return false; // Merkle receipt transaction rolled back cleanly
+    }
+
+    // Step 4: Commit Phase - Lock Caliper Brake to Freeze Shaft Position
+    g_capstan_control = 0;
+    g_capstan_brake = 1;
+    g_capstan_solenoid = 0;
+    g_tape_sectors[sector_id] = merkle_root_hash[0];
+
+    return true; // Capstan Shaft Merkle Tree Receipt commit success
 }

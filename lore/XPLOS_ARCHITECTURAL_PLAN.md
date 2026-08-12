@@ -6,36 +6,34 @@ Auncient XplOS is a simulated, transaction-oriented microkernel operating system
 
 ## 1. System Architecture Diagram
 
-```mermaid
-graph TD
-    subgraph "User Space"
-        Shell["XPL Shell Command Line"]
-        Editor["Interactive Graphic Editor (XPLG)"]
-    end
-
-    subgraph "OS Services (XPL / XPLG)"
-        ACMS["ACMS Transaction Monitor"]
-        SVDAG["SVDAG Registry & Scene Graph"]
-    end
-
-    subgraph "Kernel Space"
-        Scheduler["Task & Coroutine Scheduler"]
-        IRQ["Interrupt Dispatcher"]
-        VFS["Storage Manager (.dat.bin Only)"]
-    end
-
-    subgraph "ZMM Hardware Emulation"
-        WinMQ["WinchesterMQ SCSI Registers"]
-        VRAM["Raster Framebuffer (256x256)"]
-    end
-
-    Shell -->|YULEXEC| ACMS
-    Editor -->|Transforms| SVDAG
-    ACMS -->|Commit/Abort| Scheduler
-    SVDAG -->|Ray-trace/Raster| VRAM
-    Scheduler -->|IRQ Vectors| IRQ
-    VFS -->|Read/Write| WinMQ
-```
++-----------------------------------------------------------------------+
+|                               USER SPACE                              |
+|   +--------------------------+    +-------------------------------+   |
+|   |   XPL Shell Command Line |    | Interactive Graphic Editor    |   |
+|   +--------------------------+    +-------------------------------+   |
++-----------------------------------|-----------------------------------+
+                                    |
++-----------------------------------|-----------------------------------+
+|                           OS SERVICES (XPL / XPLG)                    |
+|   +--------------------------+    +-------------------------------+   |
+|   |  ACMS Transaction Monitor|    |  SVDAG Registry & Scene Graph |   |
+|   +--------------------------+    +-------------------------------+   |
++-----------------------------------|-----------------------------------+
+                                    |
++-----------------------------------|-----------------------------------+
+|                               KERNEL SPACE                            |
+|   +---------------------------------------------------------------+   |
+|   |          Task & Coroutine Scheduler / IRQ Dispatcher          |   |
+|   |          VFS Storage Manager (Exclusive .dat.bin Only)        |   |
+|   +---------------------------------------------------------------+   |
++-----------------------------------|-----------------------------------+
+                                    |
++-----------------------------------|-----------------------------------+
+|                        ZMM HARDWARE EMULATION                         |
+|   +--------------------------+    +-------------------------------+   |
+|   | WinchesterMQ SCSI Regs   |    | Direct ReBAR VRAM Framebuffer |   |
+|   +--------------------------+    +-------------------------------+   |
++-----------------------------------------------------------------------+
 
 ---
 
