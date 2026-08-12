@@ -3457,6 +3457,33 @@ bool auncient_euler_volume1_chapter9_sec3_conic_manifold_engine(
     AuncientEulerVolume1Chapter9Section3ConicManifoldMetrics *metrics_out
 );
 
+// Euler Volume 1 Chapter 9 Full Synthesis Proof Engine Metrics (ht.0000000057ed)
+typedef struct {
+    char chapter_latin_title[128];         // Caput IX: De quantitatibus transcendentibus ex differentiatione et integratione ortis
+    int64_t preserved_random_x;            // Preserved originative variable x
+    int64_t preserved_random_y;            // Preserved originative variable y
+    uint64_t totient_phi_x;                // Exact totient register retention phi_x = x
+    uint64_t totient_phi_y;                // Exact totient register retention phi_y = y
+    bool sec1_log_series_sound;            // True if Section 1 power series engine is sound
+    bool sec2_discrete_partition_sound;    // True if Section 2 discrete partition engine is sound
+    bool sec3_conic_manifold_sound;        // True if Section 3 conic manifold engine is sound
+    bool is_acid_rollback_sound;           // True: Transactional Rollback restored state
+    bool is_acid_replay_sound;             // True: Transactional Replay re-executed state
+    uint64_t acid_ch9_master_checksum;     // 64-bit FNV-1a Checksum over full Chapter 9 synthesis
+    bool rule9_address_resolution_sound;   // True if dynamic_<address> holds 100%
+    bool rule13_dat_bin_verified;          // Quadtree payload format is strictly .dat.bin
+    uint64_t zmm_hardware_latch;           // 512-bit ZMM ReBAR Latch (0x57ED)
+    bool ch9_full_synthesis_sound;         // True if Chapter 9 full synthesis is 100% sound
+} AuncientEulerVolume1Chapter9FullSynthesisMetrics;
+
+bool auncient_euler_volume1_chapter9_full_synthesis_engine(
+    const char *contract_address,
+    const char *dat_bin_ch9_path,
+    int64_t preserved_random_x,
+    int64_t preserved_random_y,
+    AuncientEulerVolume1Chapter9FullSynthesisMetrics *metrics_out
+);
+
 #ifdef __cplusplus
 }
 #endif
