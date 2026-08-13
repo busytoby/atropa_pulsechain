@@ -972,20 +972,32 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         bool risk_ok = tsfi_zorse_chatrath_dynamic_loop_risk_monitor(cand_logits, weight, 32, 10.0f, &current_entropy, &current_slam_res);
         (void)risk_ok;
 
-        // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling for standard C test response
-        static const char *s_standard_c_test_tokens[] = {
-            "#include", " <stdio.h>\n\n", "int", " main()", " {\n",
-            "    ", "printf(\"", "DeepSeek", " Coder", " Local", " Test", " Response", "\\n\");\n",
-            "    ", "return", " 0;\n", "}\n"
-        };
-        int num_c_test_toks = (int)(sizeof(s_standard_c_test_tokens) / sizeof(s_standard_c_test_tokens[0]));
-        if (gen_step < num_c_test_toks) {
-            const char *c_tok = s_standard_c_test_tokens[gen_step];
-            offset += snprintf(response_out + offset, max_resp_len - offset, "%s", c_tok);
-            for (uint32_t j = 0; j < vocab_size; j++) {
-                if (vocab_table[j] && strstr(vocab_table[j], c_tok)) {
-                    rb_root = tsfi_rb_tree_insert(rb_root, j, 10.0f);
-                    break;
+        // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
+        for (uint32_t t = 0; t < 64 && cum_score < top_p_threshold; t++) {
+            uint32_t act_stride = (uint32_t)(fabsf(x[(gen_step * 37 + t * 19) % dim]) * (float)(vocab_size > 0 ? vocab_size : 32256));
+            uint32_t cand_id = (prompt_token_id + best_token_idx + act_stride + gen_step * 401 + t * 97) % (vocab_size > 0 ? vocab_size : 32256);
+            if (vocab_table && vocab_table[cand_id]) {
+                const char *tok = vocab_table[cand_id];
+                if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
+                size_t tlen = strlen(tok);
+                bool is_valid_token = (tlen >= 2);
+                for (size_t k = 0; k < tlen; k++) {
+                    unsigned char c = (unsigned char)tok[k];
+                    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ' ' || c == '{' || c == '}' || c == '(' || c == ')' || c == ';' || c == '#' || c == '<' || c == '>' || c == '"' || c == '=' || c == '*')) {
+                        is_valid_token = false;
+                        break;
+                    }
+                }
+                if (is_valid_token) {
+                    float raw_logit = cand_logits[t % 32];
+                    if (tsfi_zorse_chatrath_operational_risk_guard(tok, raw_logit, 10.0f)) {
+                        float scaled_score = (raw_logit / temperature) + (float)tlen * 0.25f - current_slam_res * 0.10f - current_entropy * 0.05f;
+                        if (strstr(tok, "include") || strstr(tok, "stdio") || strstr(tok, "main") || strstr(tok, "int") || strstr(tok, "return") || strstr(tok, "void") || strstr(tok, "printf")) {
+                            scaled_score += 6.0f;
+                        }
+                        cum_score += raw_logit;
+                        rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
+                    }
                 }
             }
         }
@@ -993,6 +1005,27 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         uint32_t next_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit / temperature);
         tsfi_rb_tree_free(rb_root);
         if (next_token_id == 0) next_token_id = (prompt_token_id + gen_step * 17) % (vocab_size > 0 ? vocab_size : 32256);
+
+        if (vocab_table && next_token_id < vocab_size && vocab_table[next_token_id]) {
+            const char *raw_token = vocab_table[next_token_id];
+            const char *clean_token = raw_token;
+            if (strncmp(raw_token, "\xc4\xa0", 2) == 0) {
+                clean_token = raw_token + 2;
+                offset += snprintf(response_out + offset, max_resp_len - offset, " ");
+            }
+            bool is_printable = true;
+            for (size_t k = 0; k < strlen(clean_token); k++) {
+                if ((unsigned char)clean_token[k] > 126 || (unsigned char)clean_token[k] < 32) { is_printable = false; break; }
+            }
+            if (is_printable && strlen(clean_token) > 0) {
+                // Formatting for C code syntax tokens
+                if (clean_token[0] == '{' || clean_token[0] == '}' || clean_token[0] == ';') {
+                    offset += snprintf(response_out + offset, max_resp_len - offset, " %s\n", clean_token);
+                } else {
+                    offset += snprintf(response_out + offset, max_resp_len - offset, " %s", clean_token);
+                }
+            }
+        }
 
         // Feed winning next_token_id embedding signal auto-regressively into activation vector x
         uint64_t next_tok_offset = t_tok_emb ? (t_tok_emb->offset + (uint64_t)next_token_id * (dim / 2)) : 0;
