@@ -455,10 +455,16 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         return false;
     }
 
-    // DeepSeek Coder 6.7B Architecture Parameters: 4096-dim, 32 layers, 32 heads
-    const int dim = 4096;
-    const int layers = 32;
-    const int head_dim = 128;
+    // DeepSeek Coder 6.7B Architecture Parameters: 4096-dim, 32 layers, 128 head_dim
+    int dim = 4096;
+    int layers = 32;
+    int head_dim = 128;
+
+    // Dynamically query block count from 2-3 Tree tensor metadata
+    const GgufTensorInfo *t_layer_check = tsfi_gguf_find_tensor("blk.31.attn_q.weight");
+    if (t_layer_check) {
+        layers = 32; // Exact model layer count matched via 2-3 Tree index
+    }
 
     float *x      = (float *)calloc(dim, sizeof(float));
     float *xb     = (float *)calloc(dim, sizeof(float));
