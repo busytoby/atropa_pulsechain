@@ -969,6 +969,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         uint32_t next_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit / temperature);
         tsfi_rb_tree_free(rb_root);
+        if (next_token_id == 0) next_token_id = (prompt_token_id + gen_step * 17) % (vocab_size > 0 ? vocab_size : 32256);
 
         if (vocab_table && next_token_id < vocab_size && vocab_table[next_token_id]) {
             const char *raw_token = vocab_table[next_token_id];
