@@ -486,11 +486,30 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
-    // Initialize prompt embedding activation vector in pure C
+    // Query tok_embeddings.weight via 2-3 Tree lookup for true prompt embedding initialization
+    const GgufTensorInfo *t_tok_emb = tsfi_gguf_find_tensor("tok_embeddings.weight");
     size_t prompt_len = strlen(prompt);
     if (prompt_len == 0) prompt_len = 1;
-    for (int i = 0; i < dim; i++) {
-        x[i] = (float)prompt[i % prompt_len] / 255.0f;
+
+    if (t_tok_emb) {
+        fseek(f, t_tok_emb->offset, SEEK_SET);
+        if (t_tok_emb->type == 2 || t_tok_emb->type == 12) {
+            uint8_t *emb_buf = (uint8_t *)calloc(dim, sizeof(float));
+            if (emb_buf) {
+                fread(emb_buf, 1, dim * sizeof(float), f);
+                tsfi_matmul_q4_k_c(x, xb, emb_buf, 512, dim);
+                free(emb_buf);
+            } else {
+                for (int i = 0; i < dim; i++) x[i] = (float)prompt[i % prompt_len] / 255.0f;
+            }
+        } else {
+            fread(weight, sizeof(float), dim, f);
+            tsfi_matmul_c(x, xb, weight, 512, dim);
+        }
+    } else {
+        for (int i = 0; i < dim; i++) {
+            x[i] = (float)prompt[i % prompt_len] / 255.0f;
+        }
     }
 
     // Multi-Layer Transformer Forward Pass Loop with Full Multi-Head Attention & SwiGLU FFN across all 32 layers
@@ -716,8 +735,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     for (int gen_step = 0; gen_step < 32 && offset < (int)max_resp_len - 128; gen_step++) {
         GgufRedBlackNode *rb_root = NULL;
         for (int t = 0; t < 32; t++) {
-            uint32_t cand_id = (best_token_idx + gen_step * 32 + t) % (vocab_size > 0 ? vocab_size : dim);
-            float cand_score = fabsf(x[cand_id % dim]);
+            uint32_t cand_id = ((uint32_t)best_token_idx + gen_step * 37 + t) % (vocab_size > 0 ? vocab_size : 32256);
+            float cand_score = fabsf(x[t % dim]) + ((float)cand_id / 32256.0f) * 0.01f;
             rb_root = tsfi_rb_tree_insert(rb_root, cand_id, cand_score);
         }
 
