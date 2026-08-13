@@ -953,7 +953,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
     // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
     int offset = 0;
-    float temperature = 0.7f;
+    float temperature = 0.50f;
 
     for (int gen_step = 0; gen_step < 32 && offset < (int)max_resp_len - 128; gen_step++) {
         GgufRedBlackNode *rb_root = NULL;
