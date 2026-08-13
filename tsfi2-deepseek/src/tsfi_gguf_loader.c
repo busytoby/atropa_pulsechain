@@ -936,7 +936,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 const char *tok = vocab_table[cand_id];
                 if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
                 size_t tlen = strlen(tok);
-                bool is_valid_token = (tlen >= 1);
+                bool is_valid_token = (tlen >= 3);
                 for (size_t k = 0; k < tlen; k++) {
                     unsigned char c = (unsigned char)tok[k];
                     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ' ' || c == '{' || c == '}' || c == '(' || c == ')' || c == ';' || c == '#' || c == '<' || c == '>' || c == '"' || c == '=' || c == '*')) {
