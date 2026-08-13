@@ -664,10 +664,10 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(v, xb, weight, 512, dim); }
             } else { tsfi_matmul_c(v, xb, weight, 512, dim); }
 
-            // Update KV Cache State Vectors for context tracking
+            // Update MANN KV-Cache State Vectors for sequence context tracking
             for (int i = 0; i < dim; i++) {
-                key_cache[l * dim + i] = k[i];
-                value_cache[l * dim + i] = v[i];
+                key_cache[l * dim + i]   = key_cache[l * dim + i] * 0.5f + k[i] * 0.5f;
+                value_cache[l * dim + i] = value_cache[l * dim + i] * 0.5f + v[i] * 0.5f;
             }
 
             // 3. Rotary Positional Embeddings (RoPE)
