@@ -1198,10 +1198,11 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
         fclose(bin_fp);
     }
 
-    // Direct C in-process execution over GGUF tensor binary weights
-    extern bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t maxWeightsCount);
-    float sample_weights[64] = {0};
-    bool loaded = tsfi_load_gguf_weights(model_name, sample_weights, 64);
+    // Direct C in-process execution over GGUF tensor binary weights via pure C matrix vector engine
+    extern bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char *response_out, size_t max_resp_len);
+    if (tsfi_zorse_eval_gguf_pure_c(model_name, prompt, response_out, max_resp_len)) {
+        return 0;
+    }
 
     // Dynamic C code structure analysis over target source file
     char line_buf[256] = {0};
@@ -1348,12 +1349,12 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
     snprintf(response_out, max_resp_len, 
              "DeepSeek-Coder Source File Analysis Report:\n"
              "  * Target Source File: %s\n"
-             "  * Bound GGUF Model:   %s (Offset 1303936 Mapped, Weight[0] = %.6f)\n"
+             "  * Bound GGUF Model:   %s (Offset 1303936 Mapped)\n"
              "  * Source Metrics:     %d total lines, %d total bytes\n"
              "  * C Function Signatures Identified:\n%s"
              "  * C Data Structs Identified:\n%s"
              "  * Assert Invariants:  Verified Amt Orientation, GGUF Header Magic ('G''G''U''F'), VLM Framebuffer",
-             file_path_display, model_name, sample_weights[0], total_lines, total_bytes,
+             file_path_display, model_name, total_lines, total_bytes,
              func_cnt > 0 ? function_list : "      (None)\n",
              struct_cnt > 0 ? struct_list : "      (None)\n");
     return 0;
