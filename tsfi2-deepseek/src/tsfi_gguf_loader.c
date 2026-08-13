@@ -262,6 +262,13 @@ bool tsfi_zorse_chatrath_dynamic_loop_risk_monitor(
     return (combined_risk <= max_risk_threshold);
 }
 
+// Chatrath Operational Risk Assessment Guard for Subword Candidate Pruning
+bool tsfi_zorse_chatrath_operational_risk_guard(const char *subword, float logit_score, float max_risk_bound) {
+    if (!subword || strlen(subword) == 0) return false;
+    float subword_entropy = (float)strlen(subword) * fabsf(logit_score);
+    return (subword_entropy <= max_risk_bound);
+}
+
 void tsfi_rb_tree_free(GgufRedBlackNode *node) {
     if (!node) return;
     tsfi_rb_tree_free(node->left);
@@ -903,9 +910,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 }
                 if (is_alpha) {
                     float raw_logit = cand_logits[t % 32];
-                    float scaled_score = (raw_logit / temperature) + (float)tlen * 0.05f;
-                    cum_score += raw_logit;
-                    rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
+                    if (tsfi_zorse_chatrath_operational_risk_guard(tok, raw_logit, 10.0f)) {
+                        float scaled_score = (raw_logit / temperature) + (float)tlen * 0.05f;
+                        cum_score += raw_logit;
+                        rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
+                    }
                 }
             }
         }
