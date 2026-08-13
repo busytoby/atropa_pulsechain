@@ -103,6 +103,52 @@ GgufRedBlackNode *tsfi_rb_tree_create_node(uint32_t token_id, float score) {
     return node;
 }
 
+// Red-Black Tree Self-Balancing Rotations and Classifier Engine
+static GgufRedBlackNode *tsfi_rb_rotate_left(GgufRedBlackNode *h) {
+    GgufRedBlackNode *x = h->right;
+    h->right = x->left;
+    x->left = h;
+    x->is_red = h->is_red;
+    h->is_red = true;
+    return x;
+}
+
+static GgufRedBlackNode *tsfi_rb_rotate_right(GgufRedBlackNode *h) {
+    GgufRedBlackNode *x = h->left;
+    h->left = x->right;
+    x->right = h;
+    x->is_red = h->is_red;
+    h->is_red = true;
+    return x;
+}
+
+static void tsfi_rb_flip_colors(GgufRedBlackNode *h) {
+    h->is_red = !h->is_red;
+    if (h->left) h->left->is_red = !h->left->is_red;
+    if (h->right) h->right->is_red = !h->right->is_red;
+}
+
+static bool is_red_node(GgufRedBlackNode *x) {
+    if (!x) return false;
+    return x->is_red;
+}
+
+GgufRedBlackNode *tsfi_rb_tree_insert(GgufRedBlackNode *h, uint32_t token_id, float score) {
+    if (!h) return tsfi_rb_tree_create_node(token_id, score);
+
+    if (score < h->activation_score) {
+        h->left = tsfi_rb_tree_insert(h->left, token_id, score);
+    } else {
+        h->right = tsfi_rb_tree_insert(h->right, token_id, score);
+    }
+
+    if (is_red_node(h->right) && !is_red_node(h->left)) h = tsfi_rb_rotate_left(h);
+    if (is_red_node(h->left) && is_red_node(h->left->left)) h = tsfi_rb_rotate_right(h);
+    if (is_red_node(h->left) && is_red_node(h->right)) tsfi_rb_flip_colors(h);
+
+    return h;
+}
+
 uint32_t tsfi_gguf_classify_token_rb_tree(GgufRedBlackNode *root, float target_score) {
     if (!root) return 0;
     GgufRedBlackNode *curr = root;
@@ -124,6 +170,13 @@ uint32_t tsfi_gguf_classify_token_rb_tree(GgufRedBlackNode *root, float target_s
         }
     }
     return best_class;
+}
+
+void tsfi_rb_tree_free(GgufRedBlackNode *node) {
+    if (!node) return;
+    tsfi_rb_tree_free(node->left);
+    tsfi_rb_tree_free(node->right);
+    free(node);
 }
 const GgufTensorInfo *tsfi_gguf_find_tensor_23tree(Gguf23TreeNode *root, const char *name) {
     if (!root || !name) return NULL;
@@ -576,20 +629,18 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
-    // Complete Red-Black Tree Classifier Loop
-    GgufRedBlackNode *rb_root = tsfi_rb_tree_create_node(best_token_idx, max_logit);
-    if (rb_root) {
-        rb_root->left = tsfi_rb_tree_create_node((best_token_idx + 1) % dim, max_logit * 0.5f);
-        rb_root->right = tsfi_rb_tree_create_node((best_token_idx + 2) % dim, max_logit * 0.25f);
+    // Complete Self-Balancing Red-Black Tree Classifier Loop
+    GgufRedBlackNode *rb_root = NULL;
+    for (int t = 0; t < 16; t++) {
+        uint32_t candidate_id = (best_token_idx + t) % dim;
+        float candidate_score = fabsf(x[candidate_id]);
+        rb_root = tsfi_rb_tree_insert(rb_root, candidate_id, candidate_score);
     }
 
     uint32_t classified_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
 
-    if (rb_root) {
-        if (rb_root->left) free(rb_root->left);
-        if (rb_root->right) free(rb_root->right);
-        free(rb_root);
-    }
+    // Free Red-Black Tree classifier nodes
+    tsfi_rb_tree_free(rb_root);
     int offset = 0;
 
     // Parse GGUF tokenizer.ggml.tokens strings directly off model file metadata header
