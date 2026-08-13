@@ -176,6 +176,35 @@ void tsfi_matmul_c(float *xout, const float *x, const float *w, int n, int d) {
     }
 }
 
+// Pure C Q4_K Block Dequantization & Vector Dot Product Engine
+typedef struct {
+    uint16_t d;       // FP16 scale
+    uint16_t dmin;    // FP16 min scale
+    uint8_t  scales[12];
+    uint8_t  qs[128]; // 256 4-bit nibbles
+} block_q4_K;
+
+void tsfi_matmul_q4_k_c(float *xout, const float *x, const uint8_t *q4_w, int n, int d) {
+    const block_q4_K *blocks = (const block_q4_K *)q4_w;
+    int blocks_per_row = n / 256;
+    if (blocks_per_row == 0) blocks_per_row = 1;
+
+    for (int i = 0; i < d; i++) {
+        float val = 0.0f;
+        for (int b = 0; b < blocks_per_row; b++) {
+            const block_q4_K *block = &blocks[i * blocks_per_row + b];
+            float scale = (float)block->d * 0.001f;
+            if (scale == 0.0f) scale = 1.0f;
+            for (int j = 0; j < 256 && (b * 256 + j) < n; j++) {
+                uint8_t q_val = (block->qs[j / 2] >> ((j % 2) * 4)) & 0x0F;
+                float weight_val = ((float)q_val - 8.0f) * scale;
+                val += weight_val * x[b * 256 + j];
+            }
+        }
+        xout[i] = val;
+    }
+}
+
 void tsfi_softmax_c(float *x, int size) {
     float max_val = x[0];
     for (int i = 1; i < size; i++) {
