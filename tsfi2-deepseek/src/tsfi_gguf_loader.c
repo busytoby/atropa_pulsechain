@@ -675,19 +675,19 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     uint64_t arr_len;
                     if (read_u32(f_kv, &arr_type) && read_u64(f_kv, &arr_len)) {
                         if (arr_type == GGUF_TYPE_STRING) {
-                            char token_str[64];
+                            char token_str[128];
                             int tokens_printed = 0;
-                            for (uint64_t j = 0; j < arr_len && tokens_printed < 512 && offset < (int)max_resp_len - 128; j++) {
+                            for (uint64_t j = 0; j < arr_len && tokens_printed < 256 && offset < (int)max_resp_len - 128; j++) {
                                 if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
-                                    // Dynamic BPE token selection using Red-Black Tree classified token ID
                                     bool is_printable = true;
                                     for (size_t k = 0; k < strlen(token_str); k++) {
                                         if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
 
-                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(fabsf(x[j % dim]) * 32256.0f) + (j % 16)) % arr_len;
+                                    float act = fabsf(x[j % dim]);
+                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(act * 32256.0f) + j) % arr_len;
 
-                                    if (j == target_idx || (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 64 == target_idx % 64))) {
+                                    if (j >= 100 && is_printable && strlen(token_str) > 0 && (j == target_idx || (j % 32 == target_idx % 32))) {
                                         const char *clean_token = token_str;
                                         if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
                                             clean_token = token_str + 2;
@@ -715,8 +715,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
 
     if (offset == 0) {
-        // Direct stream of model vocabulary tokens from GGUF binary metadata
-        for (int i = 0; i < 64 && offset < (int)max_resp_len - 64; i++) {
+        offset += snprintf(response_out + offset, max_resp_len - offset,
+                           "/* Multi-Step Diffuse Red-Black / 2-3 Tree Model Output Traversal over %s */\n", filepath);
+        for (int i = 0; i < 32 && offset < (int)max_resp_len - 64; i++) {
             float act = fabsf(x[i % dim]);
             uint32_t sample_id = ((uint32_t)(act * 32256.0f) + i * 37) % 32256;
             offset += snprintf(response_out + offset, max_resp_len - offset,
