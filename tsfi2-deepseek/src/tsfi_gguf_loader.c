@@ -608,8 +608,17 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     const GgufTensorInfo *t_lm_head = tsfi_gguf_find_tensor("lm_head.weight");
     if (t_lm_head) {
         fseek(f, t_lm_head->offset, SEEK_SET);
-        fread(weight, sizeof(float), dim, f);
-        tsfi_matmul_c(xb, x, weight, 512, dim);
+        if (t_lm_head->type == 2 || t_lm_head->type == 12) {
+            uint8_t *lm_buf = (uint8_t *)calloc(dim, sizeof(float));
+            if (lm_buf) {
+                fread(lm_buf, 1, dim * sizeof(float), f);
+                tsfi_matmul_q4_k_c(xb, x, lm_buf, 512, dim);
+                free(lm_buf);
+            } else { tsfi_matmul_c(xb, x, weight, 512, dim); }
+        } else {
+            fread(weight, sizeof(float), dim, f);
+            tsfi_matmul_c(xb, x, weight, 512, dim);
+        }
         for (int i = 0; i < dim; i++) x[i] = xb[i];
     }
 
