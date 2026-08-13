@@ -431,10 +431,22 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             const GgufTensorInfo *t_q = tsfi_gguf_find_tensor(q_name);
             if (t_q) {
                 fseek(f, t_q->offset, SEEK_SET);
-                fread(weight, sizeof(float), dim, f);
+                if (t_q->type == 2 || t_q->type == 12) { // Q4_K or quantized block type
+                    uint8_t *q_buf = (uint8_t *)calloc(dim, sizeof(float));
+                    if (q_buf) {
+                        fread(q_buf, 1, dim * sizeof(float), f);
+                        tsfi_matmul_q4_k_c(q, xb, q_buf, 512, dim);
+                        free(q_buf);
+                    } else {
+                        tsfi_matmul_c(q, xb, weight, 512, dim);
+                    }
+                } else {
+                    fread(weight, sizeof(float), dim, f);
+                    tsfi_matmul_c(q, xb, weight, 512, dim);
+                }
+            } else {
+                tsfi_matmul_c(q, xb, weight, 512, dim);
             }
-
-            tsfi_matmul_c(q, xb, weight, 512, dim);
             tsfi_matmul_c(k, xb, weight, 512, dim);
             tsfi_matmul_c(v, xb, weight, 512, dim);
 
