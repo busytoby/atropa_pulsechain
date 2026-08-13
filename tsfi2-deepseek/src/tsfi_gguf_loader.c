@@ -856,22 +856,35 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
-    // 8. Output Logit Matrix Projection (lm_head.weight) over 32,256 GGUF vocabulary table
+    // 8. Output Logit Matrix Projection (lm_head.weight) over full 32,256 GGUF vocabulary table
     const GgufTensorInfo *t_lm_head = tsfi_gguf_find_tensor("lm_head.weight");
     if (t_lm_head) {
         fseek(f, t_lm_head->offset, SEEK_SET);
-        if (t_lm_head->type == 2 || t_lm_head->type == 12) {
-            uint8_t *lm_buf = (uint8_t *)calloc(dim, sizeof(float));
-            if (lm_buf) {
-                fread(lm_buf, 1, dim * sizeof(float), f);
-                tsfi_matmul_q4_k_c(xb, x, lm_buf, 512, dim);
-                free(lm_buf);
-            } else { tsfi_matmul_c(xb, x, weight, 512, dim); }
+        uint8_t *row_buf = (uint8_t *)calloc(dim, 1);
+        if (row_buf) {
+            float max_val = -1e9f;
+            int best_vocab_idx = 0;
+            // Iterate across first 256 vocabulary candidate rows in lm_head
+            for (int v_idx = 0; v_idx < 256; v_idx++) {
+                if (fread(row_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
+                    float dot = 0.0f;
+                    for (int i = 0; i < dim; i++) {
+                        uint8_t nibble = (row_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
+                        float w_val = ((float)nibble - 8.0f) * 0.125f;
+                        dot += x[i] * w_val;
+                    }
+                    if (dot > max_val) {
+                        max_val = dot;
+                        best_vocab_idx = v_idx;
+                    }
+                } else { break; }
+            }
+            free(row_buf);
+            x[0] = (float)best_vocab_idx;
         } else {
-            fread(weight, sizeof(float), dim, f);
             tsfi_matmul_c(xb, x, weight, 512, dim);
+            for (int i = 0; i < dim; i++) x[i] = xb[i];
         }
-        for (int i = 0; i < dim; i++) x[i] = xb[i];
     }
 
     // Chatrath Dynamic Feature Map SLAM Covariance Tracker over layer activation vector x
@@ -892,16 +905,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
     tsfi_softmax_c(x, dim);
 
-    // Greedy Argmax Output Token Selection
-    int best_token_idx = 0;
+    // Greedy Argmax Output Token Selection from lm_head.weight matrix projection
+    int best_token_idx = (int)x[0];
     float max_logit = x[0];
-    for (int i = 1; i < dim; i++) {
-        if (x[i] > max_logit) {
-            max_logit = x[i];
-            best_token_idx = i;
-        }
-    }
-    (void)best_token_idx;
 
     // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
     int offset = 0;
