@@ -668,18 +668,31 @@ int tsfi_vsen_audit_chain_verify(const char *dat_bin_file_path) {
     FILE *fp = fopen(dat_bin_file_path, "rb");
     if (!fp) return -2;
 
-    vsen_vaesen_mvcc_record record;
     uint64_t prev_hash = 0;
     int valid = 1;
 
-    while (fread(&record, sizeof(record), 1, fp) == 1) {
-        uint64_t expected_hash = tsfi_vsen_compute_fnv1a_dna_hash(&record.data, sizeof(record.data), prev_hash);
-        if (record.mvcc.dna_hash != expected_hash) {
-            valid = 0;
-            break;
+    if (strstr(dat_bin_file_path, "erara") != NULL) {
+        vsen_erara_title_mvcc_record record;
+        while (fread(&record, sizeof(record), 1, fp) == 1) {
+            uint64_t expected_hash = tsfi_vsen_compute_fnv1a_dna_hash(&record.data, sizeof(record.data), prev_hash);
+            if (record.mvcc.dna_hash != expected_hash) {
+                valid = 0;
+                break;
+            }
+            prev_hash = record.mvcc.dna_hash;
         }
-        prev_hash = record.mvcc.dna_hash;
+    } else {
+        vsen_vaesen_mvcc_record record;
+        while (fread(&record, sizeof(record), 1, fp) == 1) {
+            uint64_t expected_hash = tsfi_vsen_compute_fnv1a_dna_hash(&record.data, sizeof(record.data), prev_hash);
+            if (record.mvcc.dna_hash != expected_hash) {
+                valid = 0;
+                break;
+            }
+            prev_hash = record.mvcc.dna_hash;
+        }
     }
+
     fclose(fp);
     return valid ? 0 : -3;
 }
@@ -705,30 +718,29 @@ int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level
     strncpy(mvcc_rec.data.status, status, sizeof(mvcc_rec.data.status) - 1);
 
     // Rule 13: Must only support .dat.bin extension for quadtree, index, database slices
-    FILE *fp = fopen("vaesen_registry.dat.bin", "rb+");
-    if (!fp) {
-        fp = fopen("vaesen_registry.dat.bin", "wb+");
-    }
-    if (!fp) {
-        tsfi_vsen_tx_abort(tx_id);
-        return -2;
-    }
-
     vsen_vaesen_mvcc_record existing;
     uint64_t last_offset = 0;
     uint64_t prev_dna_hash = 0;
 
-    while (fread(&existing, sizeof(existing), 1, fp) == 1) {
-        prev_dna_hash = existing.mvcc.dna_hash;
-        if (strcmp(existing.data.name, name) == 0 && !existing.mvcc.is_deleted) {
-            last_offset = ftell(fp) - sizeof(existing);
+    FILE *fp_read = fopen("vaesen_registry.dat.bin", "rb");
+    if (fp_read) {
+        while (fread(&existing, sizeof(existing), 1, fp_read) == 1) {
+            prev_dna_hash = existing.mvcc.dna_hash;
+            if (strcmp(existing.data.name, name) == 0 && !existing.mvcc.is_deleted) {
+                last_offset = ftell(fp_read) - sizeof(existing);
+            }
         }
+        fclose(fp_read);
     }
 
     mvcc_rec.mvcc.prev_version_offset = last_offset;
-    mvcc_rec.mvcc.dna_hash = tsfi_vsen_compute_fnv1a_dna_hash(&mvcc_rec.data, sizeof(mvcc_rec.data), prev_dna_hash);
+    mvcc_rec.mvcc.dna_hash = tsfi_vsen_compute_fnv1a_dna_hash(&mvcc_rec.data, sizeof(vsen_vaesen_record), prev_dna_hash);
 
-    fseek(fp, 0, SEEK_END);
+    FILE *fp = fopen("vaesen_registry.dat.bin", "ab");
+    if (!fp) {
+        tsfi_vsen_tx_abort(tx_id);
+        return -2;
+    }
     uint64_t write_offset = ftell(fp);
     size_t written = fwrite(&mvcc_rec, sizeof(mvcc_rec), 1, fp);
     fclose(fp);
@@ -794,6 +806,117 @@ int tsfi_vsen_vaesen_lookup_as_of(const char *name, uint64_t timestamp, char *ty
             *risk_level_out = record.data.risk_level;
             strncpy(status_out, record.data.status, sizeof(record.data.status) - 1);
             status_out[sizeof(record.data.status) - 1] = '\0';
+            found = 1;
+        }
+    }
+    fclose(fp);
+
+    return found ? 0 : -3;
+}
+
+int tsfi_erara_register_title(const char *doi, const char *title, const char *author, uint32_t pub_year, uint32_t total_pages, const char *iiif_manifest_url) {
+    if (!doi || !title || !author || !iiif_manifest_url) return -1;
+
+    uint64_t tx_id = 0;
+    tsfi_vsen_tx_begin(&tx_id);
+
+    vsen_erara_title_mvcc_record mvcc_rec;
+    memset(&mvcc_rec, 0, sizeof(mvcc_rec));
+    mvcc_rec.mvcc.tx_id = tx_id;
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    mvcc_rec.mvcc.commit_timestamp = (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)(ts.tv_nsec / 1000);
+    mvcc_rec.mvcc.prev_version_offset = 0;
+    mvcc_rec.mvcc.is_deleted = 0;
+
+    strncpy(mvcc_rec.data.doi, doi, sizeof(mvcc_rec.data.doi) - 1);
+    strncpy(mvcc_rec.data.title, title, sizeof(mvcc_rec.data.title) - 1);
+    strncpy(mvcc_rec.data.author, author, sizeof(mvcc_rec.data.author) - 1);
+    mvcc_rec.data.pub_year = pub_year;
+    mvcc_rec.data.total_pages = total_pages;
+    strncpy(mvcc_rec.data.iiif_manifest_url, iiif_manifest_url, sizeof(mvcc_rec.data.iiif_manifest_url) - 1);
+
+    // Rule 13: Must only support .dat.bin extension for quadtree, index, database slices
+    vsen_erara_title_mvcc_record existing;
+    uint64_t last_offset = 0;
+    uint64_t prev_dna_hash = 0;
+
+    FILE *fp_read = fopen("erara_catalog.dat.bin", "rb");
+    if (fp_read) {
+        while (fread(&existing, sizeof(existing), 1, fp_read) == 1) {
+            prev_dna_hash = existing.mvcc.dna_hash;
+            if ((strcmp(existing.data.doi, doi) == 0 || strcmp(existing.data.title, title) == 0) && !existing.mvcc.is_deleted) {
+                last_offset = ftell(fp_read) - sizeof(existing);
+            }
+        }
+        fclose(fp_read);
+    }
+
+    mvcc_rec.mvcc.prev_version_offset = last_offset;
+    mvcc_rec.mvcc.dna_hash = tsfi_vsen_compute_fnv1a_dna_hash(&mvcc_rec.data, sizeof(vsen_erara_title_record_t), prev_dna_hash);
+
+    FILE *fp = fopen("erara_catalog.dat.bin", "ab");
+    if (!fp) {
+        tsfi_vsen_tx_abort(tx_id);
+        return -2;
+    }
+    uint64_t write_offset = ftell(fp);
+    size_t written = fwrite(&mvcc_rec, sizeof(mvcc_rec), 1, fp);
+    fclose(fp);
+
+    if (written == 1) {
+        vsen_wal_entry_header_t wal;
+        memset(&wal, 0, sizeof(wal));
+        wal.lsn = ++g_vsen_global_lsn_counter;
+        wal.tx_id = tx_id;
+        wal.op_type = 2; // INSERT/UPDATE
+        strncpy(wal.target_file, "erara_catalog.dat.bin", sizeof(wal.target_file) - 1);
+        wal.record_offset = write_offset;
+        wal.payload_len = sizeof(mvcc_rec);
+
+        FILE *wal_fp = fopen("erara_catalog.wal.dat.bin", "ab");
+        if (wal_fp) {
+            fwrite(&wal, sizeof(wal), 1, wal_fp);
+            fclose(wal_fp);
+        }
+        tsfi_vsen_tx_commit(tx_id);
+        return 0;
+    } else {
+        tsfi_vsen_tx_abort(tx_id);
+        return -3;
+    }
+}
+
+int tsfi_erara_lookup_title(const char *doi_or_title, vsen_erara_title_record_t *record_out) {
+    if (!doi_or_title || !record_out) return -1;
+
+    FILE *fp = fopen("erara_catalog.dat.bin", "rb");
+    if (!fp) return -2;
+
+    vsen_erara_title_mvcc_record record;
+    int found = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if ((strcmp(record.data.doi, doi_or_title) == 0 || strstr(record.data.title, doi_or_title) != NULL) && !record.mvcc.is_deleted) {
+            *record_out = record.data;
+            found = 1;
+        }
+    }
+    fclose(fp);
+
+    return found ? 0 : -3;
+}
+
+int tsfi_erara_lookup_title_as_of(const char *doi_or_title, uint64_t timestamp, vsen_erara_title_record_t *record_out) {
+    if (!doi_or_title || !record_out) return -1;
+
+    FILE *fp = fopen("erara_catalog.dat.bin", "rb");
+    if (!fp) return -2;
+
+    vsen_erara_title_mvcc_record record;
+    int found = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if ((strcmp(record.data.doi, doi_or_title) == 0 || strstr(record.data.title, doi_or_title) != NULL) && record.mvcc.commit_timestamp <= timestamp && !record.mvcc.is_deleted) {
+            *record_out = record.data;
             found = 1;
         }
     }

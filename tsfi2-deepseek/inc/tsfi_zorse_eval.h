@@ -403,6 +403,26 @@ int tsfi_vsen_tx_rollback_to_savepoint(uint64_t tx_id, const char *savepoint_nam
 int tsfi_vsen_wal_recover(const char *dat_bin_file_path);
 int tsfi_vsen_audit_chain_verify(const char *dat_bin_file_path);
 
+// e-rara.ch Swiss Digitized Rare Book Record Structure
+typedef struct {
+    char doi[128];               // e.g. "10.3931/e-rara-1543"
+    char title[256];             // Book title
+    char author[128];            // Author name
+    uint32_t pub_year;           // Publication year (e.g. 1543)
+    uint32_t total_pages;        // Digitized page count
+    char iiif_manifest_url[256]; // IIIF Manifest URI
+} vsen_erara_title_record_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_erara_title_record_t data;
+} vsen_erara_title_mvcc_record;
+
+// e-rara.ch Title Lookup & Registration APIs
+int tsfi_erara_register_title(const char *doi, const char *title, const char *author, uint32_t pub_year, uint32_t total_pages, const char *iiif_manifest_url);
+int tsfi_erara_lookup_title(const char *doi_or_title, vsen_erara_title_record_t *record_out);
+int tsfi_erara_lookup_title_as_of(const char *doi_or_title, uint64_t timestamp, vsen_erara_title_record_t *record_out);
+
 // VSEn Vaesen Sight Telemetry Tracker
 int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);
 int tsfi_vsen_vaesen_get_aggregate_fear(const char *location, int *agg_fear_out);
