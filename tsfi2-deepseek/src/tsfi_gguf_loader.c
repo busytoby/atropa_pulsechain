@@ -686,8 +686,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
                                     float act = fabsf(x[j % dim]);
                                     uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(act * 32256.0f) + j) % arr_len;
+                                    (void)target_idx;
 
-                                    if (j >= 100 && is_printable && strlen(token_str) > 0 && (j == target_idx || (j % 32 == target_idx % 32))) {
+                                    if (j >= 100 && is_printable && strlen(token_str) > 0 && (j % 64 == (best_token_idx % 64))) {
                                         const char *clean_token = token_str;
                                         if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
                                             clean_token = token_str + 2;
