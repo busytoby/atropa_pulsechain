@@ -1160,8 +1160,22 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
     if (!prompt || !model_name || !response_out || max_resp_len == 0) return -1;
     
     response_out[0] = '\0';
-    
+
+    // If model_name points to a GGUF asset file path on disk (e.g. ~/src/tsfi2/assets/*.gguf)
     size_t m_len = strlen(model_name);
+    if (m_len > 5 && strcmp(model_name + m_len - 5, ".gguf") == 0) {
+        FILE *fp = fopen(model_name, "rb");
+        if (!fp) return -2; // GGUF asset file not found
+
+        uint8_t magic[4] = {0};
+        size_t read_bytes = fread(magic, 1, 4, fp);
+        fclose(fp);
+
+        if (read_bytes < 4 || magic[0] != 'G' || magic[1] != 'G' || magic[2] != 'U' || magic[3] != 'F') {
+            return -3; // Invalid GGUF header magic
+        }
+    }
+    
     size_t p_len = strlen(prompt);
     char *json_payload = (char *)malloc(m_len + p_len + 256);
     if (!json_payload) return -1;

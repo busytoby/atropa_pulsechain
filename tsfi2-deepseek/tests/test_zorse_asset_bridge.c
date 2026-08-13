@@ -45,10 +45,14 @@ int main(void) {
     assert(amt_rec.is_eisent_eih_intrinsic == 1);
     assert(amt_rec.forebearance_factor == 10);
 
-    // 4. Test tsfi_zorse_query_llm_gguf direct binding over GGUF asset file
+    // 4. Test tsfi_zorse_query_llm passing GGUF asset path instead of 0 or model name
     char resp_buf[256];
+    int llm_gguf_rc = tsfi_zorse_query_llm("Ping DeepSeek GGUF Path", model_gguf_path, resp_buf, sizeof(resp_buf));
+    printf("  tsfi_zorse_query_llm(..., GGUF Path): %s -> RC: %d\n", model_gguf_path, llm_gguf_rc);
+    assert(llm_gguf_rc == 0 || llm_gguf_rc == -2);
+
     int gguf_rc = tsfi_zorse_query_llm_gguf("Ping DeepSeek GGUF", model_gguf_path, resp_buf, sizeof(resp_buf));
-    printf("  GGUF Asset Path Verification: %s -> RC: %d\n", model_gguf_path, gguf_rc);
+    printf("  GGUF Asset Path Verification:          %s -> RC: %d\n", model_gguf_path, gguf_rc);
     assert(gguf_rc == 0 || gguf_rc == -2);
 
     // 5. Test tsfi_zorse_query_moondream_vlm multimodal visual query pipeline
