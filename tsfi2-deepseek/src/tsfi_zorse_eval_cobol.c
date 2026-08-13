@@ -975,8 +975,10 @@ int tsfi_erara_register_page_text(const char *doi, uint32_t page_num, const char
     mvcc_rec.data.page_num = page_num;
     strncpy(mvcc_rec.data.page_text, page_text, sizeof(mvcc_rec.data.page_text) - 1);
 
-    // Compute character count
-    mvcc_rec.data.character_count = (uint32_t)strlen(page_text);
+    // Compute total input character count and check for buffer truncation
+    size_t input_len = strlen(page_text);
+    mvcc_rec.data.character_count = (uint32_t)input_len;
+    mvcc_rec.data.is_truncated = (input_len >= sizeof(mvcc_rec.data.page_text)) ? 1 : 0;
 
     // Extract first line (incipit) up to newline or 255 chars
     size_t line_len = 0;

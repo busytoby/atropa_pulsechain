@@ -32,6 +32,7 @@ int main(void) {
     printf("\n--- C RDBMS ANALYZER REPORT (DOI: %s, Page %u) ---\n", analysis.doi, analysis.page_num);
     printf("  Evaluated Character Count:  %u bytes\n", analysis.character_count);
     printf("  Evaluated Word Count:       %u words\n", analysis.word_count);
+    printf("  Buffer Truncation Status:   %s\n", analysis.is_truncated ? "[TRUNCATED - BUFFER LIMIT EXCEEDED]" : "[COMPLETE - UNTRUNCATED FULL PAGE TEXT]");
     printf("  Extracted Incipit (Line 1): \"%s\"\n", analysis.first_line);
     printf("\n  Raw Payload Stream:\n--------------------------------------------------------------------\n%s\n--------------------------------------------------------------------\n", analysis.page_text);
 

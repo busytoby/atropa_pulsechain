@@ -424,8 +424,9 @@ typedef struct {
     uint32_t page_num;           // Page number (e.g. 1)
     uint32_t word_count;         // Total word count on page
     uint32_t character_count;    // Total character count on page
+    uint32_t is_truncated;       // 1 if text exceeded buffer size, 0 if full page text
     char first_line[256];        // Incipit / first line of text
-    char page_text[1024];        // Full text excerpt of the page
+    char page_text[4096];        // Un-redacted full text buffer of the page
 } vsen_erara_page_text_record_t;
 
 typedef struct {
