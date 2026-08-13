@@ -277,7 +277,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
 
     // Multi-Layer Transformer Forward Pass Loop (RMSNorm -> RoPE -> SwiGLU -> Softmax)
-    for (int l = 0; l < 4; l++) {
+    int num_layers = layers > 4 ? 4 : layers;
+    for (int l = 0; l < num_layers; l++) {
         tsfi_rmsnorm_c(xb, x, weight, dim, 1e-5f);
         tsfi_rope_c(xb, NULL, l, head_dim);
         tsfi_swiglu_c(q, xb, dim);
