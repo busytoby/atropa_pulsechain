@@ -1034,7 +1034,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     for (int i = 0; i < dim; i++) {
                         uint8_t nibble = (fb_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
                         float fb_val = ((float)nibble - 8.0f) * 0.125f;
-                        x[i] = x[i] * 0.70f + fb_val * 0.30f;
+                        x[i] = x[i] * 0.50f + fb_val * 0.50f;
                     }
                 }
                 free(fb_buf);
