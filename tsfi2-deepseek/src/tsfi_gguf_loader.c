@@ -864,14 +864,14 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         if (row_buf) {
             float max_val = -1e9f;
             int best_vocab_idx = 0;
-            // Iterate across first 256 vocabulary candidate rows in lm_head
-            for (int v_idx = 0; v_idx < 256; v_idx++) {
+            // Iterate across first 1024 vocabulary candidate rows in lm_head
+            for (int v_idx = 0; v_idx < 1024; v_idx++) {
                 if (fread(row_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
                     float dot = 0.0f;
-                    for (int i = 0; i < dim; i++) {
-                        uint8_t nibble = (row_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
-                        float w_val = ((float)nibble - 8.0f) * 0.125f;
-                        dot += x[i] * w_val;
+                    for (int i = 0; i < dim; i += 4) {
+                        uint8_t n0 = row_buf[i / 2] & 0x0F;
+                        uint8_t n1 = (row_buf[i / 2] >> 4) & 0x0F;
+                        dot += x[i] * (((float)n0 - 8.0f) * 0.125f) + x[i+1] * (((float)n1 - 8.0f) * 0.125f);
                     }
                     if (dot > max_val) {
                         max_val = dot;
