@@ -442,6 +442,24 @@ int tsfi_erara_search_by_author(const char *author_query, vsen_erara_title_recor
 int tsfi_erara_register_page_text(const char *doi, uint32_t page_num, const char *page_text);
 int tsfi_erara_analyze_page_text(const char *doi, uint32_t page_num, vsen_erara_page_text_record_t *record_out);
 
+// z/VSEn Amt Orientation & Forbearance Sight Vision Structures
+typedef struct {
+    char amt_id[64];             // e.g. "amt_zwingli_forebearance"
+    char orientation[128];       // Orientation state upon Amt
+    int is_eisent_eih_intrinsic; // 1 if intrinsic definition ("amt nit ist ein eisent eih") holds sound
+    int forebearance_factor;     // Forbearance rating (1-10)
+    char vision_summary[256];    // Telemetry summary of forebearance vision
+} vsen_amt_orientation_record_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_amt_orientation_record_t data;
+} vsen_amt_orientation_mvcc_record;
+
+// VSEn Amt Orientation & Sight Vision Telemetry APIs
+int tsfi_vsen_amt_register_orientation(const char *amt_id, const char *orientation, int forebearance_factor, const char *vision_summary);
+int tsfi_vsen_amt_lookup_orientation(const char *amt_id, vsen_amt_orientation_record_t *record_out);
+
 // VSEn Vaesen Sight Telemetry Tracker
 int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);
 int tsfi_vsen_vaesen_get_aggregate_fear(const char *location, int *agg_fear_out);

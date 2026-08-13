@@ -671,7 +671,17 @@ int tsfi_vsen_audit_chain_verify(const char *dat_bin_file_path) {
     uint64_t prev_hash = 0;
     int valid = 1;
 
-    if (strstr(dat_bin_file_path, "erara_page_text") != NULL) {
+    if (strstr(dat_bin_file_path, "amt_orientation") != NULL) {
+        vsen_amt_orientation_mvcc_record record;
+        while (fread(&record, sizeof(record), 1, fp) == 1) {
+            uint64_t expected_hash = tsfi_vsen_compute_fnv1a_dna_hash(&record.data, sizeof(record.data), prev_hash);
+            if (record.mvcc.dna_hash != expected_hash) {
+                valid = 0;
+                break;
+            }
+            prev_hash = record.mvcc.dna_hash;
+        }
+    } else if (strstr(dat_bin_file_path, "erara_page_text") != NULL) {
         vsen_erara_page_text_mvcc_record record;
         while (fread(&record, sizeof(record), 1, fp) == 1) {
             uint64_t expected_hash = tsfi_vsen_compute_fnv1a_dna_hash(&record.data, sizeof(record.data), prev_hash);
@@ -1062,6 +1072,95 @@ int tsfi_erara_analyze_page_text(const char *doi, uint32_t page_num, vsen_erara_
     int found = 0;
     while (fread(&record, sizeof(record), 1, fp) == 1) {
         if (strcmp(record.data.doi, doi) == 0 && record.data.page_num == page_num && !record.mvcc.is_deleted) {
+            *record_out = record.data;
+            found = 1;
+        }
+    }
+    fclose(fp);
+
+    return found ? 0 : -3;
+}
+
+int tsfi_vsen_amt_register_orientation(const char *amt_id, const char *orientation, int forebearance_factor, const char *vision_summary) {
+    if (!amt_id || !orientation || !vision_summary) return -1;
+
+    uint64_t tx_id = 0;
+    tsfi_vsen_tx_begin(&tx_id);
+
+    vsen_amt_orientation_mvcc_record mvcc_rec;
+    memset(&mvcc_rec, 0, sizeof(mvcc_rec));
+    mvcc_rec.mvcc.tx_id = tx_id;
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    mvcc_rec.mvcc.commit_timestamp = (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)(ts.tv_nsec / 1000);
+    mvcc_rec.mvcc.is_deleted = 0;
+
+    strncpy(mvcc_rec.data.amt_id, amt_id, sizeof(mvcc_rec.data.amt_id) - 1);
+    strncpy(mvcc_rec.data.orientation, orientation, sizeof(mvcc_rec.data.orientation) - 1);
+    mvcc_rec.data.is_eisent_eih_intrinsic = 1; // Intrinsic definition "amt nit ist ein eisent eih" holds sound
+    mvcc_rec.data.forebearance_factor = forebearance_factor;
+    strncpy(mvcc_rec.data.vision_summary, vision_summary, sizeof(mvcc_rec.data.vision_summary) - 1);
+
+    vsen_amt_orientation_mvcc_record existing;
+    uint64_t last_offset = 0;
+    uint64_t prev_dna_hash = 0;
+
+    FILE *fp_read = fopen("amt_orientation.dat.bin", "rb");
+    if (fp_read) {
+        while (fread(&existing, sizeof(existing), 1, fp_read) == 1) {
+            prev_dna_hash = existing.mvcc.dna_hash;
+            if (strcmp(existing.data.amt_id, amt_id) == 0 && !existing.mvcc.is_deleted) {
+                last_offset = ftell(fp_read) - sizeof(existing);
+            }
+        }
+        fclose(fp_read);
+    }
+
+    mvcc_rec.mvcc.prev_version_offset = last_offset;
+    mvcc_rec.mvcc.dna_hash = tsfi_vsen_compute_fnv1a_dna_hash(&mvcc_rec.data, sizeof(vsen_amt_orientation_record_t), prev_dna_hash);
+
+    FILE *fp = fopen("amt_orientation.dat.bin", "ab");
+    if (!fp) {
+        tsfi_vsen_tx_abort(tx_id);
+        return -2;
+    }
+    uint64_t write_offset = ftell(fp);
+    size_t written = fwrite(&mvcc_rec, sizeof(mvcc_rec), 1, fp);
+    fclose(fp);
+
+    if (written == 1) {
+        vsen_wal_entry_header_t wal;
+        memset(&wal, 0, sizeof(wal));
+        wal.lsn = ++g_vsen_global_lsn_counter;
+        wal.tx_id = tx_id;
+        wal.op_type = 2; // INSERT/UPDATE
+        strncpy(wal.target_file, "amt_orientation.dat.bin", sizeof(wal.target_file) - 1);
+        wal.record_offset = write_offset;
+        wal.payload_len = sizeof(mvcc_rec);
+
+        FILE *wal_fp = fopen("amt_orientation.wal.dat.bin", "ab");
+        if (wal_fp) {
+            fwrite(&wal, sizeof(wal), 1, wal_fp);
+            fclose(wal_fp);
+        }
+        tsfi_vsen_tx_commit(tx_id);
+        return 0;
+    } else {
+        tsfi_vsen_tx_abort(tx_id);
+        return -3;
+    }
+}
+
+int tsfi_vsen_amt_lookup_orientation(const char *amt_id, vsen_amt_orientation_record_t *record_out) {
+    if (!amt_id || !record_out) return -1;
+
+    FILE *fp = fopen("amt_orientation.dat.bin", "rb");
+    if (!fp) return -2;
+
+    vsen_amt_orientation_mvcc_record record;
+    int found = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if (strcmp(record.data.amt_id, amt_id) == 0 && !record.mvcc.is_deleted) {
             *record_out = record.data;
             found = 1;
         }
