@@ -38,16 +38,48 @@ typedef struct {
     uint64_t offset;
 } GgufTensorInfo;
 
+// Pure C 2-3 Tree Node Structure for GGUF Tensor Name Indexing
+typedef struct Gguf23TreeNode {
+    GgufTensorInfo *keys[2];           // Up to 2 keys per node (2-3 Tree)
+    struct Gguf23TreeNode *children[3]; // Up to 3 children pointers (2-3 Tree)
+    int key_count;                     // 1 or 2 keys
+    bool is_leaf;
+} Gguf23TreeNode;
+
 #define MAX_GGUF_TENSORS 512
 GgufTensorInfo g_gguf_tensors[MAX_GGUF_TENSORS];
 uint32_t g_gguf_tensor_count = 0;
+Gguf23TreeNode *g_gguf_23tree_root = NULL;
 
 static bool read_u64(FILE *f, uint64_t *out) { return fread(out, sizeof(uint64_t), 1, f) == 1; }
 static bool read_u32(FILE *f, uint32_t *out) { return fread(out, sizeof(uint32_t), 1, f) == 1; }
 static bool read_gguf_string(FILE *f, char *buf, size_t max_len);
 
-// Find tensor by exact name in GGUF registry
+// Pure C 2-3 Tree Insertion & Lookup Engine for GGUF Tensors
+Gguf23TreeNode *tsfi_23tree_create_node(bool is_leaf) {
+    Gguf23TreeNode *node = (Gguf23TreeNode *)calloc(1, sizeof(Gguf23TreeNode));
+    if (node) node->is_leaf = is_leaf;
+    return node;
+}
+
+const GgufTensorInfo *tsfi_gguf_find_tensor_23tree(Gguf23TreeNode *root, const char *name) {
+    if (!root || !name) return NULL;
+    int cmp0 = strcmp(name, root->keys[0]->name);
+    if (cmp0 == 0) return root->keys[0];
+    if (root->key_count == 2) {
+        int cmp1 = strcmp(name, root->keys[1]->name);
+        if (cmp1 == 0) return root->keys[1];
+        if (cmp1 > 0) return tsfi_gguf_find_tensor_23tree(root->children[2], name);
+    }
+    if (cmp0 < 0) return tsfi_gguf_find_tensor_23tree(root->children[0], name);
+    return tsfi_gguf_find_tensor_23tree(root->children[1], name);
+}
+
 const GgufTensorInfo *tsfi_gguf_find_tensor(const char *name) {
+    if (g_gguf_23tree_root) {
+        const GgufTensorInfo *res = tsfi_gguf_find_tensor_23tree(g_gguf_23tree_root, name);
+        if (res) return res;
+    }
     for (uint32_t i = 0; i < g_gguf_tensor_count; i++) {
         if (strcmp(g_gguf_tensors[i].name, name) == 0) {
             return &g_gguf_tensors[i];
