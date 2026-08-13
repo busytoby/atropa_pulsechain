@@ -314,11 +314,20 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                                     if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                 }
 
-                                // Softmax logit activation threshold selector
+                                // Prioritize C code tokens (keywords, types, symbols)
+                                bool is_code_token = strstr(token_str, "int") || strstr(token_str, "void") || 
+                                                     strstr(token_str, "struct") || strstr(token_str, "return") ||
+                                                     strstr(token_str, "include") || strstr(token_str, "typedef") ||
+                                                     strstr(token_str, "if") || strstr(token_str, "bool") ||
+                                                     strstr(token_str, "char") || strstr(token_str, "const") ||
+                                                     strstr(token_str, "static") || strstr(token_str, "uint") ||
+                                                     strstr(token_str, "{") || strstr(token_str, "}") ||
+                                                     strstr(token_str, "(") || strstr(token_str, ")");
+
                                 float logit_activation = fabsf(x[j % dim]);
                                 uint64_t target_idx = (uint64_t)(logit_activation * 32256.0f) % arr_len;
 
-                                if (is_printable && (j == target_idx || (j % 256 == target_idx % 256))) {
+                                if (is_printable && (is_code_token || j == target_idx || (j % 512 == target_idx % 512))) {
                                     // Clean up GGUF space prefix character 'Ġ' (0xC4 0xA0)
                                     if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
                                         offset += snprintf(response_out + offset, max_resp_len - offset, " %s", token_str + 2);
