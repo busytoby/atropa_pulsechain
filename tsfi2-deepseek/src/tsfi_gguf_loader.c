@@ -975,13 +975,13 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (uint32_t t = 0; t < 64; t++) {
-            uint32_t act_stride = (uint32_t)(fabsf(x[(gen_step * 37 + t * 19) % dim]) * (float)(vocab_size > 0 ? vocab_size : 32256));
-            uint32_t cand_id = (best_token_idx + act_stride + gen_step * 503 + t * 101) % (vocab_size > 0 ? vocab_size : 32256);
+            uint32_t act_stride = (uint32_t)(fabsf(x[(gen_step * 29 + t * 13) % dim]) * (float)(vocab_size > 0 ? vocab_size : 32256));
+            uint32_t cand_id = (prompt_token_id + act_stride + gen_step * 131 + t * 37) % (vocab_size > 0 ? vocab_size : 32256);
             if (vocab_table && vocab_table[cand_id]) {
                 const char *tok = vocab_table[cand_id];
                 if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
                 size_t tlen = strlen(tok);
-                bool is_valid_token = (tlen >= 3);
+                bool is_valid_token = (tlen >= 2);
                 for (size_t k = 0; k < tlen; k++) {
                     unsigned char c = (unsigned char)tok[k];
                     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ' ' || c == '{' || c == '}' || c == '(' || c == ')' || c == ';' || c == '#' || c == '<' || c == '>' || c == '"' || c == '=' || c == '*')) {
@@ -992,10 +992,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 if (is_valid_token) {
                     float raw_logit = cand_logits[t % 32];
                     if (tsfi_zorse_chatrath_operational_risk_guard(tok, raw_logit, 10.0f)) {
-                        float scaled_score = (raw_logit / temperature) + (float)tlen * 0.35f - current_slam_res * 0.10f - current_entropy * 0.05f;
-                        if (strstr(tok, "include") || strstr(tok, "stdio") || strstr(tok, "main") || strstr(tok, "int") || strstr(tok, "return") || strstr(tok, "void") || strstr(tok, "printf") || strstr(tok, "size_t") || strstr(tok, "float") || strstr(tok, "double") || strstr(tok, "const") || strstr(tok, "char") || strstr(tok, "struct") || strstr(tok, "for") || strstr(tok, "while")) {
-                            scaled_score += 10.0f;
-                        }
+                        float scaled_score = (raw_logit / temperature) + (float)tlen * 0.25f - current_slam_res * 0.10f - current_entropy * 0.05f;
                         rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
                     }
                 }
