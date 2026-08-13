@@ -1045,6 +1045,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 x[i] = fabsf(x[i] * 0.70f + token_signal * 0.30f);
             }
         }
+        float cov_val = tsfi_zorse_chatrath_slam_covariance_tracker(x, dim);
+        (void)cov_val;
     }
 
     // Clean up dynamic vocabulary table pointers
