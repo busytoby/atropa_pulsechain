@@ -81,6 +81,27 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
     return ret;
 }
 
+int tsfi_zorse_query_llm_gguf(const char *prompt, const char *gguf_asset_path, char *response_out, size_t max_resp_len) {
+    if (!prompt || !gguf_asset_path || !response_out || max_resp_len == 0) return -1;
+    response_out[0] = '\0';
+
+    // Verify presence of GGUF asset file on disk (e.g. ~/src/tsfi2/assets/DeepSeek-Coder-V2-Lite-Instruct.gguf)
+    FILE *fp = fopen(gguf_asset_path, "rb");
+    if (!fp) return -2; // GGUF asset not found
+
+    // Read GGUF header magic (4 bytes: 'G''G''U''F')
+    uint8_t magic[4] = {0};
+    size_t read_bytes = fread(magic, 1, 4, fp);
+    fclose(fp);
+
+    if (read_bytes < 4 || magic[0] != 'G' || magic[1] != 'G' || magic[2] != 'U' || magic[3] != 'F') {
+        return -3; // Invalid GGUF header magic
+    }
+
+    // Direct binding over DeepSeek GGUF model asset
+    return tsfi_zorse_query_llm(prompt, gguf_asset_path, response_out, max_resp_len);
+}
+
 int tsfi_zorse_autocorrect_source(const char *failed_source, const char *lang, const char *model_name, char *corrected_source_out, size_t max_len) {
     if (!failed_source || !lang || !model_name || !corrected_source_out || max_len == 0) return -1;
     
