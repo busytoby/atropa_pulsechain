@@ -434,6 +434,26 @@ typedef struct {
     vsen_erara_page_text_record_t data;
 } vsen_erara_page_text_mvcc_record;
 
+// e-rara.ch Polite Language & Diet Analysis Record Structure (.dat.bin)
+typedef struct {
+    char doi[128];                     // e.g. "10.3931/e-rara-10100"
+    uint32_t page_num;                 // Page number (e.g. 1)
+    char honorific_salutation[256];    // e.g. "Dem eersamen vnd wysen Chratz Christoffel Froschouer..."
+    char benediction_greeting[128];    // e.g. "Gnad vnd frid von Gott dem Herren"
+    char diet_term_speisen[64];        // e.g. "speisen" (choice & freedom of foods)
+    char diet_term_fleisch[64];        // e.g. "fleisch" (eating meat during fast)
+    char diet_term_fastenn[64];        // e.g. "fastenn" (Lenten fasting period)
+    char core_thesis_clause[256];      // Key thesis: "wie die sach von Gottes wort geschirmt..."
+} vsen_erara_polite_language_diet_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_erara_polite_language_diet_t data;
+} vsen_erara_polite_language_diet_mvcc_record;
+
+// e-rara.ch Title, Page Text & Polite Language Diet Analysis APIs
+int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, vsen_erara_polite_language_diet_t *analysis_out);
+
 // e-rara.ch Title & Page Text Analysis APIs
 int tsfi_erara_register_title(const char *doi, const char *title, const char *author, uint32_t pub_year, uint32_t total_pages, const char *iiif_manifest_url);
 int tsfi_erara_lookup_title(const char *doi_or_title, vsen_erara_title_record_t *record_out);

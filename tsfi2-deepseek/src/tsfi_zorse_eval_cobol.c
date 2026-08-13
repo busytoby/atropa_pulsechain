@@ -1081,6 +1081,63 @@ int tsfi_erara_analyze_page_text(const char *doi, uint32_t page_num, vsen_erara_
     return found ? 0 : -3;
 }
 
+int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, vsen_erara_polite_language_diet_t *analysis_out) {
+    if (!doi || !analysis_out || page_num == 0) return -1;
+
+    vsen_erara_page_text_record_t page_rec;
+    if (tsfi_erara_analyze_page_text(doi, page_num, &page_rec) != 0) return -2;
+
+    memset(analysis_out, 0, sizeof(*analysis_out));
+    strncpy(analysis_out->doi, doi, sizeof(analysis_out->doi) - 1);
+    analysis_out->page_num = page_num;
+
+    // 1. Extract Honorific Salutation
+    const char *salutation_start = strstr(page_rec.page_text, "Dem eersamen");
+    if (salutation_start) {
+        size_t len = 0;
+        while (salutation_start[len] != '\0' && salutation_start[len] != '\n' && len < sizeof(analysis_out->honorific_salutation) - 1) {
+            len++;
+        }
+        strncpy(analysis_out->honorific_salutation, salutation_start, len);
+        analysis_out->honorific_salutation[len] = '\0';
+    }
+
+    // 2. Extract Benediction Greeting
+    const char *benediction_start = strstr(page_rec.page_text, "Gnad vnd frid");
+    if (benediction_start) {
+        size_t len = 0;
+        while (benediction_start[len] != '\0' && benediction_start[len] != '.' && len < sizeof(analysis_out->benediction_greeting) - 1) {
+            len++;
+        }
+        strncpy(analysis_out->benediction_greeting, benediction_start, len);
+        analysis_out->benediction_greeting[len] = '\0';
+    }
+
+    // 3. Extract Dietary Terminology
+    if (strstr(page_rec.page_text, "speisen") || strstr(page_rec.page_text, "speiss")) {
+        strncpy(analysis_out->diet_term_speisen, "speisen (choice & Christian liberty of food)", sizeof(analysis_out->diet_term_speisen) - 1);
+    }
+    if (strstr(page_rec.page_text, "fleisch")) {
+        strncpy(analysis_out->diet_term_fleisch, "fleisch (eating meat during fast)", sizeof(analysis_out->diet_term_fleisch) - 1);
+    }
+    if (strstr(page_rec.page_text, "fastenn")) {
+        strncpy(analysis_out->diet_term_fastenn, "fastenn (Lenten ecclesiastical fast)", sizeof(analysis_out->diet_term_fastenn) - 1);
+    }
+
+    // 4. Extract Core Thesis Clause
+    const char *thesis_start = strstr(page_rec.page_text, "damit menklich wysse");
+    if (thesis_start) {
+        size_t len = 0;
+        while (thesis_start[len] != '\0' && thesis_start[len] != '\n' && len < sizeof(analysis_out->core_thesis_clause) - 1) {
+            len++;
+        }
+        strncpy(analysis_out->core_thesis_clause, thesis_start, len);
+        analysis_out->core_thesis_clause[len] = '\0';
+    }
+
+    return 0;
+}
+
 int tsfi_vsen_amt_register_orientation(const char *amt_id, const char *orientation, int forebearance_factor, const char *vision_summary) {
     if (!amt_id || !orientation || !vision_summary) return -1;
 
