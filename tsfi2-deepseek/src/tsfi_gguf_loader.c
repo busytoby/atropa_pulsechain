@@ -333,54 +333,56 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     int offset = 0;
 
     // Parse GGUF tokenizer.ggml.tokens strings directly off model file metadata header
-    fseek(f, 0, SEEK_SET);
-    GgufHeader kv_header;
-    if (fread(&kv_header, sizeof(GgufHeader), 1, f) == 1 && kv_header.magic == GGUF_MAGIC) {
-        char key_buf[128];
-        for (uint64_t i = 0; i < kv_header.kv_count; i++) {
-            if (!read_gguf_string(f, key_buf, sizeof(key_buf))) break;
-            uint32_t val_type;
-            if (!read_u32(f, &val_type)) break;
+    FILE *f_kv = fopen(filepath, "rb");
+    if (f_kv) {
+        GgufHeader kv_header;
+        if (fread(&kv_header, sizeof(GgufHeader), 1, f_kv) == 1 && kv_header.magic == GGUF_MAGIC) {
+            char key_buf[128];
+            for (uint64_t i = 0; i < kv_header.kv_count; i++) {
+                if (!read_gguf_string(f_kv, key_buf, sizeof(key_buf))) break;
+                uint32_t val_type;
+                if (!read_u32(f_kv, &val_type)) break;
 
-            if (strcmp(key_buf, "tokenizer.ggml.tokens") == 0 && val_type == GGUF_TYPE_ARRAY) {
-                uint32_t arr_type;
-                uint64_t arr_len;
-                if (read_u32(f, &arr_type) && read_u64(f, &arr_len)) {
-                    if (arr_type == GGUF_TYPE_STRING) {
-                        char token_str[64];
-                        int tokens_printed = 0;
-                        uint64_t max_scan = arr_len < 4096 ? arr_len : 4096;
-                        for (uint64_t j = 0; j < max_scan && tokens_printed < 256 && offset < (int)max_resp_len - 128; j++) {
-                            if (read_gguf_string(f, token_str, sizeof(token_str))) {
-                                // Dynamic BPE token selection: filter printable tokens and match activation thresholds
-                                bool is_printable = true;
-                                for (size_t k = 0; k < strlen(token_str); k++) {
-                                    if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
-                                }
-
-                                float logit_activation = fabsf(x[j % dim]);
-                                if (is_printable && strlen(token_str) > 0 && logit_activation > 0.0001f) {
-                                    const char *clean_token = token_str;
-                                    if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
-                                        clean_token = token_str + 2;
-                                        offset += snprintf(response_out + offset, max_resp_len - offset, " ");
+                if (strcmp(key_buf, "tokenizer.ggml.tokens") == 0 && val_type == GGUF_TYPE_ARRAY) {
+                    uint32_t arr_type;
+                    uint64_t arr_len;
+                    if (read_u32(f_kv, &arr_type) && read_u64(f_kv, &arr_len)) {
+                        if (arr_type == GGUF_TYPE_STRING) {
+                            char token_str[64];
+                            int tokens_printed = 0;
+                            uint64_t max_scan = arr_len < 4096 ? arr_len : 4096;
+                            for (uint64_t j = 0; j < max_scan && tokens_printed < 256 && offset < (int)max_resp_len - 128; j++) {
+                                if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
+                                    // Dynamic BPE token selection: filter printable tokens and match activation thresholds
+                                    bool is_printable = true;
+                                    for (size_t k = 0; k < strlen(token_str); k++) {
+                                        if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
-                                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
-                                    tokens_printed++;
+
+                                    float logit_activation = fabsf(x[j % dim]);
+                                    if (is_printable && strlen(token_str) > 0 && logit_activation > 0.0001f) {
+                                        const char *clean_token = token_str;
+                                        if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
+                                            clean_token = token_str + 2;
+                                            offset += snprintf(response_out + offset, max_resp_len - offset, " ");
+                                        }
+                                        offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
+                                        tokens_printed++;
+                                    }
+                                } else {
+                                    break;
                                 }
-                            } else {
-                                break;
                             }
                         }
                     }
+                    break;
+                } else {
+                    if (!skip_gguf_value(f_kv, val_type)) break;
                 }
-                break;
-            } else {
-                if (!skip_gguf_value(f, val_type)) break;
             }
         }
+        fclose(f_kv);
     }
-    fclose(f);
 
     if (offset == 0) {
         offset += snprintf(response_out + offset, max_resp_len - offset,
