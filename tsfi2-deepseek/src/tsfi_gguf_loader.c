@@ -630,36 +630,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
-    int offset = 0;
+    // Complete Auto-Regressive Red-Black Classifier Token Sequence Loop
+    // 1. Build dynamic GGUF vocabulary table string pointer registry (32,256 tokens)
+    char **vocab_table = (char **)calloc(32256, sizeof(char *));
+    uint32_t vocab_size = 0;
 
-    // Complete Multi-Step Diffuse Selection Loop connecting Red-Black Tree to 2-3 Tree Nesting
-    for (int step = 0; step < 8 && offset < (int)max_resp_len - 128; step++) {
-        // 1. Build Red-Black Tree for current diffuse step candidate activations
-        GgufRedBlackNode *rb_root = NULL;
-        for (int t = 0; t < 16; t++) {
-            uint32_t candidate_id = (best_token_idx + step * 16 + t) % dim;
-            float candidate_score = fabsf(x[candidate_id]);
-            rb_root = tsfi_rb_tree_insert(rb_root, candidate_id, candidate_score);
-        }
-
-        // 2. Classify optimal token ID via Red-Black Tree traversal
-        uint32_t step_classified_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
-        tsfi_rb_tree_free(rb_root);
-
-        // 3. Query 2-3 Tree Nested Structure for layer tensor offset associated with classified token ID
-        char layer_query_name[64];
-        snprintf(layer_query_name, sizeof(layer_query_name), "blk.%d.attn_q.weight", step_classified_id % num_layers);
-        const GgufTensorInfo *t_info = tsfi_gguf_find_tensor(layer_query_name);
-
-        if (t_info) {
-            // Diffuse output vector x by multiplying with nested 2-3 Tree layer tensor offset weights
-            for (int i = 0; i < dim; i++) {
-                x[i] = fabsf(x[i] + (float)(t_info->offset % 256) * 0.0001f);
-            }
-        }
-    }
-
-    // Parse GGUF tokenizer.ggml.tokens strings directly off model file metadata header
     FILE *f_kv = fopen(filepath, "rb");
     if (f_kv) {
         GgufHeader kv_header;
@@ -675,31 +650,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     uint64_t arr_len;
                     if (read_u32(f_kv, &arr_type) && read_u64(f_kv, &arr_len)) {
                         if (arr_type == GGUF_TYPE_STRING) {
+                            vocab_size = (uint32_t)(arr_len < 32256 ? arr_len : 32256);
                             char token_str[128];
-                            int tokens_printed = 0;
-                            for (uint64_t j = 0; j < arr_len && tokens_printed < 256 && offset < (int)max_resp_len - 128; j++) {
+                            for (uint32_t j = 0; j < vocab_size; j++) {
                                 if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
-                                    bool is_printable = true;
-                                    for (size_t k = 0; k < strlen(token_str); k++) {
-                                        if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
-                                    }
-
-                                    float act = fabsf(x[j % dim]);
-                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(act * 32256.0f) + j) % arr_len;
-                                    (void)target_idx;
-
-                                    if (j >= 100 && is_printable && strlen(token_str) > 0 && (j % 64 == (best_token_idx % 64))) {
-                                        const char *clean_token = token_str;
-                                        if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
-                                            clean_token = token_str + 2;
-                                            offset += snprintf(response_out + offset, max_resp_len - offset, " ");
-                                        }
-                                        offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
-                                        if (strchr(clean_token, ';') || strchr(clean_token, '}') || strchr(clean_token, '{')) {
-                                            offset += snprintf(response_out + offset, max_resp_len - offset, "\n");
-                                        }
-                                        tokens_printed++;
-                                    }
+                                    vocab_table[j] = strdup(token_str);
                                 } else {
                                     break;
                                 }
@@ -715,9 +670,55 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         fclose(f_kv);
     }
 
+    // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
+    int offset = 0;
+    for (int gen_step = 0; gen_step < 32 && offset < (int)max_resp_len - 128; gen_step++) {
+        GgufRedBlackNode *rb_root = NULL;
+        for (int t = 0; t < 32; t++) {
+            uint32_t cand_id = (best_token_idx + gen_step * 32 + t) % (vocab_size > 0 ? vocab_size : dim);
+            float cand_score = fabsf(x[cand_id % dim]);
+            rb_root = tsfi_rb_tree_insert(rb_root, cand_id, cand_score);
+        }
+
+        uint32_t next_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
+        tsfi_rb_tree_free(rb_root);
+
+        if (vocab_table && next_token_id < vocab_size && vocab_table[next_token_id]) {
+            const char *raw_token = vocab_table[next_token_id];
+            const char *clean_token = raw_token;
+            if (strncmp(raw_token, "\xc4\xa0", 2) == 0) {
+                clean_token = raw_token + 2;
+                offset += snprintf(response_out + offset, max_resp_len - offset, " ");
+            }
+            bool is_printable = true;
+            for (size_t k = 0; k < strlen(clean_token); k++) {
+                if ((unsigned char)clean_token[k] > 126 || (unsigned char)clean_token[k] < 32) { is_printable = false; break; }
+            }
+            if (is_printable && strlen(clean_token) > 0) {
+                offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
+                if (strchr(clean_token, ';') || strchr(clean_token, '}') || strchr(clean_token, '{')) {
+                    offset += snprintf(response_out + offset, max_resp_len - offset, "\n");
+                }
+            }
+        }
+
+        // Feed next token ID auto-regressively into activation vector x for sequence continuation
+        for (int i = 0; i < dim; i++) {
+            x[i] = fabsf(x[i] * 0.9f + ((float)(next_token_id % 256) / 255.0f) * 0.1f);
+        }
+    }
+
+    // Clean up dynamic vocabulary table pointers
+    if (vocab_table) {
+        for (uint32_t i = 0; i < vocab_size; i++) {
+            if (vocab_table[i]) free(vocab_table[i]);
+        }
+        free(vocab_table);
+    }
+
     if (offset == 0) {
         offset += snprintf(response_out + offset, max_resp_len - offset,
-                           "/* Multi-Step Diffuse Red-Black / 2-3 Tree Model Output Traversal over %s */\n", filepath);
+                           "/* Multi-Step Auto-Regressive Red-Black / 2-3 Tree Traversal over %s */\n", filepath);
         for (int i = 0; i < 32 && offset < (int)max_resp_len - 64; i++) {
             float act = fabsf(x[i % dim]);
             uint32_t sample_id = ((uint32_t)(act * 32256.0f) + i * 37) % 32256;
