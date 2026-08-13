@@ -947,9 +947,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 if (is_valid_token) {
                     float raw_logit = cand_logits[t % 32];
                     if (tsfi_zorse_chatrath_operational_risk_guard(tok, raw_logit, 10.0f)) {
-                        float scaled_score = (raw_logit / temperature) + (float)tlen * 0.10f;
-                        if (strcmp(tok, "int") == 0 || strcmp(tok, "return") == 0 || strcmp(tok, "void") == 0 || strcmp(tok, "struct") == 0 || strcmp(tok, "char") == 0) {
-                            scaled_score += 1.5f;
+                        float scaled_score = (raw_logit / temperature) + (float)tlen * 0.25f;
+                        if (strcmp(tok, "int") == 0 || strcmp(tok, "return") == 0 || strcmp(tok, "void") == 0 || strcmp(tok, "struct") == 0 || strcmp(tok, "char") == 0 || strcmp(tok, "include") == 0 || strcmp(tok, "stdio") == 0) {
+                            scaled_score += 2.5f;
                         }
                         cum_score += raw_logit;
                         rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
