@@ -992,8 +992,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     float raw_logit = cand_logits[t % 32];
                     if (tsfi_zorse_chatrath_operational_risk_guard(tok, raw_logit, 10.0f)) {
                         float scaled_score = (raw_logit / temperature) + (float)tlen * 0.35f - current_slam_res * 0.10f - current_entropy * 0.05f;
-                        if (strstr(tok, "include") || strstr(tok, "stdio") || strstr(tok, "main") || strstr(tok, "int") || strstr(tok, "return") || strstr(tok, "void") || strstr(tok, "printf")) {
-                            scaled_score += 8.0f;
+                        if (strstr(tok, "include") || strstr(tok, "stdio") || strstr(tok, "main") || strstr(tok, "int") || strstr(tok, "return") || strstr(tok, "void") || strstr(tok, "printf") || strstr(tok, "size_t") || strstr(tok, "float") || strstr(tok, "double") || strstr(tok, "const") || strstr(tok, "char") || strstr(tok, "struct") || strstr(tok, "for") || strstr(tok, "while")) {
+                            scaled_score += 10.0f;
                         }
                         rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
                     }
