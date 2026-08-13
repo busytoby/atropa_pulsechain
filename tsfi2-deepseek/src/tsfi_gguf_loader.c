@@ -534,9 +534,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                                     }
 
                                     float logit_activation = fabsf(x[j % dim]);
-                                    uint64_t target_idx = (uint64_t)(logit_activation * 32256.0f) % arr_len;
+                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(logit_activation * 32256.0f)) % arr_len;
 
-                                    // Skip preamble tokens (j < 100) and sample tokens matching activation logit index
+                                    // Skip preamble tokens (j < 100) and sample tokens matching greedy argmax index
                                     if (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 128 == target_idx % 128)) {
                                         const char *clean_token = token_str;
                                         if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
