@@ -470,10 +470,10 @@ int tsfi_erara_analyze_page_text(const char *doi, uint32_t page_num, vsen_erara_
 // z/VSEn Amt Orientation & Forbearance Sight Vision Structures
 typedef struct {
     char amt_id[64];             // e.g. "amt_zwingli_forebearance"
-    char orientation[128];       // Orientation state upon Amt
+    char orientation[128];       // Orientation state upon Amt (Ewig)
     int is_eisent_eih_intrinsic; // 1 if intrinsic definition ("amt nit ist ein eisent eih") holds sound
     int forebearance_factor;     // Forbearance rating (1-10)
-    char vision_summary[256];    // Telemetry summary of forebearance vision
+    char vision_summary[256];    // Telemetry summary of Ewig forebearance vision
 } vsen_amt_orientation_record_t;
 
 typedef struct {
