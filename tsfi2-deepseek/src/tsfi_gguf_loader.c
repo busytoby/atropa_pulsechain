@@ -172,6 +172,30 @@ uint32_t tsfi_gguf_classify_token_rb_tree(GgufRedBlackNode *root, float target_s
     return best_class;
 }
 
+// Chatrath Entropy Risk Guard for Output Logit Distribution Safety
+float tsfi_zorse_risk_eval_entropy(const float *logits, int size) {
+    if (!logits || size <= 0) return 0.0f;
+    float entropy = 0.0f;
+    float sum = 0.0f;
+    for (int i = 0; i < size; i++) sum += fabsf(logits[i]) + 1e-9f;
+    for (int i = 0; i < size; i++) {
+        float p = (fabsf(logits[i]) + 1e-9f) / sum;
+        entropy -= p * log2f(p);
+    }
+    return entropy;
+}
+
+// Chatrath SLAM Static vs. Dynamic State Matrix Disambiguation Engine
+float tsfi_zorse_slam_disambiguate(const float *static_weights, const float *dynamic_kv_cache, int size) {
+    if (!static_weights || !dynamic_kv_cache || size <= 0) return 0.0f;
+    float residual_sq_sum = 0.0f;
+    for (int i = 0; i < size; i++) {
+        float diff = dynamic_kv_cache[i] - static_weights[i];
+        residual_sq_sum += diff * diff;
+    }
+    return sqrtf(residual_sq_sum / (float)size);
+}
+
 void tsfi_rb_tree_free(GgufRedBlackNode *node) {
     if (!node) return;
     tsfi_rb_tree_free(node->left);
