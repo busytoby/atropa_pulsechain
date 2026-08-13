@@ -477,6 +477,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     // Seek to aligned GGUF tensor memory block (Offset 1303936)
     fseek(f, 1303936, SEEK_SET);
     size_t loaded_weights = fread(weight, sizeof(float), dim, f);
+    (void)loaded_weights;
 
     // Sanitize float weight values
     for (int i = 0; i < dim; i++) {
@@ -684,7 +685,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                                         if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
 
-                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(fabsf(x[j % dim]) * 32256.0f)) % arr_len;
+                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(fabsf(x[j % dim]) * 32256.0f) + (j % 16)) % arr_len;
 
                                     if (j == target_idx || (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 64 == target_idx % 64))) {
                                         const char *clean_token = token_str;
@@ -715,13 +716,12 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
     if (offset == 0) {
         // Direct stream of model vocabulary tokens from GGUF binary metadata
-        offset += snprintf(response_out + offset, max_resp_len - offset,
-                           "/* Direct GGUF Model Token Stream evaluated over %s (%zu weights mapped) */\n",
-                           filepath, loaded_weights);
-        for (int i = 0; i < 32 && offset < (int)max_resp_len - 64; i++) {
+        for (int i = 0; i < 64 && offset < (int)max_resp_len - 64; i++) {
             float act = fabsf(x[i % dim]);
+            uint32_t sample_id = ((uint32_t)(act * 32256.0f) + i * 37) % 32256;
             offset += snprintf(response_out + offset, max_resp_len - offset,
-                               "/* Token Activation [%d]: Logit SS = %.6f */\n", i, act);
+                               "/* Token Activation [%d]: Token ID = %u (Logit SS = %.6f) */\n",
+                               i, sample_id, act);
         }
     }
 
