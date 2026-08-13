@@ -774,9 +774,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 if ((unsigned char)clean_token[k] > 126 || (unsigned char)clean_token[k] < 32) { is_printable = false; break; }
             }
             if (is_printable && strlen(clean_token) > 0) {
-                offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
-                if (strchr(clean_token, ';') || strchr(clean_token, '}') || strchr(clean_token, '{')) {
-                    offset += snprintf(response_out + offset, max_resp_len - offset, "\n");
+                // Formatting for C code syntax tokens
+                if (strcmp(clean_token, "{") == 0 || strcmp(clean_token, "}") == 0 || strcmp(clean_token, ";") == 0) {
+                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s\n", clean_token);
+                } else {
+                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
                 }
             }
         }
