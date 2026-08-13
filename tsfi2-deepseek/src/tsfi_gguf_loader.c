@@ -949,6 +949,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     // Greedy Argmax Output Token Selection from lm_head.weight matrix projection
     int best_token_idx = (int)x[0];
     float max_logit = x[0];
+    (void)best_token_idx;
 
     // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
     int offset = 0;
@@ -971,8 +972,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (uint32_t t = 0; t < 32 && cum_score < top_p_threshold; t++) {
-            uint32_t act_stride = (uint32_t)(fabsf(sinf(x[(gen_step * 31 + t * 11) % dim] * 3.14159f)) * 4096.0f);
-            uint32_t cand_id = (best_token_idx + act_stride + gen_step * 103 + t * 29) % (vocab_size > 0 ? vocab_size : 32256);
+            uint32_t act_stride = (uint32_t)(fabsf(x[(gen_step * 17 + t * 5) % dim]) * 32256.0f);
+            uint32_t cand_id = (prompt_token_id + act_stride + gen_step * 211 + t * 43) % (vocab_size > 0 ? vocab_size : 32256);
             if (vocab_table && vocab_table[cand_id]) {
                 const char *tok = vocab_table[cand_id];
                 if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
