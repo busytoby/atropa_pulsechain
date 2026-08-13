@@ -889,8 +889,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         float cand_logits[32];
         for (int t = 0; t < 32; t++) cand_logits[t] = fabsf(x[t % dim]);
         tsfi_zorse_chatrath_bias_mitigation(cand_logits, 32, 2.0f);
-        float current_entropy = tsfi_zorse_risk_eval_entropy(cand_logits, 32);
-        (void)current_entropy;
+        
+        float current_entropy = 0.0f;
+        float current_slam_res = 0.0f;
+        bool risk_ok = tsfi_zorse_chatrath_dynamic_loop_risk_monitor(cand_logits, weight, 32, 10.0f, &current_entropy, &current_slam_res);
+        (void)risk_ok;
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (uint32_t t = 0; t < 32 && cum_score < top_p_threshold; t++) {
