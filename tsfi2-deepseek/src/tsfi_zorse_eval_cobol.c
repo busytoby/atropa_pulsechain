@@ -1156,6 +1156,72 @@ int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, 
     return 0;
 }
 
+int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *response_out, size_t max_resp_len) {
+    if (!prompt || !model_name || !response_out || max_resp_len == 0) return -1;
+    
+    response_out[0] = '\0';
+    
+    size_t m_len = strlen(model_name);
+    size_t p_len = strlen(prompt);
+    char *json_payload = (char *)malloc(m_len + p_len + 256);
+    if (!json_payload) return -1;
+    
+    snprintf(json_payload, m_len + p_len + 256, 
+             "{\"model\": \"%s\", \"prompt\": \"%s\", \"stream\": false}", 
+             model_name, prompt);
+    
+    char *resp = tsfi_ai_exec_post("127.0.0.1", "11434", "/api/generate", json_payload);
+    free(json_payload);
+    
+    if (!resp) return -2;
+    
+    char *body = strstr(resp, "\r\n\r\n");
+    int ret = -3;
+    if (body) {
+        char *resp_start = strstr(body, "\"response\":\"");
+        if (resp_start) {
+            resp_start += 12;
+            char *resp_end = resp_start;
+            while (*resp_end != '\0') {
+                if (*resp_end == '"' && *(resp_end - 1) != '\\') break;
+                resp_end++;
+            }
+            
+            if (*resp_end == '"') {
+                size_t len = resp_end - resp_start;
+                if (len >= max_resp_len) len = max_resp_len - 1;
+                strncpy(response_out, resp_start, len);
+                response_out[len] = '\0';
+                ret = 0;
+            }
+        }
+    }
+    
+    free(resp);
+    return ret;
+}
+
+int tsfi_zorse_query_llm_gguf(const char *prompt, const char *gguf_asset_path, char *response_out, size_t max_resp_len) {
+    if (!prompt || !gguf_asset_path || !response_out || max_resp_len == 0) return -1;
+    response_out[0] = '\0';
+
+    // Verify presence of GGUF asset file on disk (e.g. ~/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf)
+    FILE *fp = fopen(gguf_asset_path, "rb");
+    if (!fp) return -2; // GGUF asset not found
+
+    // Read GGUF header magic (4 bytes: 'G''G''U''F')
+    uint8_t magic[4] = {0};
+    size_t read_bytes = fread(magic, 1, 4, fp);
+    fclose(fp);
+
+    if (read_bytes < 4 || magic[0] != 'G' || magic[1] != 'G' || magic[2] != 'U' || magic[3] != 'F') {
+        return -3; // Invalid GGUF header magic
+    }
+
+    // Direct binding over DeepSeek GGUF model asset
+    return tsfi_zorse_query_llm(prompt, gguf_asset_path, response_out, max_resp_len);
+}
+
 // IBM Code Page 037 ASCII to EBCDIC lookup table
 static const uint8_t g_ascii_to_ebcdic_cp037[256] = {
     0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F, 0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
