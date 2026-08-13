@@ -62,6 +62,28 @@ Gguf23TreeNode *tsfi_23tree_create_node(bool is_leaf) {
     return node;
 }
 
+void tsfi_23tree_insert(GgufTensorInfo *info) {
+    if (!info) return;
+    if (!g_gguf_23tree_root) {
+        g_gguf_23tree_root = tsfi_23tree_create_node(true);
+        if (g_gguf_23tree_root) {
+            g_gguf_23tree_root->keys[0] = info;
+            g_gguf_23tree_root->key_count = 1;
+        }
+        return;
+    }
+    // Simple 2-3 Tree insertion into root node keys
+    if (g_gguf_23tree_root->key_count < 2) {
+        if (strcmp(info->name, g_gguf_23tree_root->keys[0]->name) < 0) {
+            g_gguf_23tree_root->keys[1] = g_gguf_23tree_root->keys[0];
+            g_gguf_23tree_root->keys[0] = info;
+        } else {
+            g_gguf_23tree_root->keys[1] = info;
+        }
+        g_gguf_23tree_root->key_count = 2;
+    }
+}
+
 const GgufTensorInfo *tsfi_gguf_find_tensor_23tree(Gguf23TreeNode *root, const char *name) {
     if (!root || !name) return NULL;
     int cmp0 = strcmp(name, root->keys[0]->name);
