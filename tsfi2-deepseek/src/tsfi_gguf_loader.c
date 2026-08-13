@@ -741,9 +741,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (int t = 0; t < 32 && cum_score < top_p_threshold; t++) {
-            uint32_t cand_id = ((uint32_t)best_token_idx + gen_step * 17 + t) % (vocab_size > 0 ? vocab_size : 32256);
+            uint32_t cand_id = ((uint32_t)best_token_idx + gen_step * 19 + t * 7) % (vocab_size > 0 ? vocab_size : 32256);
             float raw_logit = fabsf(x[t % dim]);
-            float scaled_score = (raw_logit / temperature) + ((float)(cand_id % 1024) / 1024.0f) * 0.001f;
+            float scaled_score = (raw_logit / temperature) + ((float)(cand_id % 2048) / 2048.0f) * 0.001f;
             cum_score += raw_logit;
             rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
         }
