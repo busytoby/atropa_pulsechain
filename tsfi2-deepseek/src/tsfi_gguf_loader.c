@@ -1018,11 +1018,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             if (is_printable && strlen(clean_token) > 0) {
                 // Formatting for C code syntax tokens
                 if (clean_token[0] == '{' || clean_token[0] == '}' || clean_token[0] == ';') {
-                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s\n", clean_token);
-                } else if (raw_token[0] == '\xc4' || raw_token[0] == ' ') {
-                    offset += snprintf(response_out + offset, max_resp_len - offset, " %s", clean_token);
+                    offset += snprintf(response_out + offset, max_resp_len - offset, " %s\n", clean_token);
                 } else {
-                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
+                    offset += snprintf(response_out + offset, max_resp_len - offset, " %s", clean_token);
                 }
             }
         }
