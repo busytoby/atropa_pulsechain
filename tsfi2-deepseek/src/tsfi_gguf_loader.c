@@ -306,15 +306,15 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     if (arr_type == GGUF_TYPE_STRING) {
                         char token_str[64];
                         int tokens_printed = 0;
-                        for (uint64_t j = 0; j < arr_len && tokens_printed < 32 && offset < (int)max_resp_len - 128; j++) {
+                        for (uint64_t j = 0; j < arr_len && tokens_printed < 128 && offset < (int)max_resp_len - 128; j++) {
                             if (read_gguf_string(f, token_str, sizeof(token_str))) {
                                 // Sample tokens based on Softmax vector activations
                                 bool is_ascii = true;
                                 for (size_t k = 0; k < strlen(token_str); k++) {
-                                    if ((unsigned char)token_str[k] > 127) { is_ascii = false; break; }
+                                    if ((unsigned char)token_str[k] > 127 || (unsigned char)token_str[k] < 32) { is_ascii = false; break; }
                                 }
-                                if (is_ascii && (j % 500 == (uint64_t)(fabsf(x[j % dim]) * 500.0f) % 500 || tokens_printed < 16)) {
-                                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s", token_str);
+                                if (is_ascii && strlen(token_str) > 1) {
+                                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s ", token_str);
                                     tokens_printed++;
                                 }
                             } else {
