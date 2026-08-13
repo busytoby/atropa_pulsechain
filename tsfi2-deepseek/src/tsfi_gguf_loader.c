@@ -527,11 +527,16 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         return false;
     }
 
-    // Dynamic Multi-Token KV-Cache Context Sequence Generator
+    // Dynamic Multi-Token KV-Cache Context Sequence Prefill Engine
     float *key_cache   = (float *)calloc(layers * dim, sizeof(float));
     float *value_cache = (float *)calloc(layers * dim, sizeof(float));
 
-    for (int gen_step = 0; gen_step < 8; gen_step++) {
+    int prefill_steps = (int)(prompt_len < 16 ? prompt_len : 16);
+    for (int gen_step = 0; gen_step < prefill_steps; gen_step++) {
+        // Feed character token position into activation vector x for sequence prefill
+        for (int i = 0; i < dim; i++) {
+            x[i] = fabsf(x[i] * 0.9f + ((float)prompt[gen_step % prompt_len] / 255.0f) * 0.1f);
+        }
         for (int l = 0; l < num_layers; l++) {
             // 1. RMS Layer Normalization over dynamic weights
             tsfi_rmsnorm_c(xb, x, weight, dim, 1e-5f);
