@@ -30,6 +30,18 @@ typedef struct {
     uint64_t kv_count;
 } GgufHeader;
 
+typedef struct {
+    char name[128];
+    uint32_t n_dims;
+    uint64_t dims[4];
+    uint32_t type;
+    uint64_t offset;
+} GgufTensorInfo;
+
+#define MAX_GGUF_TENSORS 512
+GgufTensorInfo g_gguf_tensors[MAX_GGUF_TENSORS];
+uint32_t g_gguf_tensor_count = 0;
+
 static bool read_u64(FILE *f, uint64_t *out) { return fread(out, sizeof(uint64_t), 1, f) == 1; }
 static bool read_u32(FILE *f, uint32_t *out) { return fread(out, sizeof(uint32_t), 1, f) == 1; }
 
@@ -127,18 +139,6 @@ bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t ma
         } else {
             if (!skip_gguf_value(f, val_type)) break;
         }
-    }
-
-    // Skip Tensor metadata records
-    for (uint64_t i = 0; i < header.tensor_count; i++) {
-        if (!skip_gguf_string(f)) break;
-        uint32_t n_dims;
-        if (!read_u32(f, &n_dims)) break;
-        fseek(f, n_dims * sizeof(uint64_t), SEEK_CUR); // Skip dimensions sizes
-        uint32_t type;
-        if (!read_u32(f, &type)) break;
-        uint64_t offset;
-        if (!read_u64(f, &offset)) break;
     }
 
     // Read raw weights direct from the tensor block into buffer
