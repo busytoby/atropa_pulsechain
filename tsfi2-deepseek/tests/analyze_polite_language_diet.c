@@ -35,6 +35,7 @@ int main(void) {
     printf("  Benediction Precedence Amt: \"%s\" (Rank #%u Precedence)\n", diet_analysis.benediction_greeting, diet_analysis.benediction_precedence_rank);
     printf("  Penitent Dismissal Status:  %s\n", diet_analysis.penitent_dismissal_cleared ? "CLEARED FOR DISMISSAL AS A PENITENT (Gnad vnd Frid)" : "UNCLEARED");
     printf("  Post-Last-Rites Posture:    %s\n", diet_analysis.post_last_rites_rejection_posture ? "QUALIFIED TO WHOLLY REJECT PARTY BEYOND LAST RITES" : "STANDARD");
+    printf("  Priest/Mendicant Status:    %s\n", diet_analysis.priest_mendicant_qualified ? "PRIEST WHOLLY QUALIFIED TO DELIVER LAST RITES TO MENDICANT (POLITE AMT)" : "UNQUALIFIED");
     printf("  Amt Polite Orientation:     %s\n", diet_analysis.amt_polite_orientation);
     printf("  Secondary Salutation:       \"%s\"\n", diet_analysis.honorific_salutation);
     printf("  Diet Term (Speisen):        %s\n", diet_analysis.diet_term_speisen);
@@ -42,11 +43,12 @@ int main(void) {
     printf("  Diet Term (Fastenn):        %s\n", diet_analysis.diet_term_fastenn);
     printf("  Core Thesis Clause:         \"%s\"\n", diet_analysis.core_thesis_clause);
 
-    // Assert key analysis extractions, penitent dismissal clearance, and post-last-rites posture computed by C logic
+    // Assert key analysis extractions, priest mendicant qualification, and precedence ordering computed by C logic
     assert(diet_analysis.benediction_precedence_rank == 1);
     assert(diet_analysis.penitent_dismissal_cleared == 1);
     assert(diet_analysis.post_last_rites_rejection_posture == 1);
-    assert(strstr(diet_analysis.amt_polite_orientation, "posture beyond last rites") != NULL);
+    assert(diet_analysis.priest_mendicant_qualified == 1);
+    assert(strstr(diet_analysis.amt_polite_orientation, "Priest wholly qualified to deliver last rites to mendicant") != NULL);
     assert(strstr(diet_analysis.benediction_greeting, "Gnad vnd frid") != NULL);
     assert(strstr(diet_analysis.honorific_salutation, "Christoffel Froschouer") != NULL);
     assert(strlen(diet_analysis.diet_term_speisen) > 0);
