@@ -1,6 +1,8 @@
 #ifndef TSFI_ZORSE_EVAL_H
 #define TSFI_ZORSE_EVAL_H
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 // Zorse JCL Syntax Compliance Validator
@@ -362,9 +364,44 @@ typedef struct {
     int fear_factor;
 } vsen_vaesen_sight_record;
 
+// MVCC Versioned Record Header & Struct
+typedef struct {
+    uint64_t tx_id;              // Transaction ID creating version
+    uint64_t commit_timestamp;   // Microsecond epoch timestamp
+    uint64_t prev_version_offset;// File offset to previous version
+    uint32_t is_deleted;         // 1 if record tombstone, 0 active
+    uint64_t dna_hash;           // Cryptographic FNV-1a DNA Hash link
+} vsen_mvcc_header_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_vaesen_record data;
+} vsen_vaesen_mvcc_record;
+
+// WAL Log Entry Structure
+typedef struct {
+    uint64_t lsn;                // Log Sequence Number
+    uint64_t tx_id;              // Transaction ID
+    uint32_t op_type;            // 1: BEGIN, 2: INSERT/UPDATE, 3: DELETE, 4: COMMIT, 5: ABORT, 6: SAVEPOINT, 7: ROLLBACK_SAVEPOINT
+    char savepoint_name[32];     // Savepoint identifier
+    char target_file[128];       // Target file path (.dat.bin)
+    uint64_t record_offset;      // Record offset target
+    uint32_t payload_len;        // Payload length
+} vsen_wal_entry_header_t;
+
 int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status);
 int tsfi_vsen_vaesen_lookup(const char *name, char *type_out, int *risk_level_out, char *status_out, size_t max_len);
+int tsfi_vsen_vaesen_lookup_as_of(const char *name, uint64_t timestamp, char *type_out, int *risk_level_out, char *status_out, size_t max_len);
 int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *entity_name, int *is_allowed_out);
+
+// RDBMS Transaction & WAL APIs
+int tsfi_vsen_tx_begin(uint64_t *tx_id_out);
+int tsfi_vsen_tx_commit(uint64_t tx_id);
+int tsfi_vsen_tx_abort(uint64_t tx_id);
+int tsfi_vsen_tx_savepoint(uint64_t tx_id, const char *savepoint_name);
+int tsfi_vsen_tx_rollback_to_savepoint(uint64_t tx_id, const char *savepoint_name);
+int tsfi_vsen_wal_recover(const char *dat_bin_file_path);
+int tsfi_vsen_audit_chain_verify(const char *dat_bin_file_path);
 
 // VSEn Vaesen Sight Telemetry Tracker
 int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);

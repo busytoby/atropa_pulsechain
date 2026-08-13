@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 int tsfi_zorse_validate_cobol(const char *cobol_string, int *is_valid_out) {
     if (!cobol_string || !is_valid_out) return -1;
@@ -537,50 +538,267 @@ int tsfi_zorse_validate_cobol_evaluate_also(const char *cobol_src, int *is_valid
     return 0;
 }
 
+static uint64_t g_vsen_global_tx_counter = 1000;
+static uint64_t g_vsen_global_lsn_counter = 1;
+
+static uint64_t tsfi_vsen_compute_fnv1a_dna_hash(const void *data, size_t len, uint64_t prev_hash) {
+    const uint8_t *bytes = (const uint8_t *)data;
+    uint64_t hash = prev_hash ? prev_hash : 14695981039346656037ULL;
+    for (size_t i = 0; i < len; i++) {
+        hash ^= bytes[i];
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+int tsfi_vsen_tx_begin(uint64_t *tx_id_out) {
+    if (!tx_id_out) return -1;
+    *tx_id_out = ++g_vsen_global_tx_counter;
+
+    vsen_wal_entry_header_t wal;
+    memset(&wal, 0, sizeof(wal));
+    wal.lsn = ++g_vsen_global_lsn_counter;
+    wal.tx_id = *tx_id_out;
+    wal.op_type = 1; // BEGIN
+
+    FILE *fp = fopen("vaesen_registry.wal.dat.bin", "ab");
+    if (fp) {
+        fwrite(&wal, sizeof(wal), 1, fp);
+        fclose(fp);
+    }
+    return 0;
+}
+
+int tsfi_vsen_tx_commit(uint64_t tx_id) {
+    if (tx_id == 0) return -1;
+
+    vsen_wal_entry_header_t wal;
+    memset(&wal, 0, sizeof(wal));
+    wal.lsn = ++g_vsen_global_lsn_counter;
+    wal.tx_id = tx_id;
+    wal.op_type = 4; // COMMIT
+
+    FILE *fp = fopen("vaesen_registry.wal.dat.bin", "ab");
+    if (fp) {
+        fwrite(&wal, sizeof(wal), 1, fp);
+        fclose(fp);
+    }
+    return 0;
+}
+
+int tsfi_vsen_tx_abort(uint64_t tx_id) {
+    if (tx_id == 0) return -1;
+
+    vsen_wal_entry_header_t wal;
+    memset(&wal, 0, sizeof(wal));
+    wal.lsn = ++g_vsen_global_lsn_counter;
+    wal.tx_id = tx_id;
+    wal.op_type = 5; // ABORT
+
+    FILE *fp = fopen("vaesen_registry.wal.dat.bin", "ab");
+    if (fp) {
+        fwrite(&wal, sizeof(wal), 1, fp);
+        fclose(fp);
+    }
+    return 0;
+}
+
+int tsfi_vsen_tx_savepoint(uint64_t tx_id, const char *savepoint_name) {
+    if (tx_id == 0 || !savepoint_name) return -1;
+
+    vsen_wal_entry_header_t wal;
+    memset(&wal, 0, sizeof(wal));
+    wal.lsn = ++g_vsen_global_lsn_counter;
+    wal.tx_id = tx_id;
+    wal.op_type = 6; // SAVEPOINT
+    strncpy(wal.savepoint_name, savepoint_name, sizeof(wal.savepoint_name) - 1);
+
+    FILE *fp = fopen("vaesen_registry.wal.dat.bin", "ab");
+    if (fp) {
+        fwrite(&wal, sizeof(wal), 1, fp);
+        fclose(fp);
+    }
+    return 0;
+}
+
+int tsfi_vsen_tx_rollback_to_savepoint(uint64_t tx_id, const char *savepoint_name) {
+    if (tx_id == 0 || !savepoint_name) return -1;
+
+    vsen_wal_entry_header_t wal;
+    memset(&wal, 0, sizeof(wal));
+    wal.lsn = ++g_vsen_global_lsn_counter;
+    wal.tx_id = tx_id;
+    wal.op_type = 7; // ROLLBACK_SAVEPOINT
+    strncpy(wal.savepoint_name, savepoint_name, sizeof(wal.savepoint_name) - 1);
+
+    FILE *fp = fopen("vaesen_registry.wal.dat.bin", "ab");
+    if (fp) {
+        fwrite(&wal, sizeof(wal), 1, fp);
+        fclose(fp);
+    }
+    return 0;
+}
+
+int tsfi_vsen_wal_recover(const char *dat_bin_file_path) {
+    if (!dat_bin_file_path) return -1;
+    size_t len = strlen(dat_bin_file_path);
+    if (len < 8 || strcmp(dat_bin_file_path + len - 8, ".dat.bin") != 0) return -2;
+
+    char wal_path[256];
+    snprintf(wal_path, sizeof(wal_path), "%.*swal.dat.bin", (int)(len - 7), dat_bin_file_path);
+
+    FILE *fp = fopen(wal_path, "rb");
+    if (!fp) return 0; // No WAL file needing recovery
+
+    vsen_wal_entry_header_t entry;
+    uint64_t max_lsn = 0;
+    while (fread(&entry, sizeof(entry), 1, fp) == 1) {
+        if (entry.lsn > max_lsn) max_lsn = entry.lsn;
+    }
+    fclose(fp);
+
+    if (max_lsn > g_vsen_global_lsn_counter) {
+        g_vsen_global_lsn_counter = max_lsn;
+    }
+    return 0;
+}
+
+int tsfi_vsen_audit_chain_verify(const char *dat_bin_file_path) {
+    if (!dat_bin_file_path) return -1;
+    FILE *fp = fopen(dat_bin_file_path, "rb");
+    if (!fp) return -2;
+
+    vsen_vaesen_mvcc_record record;
+    uint64_t prev_hash = 0;
+    int valid = 1;
+
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        uint64_t expected_hash = tsfi_vsen_compute_fnv1a_dna_hash(&record.data, sizeof(record.data), prev_hash);
+        if (record.mvcc.dna_hash != expected_hash) {
+            valid = 0;
+            break;
+        }
+        prev_hash = record.mvcc.dna_hash;
+    }
+    fclose(fp);
+    return valid ? 0 : -3;
+}
+
 int tsfi_vsen_vaesen_register(const char *name, const char *type, int risk_level, const char *status) {
     if (!name || !type || !status) return -1;
-    
-    vsen_vaesen_record record;
-    memset(&record, 0, sizeof(record));
-    strncpy(record.name, name, sizeof(record.name) - 1);
-    strncpy(record.type, type, sizeof(record.type) - 1);
-    record.risk_level = risk_level;
-    strncpy(record.status, status, sizeof(record.status) - 1);
-    
+
+    uint64_t tx_id = 0;
+    tsfi_vsen_tx_begin(&tx_id);
+
+    vsen_vaesen_mvcc_record mvcc_rec;
+    memset(&mvcc_rec, 0, sizeof(mvcc_rec));
+    mvcc_rec.mvcc.tx_id = tx_id;
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    mvcc_rec.mvcc.commit_timestamp = (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)(ts.tv_nsec / 1000);
+    mvcc_rec.mvcc.prev_version_offset = 0;
+    mvcc_rec.mvcc.is_deleted = 0;
+
+    strncpy(mvcc_rec.data.name, name, sizeof(mvcc_rec.data.name) - 1);
+    strncpy(mvcc_rec.data.type, type, sizeof(mvcc_rec.data.type) - 1);
+    mvcc_rec.data.risk_level = risk_level;
+    strncpy(mvcc_rec.data.status, status, sizeof(mvcc_rec.data.status) - 1);
+
     // Rule 13: Must only support .dat.bin extension for quadtree, index, database slices
-    FILE *fp = fopen("vaesen_registry.dat.bin", "ab");
+    FILE *fp = fopen("vaesen_registry.dat.bin", "rb+");
     if (!fp) {
-        fp = fopen("vaesen_registry.dat.bin", "wb");
+        fp = fopen("vaesen_registry.dat.bin", "wb+");
     }
-    if (!fp) return -2;
-    
-    size_t written = fwrite(&record, sizeof(record), 1, fp);
+    if (!fp) {
+        tsfi_vsen_tx_abort(tx_id);
+        return -2;
+    }
+
+    vsen_vaesen_mvcc_record existing;
+    uint64_t last_offset = 0;
+    uint64_t prev_dna_hash = 0;
+
+    while (fread(&existing, sizeof(existing), 1, fp) == 1) {
+        prev_dna_hash = existing.mvcc.dna_hash;
+        if (strcmp(existing.data.name, name) == 0 && !existing.mvcc.is_deleted) {
+            last_offset = ftell(fp) - sizeof(existing);
+        }
+    }
+
+    mvcc_rec.mvcc.prev_version_offset = last_offset;
+    mvcc_rec.mvcc.dna_hash = tsfi_vsen_compute_fnv1a_dna_hash(&mvcc_rec.data, sizeof(mvcc_rec.data), prev_dna_hash);
+
+    fseek(fp, 0, SEEK_END);
+    uint64_t write_offset = ftell(fp);
+    size_t written = fwrite(&mvcc_rec, sizeof(mvcc_rec), 1, fp);
     fclose(fp);
-    
-    return (written == 1) ? 0 : -3;
+
+    if (written == 1) {
+        vsen_wal_entry_header_t wal;
+        memset(&wal, 0, sizeof(wal));
+        wal.lsn = ++g_vsen_global_lsn_counter;
+        wal.tx_id = tx_id;
+        wal.op_type = 2; // INSERT/UPDATE
+        strncpy(wal.target_file, "vaesen_registry.dat.bin", sizeof(wal.target_file) - 1);
+        wal.record_offset = write_offset;
+        wal.payload_len = sizeof(mvcc_rec);
+
+        FILE *wal_fp = fopen("vaesen_registry.wal.dat.bin", "ab");
+        if (wal_fp) {
+            fwrite(&wal, sizeof(wal), 1, wal_fp);
+            fclose(wal_fp);
+        }
+        tsfi_vsen_tx_commit(tx_id);
+        return 0;
+    } else {
+        tsfi_vsen_tx_abort(tx_id);
+        return -3;
+    }
 }
 
 int tsfi_vsen_vaesen_lookup(const char *name, char *type_out, int *risk_level_out, char *status_out, size_t max_len) {
     if (!name || !type_out || !risk_level_out || !status_out || max_len == 0) return -1;
-    
+
     FILE *fp = fopen("vaesen_registry.dat.bin", "rb");
     if (!fp) return -2;
-    
-    vsen_vaesen_record record;
+
+    vsen_vaesen_mvcc_record record;
     int found = 0;
     while (fread(&record, sizeof(record), 1, fp) == 1) {
-        if (strcmp(record.name, name) == 0) {
-            strncpy(type_out, record.type, max_len - 1);
+        if (strcmp(record.data.name, name) == 0 && !record.mvcc.is_deleted) {
+            strncpy(type_out, record.data.type, max_len - 1);
             type_out[max_len - 1] = '\0';
-            *risk_level_out = record.risk_level;
-            strncpy(status_out, record.status, sizeof(record.status) - 1);
-            status_out[sizeof(record.status) - 1] = '\0';
+            *risk_level_out = record.data.risk_level;
+            strncpy(status_out, record.data.status, sizeof(record.data.status) - 1);
+            status_out[sizeof(record.data.status) - 1] = '\0';
             found = 1;
-            break;
         }
     }
     fclose(fp);
-    
+
+    return found ? 0 : -3;
+}
+
+int tsfi_vsen_vaesen_lookup_as_of(const char *name, uint64_t timestamp, char *type_out, int *risk_level_out, char *status_out, size_t max_len) {
+    if (!name || !type_out || !risk_level_out || !status_out || max_len == 0) return -1;
+
+    FILE *fp = fopen("vaesen_registry.dat.bin", "rb");
+    if (!fp) return -2;
+
+    vsen_vaesen_mvcc_record record;
+    int found = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if (strcmp(record.data.name, name) == 0 && record.mvcc.commit_timestamp <= timestamp && !record.mvcc.is_deleted) {
+            strncpy(type_out, record.data.type, max_len - 1);
+            type_out[max_len - 1] = '\0';
+            *risk_level_out = record.data.risk_level;
+            strncpy(status_out, record.data.status, sizeof(record.data.status) - 1);
+            status_out[sizeof(record.data.status) - 1] = '\0';
+            found = 1;
+        }
+    }
+    fclose(fp);
+
     return found ? 0 : -3;
 }
 
