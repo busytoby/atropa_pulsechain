@@ -856,6 +856,15 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
+    // 7.5 Apply Final Output RMS Norm (output_norm.weight)
+    const GgufTensorInfo *t_out_norm = tsfi_gguf_find_tensor("output_norm.weight");
+    if (t_out_norm) {
+        fseek(f, t_out_norm->offset, SEEK_SET);
+        fread(weight, sizeof(float), dim, f);
+        tsfi_rmsnorm_c(xb, x, weight, dim, 1e-5f);
+        for (int i = 0; i < dim; i++) x[i] = xb[i];
+    }
+
     // 8. Output Logit Matrix Projection (lm_head.weight) over full 32,256 GGUF vocabulary table
     const GgufTensorInfo *t_lm_head = tsfi_gguf_find_tensor("lm_head.weight");
     if (t_lm_head) {
