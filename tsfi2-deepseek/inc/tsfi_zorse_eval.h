@@ -76,7 +76,17 @@ int tsfi_zorse_parse_cabling_topology(const char *b64_topology_img, const char *
 // Zorse Moondream Cabinet Thermal Graph Auditor
 int tsfi_zorse_audit_thermal_graph(const char *b64_thermal_img, const char *model_name, char *hotspot_info_out, size_t max_len);
 
+// Zorse Mainframe JCL/COBOL Batch Job Receipt Struct
+typedef struct {
+    uint32_t job_id;               // Mainframe JCL Job Number (e.g. 10100)
+    uint32_t model_type;           // 1 = DeepSeek LLM, 2 = Moondream VLM
+    uint32_t status_code;          // 0 = Success (ACID Committed)
+    char     input_dsn[128];       // Source Data Set Name
+    char     result_dat_bin[128];  // Target RDBMS .dat.bin filename
+} zorse_jcl_batch_receipt_t;
+
 // Zorse Mainframe Job Stream Orchestrator
+int tsfi_zorse_submit_jcl_cobol_batch(const char *jcl_source, const char *cobol_source, const char *model_asset_path, zorse_jcl_batch_receipt_t *receipt_out);
 int tsfi_zorse_audit_job_stream(const char *jcl_source, const char *cobol_source, const char *model_name, int *is_valid_out, char *report_out, size_t max_report_len);
 
 // Zorse LLM COBOL-to-C Struct Transpiler

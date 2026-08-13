@@ -72,7 +72,22 @@ int main(void) {
     printf("  Flowchart JCL Gen Status:     RC: %d\n", flow_rc);
     assert(flow_rc == 0 || flow_rc == -1 || flow_rc == -2);
 
-    // 7. Audit Cryptographic DNA Hash Chain
+    // 7. Test tsfi_zorse_submit_jcl_cobol_batch batch submission engine
+    const char *jcl_job = "//ZORSEJOB JOB (10100),'DEEPSEEK BATCH',CLASS=A\n"
+                           "//STEP1    EXEC PGM=ZORSEAI,PARM='MODEL=DEEPSEEK'\n"
+                           "//SYSUT1   DD DSN=ATROPA.ZWINGLI.PAGE1,DISP=SHR\n";
+    const char *cobol_job = "01  PENITENT-CLEARANCE PIC X(30) VALUE 'Gnad vnd Frid von Gott'.\n";
+
+    zorse_jcl_batch_receipt_t batch_rcpt;
+    int batch_rc = tsfi_zorse_submit_jcl_cobol_batch(jcl_job, cobol_job, model_gguf_path, &batch_rcpt);
+    printf("  JCL/COBOL Batch Job Submission Status: RC: %d -> Job ID: %u, DSN: %s, Result Binary: %s\n", 
+           batch_rc, batch_rcpt.job_id, batch_rcpt.input_dsn, batch_rcpt.result_dat_bin);
+    assert(batch_rc == 0);
+    assert(batch_rcpt.job_id == 10100);
+    assert(batch_rcpt.status_code == 0);
+    assert(strcmp(batch_rcpt.input_dsn, "ATROPA.ZWINGLI.PAGE1") == 0);
+
+    // 8. Audit Cryptographic DNA Hash Chain
     assert(tsfi_vsen_audit_chain_verify("amt_orientation.dat.bin") == 0);
 
     printf("\n[ZORSE ASSET INTEGRATION] Zorse DeepSeek asset prover initialized and verified successfully in C!\n");
