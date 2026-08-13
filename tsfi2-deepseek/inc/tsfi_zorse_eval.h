@@ -438,8 +438,10 @@ typedef struct {
 typedef struct {
     char doi[128];                     // e.g. "10.3931/e-rara-10100"
     uint32_t page_num;                 // Page number (e.g. 1)
-    char honorific_salutation[256];    // e.g. "Dem eersamen vnd wysen Chratz Christoffel Froschouer..."
-    char benediction_greeting[128];    // e.g. "Gnad vnd frid von Gott dem Herren"
+    char benediction_greeting[128];    // Primary Precedence Amt: "Gnad vnd frid von Gott dem Herren"
+    char honorific_salutation[256];    // Secondary Salutation: "Dem eersamen vnd wysen..."
+    uint32_t benediction_precedence_rank; // 1 = Highest precedence (Benediction holds Amt over salutation)
+    char amt_polite_orientation[256];  // Orientation upon Amt: "Gnad vnd frid" as the primary governing orientation
     char diet_term_speisen[64];        // e.g. "speisen" (choice & freedom of foods)
     char diet_term_fleisch[64];        // e.g. "fleisch" (eating meat during fast)
     char diet_term_fastenn[64];        // e.g. "fastenn" (Lenten fasting period)

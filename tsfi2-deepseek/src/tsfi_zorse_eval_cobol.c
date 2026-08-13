@@ -1091,18 +1091,7 @@ int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, 
     strncpy(analysis_out->doi, doi, sizeof(analysis_out->doi) - 1);
     analysis_out->page_num = page_num;
 
-    // 1. Extract Honorific Salutation
-    const char *salutation_start = strstr(page_rec.page_text, "Dem eersamen");
-    if (salutation_start) {
-        size_t len = 0;
-        while (salutation_start[len] != '\0' && salutation_start[len] != '\n' && len < sizeof(analysis_out->honorific_salutation) - 1) {
-            len++;
-        }
-        strncpy(analysis_out->honorific_salutation, salutation_start, len);
-        analysis_out->honorific_salutation[len] = '\0';
-    }
-
-    // 2. Extract Benediction Greeting
+    // 1. Extract Primary Precedence Benediction Greeting ("Gnad vnd frid von Gott dem Herren")
     const char *benediction_start = strstr(page_rec.page_text, "Gnad vnd frid");
     if (benediction_start) {
         size_t len = 0;
@@ -1111,6 +1100,22 @@ int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, 
         }
         strncpy(analysis_out->benediction_greeting, benediction_start, len);
         analysis_out->benediction_greeting[len] = '\0';
+        
+        // Establish Benediction Precedence as the Primary Amt Orientation
+        analysis_out->benediction_precedence_rank = 1; // Highest Precedence Amt
+        snprintf(analysis_out->amt_polite_orientation, sizeof(analysis_out->amt_polite_orientation), 
+                 "Benediction Precedence Amt: '%s' governs common polite orientation prior to salutation", analysis_out->benediction_greeting);
+    }
+
+    // 2. Extract Secondary Honorific Salutation
+    const char *salutation_start = strstr(page_rec.page_text, "Dem eersamen");
+    if (salutation_start) {
+        size_t len = 0;
+        while (salutation_start[len] != '\0' && salutation_start[len] != '\n' && len < sizeof(analysis_out->honorific_salutation) - 1) {
+            len++;
+        }
+        strncpy(analysis_out->honorific_salutation, salutation_start, len);
+        analysis_out->honorific_salutation[len] = '\0';
     }
 
     // 3. Extract Dietary Terminology

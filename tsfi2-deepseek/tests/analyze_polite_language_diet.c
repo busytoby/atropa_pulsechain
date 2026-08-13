@@ -31,17 +31,20 @@ int main(void) {
     assert(tsfi_erara_analyze_polite_language_diet("10.3931/e-rara-10100", 1, &diet_analysis) == 0);
 
     printf("\n================ E-RARA POLITE LANGUAGE & DIET C ANALYSIS ================\n");
-    printf("  Target DOI:             %s (Page %u)\n", diet_analysis.doi, diet_analysis.page_num);
-    printf("  Honorific Salutation:   \"%s\"\n", diet_analysis.honorific_salutation);
-    printf("  Benediction Greeting:   \"%s\"\n", diet_analysis.benediction_greeting);
-    printf("  Diet Term (Speisen):    %s\n", diet_analysis.diet_term_speisen);
-    printf("  Diet Term (Fleisch):    %s\n", diet_analysis.diet_term_fleisch);
-    printf("  Diet Term (Fastenn):    %s\n", diet_analysis.diet_term_fastenn);
-    printf("  Core Thesis Clause:     \"%s\"\n", diet_analysis.core_thesis_clause);
+    printf("  Target DOI:                 %s (Page %u)\n", diet_analysis.doi, diet_analysis.page_num);
+    printf("  Benediction Precedence Amt: \"%s\" (Rank #%u Precedence)\n", diet_analysis.benediction_greeting, diet_analysis.benediction_precedence_rank);
+    printf("  Amt Polite Orientation:     %s\n", diet_analysis.amt_polite_orientation);
+    printf("  Secondary Salutation:       \"%s\"\n", diet_analysis.honorific_salutation);
+    printf("  Diet Term (Speisen):        %s\n", diet_analysis.diet_term_speisen);
+    printf("  Diet Term (Fleisch):        %s\n", diet_analysis.diet_term_fleisch);
+    printf("  Diet Term (Fastenn):        %s\n", diet_analysis.diet_term_fastenn);
+    printf("  Core Thesis Clause:         \"%s\"\n", diet_analysis.core_thesis_clause);
 
-    // Assert key analysis extractions computed by C logic
-    assert(strstr(diet_analysis.honorific_salutation, "Christoffel Froschouer") != NULL);
+    // Assert key analysis extractions and precedence ordering computed by C logic
+    assert(diet_analysis.benediction_precedence_rank == 1);
+    assert(strstr(diet_analysis.amt_polite_orientation, "Benediction Precedence Amt") != NULL);
     assert(strstr(diet_analysis.benediction_greeting, "Gnad vnd frid") != NULL);
+    assert(strstr(diet_analysis.honorific_salutation, "Christoffel Froschouer") != NULL);
     assert(strlen(diet_analysis.diet_term_speisen) > 0);
     assert(strlen(diet_analysis.diet_term_fleisch) > 0);
     assert(strlen(diet_analysis.diet_term_fastenn) > 0);
