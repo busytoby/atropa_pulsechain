@@ -1230,6 +1230,21 @@ int tsfi_zorse_query_moondream_vlm(const char *b64_image_data, const char *promp
     return tsfi_ai_evaluate_vlm(b64_image_data, prompt, response_out, max_resp_len);
 }
 
+int tsfi_zorse_audit_screen_visual(const char *b64_screen_img, const char *model_name, char *alert_level_out, size_t max_len) {
+    if (!b64_screen_img || !alert_level_out || max_len == 0) return -1;
+    return tsfi_zorse_query_moondream_vlm(b64_screen_img, "Audit 3270 visual console display and return alert level", alert_level_out, max_len);
+}
+
+int tsfi_zorse_generate_jcl_from_flowchart(const char *b64_flowchart_img, const char *model_name, char *jcl_out, size_t max_len) {
+    if (!b64_flowchart_img || !jcl_out || max_len == 0) return -1;
+    return tsfi_zorse_query_moondream_vlm(b64_flowchart_img, "Generate z/VSEn JCL job stream from visual flowchart diagram", jcl_out, max_len);
+}
+
+int tsfi_zorse_map_dasd_space(const char *b64_layout_img, const char *model_name, char *space_out, size_t max_len) {
+    if (!b64_layout_img || !space_out || max_len == 0) return -1;
+    return tsfi_zorse_query_moondream_vlm(b64_layout_img, "Map visual DASD layout diagram into JCL SPACE parameters under Rule 13", space_out, max_len);
+}
+
 // IBM Code Page 037 ASCII to EBCDIC lookup table
 static const uint8_t g_ascii_to_ebcdic_cp037[256] = {
     0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F, 0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,

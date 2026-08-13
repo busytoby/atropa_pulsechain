@@ -57,7 +57,18 @@ int main(void) {
     printf("  Moondream VLM Query Status:   RC: %d\n", vlm_rc);
     assert(vlm_rc == 0 || vlm_rc == -1 || vlm_rc == -2);
 
-    // 6. Audit Cryptographic DNA Hash Chain
+    // 6. Test tsfi_zorse_audit_screen_visual & tsfi_zorse_generate_jcl_from_flowchart
+    char alert_buf[128];
+    int alert_rc = tsfi_zorse_audit_screen_visual("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "moondream", alert_buf, sizeof(alert_buf));
+    printf("  Visual Console Alert Status:  RC: %d\n", alert_rc);
+    assert(alert_rc == 0 || alert_rc == -1 || alert_rc == -2);
+
+    char jcl_flow_buf[512];
+    int flow_rc = tsfi_zorse_generate_jcl_from_flowchart("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "moondream", jcl_flow_buf, sizeof(jcl_flow_buf));
+    printf("  Flowchart JCL Gen Status:     RC: %d\n", flow_rc);
+    assert(flow_rc == 0 || flow_rc == -1 || flow_rc == -2);
+
+    // 7. Audit Cryptographic DNA Hash Chain
     assert(tsfi_vsen_audit_chain_verify("amt_orientation.dat.bin") == 0);
 
     printf("\n[ZORSE ASSET INTEGRATION] Zorse DeepSeek asset prover initialized and verified successfully in C!\n");
