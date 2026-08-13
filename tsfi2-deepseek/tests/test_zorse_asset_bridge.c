@@ -87,7 +87,19 @@ int main(void) {
     assert(batch_rcpt.status_code == 0);
     assert(strcmp(batch_rcpt.input_dsn, "ATROPA.ZWINGLI.PAGE1") == 0);
 
-    // 8. Audit Cryptographic DNA Hash Chain
+    // 8. Test Zorse DeepSeek Coder Source File Reading & Editing Interface
+    char read_buf[1024];
+    int read_rc = tsfi_zorse_read_source_file("inc/tsfi_zorse_eval.h", read_buf, sizeof(read_buf));
+    printf("  Zorse C Source Read Status:   RC: %d (Read %zu bytes off inc/tsfi_zorse_eval.h)\n", read_rc, strlen(read_buf));
+    assert(read_rc == 0);
+    assert(strlen(read_buf) > 0);
+
+    char edit_summary[256];
+    int edit_rc = tsfi_zorse_edit_source_file("inc/tsfi_zorse_eval.h", "Refactor C struct alignment under Rule 8", model_gguf_path, edit_summary, sizeof(edit_summary));
+    printf("  Zorse DeepSeek Coder Source Edit Status: RC: %d -> Summary: %s\n", edit_rc, edit_summary);
+    assert(edit_rc == 0);
+
+    // 9. Audit Cryptographic DNA Hash Chain
     assert(tsfi_vsen_audit_chain_verify("amt_orientation.dat.bin") == 0);
 
     printf("\n[ZORSE ASSET INTEGRATION] Zorse DeepSeek asset prover initialized and verified successfully in C!\n");

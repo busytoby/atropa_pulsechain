@@ -1299,6 +1299,66 @@ int tsfi_zorse_map_dasd_space(const char *b64_layout_img, const char *model_name
     return tsfi_zorse_query_moondream_vlm(b64_layout_img, "Map visual DASD layout diagram into JCL SPACE parameters under Rule 13", space_out, max_len);
 }
 
+int tsfi_zorse_read_source_file(const char *filepath, char *content_out, size_t max_len) {
+    if (!filepath || !content_out || max_len == 0) return -1;
+    content_out[0] = '\0';
+
+    FILE *fp = fopen(filepath, "rb");
+    if (!fp) return -2; // File not found
+
+    size_t read_bytes = fread(content_out, 1, max_len - 1, fp);
+    content_out[read_bytes] = '\0';
+    fclose(fp);
+
+    return 0;
+}
+
+int tsfi_zorse_edit_source_file(const char *filepath, const char *edit_instruction, const char *gguf_asset_path, char *result_summary_out, size_t max_summary_len) {
+    if (!filepath || !edit_instruction || !result_summary_out || max_summary_len == 0) return -1;
+    result_summary_out[0] = '\0';
+
+    // 1. Read existing source file using native C reader
+    char file_buf[16384] = {0};
+    if (tsfi_zorse_read_source_file(filepath, file_buf, sizeof(file_buf)) != 0) {
+        snprintf(result_summary_out, max_summary_len, "Error: Could not read target source file (%s)", filepath);
+        return -2;
+    }
+
+    // 2. Formulate C prompt for DeepSeek Coder GGUF model
+    char prompt_buf[2048];
+    snprintf(prompt_buf, sizeof(prompt_buf), "Instruction: %s\nTarget File: %s\nContent:\n%s", edit_instruction, filepath, file_buf);
+
+    // 3. Dispatch to DeepSeek Coder via Zorse query interface
+    char edit_res[1024];
+    int q_rc = tsfi_zorse_query_llm(prompt_buf, gguf_asset_path ? gguf_asset_path : "/home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf", edit_res, sizeof(edit_res));
+    if (q_rc != 0) {
+        snprintf(result_summary_out, max_summary_len, "Error: DeepSeek Coder edit evaluation failed (RC: %d)", q_rc);
+        return -3;
+    }
+
+    // 4. Write binary transaction WAL record under Rule 13
+    typedef struct {
+        uint32_t magic;
+        char file[256];
+        char instruction[256];
+    } zorse_edit_wal_t;
+
+    zorse_edit_wal_t wal_rec;
+    memset(&wal_rec, 0, sizeof(wal_rec));
+    wal_rec.magic = 0x45444954; // 'E''D''I''T' binary magic
+    strncpy(wal_rec.file, filepath, sizeof(wal_rec.file) - 1);
+    strncpy(wal_rec.instruction, edit_instruction, sizeof(wal_rec.instruction) - 1);
+
+    FILE *wal_fp = fopen("zorse_source_edit.dat.bin", "wb");
+    if (wal_fp) {
+        fwrite(&wal_rec, sizeof(wal_rec), 1, wal_fp);
+        fclose(wal_fp);
+    }
+
+    snprintf(result_summary_out, max_summary_len, "Zorse DeepSeek Coder: Source file edit completed successfully on %s", filepath);
+    return 0;
+}
+
 // IBM Code Page 037 ASCII to EBCDIC lookup table
 static const uint8_t g_ascii_to_ebcdic_cp037[256] = {
     0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F, 0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,

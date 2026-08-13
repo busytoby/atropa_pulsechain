@@ -22,6 +22,10 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
 int tsfi_zorse_query_llm_gguf(const char *prompt, const char *gguf_asset_path, char *response_out, size_t max_resp_len);
 int tsfi_zorse_query_moondream_vlm(const char *b64_image_data, const char *prompt, char *response_out, size_t max_resp_len);
 
+// Zorse DeepSeek Coder Source File Reading & Editing Interface
+int tsfi_zorse_read_source_file(const char *filepath, char *content_out, size_t max_len);
+int tsfi_zorse_edit_source_file(const char *filepath, const char *edit_instruction, const char *gguf_asset_path, char *result_summary_out, size_t max_summary_len);
+
 // Zorse COBOL PICTURE Clause Auditor
 int tsfi_zorse_validate_cobol_pic(const char *pic_clause, int *is_valid_out);
 
