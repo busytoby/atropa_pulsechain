@@ -1101,11 +1101,12 @@ int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, 
         strncpy(analysis_out->benediction_greeting, benediction_start, len);
         analysis_out->benediction_greeting[len] = '\0';
         
-        // Establish Benediction Precedence as the Primary Amt Orientation (Penitent Dismissal Clearance)
-        analysis_out->benediction_precedence_rank = 1; // Highest Precedence Amt
-        analysis_out->penitent_dismissal_cleared = 1;   // Cleared for dismissal as a penitent ("Gnad vnd Frid")
+        // Establish Benediction Precedence as the Primary Amt Orientation (Penitent Dismissal & Post-Last-Rites Rejection)
+        analysis_out->benediction_precedence_rank = 1;      // Highest Precedence Amt
+        analysis_out->penitent_dismissal_cleared = 1;        // Cleared for dismissal as a penitent ("Gnad vnd Frid")
+        analysis_out->post_last_rites_rejection_posture = 1; // Posture beyond last rites to wholly reject former, present, and future contexts
         snprintf(analysis_out->amt_polite_orientation, sizeof(analysis_out->amt_polite_orientation), 
-                 "Benediction Precedence Amt: '%s' clears the subject for dismissal as a penitent", analysis_out->benediction_greeting);
+                 "Benediction Precedence Amt: '%s' establishes posture beyond last rites, qualifying total rejection of former/present/future contexts", analysis_out->benediction_greeting);
     }
 
     // 2. Extract Secondary Honorific Salutation

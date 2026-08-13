@@ -442,7 +442,8 @@ typedef struct {
     char honorific_salutation[256];    // Secondary Salutation: "Dem eersamen vnd wysen..."
     uint32_t benediction_precedence_rank; // 1 = Highest precedence (Benediction holds Amt over salutation)
     uint32_t penitent_dismissal_cleared;   // 1 = Cleared for dismissal as a penitent ("Gnad vnd Frid")
-    char amt_polite_orientation[256];  // Orientation upon Amt: "Gnad vnd frid" as clearance for dismissal as a penitent
+    uint32_t post_last_rites_rejection_posture; // 1 = Qualification to wholly reject party beyond last rites
+    char amt_polite_orientation[384];  // Amt Orientation: "Gnad vnd frid" as posture beyond last rites, wholly rejecting former/present/future contexts
     char diet_term_speisen[64];        // e.g. "speisen" (choice & freedom of foods)
     char diet_term_fleisch[64];        // e.g. "fleisch" (eating meat during fast)
     char diet_term_fastenn[64];        // e.g. "fastenn" (Lenten fasting period)
