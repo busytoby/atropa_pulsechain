@@ -917,13 +917,13 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (uint32_t t = 0; t < 32 && cum_score < top_p_threshold; t++) {
-            uint32_t stride_offset = (uint32_t)(fabsf(x[(gen_step * 17 + t * 13) % dim]) * 32256.0f);
-            uint32_t cand_id = (prompt_token_id + stride_offset + gen_step * 31 + t * 7) % (vocab_size > 0 ? vocab_size : 32256);
+            uint32_t stride_offset = (uint32_t)(fabsf(x[(gen_step * 7 + t) % dim]) * 512.0f);
+            uint32_t cand_id = (prompt_token_id + gen_step * 3 + t + stride_offset) % (vocab_size > 0 ? vocab_size : 32256);
             if (vocab_table && vocab_table[cand_id]) {
                 const char *tok = vocab_table[cand_id];
                 if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
                 size_t tlen = strlen(tok);
-                bool is_alpha = (tlen >= 2);
+                bool is_alpha = (tlen >= 1);
                 for (size_t k = 0; k < tlen; k++) {
                     unsigned char c = (unsigned char)tok[k];
                     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ' ' || c == ';' || c == '{' || c == '}')) {
