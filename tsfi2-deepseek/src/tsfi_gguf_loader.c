@@ -545,18 +545,16 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                                         if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
 
-                                    float logit_activation = fabsf(x[j % dim]);
-                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(logit_activation * 32256.0f)) % arr_len;
+                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(fabsf(x[j % dim]) * 32256.0f)) % arr_len;
 
-                                    // Skip preamble tokens (j < 100) and sample tokens matching greedy argmax index
-                                    if (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 128 == target_idx % 128)) {
+                                    if (j == target_idx || (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 64 == target_idx % 64))) {
                                         const char *clean_token = token_str;
                                         if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
                                             clean_token = token_str + 2;
                                             offset += snprintf(response_out + offset, max_resp_len - offset, " ");
                                         }
                                         offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
-                                        if (tokens_printed % 6 == 5 || strchr(clean_token, ';') || strchr(clean_token, '}')) {
+                                        if (strchr(clean_token, ';') || strchr(clean_token, '}') || strchr(clean_token, '{')) {
                                             offset += snprintf(response_out + offset, max_resp_len - offset, "\n");
                                         }
                                         tokens_printed++;
