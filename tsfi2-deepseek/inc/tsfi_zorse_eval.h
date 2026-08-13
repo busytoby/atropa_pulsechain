@@ -434,6 +434,44 @@ typedef struct {
     vsen_erara_page_text_record_t data;
 } vsen_erara_page_text_mvcc_record;
 
+// e-rara.ch Page 1 Detailed Line-by-Line Syntax Breakdown (.dat.bin)
+typedef struct {
+    char doi[128];                        // e.g. "10.3931/e-rara-10100"
+    uint32_t line_count;                  // Total lines on Page 1 (7 lines)
+    char line1_main_title[256];           // "Von erkiesen vnd freyheit der speisen..."
+    char line2_authority_question[256];   // "Ob jemants gewalt habe verbyeten..."
+    char line3_sermon_date_location[256]; // "Huldrychen Zwinglis predig gethan zu Zuerich..."
+    char line4_printer_dedication[256];   // "Dem eersamen vnd wysen Chratz Christoffel Froschouer..."
+    char line5_benediction_motive[256];   // "Gnad vnd frid von Gott dem Herren..."
+    char line6_sermon_publication[256];   // "hab ich fuer gut angesehen die predig..."
+    char line7_scriptural_defense[256];   // "damit menklich wysse wie die sach von Gottes wort..."
+} vsen_erara_page1_syntax_breakdown_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_erara_page1_syntax_breakdown_t data;
+} vsen_erara_page1_syntax_breakdown_mvcc_record;
+
+// e-rara.ch EBCDIC Code Page 037 Backend Page Text Payload Structure (.dat.bin)
+typedef struct {
+    char doi[128];                           // e.g. "10.3931/e-rara-10100"
+    uint32_t page_num;                       // Page number (e.g. 1)
+    uint32_t ebcdic_byte_count;              // Total byte count in EBCDIC encoding
+    uint8_t ebcdic_payload[4096];            // Raw EBCDIC Code Page 037 byte stream
+} vsen_erara_ebcdic_page_text_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_erara_ebcdic_page_text_t data;
+} vsen_erara_ebcdic_page_text_mvcc_record;
+
+// EBCDIC Code Page 037 Conversion & Backend Text Retrieval APIs
+void tsfi_ascii_to_ebcdic_cp037(const char *ascii_src, uint8_t *ebcdic_dest, size_t len);
+void tsfi_ebcdic_cp037_to_ascii(const uint8_t *ebcdic_src, char *ascii_dest, size_t len);
+int tsfi_erara_register_ebcdic_page_text(const char *doi, uint32_t page_num, const char *ascii_src);
+int tsfi_erara_get_ebcdic_page_text(const char *doi, uint32_t page_num, vsen_erara_ebcdic_page_text_t *record_out);
+int tsfi_erara_analyze_page1_syntax(const char *doi, vsen_erara_page1_syntax_breakdown_t *breakdown_out);
+
 // e-rara.ch Polite Language & Diet Analysis Record Structure (.dat.bin)
 typedef struct {
     char doi[128];                     // e.g. "10.3931/e-rara-10100"
