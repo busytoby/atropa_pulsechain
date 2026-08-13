@@ -833,10 +833,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             char gate_name[64], up_name[64], down_name[64];
             snprintf(gate_name, sizeof(gate_name), "blk.%d.ffn_gate.weight", l);
             snprintf(up_name, sizeof(up_name), "blk.%d.ffn_up.weight", l);
-            (void)up_name;
+            snprintf(up_name, sizeof(up_name), "blk.%d.ffn_up.weight", l);
             snprintf(down_name, sizeof(down_name), "blk.%d.ffn_down.weight", l);
 
             const GgufTensorInfo *t_gate = tsfi_gguf_find_tensor(gate_name);
+            const GgufTensorInfo *t_up   = tsfi_gguf_find_tensor(up_name);
             const GgufTensorInfo *t_down = tsfi_gguf_find_tensor(down_name);
 
             if (t_gate) {
@@ -850,6 +851,18 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
                 } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(q, xb, weight, 512, dim); }
             } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
+
+            if (t_up) {
+                fseek(f, t_up->offset, SEEK_SET);
+                if (t_up->type == 2 || t_up->type == 12) {
+                    uint8_t *u_buf = (uint8_t *)calloc(dim, sizeof(float));
+                    if (u_buf) {
+                        fread(u_buf, 1, dim * sizeof(float), f);
+                        tsfi_matmul_q4_k_c(att, xb, u_buf, 512, dim);
+                        free(u_buf);
+                    }
+                }
+            }
 
             tsfi_swiglu_c(q, xb, dim);
 
