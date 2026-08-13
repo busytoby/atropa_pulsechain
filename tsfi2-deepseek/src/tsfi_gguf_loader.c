@@ -84,6 +84,47 @@ void tsfi_23tree_insert(GgufTensorInfo *info) {
     }
 }
 
+typedef struct GgufRedBlackNode {
+    uint32_t token_id;
+    float activation_score;
+    bool is_red; // RED = true, BLACK = false
+    struct GgufRedBlackNode *left;
+    struct GgufRedBlackNode *right;
+} GgufRedBlackNode;
+
+// Red-Black Tree Token Classifier Resolution Engine
+GgufRedBlackNode *tsfi_rb_tree_create_node(uint32_t token_id, float score) {
+    GgufRedBlackNode *node = (GgufRedBlackNode *)calloc(1, sizeof(GgufRedBlackNode));
+    if (node) {
+        node->token_id = token_id;
+        node->activation_score = score;
+        node->is_red = true;
+    }
+    return node;
+}
+
+uint32_t tsfi_gguf_classify_token_rb_tree(GgufRedBlackNode *root, float target_score) {
+    if (!root) return 0;
+    GgufRedBlackNode *curr = root;
+    uint32_t best_class = curr->token_id;
+    float min_diff = fabsf(curr->activation_score - target_score);
+
+    while (curr) {
+        float diff = fabsf(curr->activation_score - target_score);
+        if (diff < min_diff) {
+            min_diff = diff;
+            best_class = curr->token_id;
+        }
+        if (target_score < curr->activation_score) {
+            curr = curr->left;
+        } else if (target_score > curr->activation_score) {
+            curr = curr->right;
+        } else {
+            break;
+        }
+    }
+    return best_class;
+}
 const GgufTensorInfo *tsfi_gguf_find_tensor_23tree(Gguf23TreeNode *root, const char *name) {
     if (!root || !name) return NULL;
     int cmp0 = strcmp(name, root->keys[0]->name);
