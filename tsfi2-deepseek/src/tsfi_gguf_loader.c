@@ -531,17 +531,38 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         fclose(f_kv);
     }
 
-    // Match prompt subword tokens using vocabulary table
-    uint32_t prompt_token_id = 0;
+    // Pure C Greedy Longest-Subword BPE Tokenizer Algorithm over GGUF vocabulary table
+    uint32_t prompt_tokens[64];
+    int num_prompt_tokens = 0;
     size_t prompt_len = strlen(prompt);
     if (prompt_len == 0) prompt_len = 1;
 
-    for (uint32_t j = 0; j < vocab_size; j++) {
-        if (vocab_table[j] && strstr(prompt, vocab_table[j]) != NULL) {
-            prompt_token_id = j;
-            break;
+    size_t p_idx = 0;
+    while (p_idx < prompt_len && num_prompt_tokens < 64) {
+        uint32_t best_token_match = 0;
+        size_t best_match_len = 0;
+
+        for (uint32_t j = 0; j < vocab_size; j++) {
+            if (vocab_table[j]) {
+                const char *v_str = vocab_table[j];
+                if (strncmp(v_str, "\xc4\xa0", 2) == 0) v_str += 2;
+                size_t v_len = strlen(v_str);
+                if (v_len > 0 && v_len > best_match_len && strncmp(prompt + p_idx, v_str, v_len) == 0) {
+                    best_match_len = v_len;
+                    best_token_match = j;
+                }
+            }
+        }
+
+        if (best_match_len == 0) {
+            prompt_tokens[num_prompt_tokens++] = (uint32_t)prompt[p_idx];
+            p_idx++;
+        } else {
+            prompt_tokens[num_prompt_tokens++] = best_token_match;
+            p_idx += best_match_len;
         }
     }
+    uint32_t prompt_token_id = num_prompt_tokens > 0 ? prompt_tokens[0] : 0;
 
     // Query tok_embeddings.weight via 2-3 Tree lookup for true prompt embedding initialization
     const GgufTensorInfo *t_tok_emb = tsfi_gguf_find_tensor("tok_embeddings.weight");
