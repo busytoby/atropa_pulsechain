@@ -415,10 +415,10 @@ void tsfi_swiglu_c(float *out, const float *x, int size) {
     }
 }
 
-// Pure C RoPE (Rotary Positional Embedding) transformation
+// Pure C RoPE (Rotary Positional Embedding) transformation with DeepSeek 100K Base Scaling
 void tsfi_rope_c(float *q, float *k, int pos, int head_dim) {
     for (int i = 0; i < head_dim; i += 2) {
-        float freq = 1.0f / powf(10000.0f, (float)i / head_dim);
+        float freq = 1.0f / powf(100000.0f, (float)i / head_dim);
         float val = pos * freq;
         float fcr = cosf(val);
         float fci = sinf(val);
