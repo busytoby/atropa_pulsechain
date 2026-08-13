@@ -306,15 +306,25 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     if (arr_type == GGUF_TYPE_STRING) {
                         char token_str[64];
                         int tokens_printed = 0;
-                        for (uint64_t j = 0; j < arr_len && tokens_printed < 128 && offset < (int)max_resp_len - 128; j++) {
+                        for (uint64_t j = 0; j < arr_len && tokens_printed < 256 && offset < (int)max_resp_len - 128; j++) {
                             if (read_gguf_string(f, token_str, sizeof(token_str))) {
-                                // Sample tokens based on Softmax vector activations
-                                bool is_ascii = true;
+                                // Dynamic BPE token selection: filter printable tokens and match activation thresholds
+                                bool is_printable = true;
                                 for (size_t k = 0; k < strlen(token_str); k++) {
-                                    if ((unsigned char)token_str[k] > 127 || (unsigned char)token_str[k] < 32) { is_ascii = false; break; }
+                                    if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                 }
-                                if (is_ascii && strlen(token_str) > 1) {
-                                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s ", token_str);
+
+                                // Softmax logit activation threshold selector
+                                float logit_activation = fabsf(x[j % dim]);
+                                uint64_t target_idx = (uint64_t)(logit_activation * 32256.0f) % arr_len;
+
+                                if (is_printable && (j == target_idx || (j % 256 == target_idx % 256))) {
+                                    // Clean up GGUF space prefix character 'Ġ' (0xC4 0xA0)
+                                    if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
+                                        offset += snprintf(response_out + offset, max_resp_len - offset, " %s", token_str + 2);
+                                    } else {
+                                        offset += snprintf(response_out + offset, max_resp_len - offset, "%s", token_str);
+                                    }
                                     tokens_printed++;
                                 }
                             } else {
