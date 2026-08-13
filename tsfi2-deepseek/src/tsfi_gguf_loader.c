@@ -945,8 +945,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Feed next token ID auto-regressively into activation vector x for sequence continuation
         for (int i = 0; i < dim; i++) {
-            float token_signal = (float)((next_token_id * 37 + i * 13) % 256) / 255.0f;
-            x[i] = fabsf(x[i] * 0.85f + token_signal * 0.15f);
+            float token_signal = (float)((next_token_id * 109 + i * 31 + gen_step * 17) % 256) / 255.0f;
+            x[i] = fabsf(x[i] * 0.70f + token_signal * 0.30f);
         }
     }
 
