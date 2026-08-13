@@ -429,26 +429,44 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             snprintf(v_name, sizeof(v_name), "blk.%d.attn_v.weight", l);
 
             const GgufTensorInfo *t_q = tsfi_gguf_find_tensor(q_name);
+            const GgufTensorInfo *t_k = tsfi_gguf_find_tensor(k_name);
+            const GgufTensorInfo *t_v = tsfi_gguf_find_tensor(v_name);
+
             if (t_q) {
                 fseek(f, t_q->offset, SEEK_SET);
-                if (t_q->type == 2 || t_q->type == 12) { // Q4_K or quantized block type
+                if (t_q->type == 2 || t_q->type == 12) {
                     uint8_t *q_buf = (uint8_t *)calloc(dim, sizeof(float));
                     if (q_buf) {
                         fread(q_buf, 1, dim * sizeof(float), f);
                         tsfi_matmul_q4_k_c(q, xb, q_buf, 512, dim);
                         free(q_buf);
-                    } else {
-                        tsfi_matmul_c(q, xb, weight, 512, dim);
-                    }
-                } else {
-                    fread(weight, sizeof(float), dim, f);
-                    tsfi_matmul_c(q, xb, weight, 512, dim);
-                }
-            } else {
-                tsfi_matmul_c(q, xb, weight, 512, dim);
-            }
-            tsfi_matmul_c(k, xb, weight, 512, dim);
-            tsfi_matmul_c(v, xb, weight, 512, dim);
+                    } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
+                } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(q, xb, weight, 512, dim); }
+            } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
+
+            if (t_k) {
+                fseek(f, t_k->offset, SEEK_SET);
+                if (t_k->type == 2 || t_k->type == 12) {
+                    uint8_t *k_buf = (uint8_t *)calloc(dim, sizeof(float));
+                    if (k_buf) {
+                        fread(k_buf, 1, dim * sizeof(float), f);
+                        tsfi_matmul_q4_k_c(k, xb, k_buf, 512, dim);
+                        free(k_buf);
+                    } else { tsfi_matmul_c(k, xb, weight, 512, dim); }
+                } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(k, xb, weight, 512, dim); }
+            } else { tsfi_matmul_c(k, xb, weight, 512, dim); }
+
+            if (t_v) {
+                fseek(f, t_v->offset, SEEK_SET);
+                if (t_v->type == 2 || t_v->type == 12) {
+                    uint8_t *v_buf = (uint8_t *)calloc(dim, sizeof(float));
+                    if (v_buf) {
+                        fread(v_buf, 1, dim * sizeof(float), f);
+                        tsfi_matmul_q4_k_c(v, xb, v_buf, 512, dim);
+                        free(v_buf);
+                    } else { tsfi_matmul_c(v, xb, weight, 512, dim); }
+                } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(v, xb, weight, 512, dim); }
+            } else { tsfi_matmul_c(v, xb, weight, 512, dim); }
 
             // Update KV Cache State Vectors for context tracking
             for (int i = 0; i < dim; i++) {
