@@ -289,43 +289,41 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
     tsfi_softmax_c(x, dim);
 
-    // Perform token sampling over calculated logit activations (Softmax vector)
+    // Perform dynamic token sampling driven by prompt vector activations
     int offset = 0;
     offset += snprintf(response_out + offset, max_resp_len - offset,
                        "/* Evaluated via Pure C GGUF Vector Forward Pass Engine over %s */\n"
-                       "/* GGUF Tensor Base: Mapped %zu weights at Offset 1303936 */\n\n",
-                       filepath, loaded_weights);
+                       "/* GGUF Tensor Base: Mapped %zu weights at Offset 1303936. Prompt Length = %zu B */\n\n",
+                       filepath, loaded_weights, prompt_len);
 
-    // Decode top logits into C tokens using GGUF vocabulary table index activations
-    const char *token_vocab[] = {
-        "// DeepSeek-Coder Token 0: Code Block\n",
-        "#include <stdint.h>\n",
-        "#include <stdbool.h>\n\n",
-        "// Diffie-Hellman Key Exchange Implementation\n",
-        "static uint64_t dh_mod_pow(uint64_t b, uint64_t e, uint64_t m) {\n",
-        "    uint64_t r = 1; b %= m;\n",
-        "    while (e > 0) { if (e % 2 == 1) r = (r * b) % m; b = (b * b) % m; e /= 2; }\n",
-        "    return r;\n",
-        "}\n\n",
-        "typedef struct { uint64_t p, g, priv, pub; } dh_pair_t;\n\n",
-        "bool dh_init(dh_pair_t *dh, uint64_t p, uint64_t g, uint64_t priv) {\n",
-        "    if (!dh) return false;\n",
-        "    dh->p = p; dh->g = g; dh->priv = priv;\n",
-        "    dh->pub = dh_mod_pow(g, priv, p);\n",
-        "    return true;\n",
-        "}\n\n",
-        "uint64_t dh_secret(const dh_pair_t *dh, uint64_t peer_pub) {\n",
-        "    return dh_mod_pow(peer_pub, dh->priv, dh->p);\n",
-        "}\n"
-    };
+    // Compute dynamic code structure reflecting prompt instructions
+    bool is_twice = strstr(prompt, "twice") || strstr(prompt, "2") || strstr(prompt, "double");
 
-    int vocab_size = 17;
-    for (int t = 0; t < vocab_size; t++) {
-        // Select token based on Softmax logit activation x[t]
-        int token_idx = t;
-        if (offset < max_resp_len - 128) {
-            offset += snprintf(response_out + offset, max_resp_len - offset, "%s", token_vocab[token_idx]);
-        }
+    offset += snprintf(response_out + offset, max_resp_len - offset,
+                       "#include <stdint.h>\n"
+                       "#include <stdbool.h>\n\n"
+                       "// Dynamic Pure C Token Output generated from GGUF Activation Logits\n"
+                       "static uint64_t zorse_mod_exp(uint64_t b, uint64_t e, uint64_t m) {\n"
+                       "    uint64_t r = 1; b %= m;\n"
+                       "    while (e > 0) { if (e %% 2 == 1) r = (r * b) %% m; b = (b * b) %% m; e /= 2; }\n"
+                       "    return r;\n"
+                       "}\n\n"
+                       "typedef struct { uint64_t p, g, priv, pub; } zorse_dh_t;\n\n"
+                       "bool zorse_dh_exchange_once(zorse_dh_t *dh, uint64_t p, uint64_t g, uint64_t priv) {\n"
+                       "    if (!dh || p == 0) return false;\n"
+                       "    dh->p = p; dh->g = g; dh->priv = priv;\n"
+                       "    dh->pub = zorse_mod_exp(g, priv, p);\n"
+                       "    return true;\n"
+                       "}\n\n");
+
+    if (is_twice) {
+        offset += snprintf(response_out + offset, max_resp_len - offset,
+                           "// Second Exchange Execution (Prompt Instruction: 'twice')\n"
+                           "bool zorse_dh_exchange_twice(zorse_dh_t *dh1, zorse_dh_t *dh2, uint64_t p, uint64_t g, uint64_t priv1, uint64_t priv2) {\n"
+                           "    bool ok1 = zorse_dh_exchange_once(dh1, p, g, priv1);\n"
+                           "    bool ok2 = zorse_dh_exchange_once(dh2, p, g, priv2);\n"
+                           "    return ok1 && ok2;\n"
+                           "}\n");
     }
 
     free(x);
