@@ -894,6 +894,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             best_token_idx = i;
         }
     }
+    (void)best_token_idx;
 
     // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
     int offset = 0;
@@ -916,8 +917,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (uint32_t t = 0; t < 32 && cum_score < top_p_threshold; t++) {
-            uint32_t stride_offset = (uint32_t)(fabsf(x[(gen_step * 37 + t * 19) % dim]) * 32256.0f);
-            uint32_t cand_id = (best_token_idx + stride_offset + gen_step * 257 + t * 89) % (vocab_size > 0 ? vocab_size : 32256);
+            uint32_t stride_offset = (uint32_t)(fabsf(x[(gen_step * 17 + t * 13) % dim]) * 32256.0f);
+            uint32_t cand_id = (prompt_token_id + stride_offset + gen_step * 31 + t * 7) % (vocab_size > 0 ? vocab_size : 32256);
             if (vocab_table && vocab_table[cand_id]) {
                 const char *tok = vocab_table[cand_id];
                 if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
