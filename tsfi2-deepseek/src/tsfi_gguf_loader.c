@@ -185,6 +185,21 @@ float tsfi_zorse_risk_eval_entropy(const float *logits, int size) {
     return entropy;
 }
 
+// Chatrath Bias Mitigation Weight Projection for Subword Token Regularization
+void tsfi_zorse_chatrath_bias_mitigation(float *logits, int size, float threshold) {
+    if (!logits || size <= 0) return;
+    float mean = 0.0f;
+    for (int i = 0; i < size; i++) mean += logits[i];
+    mean /= (float)size;
+
+    for (int i = 0; i < size; i++) {
+        float dev = logits[i] - mean;
+        if (fabsf(dev) > threshold) {
+            logits[i] = mean + (dev > 0.0f ? threshold : -threshold);
+        }
+    }
+}
+
 // Chatrath SLAM Static vs. Dynamic State Matrix Disambiguation Engine
 float tsfi_zorse_slam_disambiguate(const float *static_weights, const float *dynamic_kv_cache, int size) {
     if (!static_weights || !dynamic_kv_cache || size <= 0) return 0.0f;
