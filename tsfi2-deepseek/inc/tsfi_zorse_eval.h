@@ -20,6 +20,7 @@ int tsfi_zorse_validate_hlasm(const char *hlasm_instruction, int *is_valid_out);
 // Zorse LLM Integration Query Interface (Daemon endpoint or direct GGUF weights in ~/src/tsfi2/assets)
 int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *response_out, size_t max_resp_len);
 int tsfi_zorse_query_llm_gguf(const char *prompt, const char *gguf_asset_path, char *response_out, size_t max_resp_len);
+int tsfi_zorse_query_moondream_vlm(const char *b64_image_data, const char *prompt, char *response_out, size_t max_resp_len);
 
 // Zorse COBOL PICTURE Clause Auditor
 int tsfi_zorse_validate_cobol_pic(const char *pic_clause, int *is_valid_out);

@@ -1222,6 +1222,14 @@ int tsfi_zorse_query_llm_gguf(const char *prompt, const char *gguf_asset_path, c
     return tsfi_zorse_query_llm(prompt, gguf_asset_path, response_out, max_resp_len);
 }
 
+int tsfi_zorse_query_moondream_vlm(const char *b64_image_data, const char *prompt, char *response_out, size_t max_resp_len) {
+    if (!b64_image_data || !prompt || !response_out || max_resp_len == 0) return -1;
+    response_out[0] = '\0';
+
+    // Route multimodal vision payload through native AI core tsfi_ai_evaluate_vlm
+    return tsfi_ai_evaluate_vlm(b64_image_data, prompt, response_out, max_resp_len);
+}
+
 // IBM Code Page 037 ASCII to EBCDIC lookup table
 static const uint8_t g_ascii_to_ebcdic_cp037[256] = {
     0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F, 0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,

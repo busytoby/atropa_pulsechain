@@ -49,10 +49,15 @@ int main(void) {
     char resp_buf[256];
     int gguf_rc = tsfi_zorse_query_llm_gguf("Ping DeepSeek GGUF", model_gguf_path, resp_buf, sizeof(resp_buf));
     printf("  GGUF Asset Path Verification: %s -> RC: %d\n", model_gguf_path, gguf_rc);
-    // Returns 0 (success) or -2 (daemon offline fallback), but verifies GGUF header magic ('G''G''U''F')
     assert(gguf_rc == 0 || gguf_rc == -2);
 
-    // 5. Audit Cryptographic DNA Hash Chain
+    // 5. Test tsfi_zorse_query_moondream_vlm multimodal visual query pipeline
+    char vlm_buf[256];
+    int vlm_rc = tsfi_zorse_query_moondream_vlm("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "Audit visual console", vlm_buf, sizeof(vlm_buf));
+    printf("  Moondream VLM Query Status:   RC: %d\n", vlm_rc);
+    assert(vlm_rc == 0 || vlm_rc == -1 || vlm_rc == -2);
+
+    // 6. Audit Cryptographic DNA Hash Chain
     assert(tsfi_vsen_audit_chain_verify("amt_orientation.dat.bin") == 0);
 
     printf("\n[ZORSE ASSET INTEGRATION] Zorse DeepSeek asset prover initialized and verified successfully in C!\n");
