@@ -930,20 +930,20 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (uint32_t t = 0; t < 32 && cum_score < top_p_threshold; t++) {
-            uint32_t cand_id = (best_token_idx + gen_step * 7 + t) % (vocab_size > 0 ? vocab_size : 32256);
+            uint32_t cand_id = (best_token_idx + gen_step * 19 + t * 11) % (vocab_size > 0 ? vocab_size : 32256);
             if (vocab_table && vocab_table[cand_id]) {
                 const char *tok = vocab_table[cand_id];
                 if (strncmp(tok, "\xc4\xa0", 2) == 0) tok += 2;
                 size_t tlen = strlen(tok);
-                bool is_alpha = (tlen >= 1);
+                bool is_valid_token = (tlen >= 2);
                 for (size_t k = 0; k < tlen; k++) {
                     unsigned char c = (unsigned char)tok[k];
-                    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ' ' || c == ';' || c == '{' || c == '}')) {
-                        is_alpha = false;
+                    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == ' ')) {
+                        is_valid_token = false;
                         break;
                     }
                 }
-                if (is_alpha) {
+                if (is_valid_token) {
                     float raw_logit = cand_logits[t % 32];
                     if (tsfi_zorse_chatrath_operational_risk_guard(tok, raw_logit, 10.0f)) {
                         float scaled_score = (raw_logit / temperature) + (float)tlen * 0.05f;
