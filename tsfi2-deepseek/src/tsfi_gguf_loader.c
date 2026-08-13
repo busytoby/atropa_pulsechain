@@ -727,11 +727,22 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     float *key_cache   = s_mann_key_cache;
     float *value_cache = s_mann_value_cache;
 
-    int prefill_steps = (int)(prompt_len < 16 ? prompt_len : 16);
+    int prefill_steps = num_prompt_tokens > 0 ? num_prompt_tokens : 1;
     for (int gen_step = 0; gen_step < prefill_steps; gen_step++) {
-        // Feed character token position into activation vector x for sequence prefill
-        for (int i = 0; i < dim; i++) {
-            x[i] = fabsf(x[i] * 0.9f + ((float)prompt[gen_step % prompt_len] / 255.0f) * 0.1f);
+        uint32_t step_tok = prompt_tokens[gen_step % prefill_steps];
+        uint64_t step_tok_offset = t_tok_emb ? (t_tok_emb->offset + (uint64_t)step_tok * (dim / 2)) : 0;
+        if (t_tok_emb && fseek(f, step_tok_offset, SEEK_SET) == 0) {
+            uint8_t *pf_buf = (uint8_t *)calloc(dim, 1);
+            if (pf_buf) {
+                if (fread(pf_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
+                    for (int i = 0; i < dim; i++) {
+                        uint8_t nibble = (pf_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
+                        float p_val = ((float)nibble - 8.0f) * 0.125f;
+                        x[i] = fabsf(x[i] * 0.70f + p_val * 0.30f);
+                    }
+                }
+                free(pf_buf);
+            }
         }
         for (int l = 0; l < num_layers; l++) {
             // 1. RMS Layer Normalization over dynamic weights
