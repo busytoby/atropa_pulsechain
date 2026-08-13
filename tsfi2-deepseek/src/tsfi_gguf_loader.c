@@ -211,6 +211,21 @@ float tsfi_zorse_slam_disambiguate(const float *static_weights, const float *dyn
     return sqrtf(residual_sq_sum / (float)size);
 }
 
+// Chatrath Temporal Landmark Anchor Mapping for SLAM Keyframe Retention
+bool tsfi_zorse_chatrath_temporal_landmark_anchor(float *kv_cache_ring, int layers, int dim, float drift_threshold) {
+    if (!kv_cache_ring || layers <= 0 || dim <= 0) return false;
+    for (int l = 0; l < layers; l++) {
+        float layer_energy = 0.0f;
+        float *layer_ptr = kv_cache_ring + l * dim;
+        for (int i = 0; i < dim; i++) layer_energy += layer_ptr[i] * layer_ptr[i];
+        layer_energy = sqrtf(layer_energy / (float)dim);
+        if (layer_energy > drift_threshold) {
+            for (int i = 0; i < dim; i++) layer_ptr[i] *= (drift_threshold / layer_energy);
+        }
+    }
+    return true;
+}
+
 void tsfi_rb_tree_free(GgufRedBlackNode *node) {
     if (!node) return;
     tsfi_rb_tree_free(node->left);
@@ -793,6 +808,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
         for (int i = 0; i < dim; i++) x[i] = xb[i];
     }
+
+    // Chatrath Temporal Landmark Anchor Mapping over MANN key-value ring buffers
+    tsfi_zorse_chatrath_temporal_landmark_anchor(key_cache, layers, dim, 1.5f);
 
     // Execute STANAG VFIO zero-copy DMA memory bridge to sync KV-Cache into MANN ring buffers
     extern bool tsfi_stanag_vfio_nic_dma_bridge(uint32_t pci_slot, void *target_kv_cache, size_t len);
