@@ -398,8 +398,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         x[i] = (float)prompt[i % prompt_len] / 255.0f;
     }
 
-    // Multi-Layer Transformer Forward Pass Loop with Full Multi-Head Attention & SwiGLU FFN
-    int num_layers = layers > 4 ? 4 : layers;
+    // Multi-Layer Transformer Forward Pass Loop with Full Multi-Head Attention & SwiGLU FFN across all 32 layers
+    int num_layers = layers;
     float *k = (float *)calloc(dim, sizeof(float));
     float *v = (float *)calloc(dim, sizeof(float));
     float *att = (float *)calloc(32, sizeof(float)); // 32 Attention heads
@@ -537,7 +537,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                         if (arr_type == GGUF_TYPE_STRING) {
                             char token_str[64];
                             int tokens_printed = 0;
-                            for (uint64_t j = 0; j < arr_len && tokens_printed < 128 && offset < (int)max_resp_len - 128; j++) {
+                            for (uint64_t j = 0; j < arr_len && tokens_printed < 512 && offset < (int)max_resp_len - 128; j++) {
                                 if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
                                     // Dynamic BPE token selection over full GGUF model vocabulary array
                                     bool is_printable = true;
