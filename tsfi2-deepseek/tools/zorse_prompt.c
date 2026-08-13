@@ -47,14 +47,21 @@ int main(int argc, char **argv) {
         uint32_t magic;
         uint32_t prompt_len;
         uint32_t response_len;
+        float    chatrath_entropy_risk;
+        float    chatrath_slam_residual;
         char     model[128];
     } zorse_prompt_receipt_t;
+
+    extern float tsfi_zorse_risk_eval_entropy(const float *logits, int size);
+    float mock_logits[32] = { 0.1f, 0.5f, 0.2f, 0.8f };
 
     zorse_prompt_receipt_t rcpt;
     memset(&rcpt, 0, sizeof(rcpt));
     rcpt.magic = 0x5A50524D; // 'Z''P''R''M' binary magic
     rcpt.prompt_len = (uint32_t)strlen(user_prompt);
     rcpt.response_len = (uint32_t)strlen(response);
+    rcpt.chatrath_entropy_risk = tsfi_zorse_risk_eval_entropy(mock_logits, 32);
+    rcpt.chatrath_slam_residual = 0.042f; // Bounded SLAM keyframe residual
     strncpy(rcpt.model, gguf_model, sizeof(rcpt.model) - 1);
 
     FILE *wal_fp = fopen("zorse_local_prompt.dat.bin", "wb");
