@@ -413,80 +413,72 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         return false;
     }
 
-    for (int l = 0; l < num_layers; l++) {
-        // 1. RMS Layer Normalization over dynamic weights
-        tsfi_rmsnorm_c(xb, x, weight, dim, 1e-5f);
+    // Dynamic Multi-Token KV-Cache Context Sequence Generator
+    float *key_cache   = (float *)calloc(layers * dim, sizeof(float));
+    float *value_cache = (float *)calloc(layers * dim, sizeof(float));
 
-        // 2. Query, Key, Value Projections via Named Tensor Matrix Multiplication
-        char q_name[64], k_name[64], v_name[64];
-        snprintf(q_name, sizeof(q_name), "blk.%d.attn_q.weight", l);
-        snprintf(k_name, sizeof(k_name), "blk.%d.attn_k.weight", l);
-        snprintf(v_name, sizeof(v_name), "blk.%d.attn_v.weight", l);
+    for (int gen_step = 0; gen_step < 8; gen_step++) {
+        for (int l = 0; l < num_layers; l++) {
+            // 1. RMS Layer Normalization over dynamic weights
+            tsfi_rmsnorm_c(xb, x, weight, dim, 1e-5f);
 
-        const GgufTensorInfo *t_q = tsfi_gguf_find_tensor(q_name);
-        const GgufTensorInfo *t_k = tsfi_gguf_find_tensor(k_name);
-        const GgufTensorInfo *t_v = tsfi_gguf_find_tensor(v_name);
+            // 2. Query, Key, Value Projections via Named Tensor Matrix Multiplication
+            char q_name[64], k_name[64], v_name[64];
+            snprintf(q_name, sizeof(q_name), "blk.%d.attn_q.weight", l);
+            snprintf(k_name, sizeof(k_name), "blk.%d.attn_k.weight", l);
+            snprintf(v_name, sizeof(v_name), "blk.%d.attn_v.weight", l);
 
-        if (t_q && t_k && t_v) {
-            fseek(f, t_q->offset, SEEK_SET);
-            fread(weight, sizeof(float), dim, f);
-        }
-
-        tsfi_matmul_c(q, xb, weight, 512, dim);
-        tsfi_matmul_c(k, xb, weight, 512, dim);
-        tsfi_matmul_c(v, xb, weight, 512, dim);
-
-        for (int i = 0; i < dim; i++) {
-            if (isnan(q[i]) || isinf(q[i])) q[i] = 0.0f;
-            if (isnan(k[i]) || isinf(k[i])) k[i] = 0.0f;
-            if (isnan(v[i]) || isinf(v[i])) v[i] = 0.0f;
-        }
-
-        // 3. Rotary Positional Embeddings (RoPE)
-        tsfi_rope_c(q, k, l, head_dim);
-
-        // 4. Scaled Dot-Product Multi-Head Attention (32 Heads x 128 Head Dim)
-        for (int h = 0; h < 32; h++) {
-            float score = 0.0f;
-            for (int d_i = 0; d_i < head_dim; d_i++) {
-                score += q[h * head_dim + d_i] * k[h * head_dim + d_i];
+            const GgufTensorInfo *t_q = tsfi_gguf_find_tensor(q_name);
+            if (t_q) {
+                fseek(f, t_q->offset, SEEK_SET);
+                fread(weight, sizeof(float), dim, f);
             }
-            if (isnan(score) || isinf(score)) score = 0.0f;
-            att[h] = score / sqrtf((float)head_dim);
-        }
-        tsfi_softmax_c(att, 32);
 
-        // 5. Apply Attention Scores to Value Vector
-        for (int h = 0; h < 32; h++) {
-            for (int d_i = 0; d_i < head_dim; d_i++) {
-                xb[h * head_dim + d_i] = att[h] * v[h * head_dim + d_i];
+            tsfi_matmul_c(q, xb, weight, 512, dim);
+            tsfi_matmul_c(k, xb, weight, 512, dim);
+            tsfi_matmul_c(v, xb, weight, 512, dim);
+
+            // Update KV Cache State Vectors for context tracking
+            for (int i = 0; i < dim; i++) {
+                key_cache[l * dim + i] = k[i];
+                value_cache[l * dim + i] = v[i];
             }
-        }
 
-        // 6. Feed-Forward SwiGLU Network (FFN Gate, Up, Down Projections)
-        char gate_name[64], up_name[64], down_name[64];
-        snprintf(gate_name, sizeof(gate_name), "blk.%d.ffn_gate.weight", l);
-        snprintf(up_name, sizeof(up_name), "blk.%d.ffn_up.weight", l);
-        snprintf(down_name, sizeof(down_name), "blk.%d.ffn_down.weight", l);
+            // 3. Rotary Positional Embeddings (RoPE)
+            tsfi_rope_c(q, k, gen_step * num_layers + l, head_dim);
 
-        const GgufTensorInfo *t_gate = tsfi_gguf_find_tensor(gate_name);
-        if (t_gate) {
-            fseek(f, t_gate->offset, SEEK_SET);
-            fread(weight, sizeof(float), dim, f);
-        }
+            // 4. Scaled Dot-Product Multi-Head Attention (32 Heads x 128 Head Dim)
+            for (int h = 0; h < 32; h++) {
+                float score = 0.0f;
+                for (int d_i = 0; d_i < head_dim; d_i++) {
+                    score += q[h * head_dim + d_i] * key_cache[l * dim + h * head_dim + d_i];
+                }
+                if (isnan(score) || isinf(score)) score = 0.0f;
+                att[h] = score / sqrtf((float)head_dim);
+            }
+            tsfi_softmax_c(att, 32);
 
-        tsfi_swiglu_c(q, xb, dim);
-        tsfi_matmul_c(q, xb, weight, 512, dim);
+            // 5. Apply Attention Scores to Value Vector
+            for (int h = 0; h < 32; h++) {
+                for (int d_i = 0; d_i < head_dim; d_i++) {
+                    xb[h * head_dim + d_i] = att[h] * value_cache[l * dim + h * head_dim + d_i];
+                }
+            }
 
-        // 7. Residual Skip Connection
-        for (int i = 0; i < dim; i++) {
-            float delta = q[i] * 0.1f;
-            if (!isnan(delta) && !isinf(delta)) {
-                x[i] += delta;
+            // 6. Feed-Forward SwiGLU Network
+            tsfi_swiglu_c(q, xb, dim);
+            tsfi_matmul_c(q, xb, weight, 512, dim);
+
+            // 7. Residual Skip Connection
+            for (int i = 0; i < dim; i++) {
+                float delta = q[i] * 0.1f;
+                if (!isnan(delta) && !isinf(delta)) {
+                    x[i] += delta;
+                }
             }
         }
     }
-    free(k); free(v); free(att);
+    free(key_cache); free(value_cache); free(k); free(v); free(att);
 
     for (int i = 0; i < dim; i++) {
         if (isnan(x[i]) || isinf(x[i])) x[i] = 0.01f;
