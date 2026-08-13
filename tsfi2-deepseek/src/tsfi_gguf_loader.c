@@ -226,6 +226,21 @@ bool tsfi_zorse_chatrath_temporal_landmark_anchor(float *kv_cache_ring, int laye
     return true;
 }
 
+// Motzkin Prime Euler Totient phi(N) Modular Exponentiation Engine
+uint64_t tsfi_zorse_motzkin_totient_mod_pow(uint64_t base, uint64_t exp) {
+    const uint64_t MOTZKIN_PRIME = 953467954114363ULL;
+    const uint64_t TOTIENT_PHI = MOTZKIN_PRIME - 1ULL; // phi(P) = P - 1
+    uint64_t res = 1ULL;
+    base %= MOTZKIN_PRIME;
+    exp %= TOTIENT_PHI;
+    while (exp > 0) {
+        if (exp % 2 == 1) res = (uint64_t)(((unsigned __int128)res * base) % MOTZKIN_PRIME);
+        base = (uint64_t)(((unsigned __int128)base * base) % MOTZKIN_PRIME);
+        exp /= 2;
+    }
+    return res;
+}
+
 void tsfi_rb_tree_free(GgufRedBlackNode *node) {
     if (!node) return;
     tsfi_rb_tree_free(node->left);
