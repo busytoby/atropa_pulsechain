@@ -18,7 +18,7 @@ int main(void) {
         "Von erkiesen vnd freyheit der speisen. Von aergerniss vnd verbesserung.\n"
         "Ob jemants gewalt habe verbyeten etliche speiss zu eessen zu etlicher zeyt.\n"
         "Huldrychen Zwinglis predig gethan zu Zuerich in der grossen kirchen am .xxiij. tag maertzen .M.D.XXII.\n"
-        "Ich bit Gott den Herren das er mir verliehe zu reden das zu lob syner goettlichen maiestat\n"
+        "Ich bitte Gott den Herren das er mir verliehe zu reden das zu lob syner goettlichen maiestat\n"
         "vnd zu erbauwung des christenlichen volcks.";
 
     // 1. Register high-precision page 1 text into C RDBMS storage (.dat.bin)
@@ -40,7 +40,7 @@ int main(void) {
     assert(page1_analysis.page_num == 1);
     assert(page1_analysis.character_count > 300);
     assert(page1_analysis.word_count >= 50);
-    assert(strstr(page1_analysis.page_text, ".xxiij. tag maertzen .M.D.XXII.") != NULL);
+    assert(strstr(page1_analysis.page_text, "Ich bitte Gott den Herren") != NULL);
 
     // 3. Audit Cryptographic DNA Hash Chain on page text storage
     assert(tsfi_vsen_audit_chain_verify("erara_page_text.dat.bin") == 0);
