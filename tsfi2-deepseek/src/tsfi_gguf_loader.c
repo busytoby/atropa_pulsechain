@@ -187,15 +187,17 @@ void tsfi_matmul_c(float *xout, const float *x, const float *w, int n, int d) {
     }
 }
 
-// Pure C Q4_K Block Dequantization & Vector Dot Product Engine
-typedef struct {
+// Pure C Q4_K Block Dequantization & Vector Dot Product Engine (16-byte aligned for SIMD)
+typedef struct __attribute__((aligned(16))) {
     uint16_t d;       // FP16 scale
     uint16_t dmin;    // FP16 min scale
     uint8_t  scales[12];
     uint8_t  qs[128]; // 256 4-bit nibbles
+    uint8_t  _padding[4]; // 16-byte struct alignment padding
 } block_q4_K;
 
 void tsfi_matmul_q4_k_c(float *xout, const float *x, const uint8_t *q4_w, int n, int d) {
+    if (!xout || !x || !q4_w || n <= 0 || d <= 0) return;
     const block_q4_K *blocks = (const block_q4_K *)q4_w;
     int blocks_per_row = n / 256;
     if (blocks_per_row == 0) blocks_per_row = 1;
@@ -206,8 +208,12 @@ void tsfi_matmul_q4_k_c(float *xout, const float *x, const uint8_t *q4_w, int n,
             const block_q4_K *block = &blocks[i * blocks_per_row + b];
             float scale = (float)block->d * 0.001f;
             if (scale == 0.0f) scale = 1.0f;
+
+            // Safe aligned nibble unpacking with bounds padding
             for (int j = 0; j < 256 && (b * 256 + j) < n; j++) {
-                uint8_t q_val = (block->qs[j / 2] >> ((j % 2) * 4)) & 0x0F;
+                int nibble_idx = j / 2;
+                if (nibble_idx >= 128) break;
+                uint8_t q_val = (block->qs[nibble_idx] >> ((j % 2) * 4)) & 0x0F;
                 float weight_val = ((float)q_val - 8.0f) * scale;
                 val += weight_val * x[b * 256 + j];
             }
