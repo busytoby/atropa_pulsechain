@@ -732,15 +732,19 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
     // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
     int offset = 0;
+    float temperature = 0.7f;
+
     for (int gen_step = 0; gen_step < 32 && offset < (int)max_resp_len - 128; gen_step++) {
         GgufRedBlackNode *rb_root = NULL;
+        // Temperature-Scaled Top-K Red-Black Tree Classifier Sampling
         for (int t = 0; t < 32; t++) {
-            uint32_t cand_id = ((uint32_t)best_token_idx + gen_step * 37 + t) % (vocab_size > 0 ? vocab_size : 32256);
-            float cand_score = fabsf(x[t % dim]) + ((float)cand_id / 32256.0f) * 0.01f;
-            rb_root = tsfi_rb_tree_insert(rb_root, cand_id, cand_score);
+            uint32_t cand_id = ((uint32_t)best_token_idx + gen_step * 17 + t) % (vocab_size > 0 ? vocab_size : 32256);
+            float raw_logit = fabsf(x[t % dim]);
+            float scaled_score = (raw_logit / temperature) + ((float)(cand_id % 1024) / 1024.0f) * 0.001f;
+            rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
         }
 
-        uint32_t next_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
+        uint32_t next_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit / temperature);
         tsfi_rb_tree_free(rb_root);
 
         if (vocab_table && next_token_id < vocab_size && vocab_table[next_token_id]) {
