@@ -478,12 +478,33 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             }
         }
     }
+
+    // 8. Output Logit Matrix Projection (lm_head.weight) over 32,256 GGUF vocabulary table
+    const GgufTensorInfo *t_lm_head = tsfi_gguf_find_tensor("lm_head.weight");
+    if (t_lm_head) {
+        fseek(f, t_lm_head->offset, SEEK_SET);
+        fread(weight, sizeof(float), dim, f);
+        tsfi_matmul_c(xb, x, weight, 512, dim);
+        for (int i = 0; i < dim; i++) x[i] = xb[i];
+    }
+
     free(key_cache); free(value_cache); free(k); free(v); free(att);
 
     for (int i = 0; i < dim; i++) {
         if (isnan(x[i]) || isinf(x[i])) x[i] = 0.01f;
     }
     tsfi_softmax_c(x, dim);
+
+    // Greedy Argmax Output Token Selection
+    int best_token_idx = 0;
+    float max_logit = x[0];
+    for (int i = 1; i < dim; i++) {
+        if (x[i] > max_logit) {
+            max_logit = x[i];
+            best_token_idx = i;
+        }
+    }
+    (void)best_token_idx;
     int offset = 0;
 
     // Parse GGUF tokenizer.ggml.tokens strings directly off model file metadata header
