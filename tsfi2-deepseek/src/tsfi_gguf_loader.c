@@ -982,10 +982,25 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             }
         }
 
-        // Feed next token ID auto-regressively into activation vector x for sequence continuation
-        for (int i = 0; i < dim; i++) {
-            float token_signal = (float)((next_token_id * 109 + i * 31 + gen_step * 17) % 256) / 255.0f;
-            x[i] = fabsf(x[i] * 0.70f + token_signal * 0.30f);
+        // Feed winning next_token_id embedding signal auto-regressively into activation vector x
+        uint64_t next_tok_offset = t_tok_emb ? (t_tok_emb->offset + (uint64_t)next_token_id * (dim / 2)) : 0;
+        if (t_tok_emb && fseek(f, next_tok_offset, SEEK_SET) == 0) {
+            uint8_t *fb_buf = (uint8_t *)calloc(dim, 1);
+            if (fb_buf) {
+                if (fread(fb_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
+                    for (int i = 0; i < dim; i++) {
+                        uint8_t nibble = (fb_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
+                        float fb_val = ((float)nibble - 8.0f) * 0.125f;
+                        x[i] = x[i] * 0.70f + fb_val * 0.30f;
+                    }
+                }
+                free(fb_buf);
+            }
+        } else {
+            for (int i = 0; i < dim; i++) {
+                float token_signal = (float)((next_token_id * 109 + i * 31 + gen_step * 17) % 256) / 255.0f;
+                x[i] = fabsf(x[i] * 0.70f + token_signal * 0.30f);
+            }
         }
     }
 
