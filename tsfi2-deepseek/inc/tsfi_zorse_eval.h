@@ -441,7 +441,8 @@ typedef struct {
     char benediction_greeting[128];    // Primary Precedence Amt: "Gnad vnd frid von Gott dem Herren"
     char honorific_salutation[256];    // Secondary Salutation: "Dem eersamen vnd wysen..."
     uint32_t benediction_precedence_rank; // 1 = Highest precedence (Benediction holds Amt over salutation)
-    char amt_polite_orientation[256];  // Orientation upon Amt: "Gnad vnd frid" as the primary governing orientation
+    uint32_t penitent_dismissal_cleared;   // 1 = Cleared for dismissal as a penitent ("Gnad vnd Frid")
+    char amt_polite_orientation[256];  // Orientation upon Amt: "Gnad vnd frid" as clearance for dismissal as a penitent
     char diet_term_speisen[64];        // e.g. "speisen" (choice & freedom of foods)
     char diet_term_fleisch[64];        // e.g. "fleisch" (eating meat during fast)
     char diet_term_fastenn[64];        // e.g. "fastenn" (Lenten fasting period)

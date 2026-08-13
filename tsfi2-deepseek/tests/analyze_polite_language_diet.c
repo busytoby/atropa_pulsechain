@@ -33,6 +33,7 @@ int main(void) {
     printf("\n================ E-RARA POLITE LANGUAGE & DIET C ANALYSIS ================\n");
     printf("  Target DOI:                 %s (Page %u)\n", diet_analysis.doi, diet_analysis.page_num);
     printf("  Benediction Precedence Amt: \"%s\" (Rank #%u Precedence)\n", diet_analysis.benediction_greeting, diet_analysis.benediction_precedence_rank);
+    printf("  Penitent Dismissal Status:  %s\n", diet_analysis.penitent_dismissal_cleared ? "CLEARED FOR DISMISSAL AS A PENITENT (Gnad vnd Frid)" : "UNCLEARED");
     printf("  Amt Polite Orientation:     %s\n", diet_analysis.amt_polite_orientation);
     printf("  Secondary Salutation:       \"%s\"\n", diet_analysis.honorific_salutation);
     printf("  Diet Term (Speisen):        %s\n", diet_analysis.diet_term_speisen);
@@ -40,9 +41,10 @@ int main(void) {
     printf("  Diet Term (Fastenn):        %s\n", diet_analysis.diet_term_fastenn);
     printf("  Core Thesis Clause:         \"%s\"\n", diet_analysis.core_thesis_clause);
 
-    // Assert key analysis extractions and precedence ordering computed by C logic
+    // Assert key analysis extractions, penitent dismissal clearance, and precedence ordering computed by C logic
     assert(diet_analysis.benediction_precedence_rank == 1);
-    assert(strstr(diet_analysis.amt_polite_orientation, "Benediction Precedence Amt") != NULL);
+    assert(diet_analysis.penitent_dismissal_cleared == 1);
+    assert(strstr(diet_analysis.amt_polite_orientation, "clears the subject for dismissal as a penitent") != NULL);
     assert(strstr(diet_analysis.benediction_greeting, "Gnad vnd frid") != NULL);
     assert(strstr(diet_analysis.honorific_salutation, "Christoffel Froschouer") != NULL);
     assert(strlen(diet_analysis.diet_term_speisen) > 0);
