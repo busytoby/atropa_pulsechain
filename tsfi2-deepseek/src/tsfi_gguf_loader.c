@@ -363,17 +363,19 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                         if (arr_type == GGUF_TYPE_STRING) {
                             char token_str[64];
                             int tokens_printed = 0;
-                            uint64_t max_scan = arr_len < 4096 ? arr_len : 4096;
-                            for (uint64_t j = 0; j < max_scan && tokens_printed < 256 && offset < (int)max_resp_len - 128; j++) {
+                            for (uint64_t j = 0; j < arr_len && tokens_printed < 128 && offset < (int)max_resp_len - 128; j++) {
                                 if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
-                                    // Dynamic BPE token selection: filter printable tokens and match activation thresholds
+                                    // Dynamic BPE token selection over full GGUF model vocabulary array
                                     bool is_printable = true;
                                     for (size_t k = 0; k < strlen(token_str); k++) {
                                         if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
 
                                     float logit_activation = fabsf(x[j % dim]);
-                                    if (is_printable && strlen(token_str) > 0 && logit_activation > 0.0001f) {
+                                    uint64_t target_idx = (uint64_t)(logit_activation * 32256.0f) % arr_len;
+
+                                    // Skip preamble tokens (j < 100) and sample tokens matching activation logit index
+                                    if (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 256 == target_idx % 256)) {
                                         const char *clean_token = token_str;
                                         if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
                                             clean_token = token_str + 2;
