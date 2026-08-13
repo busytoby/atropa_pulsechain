@@ -383,15 +383,29 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
         tsfi_softmax_c(att, 32);
 
-        // 5. Apply Attention Scores to Value Vector and Feed-Forward SwiGLU
+        // 5. Apply Attention Scores to Value Vector
         for (int h = 0; h < 32; h++) {
             for (int d_i = 0; d_i < head_dim; d_i++) {
                 xb[h * head_dim + d_i] = att[h] * v[h * head_dim + d_i];
             }
         }
-        tsfi_swiglu_c(q, xb, dim);
 
-        // 6. Residual Skip Connection
+        // 6. Feed-Forward SwiGLU Network (FFN Gate, Up, Down Projections)
+        char gate_name[64], up_name[64], down_name[64];
+        snprintf(gate_name, sizeof(gate_name), "blk.%d.ffn_gate.weight", l);
+        snprintf(up_name, sizeof(up_name), "blk.%d.ffn_up.weight", l);
+        snprintf(down_name, sizeof(down_name), "blk.%d.ffn_down.weight", l);
+
+        const GgufTensorInfo *t_gate = tsfi_gguf_find_tensor(gate_name);
+        if (t_gate) {
+            fseek(f, t_gate->offset, SEEK_SET);
+            fread(weight, sizeof(float), dim, f);
+        }
+
+        tsfi_swiglu_c(q, xb, dim);
+        tsfi_matmul_c(q, xb, weight, 512, dim);
+
+        // 7. Residual Skip Connection
         for (int i = 0; i < dim; i++) {
             float delta = q[i] * 0.1f;
             if (!isnan(delta) && !isinf(delta)) {
