@@ -492,11 +492,59 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
-    // Query tok_embeddings.weight via 2-3 Tree lookup for true prompt embedding initialization
-    const GgufTensorInfo *t_tok_emb = tsfi_gguf_find_tensor("tok_embeddings.weight");
+    // 1. Build dynamic GGUF vocabulary table string pointer registry (32,256 tokens)
+    char **vocab_table = (char **)calloc(32256, sizeof(char *));
+    uint32_t vocab_size = 0;
+
+    FILE *f_kv = fopen(filepath, "rb");
+    if (f_kv) {
+        GgufHeader kv_header;
+        if (fread(&kv_header, sizeof(GgufHeader), 1, f_kv) == 1 && kv_header.magic == GGUF_MAGIC) {
+            char key_buf[128];
+            for (uint64_t i = 0; i < kv_header.kv_count; i++) {
+                if (!read_gguf_string(f_kv, key_buf, sizeof(key_buf))) break;
+                uint32_t val_type;
+                if (!read_u32(f_kv, &val_type)) break;
+
+                if (strcmp(key_buf, "tokenizer.ggml.tokens") == 0 && val_type == GGUF_TYPE_ARRAY) {
+                    uint32_t arr_type;
+                    uint64_t arr_len;
+                    if (read_u32(f_kv, &arr_type) && read_u64(f_kv, &arr_len)) {
+                        if (arr_type == GGUF_TYPE_STRING) {
+                            vocab_size = (uint32_t)(arr_len < 32256 ? arr_len : 32256);
+                            char token_str[128];
+                            for (uint32_t j = 0; j < vocab_size; j++) {
+                                if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
+                                    vocab_table[j] = strdup(token_str);
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                } else {
+                    if (!skip_gguf_value(f_kv, val_type)) break;
+                }
+            }
+        }
+        fclose(f_kv);
+    }
+
+    // Match prompt subword tokens using vocabulary table
+    uint32_t prompt_token_id = 0;
     size_t prompt_len = strlen(prompt);
     if (prompt_len == 0) prompt_len = 1;
 
+    for (uint32_t j = 0; j < vocab_size; j++) {
+        if (vocab_table[j] && strstr(prompt, vocab_table[j]) != NULL) {
+            prompt_token_id = j;
+            break;
+        }
+    }
+
+    // Query tok_embeddings.weight via 2-3 Tree lookup for true prompt embedding initialization
+    const GgufTensorInfo *t_tok_emb = tsfi_gguf_find_tensor("tok_embeddings.weight");
     if (t_tok_emb) {
         fseek(f, t_tok_emb->offset, SEEK_SET);
         if (t_tok_emb->type == 2 || t_tok_emb->type == 12) {
@@ -506,7 +554,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 tsfi_matmul_q4_k_c(x, xb, emb_buf, 512, dim);
                 free(emb_buf);
             } else {
-                for (int i = 0; i < dim; i++) x[i] = (float)prompt[i % prompt_len] / 255.0f;
+                for (int i = 0; i < dim; i++) x[i] = (float)((prompt_token_id * 17 + i) % 256) / 255.0f;
             }
         } else {
             fread(weight, sizeof(float), dim, f);
@@ -514,7 +562,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     } else {
         for (int i = 0; i < dim; i++) {
-            x[i] = (float)prompt[i % prompt_len] / 255.0f;
+            x[i] = (float)((prompt_token_id * 17 + i) % 256) / 255.0f;
         }
     }
 
@@ -699,46 +747,6 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             max_logit = x[i];
             best_token_idx = i;
         }
-    }
-
-    // Complete Auto-Regressive Red-Black Classifier Token Sequence Loop
-    // 1. Build dynamic GGUF vocabulary table string pointer registry (32,256 tokens)
-    char **vocab_table = (char **)calloc(32256, sizeof(char *));
-    uint32_t vocab_size = 0;
-
-    FILE *f_kv = fopen(filepath, "rb");
-    if (f_kv) {
-        GgufHeader kv_header;
-        if (fread(&kv_header, sizeof(GgufHeader), 1, f_kv) == 1 && kv_header.magic == GGUF_MAGIC) {
-            char key_buf[128];
-            for (uint64_t i = 0; i < kv_header.kv_count; i++) {
-                if (!read_gguf_string(f_kv, key_buf, sizeof(key_buf))) break;
-                uint32_t val_type;
-                if (!read_u32(f_kv, &val_type)) break;
-
-                if (strcmp(key_buf, "tokenizer.ggml.tokens") == 0 && val_type == GGUF_TYPE_ARRAY) {
-                    uint32_t arr_type;
-                    uint64_t arr_len;
-                    if (read_u32(f_kv, &arr_type) && read_u64(f_kv, &arr_len)) {
-                        if (arr_type == GGUF_TYPE_STRING) {
-                            vocab_size = (uint32_t)(arr_len < 32256 ? arr_len : 32256);
-                            char token_str[128];
-                            for (uint32_t j = 0; j < vocab_size; j++) {
-                                if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
-                                    vocab_table[j] = strdup(token_str);
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    break;
-                } else {
-                    if (!skip_gguf_value(f_kv, val_type)) break;
-                }
-            }
-        }
-        fclose(f_kv);
     }
 
     // 2. Auto-Regressive Red-Black Loop: Feed classified token IDs directly into response output
