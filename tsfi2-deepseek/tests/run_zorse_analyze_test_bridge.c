@@ -7,7 +7,7 @@
 int main(void) {
     printf("[ZORSE DEEPSEEK CODER] Reading and Analyzing tests/test_zorse_asset_bridge.c...\n\n");
 
-    const char *target_file = "tests/test_zorse_asset_bridge.c";
+    const char *target_file = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_zorse_asset_bridge.c";
     const char *gguf_model = "/home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf";
 
     // 1. Read source file content using Zorse C reader
