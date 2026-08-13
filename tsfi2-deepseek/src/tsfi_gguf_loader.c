@@ -241,6 +241,27 @@ uint64_t tsfi_zorse_motzkin_totient_mod_pow(uint64_t base, uint64_t exp) {
     return res;
 }
 
+// Chatrath Dynamic Loop Disambiguation & Operational Risk Monitoring Engine
+bool tsfi_zorse_chatrath_dynamic_loop_risk_monitor(
+    const float *current_logits,
+    const float *static_layer_weights,
+    int size,
+    float max_risk_threshold,
+    float *entropy_out,
+    float *slam_residual_out
+) {
+    if (!current_logits || !static_layer_weights || size <= 0) return false;
+    float entropy = tsfi_zorse_risk_eval_entropy(current_logits, size);
+    float slam_res = tsfi_zorse_slam_disambiguate(static_layer_weights, current_logits, size);
+
+    if (entropy_out) *entropy_out = entropy;
+    if (slam_residual_out) *slam_residual_out = slam_res;
+
+    // Validate risk score bounds
+    float combined_risk = entropy * 0.5f + slam_res * 0.5f;
+    return (combined_risk <= max_risk_threshold);
+}
+
 void tsfi_rb_tree_free(GgufRedBlackNode *node) {
     if (!node) return;
     tsfi_rb_tree_free(node->left);
