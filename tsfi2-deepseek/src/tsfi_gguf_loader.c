@@ -269,6 +269,21 @@ bool tsfi_zorse_chatrath_operational_risk_guard(const char *subword, float logit
     return (subword_entropy <= max_risk_bound);
 }
 
+// Chatrath Dynamic Feature Map SLAM Covariance Tracker for Model Activation Traversal
+float tsfi_zorse_chatrath_slam_covariance_tracker(const float *layer_activations, int dim) {
+    if (!layer_activations || dim <= 0) return 0.0f;
+    float mean = 0.0f;
+    for (int i = 0; i < dim; i++) mean += layer_activations[i];
+    mean /= (float)dim;
+
+    float var = 0.0f;
+    for (int i = 0; i < dim; i++) {
+        float diff = layer_activations[i] - mean;
+        var += diff * diff;
+    }
+    return sqrtf(var / (float)dim);
+}
+
 void tsfi_rb_tree_free(GgufRedBlackNode *node) {
     if (!node) return;
     tsfi_rb_tree_free(node->left);
@@ -851,6 +866,10 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
         for (int i = 0; i < dim; i++) x[i] = xb[i];
     }
+
+    // Chatrath Dynamic Feature Map SLAM Covariance Tracker over layer activation vector x
+    float slam_cov = tsfi_zorse_chatrath_slam_covariance_tracker(x, dim);
+    (void)slam_cov;
 
     // Chatrath Temporal Landmark Anchor Mapping over MANN key-value ring buffers
     tsfi_zorse_chatrath_temporal_landmark_anchor(key_cache, layers, dim, 1.5f);
