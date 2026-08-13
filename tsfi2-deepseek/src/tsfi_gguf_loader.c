@@ -840,8 +840,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 size_t tlen = strlen(tok);
                 if (tlen >= 2 && ((unsigned char)tok[0] >= 32 && (unsigned char)tok[0] <= 126)) {
                     float raw_logit = cand_logits[t % 32];
-                    float keyword_boost = (strstr("int char void return if for while uint32_t struct bool const static float", tok) != NULL) ? 0.05f : 0.0f;
-                    float scaled_score = (raw_logit / temperature) + (float)tlen * 0.05f + keyword_boost;
+                    float scaled_score = (raw_logit / temperature) + (float)tlen * 0.05f;
                     cum_score += raw_logit;
                     rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
                 }
