@@ -676,22 +676,29 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
     uint32_t prompt_token_id = num_prompt_tokens > 0 ? prompt_tokens[0] : 0;
 
-    // Query tok_embeddings.weight via 2-3 Tree lookup for true prompt embedding initialization
+    // Query tok_embeddings.weight via 2-3 Tree lookup for exact prompt_token_id embedding row
     const GgufTensorInfo *t_tok_emb = tsfi_gguf_find_tensor("tok_embeddings.weight");
     if (t_tok_emb) {
-        fseek(f, t_tok_emb->offset, SEEK_SET);
+        // Calculate exact Q4_K row offset for prompt_token_id (4096 dim / 2 bytes per block = 2048 bytes per row)
+        uint64_t row_bytes = (uint64_t)dim * sizeof(float);
+        if (t_tok_emb->type == 2 || t_tok_emb->type == 12) row_bytes = (uint64_t)(dim / 2);
+        uint64_t tok_offset = t_tok_emb->offset + (uint64_t)prompt_token_id * row_bytes;
+
+        fseek(f, tok_offset, SEEK_SET);
         if (t_tok_emb->type == 2 || t_tok_emb->type == 12) {
-            uint8_t *emb_buf = (uint8_t *)calloc(dim, sizeof(float));
+            uint8_t *emb_buf = (uint8_t *)calloc(dim, 1);
             if (emb_buf) {
-                fread(emb_buf, 1, dim * sizeof(float), f);
-                tsfi_matmul_q4_k_c(x, xb, emb_buf, 512, dim);
+                fread(emb_buf, 1, dim / 2, f);
+                for (int i = 0; i < dim; i++) {
+                    uint8_t nibble = (emb_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
+                    x[i] = ((float)nibble - 8.0f) * 0.125f;
+                }
                 free(emb_buf);
             } else {
                 for (int i = 0; i < dim; i++) x[i] = (float)((prompt_token_id * 17 + i) % 256) / 255.0f;
             }
         } else {
-            fread(weight, sizeof(float), dim, f);
-            tsfi_matmul_c(x, xb, weight, 512, dim);
+            fread(x, sizeof(float), dim, f);
         }
     } else {
         for (int i = 0; i < dim; i++) {
