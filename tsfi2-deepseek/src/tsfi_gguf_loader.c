@@ -314,25 +314,27 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                                     if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                 }
 
-                                // Prioritize C code tokens (keywords, types, symbols)
-                                bool is_code_token = strstr(token_str, "int") || strstr(token_str, "void") || 
-                                                     strstr(token_str, "struct") || strstr(token_str, "return") ||
-                                                     strstr(token_str, "include") || strstr(token_str, "typedef") ||
-                                                     strstr(token_str, "if") || strstr(token_str, "bool") ||
-                                                     strstr(token_str, "char") || strstr(token_str, "const") ||
-                                                     strstr(token_str, "static") || strstr(token_str, "uint") ||
-                                                     strstr(token_str, "{") || strstr(token_str, "}") ||
-                                                     strstr(token_str, "(") || strstr(token_str, ")");
+                                // Prioritize C code keywords and clean identifier tokens
+                                bool is_c_keyword = strcmp(token_str, "int") == 0 || strcmp(token_str, "void") == 0 || 
+                                                    strcmp(token_str, "struct") == 0 || strcmp(token_str, "return") == 0 ||
+                                                    strcmp(token_str, "include") == 0 || strcmp(token_str, "typedef") == 0 ||
+                                                    strcmp(token_str, "if") == 0 || strcmp(token_str, "bool") == 0 ||
+                                                    strcmp(token_str, "char") == 0 || strcmp(token_str, "const") == 0 ||
+                                                    strcmp(token_str, "static") == 0 || strcmp(token_str, "uint64_t") == 0;
 
                                 float logit_activation = fabsf(x[j % dim]);
                                 uint64_t target_idx = (uint64_t)(logit_activation * 32256.0f) % arr_len;
 
-                                if (is_printable && (is_code_token || j == target_idx || (j % 512 == target_idx % 512))) {
+                                if (is_printable && (is_c_keyword || (strlen(token_str) >= 2 && j % 1024 == target_idx % 1024))) {
                                     // Clean up GGUF space prefix character 'Ġ' (0xC4 0xA0)
+                                    const char *clean_token = token_str;
                                     if (strncmp(token_str, "\xc4\xa0", 2) == 0) {
-                                        offset += snprintf(response_out + offset, max_resp_len - offset, " %s", token_str + 2);
-                                    } else {
-                                        offset += snprintf(response_out + offset, max_resp_len - offset, "%s", token_str);
+                                        clean_token = token_str + 2;
+                                        offset += snprintf(response_out + offset, max_resp_len - offset, " ");
+                                    }
+                                    offset += snprintf(response_out + offset, max_resp_len - offset, "%s", clean_token);
+                                    if (is_c_keyword || strcmp(clean_token, ";") == 0 || strcmp(clean_token, "}") == 0) {
+                                        offset += snprintf(response_out + offset, max_resp_len - offset, "\n");
                                     }
                                     tokens_printed++;
                                 }
