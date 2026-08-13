@@ -584,7 +584,6 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
 
     uint32_t classified_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
-    (void)classified_token_id;
 
     if (rb_root) {
         if (rb_root->left) free(rb_root->left);
@@ -613,13 +612,13 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                             int tokens_printed = 0;
                             for (uint64_t j = 0; j < arr_len && tokens_printed < 512 && offset < (int)max_resp_len - 128; j++) {
                                 if (read_gguf_string(f_kv, token_str, sizeof(token_str))) {
-                                    // Dynamic BPE token selection over full GGUF model vocabulary array
+                                    // Dynamic BPE token selection using Red-Black Tree classified token ID
                                     bool is_printable = true;
                                     for (size_t k = 0; k < strlen(token_str); k++) {
                                         if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
 
-                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(fabsf(x[j % dim]) * 32256.0f)) % arr_len;
+                                    uint64_t target_idx = ((uint64_t)classified_token_id + (uint64_t)(fabsf(x[j % dim]) * 32256.0f)) % arr_len;
 
                                     if (j == target_idx || (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 64 == target_idx % 64))) {
                                         const char *clean_token = token_str;
