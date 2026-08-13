@@ -803,18 +803,26 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             // 3. Rotary Positional Embeddings (RoPE)
             tsfi_rope_c(q, k, gen_step * num_layers + l, head_dim);
 
-            // 4. Scaled Dot-Product Multi-Head Attention (32 Heads x 128 Head Dim)
+            // 4. Scaled Dot-Product Multi-Head Attention (32 Heads x 128 Head Dim) with MANN Cosine-Similarity Memory Read
             for (int h = 0; h < 32; h++) {
                 float score = 0.0f;
+                float q_norm = 0.0f;
+                float k_norm = 0.0f;
                 for (int d_i = 0; d_i < head_dim; d_i++) {
-                    score += q[h * head_dim + d_i] * key_cache[l * dim + h * head_dim + d_i];
+                    float q_val = q[h * head_dim + d_i];
+                    float k_val = key_cache[l * dim + h * head_dim + d_i];
+                    score += q_val * k_val;
+                    q_norm += q_val * q_val;
+                    k_norm += k_val * k_val;
                 }
+                float norm_prod = sqrtf(q_norm * k_norm);
+                if (norm_prod > 1e-6f) score /= norm_prod;
                 if (isnan(score) || isinf(score)) score = 0.0f;
                 att[h] = score / sqrtf((float)head_dim);
             }
             tsfi_softmax_c(att, 32);
 
-            // 5. Apply Attention Scores to Value Vector
+            // 5. Apply Attention Scores to MANN Value Vectors
             for (int h = 0; h < 32; h++) {
                 for (int d_i = 0; d_i < head_dim; d_i++) {
                     xb[h * head_dim + d_i] = att[h] * value_cache[l * dim + h * head_dim + d_i];
