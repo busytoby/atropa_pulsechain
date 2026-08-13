@@ -206,6 +206,25 @@ bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t ma
         }
     }
 
+    // Read Tensor metadata records and insert into 2-3 Tree
+    g_gguf_tensor_count = 0;
+    for (uint64_t i = 0; i < header.tensor_count && g_gguf_tensor_count < MAX_GGUF_TENSORS; i++) {
+        GgufTensorInfo *info = &g_gguf_tensors[g_gguf_tensor_count];
+        if (!read_gguf_string(f, info->name, sizeof(info->name))) break;
+        if (!read_u32(f, &info->n_dims)) break;
+        for (uint32_t d = 0; d < info->n_dims && d < 4; d++) {
+            if (!read_u64(f, &info->dims[d])) break;
+        }
+        if (info->n_dims > 4) {
+            fseek(f, (info->n_dims - 4) * sizeof(uint64_t), SEEK_CUR);
+        }
+        if (!read_u32(f, &info->type)) break;
+        if (!read_u64(f, &info->offset)) break;
+        
+        tsfi_23tree_insert(info);
+        g_gguf_tensor_count++;
+    }
+
     // Read raw weights direct from the tensor block into buffer
     size_t readCount = fread(outWeights, sizeof(float), maxWeightsCount, f);
     fclose(f);
