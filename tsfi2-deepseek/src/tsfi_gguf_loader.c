@@ -166,11 +166,11 @@ void tsfi_rmsnorm_c(float *out, const float *x, const float *weight, int size, f
 }
 
 void tsfi_matmul_c(float *xout, const float *x, const float *w, int n, int d) {
-    // W is d x n, x is n, xout is d
+    // W is d x n matrix, x is input vector of size n, xout is output vector of size d
     for (int i = 0; i < d; i++) {
         float val = 0.0f;
         for (int j = 0; j < n; j++) {
-            val += w[i * n + j] * x[j];
+            val += w[(i * n + j) % d] * x[j];
         }
         xout[i] = val;
     }
