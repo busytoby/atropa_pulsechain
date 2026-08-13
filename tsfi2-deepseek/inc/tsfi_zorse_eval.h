@@ -422,6 +422,7 @@ typedef struct {
 int tsfi_erara_register_title(const char *doi, const char *title, const char *author, uint32_t pub_year, uint32_t total_pages, const char *iiif_manifest_url);
 int tsfi_erara_lookup_title(const char *doi_or_title, vsen_erara_title_record_t *record_out);
 int tsfi_erara_lookup_title_as_of(const char *doi_or_title, uint64_t timestamp, vsen_erara_title_record_t *record_out);
+int tsfi_erara_search_by_author(const char *author_query, vsen_erara_title_record_t *results_out, int max_results, int *count_out);
 
 // VSEn Vaesen Sight Telemetry Tracker
 int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);

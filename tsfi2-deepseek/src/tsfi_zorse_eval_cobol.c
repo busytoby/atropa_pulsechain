@@ -925,6 +925,28 @@ int tsfi_erara_lookup_title_as_of(const char *doi_or_title, uint64_t timestamp, 
     return found ? 0 : -3;
 }
 
+int tsfi_erara_search_by_author(const char *author_query, vsen_erara_title_record_t *results_out, int max_results, int *count_out) {
+    if (!author_query || !results_out || max_results <= 0 || !count_out) return -1;
+
+    *count_out = 0;
+    FILE *fp = fopen("erara_catalog.dat.bin", "rb");
+    if (!fp) return -2;
+
+    vsen_erara_title_mvcc_record record;
+    int count = 0;
+    while (fread(&record, sizeof(record), 1, fp) == 1) {
+        if (strstr(record.data.author, author_query) != NULL && !record.mvcc.is_deleted) {
+            results_out[count] = record.data;
+            count++;
+            if (count >= max_results) break;
+        }
+    }
+    fclose(fp);
+
+    *count_out = count;
+    return (count > 0) ? 0 : -3;
+}
+
 int tsfi_vsen_vaesen_audit_transaction(const char *cics_trans_id, const char *entity_name, int *is_allowed_out) {
     if (!cics_trans_id || !entity_name || !is_allowed_out) return -1;
     
