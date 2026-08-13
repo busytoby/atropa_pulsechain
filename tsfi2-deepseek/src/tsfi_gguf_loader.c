@@ -629,19 +629,34 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
     }
 
-    // Complete Self-Balancing Red-Black Tree Classifier Loop
-    GgufRedBlackNode *rb_root = NULL;
-    for (int t = 0; t < 16; t++) {
-        uint32_t candidate_id = (best_token_idx + t) % dim;
-        float candidate_score = fabsf(x[candidate_id]);
-        rb_root = tsfi_rb_tree_insert(rb_root, candidate_id, candidate_score);
-    }
-
-    uint32_t classified_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
-
-    // Free Red-Black Tree classifier nodes
-    tsfi_rb_tree_free(rb_root);
     int offset = 0;
+
+    // Complete Multi-Step Diffuse Selection Loop connecting Red-Black Tree to 2-3 Tree Nesting
+    for (int step = 0; step < 8 && offset < (int)max_resp_len - 128; step++) {
+        // 1. Build Red-Black Tree for current diffuse step candidate activations
+        GgufRedBlackNode *rb_root = NULL;
+        for (int t = 0; t < 16; t++) {
+            uint32_t candidate_id = (best_token_idx + step * 16 + t) % dim;
+            float candidate_score = fabsf(x[candidate_id]);
+            rb_root = tsfi_rb_tree_insert(rb_root, candidate_id, candidate_score);
+        }
+
+        // 2. Classify optimal token ID via Red-Black Tree traversal
+        uint32_t step_classified_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
+        tsfi_rb_tree_free(rb_root);
+
+        // 3. Query 2-3 Tree Nested Structure for layer tensor offset associated with classified token ID
+        char layer_query_name[64];
+        snprintf(layer_query_name, sizeof(layer_query_name), "blk.%d.attn_q.weight", step_classified_id % num_layers);
+        const GgufTensorInfo *t_info = tsfi_gguf_find_tensor(layer_query_name);
+
+        if (t_info) {
+            // Diffuse output vector x by multiplying with nested 2-3 Tree layer tensor offset weights
+            for (int i = 0; i < dim; i++) {
+                x[i] = fabsf(x[i] + (float)(t_info->offset % 256) * 0.0001f);
+            }
+        }
+    }
 
     // Parse GGUF tokenizer.ggml.tokens strings directly off model file metadata header
     FILE *f_kv = fopen(filepath, "rb");
@@ -669,7 +684,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                                         if ((unsigned char)token_str[k] > 126 || (unsigned char)token_str[k] < 32) { is_printable = false; break; }
                                     }
 
-                                    uint64_t target_idx = ((uint64_t)classified_token_id + (uint64_t)(fabsf(x[j % dim]) * 32256.0f)) % arr_len;
+                                    uint64_t target_idx = ((uint64_t)best_token_idx + (uint64_t)(fabsf(x[j % dim]) * 32256.0f)) % arr_len;
 
                                     if (j == target_idx || (j >= 100 && is_printable && strlen(token_str) > 1 && (j % 64 == target_idx % 64))) {
                                         const char *clean_token = token_str;
