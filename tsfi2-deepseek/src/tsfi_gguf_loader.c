@@ -646,6 +646,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     // Pure C Greedy Longest-Subword BPE Tokenizer Algorithm over GGUF vocabulary table
     uint32_t prompt_tokens[64];
     int num_prompt_tokens = 0;
+    prompt_tokens[num_prompt_tokens++] = 100000; // DeepSeek-Coder BOS token boundary
     size_t prompt_len = strlen(prompt);
     if (prompt_len == 0) prompt_len = 1;
 
