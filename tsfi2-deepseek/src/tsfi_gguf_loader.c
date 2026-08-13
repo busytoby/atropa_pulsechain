@@ -905,8 +905,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         if (row_buf) {
             float max_val = -1e9f;
             int best_vocab_idx = 0;
-            // Iterate across 4096 vocabulary candidate rows in lm_head matrix projection
-            for (int v_idx = 0; v_idx < 4096; v_idx++) {
+            // Iterate across all 32,256 GGUF vocabulary rows in lm_head matrix projection
+            uint32_t target_vocab = vocab_size > 0 ? vocab_size : 32256;
+            for (uint32_t v_idx = 0; v_idx < target_vocab; v_idx++) {
                 if (fread(row_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
                     float dot = 0.0f;
                     for (int i = 0; i < dim; i += 2) {
@@ -916,7 +917,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     }
                     if (dot > max_val) {
                         max_val = dot;
-                        best_vocab_idx = v_idx;
+                        best_vocab_idx = (int)v_idx;
                     }
                 } else { break; }
             }
