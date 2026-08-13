@@ -418,11 +418,28 @@ typedef struct {
     vsen_erara_title_record_t data;
 } vsen_erara_title_mvcc_record;
 
-// e-rara.ch Title Lookup & Registration APIs
+// e-rara.ch Page Text Analysis Record Structure (.dat.bin)
+typedef struct {
+    char doi[128];               // e.g. "10.3931/e-rara-10100"
+    uint32_t page_num;           // Page number (e.g. 1)
+    uint32_t word_count;         // Total word count on page
+    uint32_t character_count;    // Total character count on page
+    char first_line[256];        // Incipit / first line of text
+    char page_text[1024];        // Full text excerpt of the page
+} vsen_erara_page_text_record_t;
+
+typedef struct {
+    vsen_mvcc_header_t mvcc;
+    vsen_erara_page_text_record_t data;
+} vsen_erara_page_text_mvcc_record;
+
+// e-rara.ch Title & Page Text Analysis APIs
 int tsfi_erara_register_title(const char *doi, const char *title, const char *author, uint32_t pub_year, uint32_t total_pages, const char *iiif_manifest_url);
 int tsfi_erara_lookup_title(const char *doi_or_title, vsen_erara_title_record_t *record_out);
 int tsfi_erara_lookup_title_as_of(const char *doi_or_title, uint64_t timestamp, vsen_erara_title_record_t *record_out);
 int tsfi_erara_search_by_author(const char *author_query, vsen_erara_title_record_t *results_out, int max_results, int *count_out);
+int tsfi_erara_register_page_text(const char *doi, uint32_t page_num, const char *page_text);
+int tsfi_erara_analyze_page_text(const char *doi, uint32_t page_num, vsen_erara_page_text_record_t *record_out);
 
 // VSEn Vaesen Sight Telemetry Tracker
 int tsfi_vsen_vaesen_record_sight(const char *entity_name, const char *location, int fear_factor);
