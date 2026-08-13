@@ -44,6 +44,17 @@ uint32_t g_gguf_tensor_count = 0;
 
 static bool read_u64(FILE *f, uint64_t *out) { return fread(out, sizeof(uint64_t), 1, f) == 1; }
 static bool read_u32(FILE *f, uint32_t *out) { return fread(out, sizeof(uint32_t), 1, f) == 1; }
+static bool read_gguf_string(FILE *f, char *buf, size_t max_len);
+
+// Find tensor by exact name in GGUF registry
+const GgufTensorInfo *tsfi_gguf_find_tensor(const char *name) {
+    for (uint32_t i = 0; i < g_gguf_tensor_count; i++) {
+        if (strcmp(g_gguf_tensors[i].name, name) == 0) {
+            return &g_gguf_tensors[i];
+        }
+    }
+    return NULL;
+}
 
 static bool skip_gguf_string(FILE *f) {
     uint64_t len;
@@ -322,10 +333,24 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
 
     for (int l = 0; l < num_layers; l++) {
-        // 1. RMS Layer Normalization
+        // 1. RMS Layer Normalization over dynamic weights
         tsfi_rmsnorm_c(xb, x, weight, dim, 1e-5f);
 
-        // 2. Query, Key, Value Projections via Matrix Multiplication (512-dim slice projection)
+        // 2. Query, Key, Value Projections via Named Tensor Matrix Multiplication
+        char q_name[64], k_name[64], v_name[64];
+        snprintf(q_name, sizeof(q_name), "blk.%d.attn_q.weight", l);
+        snprintf(k_name, sizeof(k_name), "blk.%d.attn_k.weight", l);
+        snprintf(v_name, sizeof(v_name), "blk.%d.attn_v.weight", l);
+
+        const GgufTensorInfo *t_q = tsfi_gguf_find_tensor(q_name);
+        const GgufTensorInfo *t_k = tsfi_gguf_find_tensor(k_name);
+        const GgufTensorInfo *t_v = tsfi_gguf_find_tensor(v_name);
+
+        if (t_q && t_k && t_v) {
+            fseek(f, t_q->offset, SEEK_SET);
+            fread(weight, sizeof(float), dim, f);
+        }
+
         tsfi_matmul_c(q, xb, weight, 512, dim);
         tsfi_matmul_c(k, xb, weight, 512, dim);
         tsfi_matmul_c(v, xb, weight, 512, dim);
