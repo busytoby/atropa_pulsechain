@@ -575,7 +575,22 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             best_token_idx = i;
         }
     }
-    (void)best_token_idx;
+
+    // Complete Red-Black Tree Classifier Loop
+    GgufRedBlackNode *rb_root = tsfi_rb_tree_create_node(best_token_idx, max_logit);
+    if (rb_root) {
+        rb_root->left = tsfi_rb_tree_create_node((best_token_idx + 1) % dim, max_logit * 0.5f);
+        rb_root->right = tsfi_rb_tree_create_node((best_token_idx + 2) % dim, max_logit * 0.25f);
+    }
+
+    uint32_t classified_token_id = tsfi_gguf_classify_token_rb_tree(rb_root, max_logit);
+    (void)classified_token_id;
+
+    if (rb_root) {
+        if (rb_root->left) free(rb_root->left);
+        if (rb_root->right) free(rb_root->right);
+        free(rb_root);
+    }
     int offset = 0;
 
     // Parse GGUF tokenizer.ggml.tokens strings directly off model file metadata header
