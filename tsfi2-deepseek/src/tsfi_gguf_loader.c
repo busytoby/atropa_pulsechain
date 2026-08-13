@@ -209,13 +209,15 @@ void tsfi_matmul_q4_k_c(float *xout, const float *x, const uint8_t *q4_w, int n,
             float scale = (float)block->d * 0.001f;
             if (scale == 0.0f) scale = 1.0f;
 
-            // Safe aligned nibble unpacking with bounds padding
+            // Safe aligned nibble unpacking with underrun & overrun boundary clamps
             for (int j = 0; j < 256 && (b * 256 + j) < n; j++) {
                 int nibble_idx = j / 2;
-                if (nibble_idx >= 128) break;
+                if (nibble_idx < 0 || nibble_idx >= 128) break;
+                int x_idx = b * 256 + j;
+                if (x_idx < 0 || x_idx >= n) break;
                 uint8_t q_val = (block->qs[nibble_idx] >> ((j % 2) * 4)) & 0x0F;
                 float weight_val = ((float)q_val - 8.0f) * scale;
-                val += weight_val * x[b * 256 + j];
+                val += weight_val * x[x_idx];
             }
         }
         xout[i] = val;
