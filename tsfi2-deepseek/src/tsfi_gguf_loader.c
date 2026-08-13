@@ -753,6 +753,10 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         for (int i = 0; i < dim; i++) x[i] = xb[i];
     }
 
+    // Execute STANAG VFIO zero-copy DMA memory bridge to sync KV-Cache into MANN ring buffers
+    extern bool tsfi_stanag_vfio_nic_dma_bridge(uint32_t pci_slot, void *target_kv_cache, size_t len);
+    tsfi_stanag_vfio_nic_dma_bridge(1, key_cache, layers * dim * sizeof(float));
+
     free(key_cache); free(value_cache); free(k); free(v); free(att);
 
     for (int i = 0; i < dim; i++) {
