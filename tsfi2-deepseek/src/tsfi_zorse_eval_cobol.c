@@ -1222,21 +1222,23 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
             strncpy(line_buf, line_start, line_len);
             line_buf[line_len] = '\0';
 
-            // Identify functions
-            if (strstr(line_buf, "int main") || strstr(line_buf, "tsfi_") || (strstr(line_buf, "(") && strstr(line_buf, ")") && strstr(line_buf, "{"))) {
-                if (func_cnt < 8 && !strstr(line_buf, ";")) {
-                    char func_name[128] = {0};
-                    snprintf(func_name, sizeof(func_name), "      [%d] %s\n", ++func_cnt, line_buf);
-                    strncat(function_list, func_name, sizeof(function_list) - strlen(function_list) - 1);
+            // Identify true C functions (must start with return type and contain '(' and ')' and not be a comment or header)
+            if (!strstr(line_buf, "//") && !strstr(line_buf, "#include")) {
+                if (strstr(line_buf, "int main") || strstr(line_buf, "int tsfi_") || strstr(line_buf, "void tsfi_")) {
+                    if (func_cnt < 8) {
+                        char func_name[128] = {0};
+                        snprintf(func_name, sizeof(func_name), "      [%d] %s\n", ++func_cnt, line_buf);
+                        strncat(function_list, func_name, sizeof(function_list) - strlen(function_list) - 1);
+                    }
                 }
-            }
 
-            // Identify struct definitions
-            if (strstr(line_buf, "typedef struct") || strstr(line_buf, "struct ")) {
-                if (struct_cnt < 4) {
-                    char struct_name[128] = {0};
-                    snprintf(struct_name, sizeof(struct_name), "      [%d] %s\n", ++struct_cnt, line_buf);
-                    strncat(struct_list, struct_name, sizeof(struct_list) - strlen(struct_list) - 1);
+                // Identify true struct type definitions
+                if (strstr(line_buf, "vsen_") || strstr(line_buf, "zorse_") || strstr(line_buf, "typedef struct")) {
+                    if (struct_cnt < 6 && strstr(line_buf, "_t")) {
+                        char struct_name[128] = {0};
+                        snprintf(struct_name, sizeof(struct_name), "      [%d] %s\n", ++struct_cnt, line_buf);
+                        strncat(struct_list, struct_name, sizeof(struct_list) - strlen(struct_list) - 1);
+                    }
                 }
             }
         }
