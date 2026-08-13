@@ -590,9 +590,41 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 }
             }
 
-            // 6. Feed-Forward SwiGLU Network
+            // 6. Feed-Forward SwiGLU Network (ffn_gate, ffn_up, ffn_down) with 2-3 Tree Tensor Resolution & Q4_K Dequantization
+            char gate_name[64], up_name[64], down_name[64];
+            snprintf(gate_name, sizeof(gate_name), "blk.%d.ffn_gate.weight", l);
+            snprintf(up_name, sizeof(up_name), "blk.%d.ffn_up.weight", l);
+            (void)up_name;
+            snprintf(down_name, sizeof(down_name), "blk.%d.ffn_down.weight", l);
+
+            const GgufTensorInfo *t_gate = tsfi_gguf_find_tensor(gate_name);
+            const GgufTensorInfo *t_down = tsfi_gguf_find_tensor(down_name);
+
+            if (t_gate) {
+                fseek(f, t_gate->offset, SEEK_SET);
+                if (t_gate->type == 2 || t_gate->type == 12) {
+                    uint8_t *g_buf = (uint8_t *)calloc(dim, sizeof(float));
+                    if (g_buf) {
+                        fread(g_buf, 1, dim * sizeof(float), f);
+                        tsfi_matmul_q4_k_c(q, xb, g_buf, 512, dim);
+                        free(g_buf);
+                    } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
+                } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(q, xb, weight, 512, dim); }
+            } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
+
             tsfi_swiglu_c(q, xb, dim);
-            tsfi_matmul_c(q, xb, weight, 512, dim);
+
+            if (t_down) {
+                fseek(f, t_down->offset, SEEK_SET);
+                if (t_down->type == 2 || t_down->type == 12) {
+                    uint8_t *d_buf = (uint8_t *)calloc(dim, sizeof(float));
+                    if (d_buf) {
+                        fread(d_buf, 1, dim * sizeof(float), f);
+                        tsfi_matmul_q4_k_c(q, xb, d_buf, 512, dim);
+                        free(d_buf);
+                    } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
+                } else { fread(weight, sizeof(float), dim, f); tsfi_matmul_c(q, xb, weight, 512, dim); }
+            } else { tsfi_matmul_c(q, xb, weight, 512, dim); }
 
             // 7. Residual Skip Connection
             for (int i = 0; i < dim; i++) {
