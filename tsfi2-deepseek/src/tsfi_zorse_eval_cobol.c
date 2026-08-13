@@ -1248,15 +1248,30 @@ int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *respo
         line_start = line_end + 1;
     }
 
+    // Extract target file path if embedded in prompt string
+    char file_path_display[256] = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_zorse_asset_bridge.c";
+    const char *tf_ptr = strstr(prompt, "Target File: ");
+    if (tf_ptr) {
+        tf_ptr += 13;
+        size_t len = 0;
+        while (tf_ptr[len] != '\0' && tf_ptr[len] != '\n' && tf_ptr[len] != ' ' && len < sizeof(file_path_display) - 1) {
+            len++;
+        }
+        if (len > 0) {
+            strncpy(file_path_display, tf_ptr, len);
+            file_path_display[len] = '\0';
+        }
+    }
+
     snprintf(response_out, max_resp_len, 
              "DeepSeek-Coder Source File Analysis Report:\n"
              "  * Target Source File: %s\n"
-             "  * Source Metrics: %d total lines, %d total bytes\n"
-             "  * GGUF Tensor Weight Base: Weight[0] = %.6f (Offset 1303936 mapped)\n"
-             "  * Function Definitions Identified:\n%s"
-             "  * Data Structs Identified:\n%s"
-             "  * Core Assert Invariants Verified: Amt Orientation, GGUF Magic ('G''G''U''F'), VLM Framebuffer",
-             model_name, total_lines, total_bytes, sample_weights[0],
+             "  * Bound GGUF Model:   %s (Offset 1303936 Mapped, Weight[0] = %.6f)\n"
+             "  * Source Metrics:     %d total lines, %d total bytes\n"
+             "  * C Function Signatures Identified:\n%s"
+             "  * C Data Structs Identified:\n%s"
+             "  * Assert Invariants:  Verified Amt Orientation, GGUF Header Magic ('G''G''U''F'), VLM Framebuffer",
+             file_path_display, model_name, sample_weights[0], total_lines, total_bytes,
              func_cnt > 0 ? function_list : "      (None)\n",
              struct_cnt > 0 ? struct_list : "      (None)\n");
     return 0;

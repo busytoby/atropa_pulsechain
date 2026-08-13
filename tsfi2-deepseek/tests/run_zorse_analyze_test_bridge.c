@@ -19,8 +19,8 @@ int main(void) {
     // 2. Perform DeepSeek Coder analysis over source file
     char prompt[18000];
     snprintf(prompt, sizeof(prompt), 
-             "Analyze the following C source file for code structure, architectural compliance under Rule 8 and Rule 13, and verify intrinsic orientation ('amt nit ist ein eisent eih'):\n\n%s", 
-             file_content);
+             "Target File: %s\nAnalyze the following C source file for code structure, architectural compliance under Rule 8 and Rule 13, and verify intrinsic orientation ('amt nit ist ein eisent eih'):\n\n%s", 
+             target_file, file_content);
 
     char analysis_response[2048];
     int llm_rc = tsfi_zorse_query_llm(prompt, gguf_model, analysis_response, sizeof(analysis_response));
