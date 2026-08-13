@@ -602,9 +602,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         return false;
     }
 
-    // Dynamic Multi-Token KV-Cache Context Sequence Prefill Engine
-    float *key_cache   = (float *)calloc(layers * dim, sizeof(float));
-    float *value_cache = (float *)calloc(layers * dim, sizeof(float));
+    // MANN Memory Ring Buffer Context State (Persists across evaluations)
+    static float s_mann_key_cache[32 * 4096];
+    static float s_mann_value_cache[32 * 4096];
+    float *key_cache   = s_mann_key_cache;
+    float *value_cache = s_mann_value_cache;
 
     int prefill_steps = (int)(prompt_len < 16 ? prompt_len : 16);
     for (int gen_step = 0; gen_step < prefill_steps; gen_step++) {
@@ -757,7 +759,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     extern bool tsfi_stanag_vfio_nic_dma_bridge(uint32_t pci_slot, void *target_kv_cache, size_t len);
     tsfi_stanag_vfio_nic_dma_bridge(1, key_cache, layers * dim * sizeof(float));
 
-    free(key_cache); free(value_cache); free(k); free(v); free(att);
+    free(k); free(v); free(att);
 
     for (int i = 0; i < dim; i++) {
         if (isnan(x[i]) || isinf(x[i])) x[i] = 0.01f;
