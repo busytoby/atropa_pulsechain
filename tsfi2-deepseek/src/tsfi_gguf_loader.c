@@ -824,10 +824,17 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         float top_p_threshold = 0.90f;
         float cum_score = 0.0f;
 
+        // Chatrath Bias Mitigation Weight Projection over logit candidate array
+        float cand_logits[32];
+        for (int t = 0; t < 32; t++) cand_logits[t] = fabsf(x[t % dim]);
+        tsfi_zorse_chatrath_bias_mitigation(cand_logits, 32, 2.0f);
+        float current_entropy = tsfi_zorse_risk_eval_entropy(cand_logits, 32);
+        (void)current_entropy;
+
         // Temperature-Scaled Top-P Nucleus Red-Black Tree Classifier Sampling
         for (int t = 0; t < 32 && cum_score < top_p_threshold; t++) {
             uint32_t cand_id = ((uint32_t)best_token_idx + gen_step * 19 + t * 7) % (vocab_size > 0 ? vocab_size : 32256);
-            float raw_logit = fabsf(x[t % dim]);
+            float raw_logit = cand_logits[t];
             float scaled_score = (raw_logit / temperature) + ((float)(cand_id % 2048) / 2048.0f) * 0.001f;
             cum_score += raw_logit;
             rb_root = tsfi_rb_tree_insert(rb_root, cand_id, scaled_score);
