@@ -7212,4 +7212,31 @@ bool tsfi_openclaw_eval_ephemeral_cache(
     tsfi_openclaw_ephemeral_cache_state_t *cache_out
 );
 
+// STANAG 5066 / 4538 VFIO Direct DMA Hardware NIC Transport for OpenClaw Dual-Stream IPC
+typedef struct {
+    uint32_t pci_device_id;
+    uint32_t vfio_group_fd;
+    uint32_t dma_map_pages;
+    uint64_t stanag_frame_sequence;
+    uint64_t physical_dma_addr;
+    float wire_transfer_latency_ns;
+    bool stanag_crc32_verified;
+    bool kernel_bypass_active;
+    bool vfio_iommu_bound;
+} tsfi_stanag_vfio_nic_state_t;
+
+bool tsfi_stanag_vfio_nic_init(
+    uint32_t pci_slot,
+    uint32_t dma_ring_size,
+    tsfi_stanag_vfio_nic_state_t *nic_out
+);
+
+bool tsfi_stanag_vfio_nic_stream_dispatch(
+    tsfi_stanag_vfio_nic_state_t *nic,
+    uint32_t stream_id,
+    const void *frame_data,
+    size_t frame_len,
+    tsfi_openclaw_dual_stream_ipc_t *ipc_stream
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
