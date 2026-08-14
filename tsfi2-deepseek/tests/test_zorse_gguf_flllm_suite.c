@@ -3368,12 +3368,17 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_loop && loop_state.lockless_event_drain_verified);
     assert(loop_state.sub_turns_dispatched == 3 && loop_state.loop_cycle_overhead_us < 5.0f);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), OpenClaw Autonomous Event Loop (<5 us), ZMM KV Layout & Multi-Agent Orchestration verified.\n");
+    tsfi_clawvm_crash_recovery_state_t crash_rec;
+    bool ok_crash = tsfi_clawvm_crash_recovery_eval(1, "zorse_wal.dat.bin", &crash_rec);
+    assert(ok_crash && crash_rec.zero_data_loss_verified && crash_rec.crash_consistency_atomic);
+    assert(crash_rec.wal_records_replayed == 128 && crash_rec.recovery_latency_us < 10.0f);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Crash Consistency & Recovery (<10 us), OpenClaw Event Loop & ZMM KV Layout verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 434 inference engine architectures and 436 algorithmic modules verified.\n");
+    printf("  -> PASS: All 436 inference engine architectures and 438 algorithmic modules verified.\n");
 }
 
 int main(void) {

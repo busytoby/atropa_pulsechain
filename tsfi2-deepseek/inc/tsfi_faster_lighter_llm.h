@@ -7369,4 +7369,20 @@ bool tsfi_openclaw_event_loop_step(
     tsfi_openclaw_event_loop_state_t *loop_out
 );
 
+// ClawVM (EuroMLSys 2026) Crash-Consistent Page Fault Handler & WAL Recovery Engine (Section 3.6, 5.3)
+typedef struct {
+    uint32_t simulated_crash_turn;
+    uint32_t wal_records_replayed;
+    uint32_t page_state_recovered_count;
+    float recovery_latency_us;
+    bool zero_data_loss_verified;
+    bool crash_consistency_atomic;
+} tsfi_clawvm_crash_recovery_state_t;
+
+bool tsfi_clawvm_crash_recovery_eval(
+    uint32_t target_session_id,
+    const char *dat_bin_wal_path,
+    tsfi_clawvm_crash_recovery_state_t *recovery_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
