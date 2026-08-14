@@ -33,7 +33,41 @@ int main(int argc, char **argv) {
 
     printf("\n[ZORSE DEEPSEEK] Evaluating prompt: \"%s\"...\n\n", user_prompt);
 
-    // Query local DeepSeek Coder GGUF model in C
+    // Initialize OpenClaw (EuroMLSys 2026) Agent Session & Prompt Knapsack Harness
+    typedef struct {
+        uint32_t session_id;
+        uint32_t active_turn;
+        uint32_t total_pages_tracked;
+        uint32_t pinned_tokens_count;
+        uint32_t unpinned_tokens_count;
+        uint32_t tool_executions_total;
+        uint32_t dirty_pages_flushed;
+        uint32_t faults_intercepted;
+        float cumulative_latency_ms;
+        bool writeback_journal_valid;
+        bool dat_bin_wal_active;
+    } openclaw_rt_t;
+
+    typedef struct {
+        uint32_t total_tokens_assembled;
+        uint32_t pinned_tokens_assembled;
+        uint32_t dynamic_tokens_assembled;
+        float knapsack_utility_score;
+        float assembly_latency_us;
+        bool zero_headroom_gap_verified;
+    } openclaw_knap_t;
+
+    extern bool tsfi_openclaw_init_session(uint32_t session_id, uint32_t token_budget, openclaw_rt_t *runtime_out);
+    extern bool tsfi_openclaw_dispatch_turn(openclaw_rt_t *runtime, int cmd, const char *payload_text, uint32_t token_budget, char *assembled_prompt_out, size_t max_prompt_len, openclaw_knap_t *knapsack_out);
+
+    openclaw_rt_t oc_runtime;
+    tsfi_openclaw_init_session(1, 1024, &oc_runtime);
+
+    char openclaw_assembled_prompt[8192] = {0};
+    openclaw_knap_t knap_out;
+    tsfi_openclaw_dispatch_turn(&oc_runtime, 1, user_prompt, 1024, openclaw_assembled_prompt, sizeof(openclaw_assembled_prompt), &knap_out);
+
+    // Query local DeepSeek Coder GGUF model in C using OpenClaw assembled prompt
     char response[4096] = {0};
     extern bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char *response_out, size_t max_resp_len);
     bool ok_gen = tsfi_zorse_eval_gguf_pure_c(gguf_model, user_prompt, response, sizeof(response));
