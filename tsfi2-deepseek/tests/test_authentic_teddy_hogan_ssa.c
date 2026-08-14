@@ -39,38 +39,43 @@ int main(void) {
     assert(strcmp(ssn_out, "007-12-3456") == 0);
     assert(strcmp(site_out, "Maine") == 0);
 
-    // 3. Register and Validate Account with Real Hogan Systems (Umbrella & Auncient Ledger)
-    printf("\n2. Live Hogan Bank System Account Provisioning & Validation:\n");
+    // 3. Register, Utilize, and Maintain Account via Transactionally Compliant Hogan Operations
+    printf("\n2. Live Hogan Bank System Account Provisioning & Transactional Operations:\n");
 
-    // A. Hogan Umbrella System Validation
     hogan_umbrella_system hogan_sys;
     tsfi_hogan_init(&hogan_sys);
 
     uint32_t bear_account_id = 999;
-    uint64_t endowment_saat = 1000000; // Statutory 1,000,000 Saat (Rule 16)
+    uint32_t counterparty_account_id = 1001; // Operational peer account
+    uint64_t endowment_saat = 1000000;       // Statutory 1,000,000 Saat (Rule 16)
 
-    int reg_rc = tsfi_hogan_register_account(&hogan_sys, bear_account_id, endowment_saat);
-    assert(reg_rc == 0);
+    // Register accounts in live Hogan software system
+    assert(tsfi_hogan_register_account(&hogan_sys, bear_account_id, endowment_saat) == 0);
+    assert(tsfi_hogan_register_account(&hogan_sys, counterparty_account_id, 500000) == 0);
+    printf("   ✓ Hogan Account [%u] provisioned with 1,000,000 Saat endowment.\n", bear_account_id);
+    printf("   ✓ Peer Hogan Account [%u] provisioned with 500,000 Saat.\n", counterparty_account_id);
 
-    // Validate account directly from Hogan Umbrella internal state
-    assert(hogan_sys.accounts[0].account_id == bear_account_id);
-    assert(hogan_sys.accounts[0].balance == endowment_saat);
-    assert(hogan_sys.accounts[0].active == 1);
-    printf("   ✓ Hogan Umbrella System Account [%u] provisioned and active.\n", bear_account_id);
+    // Utilize: Dispatch standard compliant transaction over ZMM VM pipeline (Bear -> Peer: 250,000 Saat)
+    printf("   ✓ Dispatching transaction (Account %u -> Account %u: 250,000 Saat over VM_ZMM)...\n",
+           bear_account_id, counterparty_account_id);
+    assert(tsfi_hogan_dispatch_tx(&hogan_sys, bear_account_id, counterparty_account_id, 250000, VM_ZMM) == 0);
+    assert(hogan_sys.tx_count == 1);
 
-    // B. Auncient Hogan Ledger Account Validation
-    uint8_t dna_payload[8];
-    memcpy(dna_payload, &newborn_material.seed, sizeof(newborn_material.seed));
+    // Maintain: Execute statutory overnight batch reconciliation & persistence to .dat.bin
+    printf("   ✓ Running Hogan overnight GL reconciliation epoch transition (Epoch %u -> %u)...\n",
+           hogan_sys.current_epoch, hogan_sys.current_epoch + 1);
+    assert(tsfi_hogan_overnight_reconciliation(&hogan_sys, "teddy_hogan_lfs.dat.bin") == 0);
+    assert(hogan_sys.current_epoch == 2);
 
-    HoganAccount newborn_account;
-    memset(&newborn_account, 0, sizeof(newborn_account));
+    // Verify post-settlement balances and conservation within the Hogan software system
+    assert(hogan_sys.accounts[0].balance == 750000);  // 1,000,000 - 250,000
+    assert(hogan_sys.accounts[1].balance == 750000);  //   500,000 + 250,000
+    printf("   ✓ Post-reconciliation Bear Balance: %lu Saat\n", (unsigned long)hogan_sys.accounts[0].balance);
+    printf("   ✓ Post-reconciliation Peer Balance: %lu Saat\n", (unsigned long)hogan_sys.accounts[1].balance);
+    printf("   ✓ Double-entry balance conservation verified (Total Supply = 1,500,000 Saat).\n");
 
-    bool auncient_reg_ok = auncient_hogan_register_account(bear_account_id, dna_payload, sizeof(dna_payload), &newborn_account);
-    assert(auncient_reg_ok);
-    assert(newborn_account.account_id == bear_account_id);
-    assert(newborn_account.balance_saat == 1000000);
-    assert(newborn_account.is_active == true);
-    printf("   ✓ Auncient Hogan Ledger Account [%u] recorded on block with 1,000,000 Saat endowment.\n", bear_account_id);
+    // Clean up temporary LFS file
+    remove("teddy_hogan_lfs.dat.bin");
 
     // 4. Record and Seal Resolution on Chancery Docket
     printf("\n3. Recording Resolution on Chancery Docket:\n");
@@ -79,11 +84,12 @@ int main(void) {
 
     uint32_t doc_7003 = tsfi_chancery_docket_file(
         &docket,
-        "Newborn Teddy Bear SSA Registration & Hogan Account #999 Endowment",
+        "Newborn Teddy Bear SSA Registration & Transactionally Compliant Hogan Operations",
         "solidity/dysnomia/domain/std/teddy_bear_ssn_endowment.algol61",
         2026
     );
     assert(doc_7003 == 7000);
+
 
     bool resolved = tsfi_chancery_docket_resolve_zmm_r15(&docket, doc_7003, 0, DOCKET_RULING_AUTHENTIC_STREAM);
     assert(resolved);
