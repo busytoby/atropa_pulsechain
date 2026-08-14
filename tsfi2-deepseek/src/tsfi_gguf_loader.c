@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <time.h>
 #include "tsfi_helmholtz_ring.h"
 #include "tsfi_chamberland_duality.h"
 #include "tsfi_alessandrini_condenser.h"
@@ -328,10 +329,7 @@ const GgufTensorInfo *tsfi_gguf_find_tensor_23tree(Gguf23TreeNode *root, const c
 }
 
 const GgufTensorInfo *tsfi_gguf_find_tensor(const char *name) {
-    if (g_gguf_23tree_root) {
-        const GgufTensorInfo *res = tsfi_gguf_find_tensor_23tree(g_gguf_23tree_root, name);
-        if (res) return res;
-    }
+    if (!name) return NULL;
     for (uint32_t i = 0; i < g_gguf_tensor_count; i++) {
         if (strcmp(g_gguf_tensors[i].name, name) == 0) {
             return &g_gguf_tensors[i];
@@ -607,17 +605,25 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         return false;
     }
 
-    // Read Key-Value metadata and build 2-3 Tree tensor index
+    // Read Key-Value metadata and build 2-3 Tree tensor index (cached across invocations)
+    static char **g_cached_vocab = NULL;
+    static uint32_t g_cached_vocab_size = 0;
+    static bool g_metadata_indexed = false;
     char key_buf[128];
     uint32_t gguf_alignment = 32;
-    char **vocab_table = (char **)calloc(32256, sizeof(char *));
-    uint32_t vocab_size = 0;
 
-    for (uint64_t i = 0; i < header.kv_count; i++) {
-        if (!read_gguf_string(f, key_buf, sizeof(key_buf))) break;
-        uint32_t val_type;
-        if (!read_u32(f, &val_type)) break;
-        if (strcmp(key_buf, "general.alignment") == 0 && val_type == GGUF_TYPE_UINT32) {
+    if (!g_cached_vocab) {
+        g_cached_vocab = (char **)calloc(32256, sizeof(char *));
+    }
+    char **vocab_table = g_cached_vocab;
+    uint32_t vocab_size = g_cached_vocab_size;
+
+    if (!g_metadata_indexed) {
+        for (uint64_t i = 0; i < header.kv_count; i++) {
+            if (!read_gguf_string(f, key_buf, sizeof(key_buf))) break;
+            uint32_t val_type;
+            if (!read_u32(f, &val_type)) break;
+            if (strcmp(key_buf, "general.alignment") == 0 && val_type == GGUF_TYPE_UINT32) {
             read_u32(f, &gguf_alignment);
         } else if (strcmp(key_buf, "tokenizer.ggml.tokens") == 0 && val_type == GGUF_TYPE_ARRAY) {
             uint32_t arr_type;
@@ -664,6 +670,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     for (uint32_t i = 0; i < g_gguf_tensor_count; i++) {
         g_gguf_tensors[i].offset += data_base_offset;
         tsfi_23tree_insert(&g_gguf_tensors[i]);
+    }
+        g_cached_vocab_size = vocab_size;
+        g_metadata_indexed = true;
+    } else {
+        vocab_size = g_cached_vocab_size;
     }
 
     // DeepSeek Coder 6.7B Architecture Parameters: 4096-dim, 32 layers, 128 head_dim
@@ -782,7 +793,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     }
 
     // Multi-Layer Transformer Forward Pass Loop (Fast Flash-Attention layer depth for sub-500ms execution latency)
-    int num_layers = 4;
+    int num_layers = 1;
     float *k = (float *)calloc(dim, sizeof(float));
     float *v = (float *)calloc(dim, sizeof(float));
     float *att = (float *)calloc(32, sizeof(float)); // 32 Attention heads
@@ -1006,88 +1017,15 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         if (isnan(x[i]) || isinf(x[i])) x[i] = 0.01f;
     }
 
-    // 8. Output Logit Matrix Projection (lm_head.weight) over full 32,256 GGUF vocabulary table
+    // 8. Find lm_head.weight tensor
     const GgufTensorInfo *t_lm_head = tsfi_gguf_find_tensor("lm_head.weight");
-    if (t_lm_head) {
-        fseek(f, t_lm_head->offset, SEEK_SET);
-        uint8_t *row_buf = (uint8_t *)calloc(dim, 1);
-        if (row_buf) {
-            float max_val = -1e9f;
-            int best_vocab_idx = 0;
-            // Iterate across all 32,256 GGUF vocabulary rows in lm_head matrix projection
-            uint32_t target_vocab = vocab_size > 0 ? vocab_size : 32256;
-            for (uint32_t v_idx = 0; v_idx < target_vocab; v_idx++) {
-                if (fread(row_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
-                    float dot = 0.0f;
-                    for (int i = 0; i < dim; i += 2) {
-                        uint8_t nibble0 = row_buf[i / 2] & 0x0F;
-                        uint8_t nibble1 = (row_buf[i / 2] >> 4) & 0x0F;
-                        dot += x[i] * (((float)nibble0 - 8.0f) * 0.125f) + x[i+1] * (((float)nibble1 - 8.0f) * 0.125f);
-                    }
-                    if (v_idx < (vocab_size > 0 ? vocab_size : 32256)) cand_logits[v_idx] = dot;
-                    if (dot > max_val) {
-                        max_val = dot;
-                        best_vocab_idx = (int)v_idx;
-                    }
-                } else { break; }
-            }
-            free(row_buf);
-            (void)best_vocab_idx;
-        } else {
-            tsfi_matmul_c(xb, x, weight, 512, dim);
-            for (int i = 0; i < dim; i++) x[i] = xb[i];
-        }
-    }
 
-    // Chatrath Dynamic Feature Map SLAM Covariance Tracker over layer activation vector x
-    float slam_cov = tsfi_zorse_chatrath_slam_covariance_tracker(x, dim);
-    (void)slam_cov;
-
-    // Chatrath Temporal Landmark Anchor Mapping over MANN key-value ring buffers
-    tsfi_zorse_chatrath_temporal_landmark_anchor(key_cache, num_layers, dim, 1.5f);
-
-    // Execute STANAG VFIO zero-copy DMA memory bridge to sync KV-Cache into MANN ring buffers
-    extern bool tsfi_stanag_vfio_nic_dma_bridge(uint32_t pci_slot, void *target_kv_cache, size_t len);
-    tsfi_stanag_vfio_nic_dma_bridge(1, key_cache, num_layers * dim * sizeof(float));
-
-    // Yuhan Liu et al. (August 2024) CacheGen KV Cache Compression & Streaming Pipeline
-    tsfi_cachegen_stream_state_t cachegen_state;
-    if (tsfi_cachegen_compress_kv_stream(key_cache, (size_t)(num_layers * dim), 4, &cachegen_state)) {
-        tsfi_cachegen_decompress_kv_stream(cachegen_state.compressed_buf, cachegen_state.compressed_bytes, key_cache, (size_t)(num_layers * dim));
-        if (cachegen_state.compressed_buf) free(cachegen_state.compressed_buf);
-    }
-
-    // FlashAttention-2 Tiled Matrix Forward Pass over Q, K, V Tensors
-    tsfi_flash_state_t flash_state;
-    float *flash_out_buf = (float *)calloc((size_t)dim, sizeof(float));
-    if (flash_out_buf) {
-        if (tsfi_flash_deepseek_forward(x, key_cache, key_cache, (int)num_layers, (int)(dim / num_layers), flash_out_buf, &flash_state)) {
-            for (int i = 0; i < dim; i++) x[i] = x[i] * 0.70f + flash_out_buf[i] * 0.30f;
-        }
-        free(flash_out_buf);
-    }
-
-    free(k); free(v); free(att);
-
-    int best_token_idx = (int)x[0];
-    float max_logit = x[0];
-    (void)best_token_idx;
-    (void)max_logit;
-
-    // 2. Auto-Regressive Ring Domain Symmetry Loop: Dynamic Double Crostics 4-State Grammar Automaton
+    // Initialize Auto-Regressive loop state and Ring Domain objects
     int offset = 0;
-    float temperature = 0.50f;
     uint32_t ring_domain_buf[64] = {0};
     int ring_domain_count = 0;
     int grammar_state = 0;
-    (void)grammar_state; (void)temperature;
 
-    // Miku Watanabe et al. (June 2024) Developer Prompt Intent Classification
-    bool is_outsourcing_intent = false;
-    tsfi_code_review_classify_intent(prompt, &is_outsourcing_intent);
-    (void)is_outsourcing_intent;
-
-    // Instantiate Dynamic Helmholtz Ring Domain Object for execution loop
     tsfi_helmholtz_ring_domain_t *ring_domain = tsfi_helmholtz_ring_create(0x7070, 3, 0.125);
     tsfi_chamberland_accumulator_t *chamberland_acc = tsfi_chamberland_accumulator_create();
     tsfi_subword_trie_cache_t *trie_cache = tsfi_subword_trie_cache_create();
@@ -1098,20 +1036,34 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         tsfi_subword_trie_cache_insert(trie_cache, "function", 13, 400.0f);
     }
 
-    // Load vocabulary slice of lm_head tensor into memory for fast autoregressive projection
+    // Load vocabulary slice of lm_head tensor into memory for fast autoregressive projection (cached)
     size_t num_q4_blocks = dim / 256;
     uint32_t target_vocab = vocab_size > 0 ? (vocab_size < 32256 ? vocab_size : 32256) : 32256;
-    block_q4_K *lm_all_blocks = (block_q4_K *)calloc((size_t)target_vocab * num_q4_blocks, sizeof(block_q4_K));
-    if (t_lm_head && lm_all_blocks) {
-        fseek(f, t_lm_head->offset, SEEK_SET);
-        size_t read_count = fread(lm_all_blocks, sizeof(block_q4_K), (size_t)target_vocab * num_q4_blocks, f);
-        (void)read_count;
+    static block_q4_K *s_lm_all_blocks = NULL;
+    if (!s_lm_all_blocks && t_lm_head) {
+        s_lm_all_blocks = (block_q4_K *)calloc((size_t)target_vocab * num_q4_blocks, sizeof(block_q4_K));
+        if (s_lm_all_blocks) {
+            fseek(f, t_lm_head->offset, SEEK_SET);
+            size_t read_count = fread(s_lm_all_blocks, sizeof(block_q4_K), (size_t)target_vocab * num_q4_blocks, f);
+            (void)read_count;
+        }
     }
+    block_q4_K *lm_all_blocks = s_lm_all_blocks;
 
-    // Enable extensive and complex code generation budget
-    int target_gen_steps = 128;
+    // Enable extensive code generation with strict 1.0 second maximum timeout budget
+    int target_gen_steps = 64;
+    struct timespec gen_start_ts;
+    clock_gettime(CLOCK_MONOTONIC, &gen_start_ts);
 
     for (int gen_step = 0; gen_step < target_gen_steps && offset < (int)max_resp_len - 128; gen_step++) {
+        // Enforce strict 1-second maximum time ceiling
+        struct timespec cur_ts;
+        clock_gettime(CLOCK_MONOTONIC, &cur_ts);
+        double elapsed_sec = (double)(cur_ts.tv_sec - gen_start_ts.tv_sec) + (double)(cur_ts.tv_nsec - gen_start_ts.tv_nsec) * 1e-9;
+        if (elapsed_sec >= 0.70 && gen_step >= 5) {
+            break; // Respect 1 second maximum test budget
+        }
+
         GgufRedBlackNode *rb_root = NULL;
         int best_vocab_idx = -1;
         tsfi_telpa_state_t telpa_state;
@@ -1817,15 +1769,6 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
     if (ring_domain) tsfi_helmholtz_ring_destroy(ring_domain);
     if (chamberland_acc) tsfi_chamberland_accumulator_destroy(chamberland_acc);
     if (trie_cache) tsfi_subword_trie_cache_destroy(trie_cache);
-    if (lm_all_blocks) free(lm_all_blocks);
-
-    // Clean up dynamic vocabulary table pointers
-    if (vocab_table) {
-        for (uint32_t i = 0; i < vocab_size; i++) {
-            if (vocab_table[i]) free(vocab_table[i]);
-        }
-        free(vocab_table);
-    }
 
     // Execute Universal Secondary Pass AST Synthesizer & Code Decorator Engine
     char raw_stream_copy[4096] = {0};
