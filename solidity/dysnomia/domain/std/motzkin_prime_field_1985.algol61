@@ -1,0 +1,16 @@
+begin
+  comment Motzkin 1985 Prime Field Ring Prover;
+  comment R = (base + step * 65536 + 4096) mod MotzkinPrime;
+
+  integer baseB, stepK, prime, solvedR, sound, latch;
+
+  baseB := 1000;
+  stepK := 2;
+  prime := 953467954114363;
+
+  solvedR := baseB + stepK * 65536 + 4096;
+  solvedR := solvedR - (solvedR // prime) * prime;
+
+  if solvedR > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (solvedR - (solvedR // 65536) * 65536)
+end

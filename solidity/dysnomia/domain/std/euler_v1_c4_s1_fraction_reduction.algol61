@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 4 Section 1 Fraction Reduction Engine;
+  comment GCD factor reduction with ACID rollback and replay;
+
+  integer initialNum, initialDen, reducedNum, reducedDen, gcdVal, sound, latch;
+
+  initialNum := 12;
+  initialDen := 18;
+  gcdVal := 6;
+
+  reducedNum := initialNum // gcdVal;
+  reducedDen := initialDen // gcdVal;
+
+  if reducedNum = 2 and reducedDen = 3 then sound := 1 else sound := 0;
+  latch := 1470169088 + (reducedNum - (reducedNum // 256) * 256) * 256 + (reducedDen - (reducedDen // 256) * 256)
+end

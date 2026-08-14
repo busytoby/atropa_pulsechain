@@ -1,0 +1,18 @@
+begin
+  comment Euler Volume 1 Chapter 8 Mydorge Conic Perspective Totient Pressure Engine;
+  comment P_x = phi(x)*cos(z), P_y = phi(y)*sin(z), P = P_x + P_y;
+
+  integer randX, randY, phiX, phiY, pressX, pressY, totalPress, sound, latch;
+
+  randX := 12;
+  randY := 18;
+  phiX := randX;
+  phiY := randY;
+
+  pressX := phiX * 995;
+  pressY := phiY * 99;
+  totalPress := pressX + pressY;
+
+  if totalPress > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (totalPress - (totalPress // 65536) * 65536)
+end

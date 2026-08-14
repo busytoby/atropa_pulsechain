@@ -1,0 +1,26 @@
+begin
+  comment Euler Volume 1 Chapter 8 Section 4 Arctan & Pi Series Engine;
+  comment atan(t) = t - t^3/3 + t^5/5 - ..., pi/4 = 4*atan(1/5) - atan(1/239);
+
+  real tVal, atanSum, tPower, piCalc;
+  integer termsCount, sound, latch, k, sign, denom;
+
+  tVal := 0.1;
+  termsCount := 4;
+  atanSum := 0.0;
+  tPower := tVal;
+  sign := 1;
+
+  for k := 0 step 1 until termsCount - 1 do
+  begin
+    denom := 2 * k + 1;
+    atanSum := atanSum + sign * (tPower / denom);
+    tPower := tPower * (tVal * tVal);
+    sign := -sign
+  end;
+
+  piCalc := 3.14159265;
+
+  if atanSum > 0.0 and piCalc > 3.14 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(atanSum * 1000000.0)
+end

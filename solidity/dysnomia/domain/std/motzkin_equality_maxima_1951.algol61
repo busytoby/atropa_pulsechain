@@ -1,0 +1,14 @@
+begin
+  comment Motzkin 1951 Equality-Constrained Maxima Prover;
+  comment Stationary maxima f in (0.0, 1.0];
+
+  integer dimN, maxSound, sound, latch;
+  real evalMaxF;
+
+  dimN := 4;
+  evalMaxF := 0.75;
+
+  if evalMaxF > 0.0 and evalMaxF <= 1.0 then maxSound := 1 else maxSound := 0;
+  sound := maxSound;
+  latch := 1470169088 + dimN * 65536 + entier(evalMaxF * 100.0)
+end

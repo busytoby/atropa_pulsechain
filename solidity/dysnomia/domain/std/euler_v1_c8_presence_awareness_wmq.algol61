@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 8 Presence Awareness WMQ Engine;
+  comment WinchesterMQ coaxial & MCP presence latches over x, y;
+
+  integer nicPort, activePeers, randX, randY, sound, latch;
+
+  nicPort := 8080;
+  activePeers := 4;
+  randX := 12;
+  randY := 18;
+
+  if nicPort > 0 and activePeers > 0 and randX > 0 and randY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + nicPort + activePeers
+end

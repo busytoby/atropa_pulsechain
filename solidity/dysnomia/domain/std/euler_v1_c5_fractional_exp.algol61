@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 5 Fractional Exponents Engine;
+  comment x^(m/n) == nth_root(x^m);
+
+  integer m, n, randX, powerXM, fracExpSound, sound, latch;
+
+  m := 2;
+  n := 3;
+  randX := 4;
+
+  powerXM := randX * randX;
+  if m > 0 and n > 0 then fracExpSound := 1 else fracExpSound := 0;
+
+  sound := fracExpSound;
+  latch := 1470169088 + (powerXM - (powerXM // 256) * 256) * 256 + (m + n)
+end

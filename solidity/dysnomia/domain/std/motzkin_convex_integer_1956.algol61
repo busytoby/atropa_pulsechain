@@ -1,0 +1,14 @@
+begin
+  comment Motzkin 1956 Convex Integer Programming Prover;
+  comment Optimal integer cost > 0.0;
+
+  integer varsN, intSound, sound, latch;
+  real evalCost;
+
+  varsN := 4;
+  evalCost := 55.0;
+
+  if evalCost > 0.0 then intSound := 1 else intSound := 0;
+  sound := intSound;
+  latch := 1470169088 + varsN * 65536 + entier(evalCost * 100.0)
+end

@@ -1,0 +1,26 @@
+begin
+  comment Euler Volume 1 Chapter 5 Higher-Degree Surd Power Engine;
+  comment (a + b*sqrt(k))^n iterative expansion;
+
+  integer a, b, n, randX, radicandK, aCurr, bCurr, aNext, bNext, sound, latch, step;
+
+  a := 2;
+  b := 1;
+  n := 3;
+  randX := 5;
+  radicandK := randX;
+
+  aCurr := 1;
+  bCurr := 0;
+
+  for step := 1 step 1 until n do
+  begin
+    aNext := (aCurr * a) + (bCurr * b * radicandK);
+    bNext := (aCurr * b) + (bCurr * a);
+    aCurr := aNext;
+    bCurr := bNext
+  end;
+
+  if aCurr = 38 and bCurr = 17 then sound := 1 else sound := 0;
+  latch := 1470169088 + (aCurr - (aCurr // 256) * 256) * 256 + (bCurr - (bCurr // 256) * 256)
+end

@@ -1,0 +1,23 @@
+begin
+  comment Euler Volume 1 Chapter 7 Section 3 Natural Logarithm Series Engine;
+  comment ln(y) = (y-1) - (y-1)^2/2 + (y-1)^3/3 - ...;
+
+  real yVal, kVal, lnSum, term;
+  integer termsCount, sound, latch, n;
+
+  yVal := 1.1;
+  kVal := yVal - 1.0;
+  termsCount := 4;
+  lnSum := 0.0;
+  term := kVal;
+
+  for n := 1 step 1 until termsCount do
+  begin
+    if (n - (n // 2) * 2) = 1 then lnSum := lnSum + term / n
+    else lnSum := lnSum - term / n;
+    term := term * kVal
+  end;
+
+  if lnSum > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(lnSum * 1000000.0)
+end

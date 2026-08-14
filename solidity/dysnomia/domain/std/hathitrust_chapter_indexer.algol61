@@ -1,0 +1,14 @@
+begin
+  comment HathiTrust Chapter Indexer & TOC Search Engine;
+  comment Caput index calculation (Caput 1=1, Caput 2=120, Caput 3=240);
+
+  integer caputQueryId, startPage, sound, latch;
+
+  caputQueryId := 2;
+  if caputQueryId = 2 then startPage := 120
+  else if caputQueryId = 3 then startPage := 240
+  else startPage := 1;
+
+  if startPage > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + startPage
+end

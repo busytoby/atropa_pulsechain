@@ -1,0 +1,14 @@
+begin
+  comment Motzkin 1977 Matroid Rank Prover;
+  comment solved_rank = min(set_size_E, dimension_d);
+
+  integer setSizeE, dimD, solvedRank, rankSound, sound, latch;
+
+  setSizeE := 5;
+  dimD := 3;
+  if setSizeE < dimD then solvedRank := setSizeE else solvedRank := dimD;
+
+  if solvedRank > 0 and solvedRank <= setSizeE then rankSound := 1 else rankSound := 0;
+  sound := rankSound;
+  latch := 1470169088 + setSizeE * 65536 + solvedRank
+end

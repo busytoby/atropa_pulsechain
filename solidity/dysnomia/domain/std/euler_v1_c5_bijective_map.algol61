@@ -1,0 +1,18 @@
+begin
+  comment Euler Volume 1 Chapter 5 Bijective Matrix Mapping Engine;
+  comment Forward/Inverse map f(x)=k, det([[1,0],[0,1]]) = 1;
+
+  integer randX, radicandK, invertedX, det, forwardOk, inverseOk, sound, latch;
+
+  randX := 5;
+  if randX > 0 then radicandK := randX else radicandK := 2;
+  if randX > 0 and radicandK = randX then forwardOk := 1 else forwardOk := 0;
+
+  invertedX := radicandK;
+  if invertedX = randX then inverseOk := 1 else inverseOk := 0;
+
+  det := 1 * 1 - 0 * 0;
+
+  if forwardOk = 1 and inverseOk = 1 and det = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + (randX - (randX // 256) * 256) * 256 + det
+end

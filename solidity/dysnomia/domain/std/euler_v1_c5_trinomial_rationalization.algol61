@@ -1,0 +1,20 @@
+begin
+  comment Euler Volume 1 Chapter 5 Trinomial Surd Denominator Rationalization;
+  comment Rationalize A / (a + b*sqrt(k) + c*sqrt(m));
+
+  integer a, b, c, randX, radicandK, mRadicand, pDenom, qDenom, finalDenom, sound, latch;
+
+  a := 1; b := 1; c := 1;
+  randX := 3;
+  radicandK := randX;
+  mRadicand := 2;
+
+  pDenom := (a * a) + (b * b * radicandK) - (c * c * mRadicand);
+  qDenom := 2 * a * b;
+  finalDenom := (pDenom * pDenom) - (qDenom * qDenom * radicandK);
+
+  if pDenom = 2 and qDenom = 2 and finalDenom = -8 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (pDenom - (pDenom // 256) * 256) * 256 + (qDenom - (qDenom // 256) * 256)
+end

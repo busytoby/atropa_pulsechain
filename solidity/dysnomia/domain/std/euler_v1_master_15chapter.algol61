@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Master 15-Chapter Directory Indexer Engine;
+  comment Calculate start and end pages for 15 chapters;
+
+  integer targetCh, startPage, endPage, pageCount, sound, latch;
+
+  targetCh := 1;
+  startPage := (targetCh - 1) * 32 + 1;
+  endPage := targetCh * 32;
+  pageCount := endPage - startPage + 1;
+
+  if targetCh > 0 and targetCh <= 15 and pageCount = 32 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + targetCh * 256 + (startPage - (startPage // 256) * 256)
+end

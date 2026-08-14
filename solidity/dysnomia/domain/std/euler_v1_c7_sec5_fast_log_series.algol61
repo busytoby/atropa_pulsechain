@@ -1,0 +1,24 @@
+begin
+  comment Euler Volume 1 Chapter 7 Section 5 Fast Converging Log Series Engine;
+  comment ln((1+x)/(1-x)) = 2 * (x + x^3/3 + x^5/5 + x^7/7 + ...);
+
+  real x, sumVal, xPow;
+  integer termsCount, sound, latch, k, denom;
+
+  x := 0.1;
+  termsCount := 4;
+  sumVal := 0.0;
+  xPow := x;
+
+  for k := 0 step 1 until termsCount - 1 do
+  begin
+    denom := 2 * k + 1;
+    sumVal := sumVal + xPow / denom;
+    xPow := xPow * (x * x)
+  end;
+
+  sumVal := sumVal * 2.0;
+
+  if sumVal > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(sumVal * 1000000.0)
+end

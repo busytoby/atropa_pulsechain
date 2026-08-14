@@ -1,0 +1,14 @@
+begin
+  comment Advanced Semidefinite TTL Circuit Optimization Prover;
+  comment Positivstellensatz SOS bound = 0.0001;
+
+  integer packedLanes, retpolineFree, sound, latch;
+  real sosBound;
+
+  packedLanes := 8;
+  sosBound := 0.0001;
+  retpolineFree := 1;
+
+  if retpolineFree = 1 and sosBound > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + packedLanes * 65536 + 1
+end

@@ -1,0 +1,15 @@
+begin
+  comment Hankel Space Preferential Weight & Accumulator Filter Prover;
+  comment sigma_1 = 3.0 + preferential_alpha * 0.5;
+
+  integer maxDim, solvedRank, sound, latch;
+  real prefAlpha, sigma1;
+
+  maxDim := 4;
+  prefAlpha := 2.0;
+  solvedRank := maxDim;
+  sigma1 := 3.0 + prefAlpha * 0.5;
+
+  if solvedRank > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + maxDim * 65536 + entier(sigma1 * 100.0)
+end

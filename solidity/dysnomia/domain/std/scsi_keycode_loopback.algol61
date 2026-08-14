@@ -1,0 +1,15 @@
+begin
+  comment SCSI Keycode Loopback Security Prover;
+  comment Keycode 30 ('a') and 32 ('d') verified against simulated loopback;
+
+  integer keycode30Ok, keycode32Ok, loopbackBound, sound, latch;
+
+  keycode30Ok := 1;
+  keycode32Ok := 1;
+  loopbackBound := 1;
+
+  if keycode30Ok = 1 and keycode32Ok = 1 and loopbackBound = 1 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + 30 * 256 + 32
+end

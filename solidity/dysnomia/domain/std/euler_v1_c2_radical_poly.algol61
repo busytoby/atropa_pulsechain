@@ -1,0 +1,18 @@
+begin
+  comment Euler Volume 1 Chapter 2 Radical Polynomial Engine;
+  comment s_rat = p1_rat + p2_rat, s_surd = p1_surd + p2_surd;
+
+  integer p1Rat0, p1Surd0, p2Rat0, p2Surd0, sRat0, sSurd0, radicandK, sound, latch;
+
+  p1Rat0 := 4;
+  p1Surd0 := 2;
+  p2Rat0 := 1;
+  p2Surd0 := 3;
+  radicandK := 5;
+
+  sRat0 := p1Rat0 + p2Rat0;
+  sSurd0 := p1Surd0 + p2Surd0;
+
+  if sRat0 = 5 and sSurd0 = 5 then sound := 1 else sound := 0;
+  latch := 1470169088 + (sRat0 - (sRat0 // 256) * 256) * 256 + (radicandK - (radicandK // 256) * 256)
+end

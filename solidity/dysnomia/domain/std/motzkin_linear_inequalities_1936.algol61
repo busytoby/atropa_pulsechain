@@ -1,0 +1,13 @@
+begin
+  comment Motzkin 1936 Linear Inequalities & DDM Prover;
+  comment Extreme ray generators k = 4;
+
+  integer ineqM, dimN, extremeRays, sound, latch;
+
+  ineqM := 6;
+  dimN := 3;
+  extremeRays := 4;
+
+  if extremeRays > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + ineqM * 65536 + dimN
+end

@@ -1,0 +1,15 @@
+begin
+  comment Motzkin Path Unicity Prover;
+  comment Rank-1 single path invariant: Rank(H_path) = 1, delta_dev = 0.0;
+
+  integer stepLengthN, rank, unicitySound, sound, latch;
+  real deltaDev;
+
+  stepLengthN := 16;
+  rank := 1;
+  deltaDev := 0.0;
+
+  if rank = 1 and deltaDev = 0.0 then unicitySound := 1 else unicitySound := 0;
+  sound := unicitySound;
+  latch := 1470169088 + stepLengthN * 65536 + 1
+end

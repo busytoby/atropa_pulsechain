@@ -1,0 +1,22 @@
+begin
+  comment Euler Volume 1 Chapter 6 Section 3 Natural Log Series Engine;
+  comment ln(1 + z) = z - z^2/2 + z^3/3 - z^4/4 ...;
+
+  real z, lnSum, term;
+  integer seriesTerms, sound, latch, n;
+
+  z := 0.1;
+  seriesTerms := 4;
+  lnSum := 0.0;
+  term := z;
+
+  for n := 1 step 1 until seriesTerms do
+  begin
+    if (n - (n // 2) * 2) = 1 then lnSum := lnSum + term / n
+    else lnSum := lnSum - term / n;
+    term := term * z
+  end;
+
+  if lnSum > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(lnSum * 1000000.0)
+end

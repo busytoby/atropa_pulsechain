@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 7 Final Synthesis Engine;
+  comment 7 chapter 7 engines synthesis across dual inputs (x, y);
+
+  integer randX, randY, ch7Engines, activeParties, sound, latch;
+
+  randX := 12;
+  randY := 18;
+  ch7Engines := 7;
+  activeParties := 4;
+
+  if randX > 0 and randY > 0 and ch7Engines = 7 and activeParties = 4 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + ch7Engines * 256 + activeParties
+end

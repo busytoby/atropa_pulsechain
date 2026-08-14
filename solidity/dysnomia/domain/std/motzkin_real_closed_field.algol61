@@ -1,0 +1,18 @@
+begin
+  comment Motzkin Real Closed Field Nonnegativity Prover;
+  comment f(x,y) = x^4 y^2 + x^2 y^4 - 3 x^2 y^2 + 1 >= 0;
+
+  real evalX, evalY, x2, y2, fVal;
+  integer nonneg, sound, latch;
+
+  evalX := 1.2;
+  evalY := 1.5;
+
+  x2 := evalX * evalX;
+  y2 := evalY * evalY;
+  fVal := (x2 * x2 * y2) + (x2 * y2 * y2) - (3.0 * x2 * y2) + 1.0;
+
+  if fVal >= 0.0 then nonneg := 1 else nonneg := 0;
+  sound := nonneg;
+  latch := 1470169088 + entier(fVal * 100.0)
+end

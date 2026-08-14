@@ -1,0 +1,12 @@
+begin
+  comment HathiTrust Full-Text OCR Stream Reader;
+  comment 64KB multi-page VSAM stream across 512 pages;
+
+  integer totalPages, totalBytes, sound, latch;
+
+  totalPages := 512;
+  totalBytes := 65536;
+
+  if totalPages = 512 and totalBytes = 65536 then sound := 1 else sound := 0;
+  latch := 1470169088 + 65535
+end

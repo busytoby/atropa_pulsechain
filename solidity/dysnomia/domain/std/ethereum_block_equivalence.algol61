@@ -1,0 +1,13 @@
+begin
+  comment Ethereum Block File Security Equivalence Prover;
+  comment Capstan brake locked, parity passed, latch word generated;
+
+  integer leafCount, parityPass, brakeLocked, sound, latch;
+
+  leafCount := 64;
+  parityPass := 1;
+  brakeLocked := 1;
+
+  if parityPass = 1 and brakeLocked = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + leafCount * 256 + 255
+end

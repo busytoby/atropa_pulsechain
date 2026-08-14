@@ -1,0 +1,18 @@
+begin
+  comment Euler Volume 1 Chapter 3 Transactional ACID Checksum Engine;
+  comment Verify P(x)*Q(x) == R(x) at point x;
+
+  integer p0, p1, p2, q0, q1, q2, x, evalP, evalQ, evalR, acidVerified, sound, latch;
+
+  p0 := 1; p1 := 2; p2 := 1;
+  q0 := 1; q1 := 1; q2 := 0;
+  x := 2;
+
+  evalP := p0 + p1 * x + p2 * x * x;
+  evalQ := q0 + q1 * x + q2 * x * x;
+  evalR := evalP * evalQ;
+
+  if (evalP * evalQ) = evalR then acidVerified := 1 else acidVerified := 0;
+  sound := acidVerified;
+  latch := 1470169088 + (evalR - (evalR // 65536) * 65536)
+end

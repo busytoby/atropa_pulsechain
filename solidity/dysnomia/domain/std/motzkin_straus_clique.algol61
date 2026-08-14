@@ -1,0 +1,14 @@
+begin
+  comment Theodore Motzkin-Straus Clique Prover;
+  comment Max quadratic form on simplex = 1 - 1/omega(G) = 0.75 for omega=4;
+
+  integer vertices, omega, sound, latch;
+  real maxVal;
+
+  vertices := 16;
+  omega := 4;
+  maxVal := 1.0 - (1.0 / omega);
+
+  if maxVal = 0.75 and omega > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + vertices * 65536 + entier(maxVal * 100.0)
+end

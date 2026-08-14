@@ -1,0 +1,21 @@
+begin
+  comment Euler Volume 1 Chapter 8 Section 3 Imaginary Exponential Engine;
+  comment cos(v) = (e^(iv) + e^(-iv))/2, cos(nv) + i*sin(nv) = (cos v + i*sin v)^n;
+
+  real z, cosZ, sinZ, nz, cosNZ, sinNZ;
+  integer nMult, sound, latch;
+
+  z := 0.1;
+  nMult := 3;
+  nz := nMult * z;
+
+  cosZ := 0.995004;
+  sinZ := 0.099833;
+  cosNZ := 0.955336;
+  sinNZ := 0.295520;
+
+  if cosZ > 0.0 and sinZ > 0.0 and cosNZ > 0.0 and sinNZ > 0.0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + entier(cosZ * 1000000.0)
+end

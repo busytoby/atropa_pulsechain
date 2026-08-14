@@ -1,0 +1,14 @@
+begin
+  comment Euler Volume 1 Regular Quantity Polynomial Equivalence;
+  comment c is equivalent to degree 0 monomial c * x^0;
+
+  integer scalarQty, degree, c0, isMonomial, sound, latch;
+
+  scalarQty := 42;
+  degree := 0;
+  c0 := scalarQty;
+  isMonomial := 1;
+
+  if degree = 0 and isMonomial = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + (c0 - (c0 // 65536) * 65536)
+end

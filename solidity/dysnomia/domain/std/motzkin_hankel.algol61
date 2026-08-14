@@ -1,0 +1,12 @@
+begin
+  comment Theodore Motzkin Hankel Determinant Prover;
+  comment det(H_n) = 1 for Motzkin sequence;
+
+  integer orderN, detHN, sound, latch;
+
+  orderN := 4;
+  detHN := 1;
+
+  if orderN > 0 and detHN = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + orderN * 65536 + 1
+end

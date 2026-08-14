@@ -1,0 +1,23 @@
+begin
+  comment Theodore Motzkin Apriori Polarize Prover;
+  comment Channel = (Base + Signal * 13) mod P, Pole = (Base + Secret * 7) mod P;
+
+  integer baseB, secretS, signalSig, prime, channelCh, poleCalc, uncorrupted, sound, latch;
+
+  baseB := 100;
+  secretS := 20;
+  signalSig := 30;
+  prime := 953467954114363;
+
+  channelCh := baseB + signalSig * 13;
+  channelCh := channelCh - (channelCh // prime) * prime;
+
+  poleCalc := baseB + secretS * 7;
+  poleCalc := poleCalc - (poleCalc // prime) * prime;
+
+  if baseB > 0 and secretS > 0 and signalSig > 0 and channelCh > 0 then uncorrupted := 1
+  else uncorrupted := 0;
+
+  sound := uncorrupted;
+  latch := 1470169088 + (poleCalc - (poleCalc // 65536) * 65536)
+end

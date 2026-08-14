@@ -1,0 +1,25 @@
+begin
+  comment Euler Volume 1 Chapter 8 Section 1 Sine & Cosine Infinite Power Series;
+  comment sin(z) = z - z^3/3! + z^5/5! - ..., cos(z) = 1 - z^2/2! + z^4/4! - ...;
+
+  real z, sinSum, cosSum, termSin, termCos;
+  integer termsCount, sound, latch, n;
+
+  z := 0.1;
+  termsCount := 4;
+  sinSum := z;
+  termSin := z;
+  cosSum := 1.0;
+  termCos := 1.0;
+
+  for n := 1 step 1 until termsCount do
+  begin
+    termCos := -termCos * z * z / ((2 * n - 1) * (2 * n));
+    cosSum := cosSum + termCos;
+    termSin := -termSin * z * z / ((2 * n) * (2 * n + 1));
+    sinSum := sinSum + termSin
+  end;
+
+  if sinSum > 0.0 and cosSum > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(sinSum * 1000000.0)
+end

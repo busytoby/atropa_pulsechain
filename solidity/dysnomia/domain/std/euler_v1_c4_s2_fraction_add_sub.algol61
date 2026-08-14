@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 4 Section 2 Fraction Add/Sub Engine;
+  comment (N1/D1) +/- (N2/D2) cross-multiplication;
+
+  integer n1, d1, n2, d2, sumNum, sumDen, diffNum, diffDen, sound, latch;
+
+  n1 := 1; d1 := 2;
+  n2 := 1; d2 := 3;
+
+  sumNum := n1 * d2 + n2 * d1;
+  sumDen := d1 * d2;
+  diffNum := n1 * d2 - n2 * d1;
+  diffDen := d1 * d2;
+
+  if sumNum = 5 and sumDen = 6 and diffNum = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + (sumNum - (sumNum // 256) * 256) * 256 + (sumDen - (sumDen // 256) * 256)
+end

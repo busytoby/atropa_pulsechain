@@ -1,0 +1,22 @@
+begin
+  comment Theodore Motzkin Wheeler Relocation Prover;
+  comment Relocated instruction offset calculation over Motzkin field;
+
+  integer procedure wheelerReloc(m, n, baseOp);
+  value m, n, baseOp; integer m, n, baseOp;
+  begin
+    integer m2, n2, sumVal, prime, offset;
+    prime := 953467954114363;
+    m2 := m * m;
+    n2 := n * n;
+    sumVal := (m2 + n2 + 1) * 42;
+    offset := sumVal - (sumVal // prime) * prime;
+    offset := offset - (offset // 65536) * 65536;
+    wheelerReloc := baseOp + offset
+  end;
+
+  integer relocated, latch, sound;
+  relocated := wheelerReloc(2, 3, 100);
+  if relocated != 100 then sound := 1 else sound := 0;
+  latch := 1470169088 + 2 * 65536 + 3
+end

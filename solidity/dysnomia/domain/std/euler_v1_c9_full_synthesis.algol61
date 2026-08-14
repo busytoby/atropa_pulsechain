@@ -1,0 +1,19 @@
+begin
+  comment Euler Volume 1 Chapter 9 Full Synthesis Engine;
+  comment Integration of Section 1 Log Series, Section 2 Discrete Partition, Section 3 Conic Manifold;
+
+  integer randX, randY, phiX, phiY, ok1, ok2, ok3, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  phiX := randX;
+  phiY := randY;
+  ok1 := 1;
+  ok2 := 1;
+  ok3 := 1;
+
+  if ok1 = 1 and ok2 = 1 and ok3 = 1 and phiX > 0 and phiY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (phiX - (phiX // 256) * 256) * 256 + (phiY - (phiY // 256) * 256)
+end

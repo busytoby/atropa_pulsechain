@@ -1,0 +1,18 @@
+begin
+  comment Euler Register X ACID Rollback & Replay Engine;
+  comment In-place operations, rollback to WAL checkpoint, replay post-op;
+
+  integer initialX, postOpX, rolledBackX, replayedX, rollbackVer, replayVer, sound, latch;
+
+  initialX := 10;
+  postOpX := ((initialX + 12) - 5) * 3;
+
+  rolledBackX := initialX;
+  if rolledBackX = initialX then rollbackVer := 1 else rollbackVer := 0;
+
+  replayedX := ((rolledBackX + 12) - 5) * 3;
+  if replayedX = postOpX then replayVer := 1 else replayVer := 0;
+
+  if rollbackVer = 1 and replayVer = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + (postOpX - (postOpX // 65536) * 65536)
+end

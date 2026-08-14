@@ -1,0 +1,15 @@
+begin
+  comment HathiTrust Multi-Volume Corpus Navigator Engine;
+  comment Global corpus page index = (volume - 1) * 512 + page;
+
+  integer seriesNum, targetVol, targetPage, globalPageIndex, sound, latch;
+
+  seriesNum := 1;
+  targetVol := 3;
+  targetPage := 42;
+
+  globalPageIndex := (targetVol - 1) * 512 + targetPage;
+
+  if globalPageIndex > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (targetVol - (targetVol // 256) * 256) * 256 + (targetPage - (targetPage // 256) * 256)
+end

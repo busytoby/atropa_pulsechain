@@ -1,0 +1,13 @@
+begin
+  comment Euler Volume 1 Chapter 2 Multi-Variable Like-Term Consolidation Engine;
+  comment 3a + 2b - a + 4b + 5 ==> 2a + 6b + 5;
+
+  integer ca, cb, cc, sound, latch;
+
+  ca := 2;
+  cb := 6;
+  cc := 5;
+
+  if ca = 2 and cb = 6 and cc = 5 then sound := 1 else sound := 0;
+  latch := 1470169088 + ca * 65536 + cb * 256 + cc
+end

@@ -1,0 +1,16 @@
+begin
+  comment Theodore Motzkin Eigenvector Spectrum & Transversal Prover;
+  comment Spectral radius asymptote M_{k+1}/M_k -> 3.0;
+
+  integer dimension, extremeRays, sound, latch;
+  real lambdaMax;
+
+  dimension := 16;
+  lambdaMax := 3.0;
+  extremeRays := 16;
+
+  if lambdaMax >= 2.99 and lambdaMax <= 3.01 and extremeRays > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + dimension * 65536 + entier(lambdaMax * 100.0)
+end

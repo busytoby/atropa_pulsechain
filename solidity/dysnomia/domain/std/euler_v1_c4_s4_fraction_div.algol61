@@ -1,0 +1,15 @@
+begin
+  comment Euler Volume 1 Chapter 4 Section 4 Fraction Div Engine;
+  comment (N1/D1) // (N2/D2) = (N1*D2)/(D1*N2);
+
+  integer n1, d1, n2, d2, quotNum, quotDen, sound, latch;
+
+  n1 := 2; d1 := 3;
+  n2 := 4; d2 := 5;
+
+  quotNum := n1 * d2;
+  quotDen := d1 * n2;
+
+  if quotNum = 10 and quotDen = 12 then sound := 1 else sound := 0;
+  latch := 1470169088 + (quotNum - (quotNum // 256) * 256) * 256 + (quotDen - (quotDen // 256) * 256)
+end

@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 5 Surd Factor Extraction Engine;
+  comment sqrt(c^2 * k) = c * sqrt(k);
+
+  integer c, randX, radicandK, totalRadicand, extractedMult, sound, latch;
+
+  c := 4;
+  randX := 5;
+
+  if randX > 0 then radicandK := randX else radicandK := 2;
+  totalRadicand := (c * c) * radicandK;
+  extractedMult := c;
+
+  if totalRadicand = 80 and extractedMult = 4 then sound := 1 else sound := 0;
+  latch := 1470169088 + (extractedMult - (extractedMult // 256) * 256) * 256 + (totalRadicand - (totalRadicand // 256) * 256)
+end

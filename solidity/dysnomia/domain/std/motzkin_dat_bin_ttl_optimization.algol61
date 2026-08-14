@@ -1,0 +1,17 @@
+begin
+  comment Universal .dat.bin Asset TTL Circuit Optimization Prover;
+  comment parallel_gates = 8, latency = 0.0225 ns;
+
+  integer mmapVerified, parallelGates, opcodeGating, sound, latch;
+  real latency;
+
+  mmapVerified := 1;
+  parallelGates := 8;
+  latency := 0.0225;
+  opcodeGating := 1;
+
+  if mmapVerified = 1 and opcodeGating = 1 and latency < 0.10 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + parallelGates * 65536 + 1
+end

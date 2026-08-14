@@ -1,0 +1,19 @@
+begin
+  comment Euler Volume 1 Chapter 5 Surd Arithmetic & Conjugate Engine;
+  comment (a1 + b1*sqrt(x))(a1 - b1*sqrt(x)) = a1^2 - b1^2 * x;
+
+  integer a1, b1, a2, b2, randX, sumA, sumB, prodA, prodB, norm, sound, latch;
+
+  a1 := 3; b1 := 2;
+  a2 := 1; b2 := 1;
+  randX := 5;
+
+  sumA := a1 + a2;
+  sumB := b1 + b2;
+  prodA := (a1 * a2) + (b1 * b2 * randX);
+  prodB := (a1 * b2) + (a2 * b1);
+  norm := (a1 * a1) - (b1 * b1 * randX);
+
+  if sumA = 4 and sumB = 3 and norm = -11 then sound := 1 else sound := 0;
+  latch := 1470169088 + (prodA - (prodA // 256) * 256) * 256 + (prodB - (prodB // 256) * 256)
+end

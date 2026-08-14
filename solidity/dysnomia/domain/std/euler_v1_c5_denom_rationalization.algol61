@@ -1,0 +1,21 @@
+begin
+  comment Euler Volume 1 Chapter 5 Binomial Denominator Rationalization Engine;
+  comment A / (a + b*sqrt(k)) = A*(a - b*sqrt(k)) / (a^2 - b^2*k);
+
+  integer bigA, a, b, randX, radicandK, numBase, numMult, ratDenom, sound, latch;
+
+  bigA := 10;
+  a := 3;
+  b := 1;
+  randX := 5;
+
+  if randX > 0 then radicandK := randX else radicandK := 2;
+  numBase := bigA * a;
+  numMult := -bigA * b;
+  ratDenom := a * a - b * b * radicandK;
+
+  if numBase = 30 and numMult = -10 and ratDenom = 4 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (numBase - (numBase // 256) * 256) * 256 + (ratDenom - (ratDenom // 256) * 256)
+end

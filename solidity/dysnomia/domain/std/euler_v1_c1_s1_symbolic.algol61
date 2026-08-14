@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 1 Section 1 Symbolic Expression Engine;
+  comment Hash = (vars * 1000 + ops) mod MotzkinPrime;
+
+  integer vars, ops, prime, hashVal, sound, latch;
+
+  vars := 3;
+  ops := 2;
+  prime := 953467954114363;
+
+  hashVal := vars * 1000 + ops;
+  hashVal := hashVal - (hashVal // prime) * prime;
+
+  if hashVal > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (hashVal - (hashVal // 65536) * 65536)
+end

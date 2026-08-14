@@ -1,0 +1,13 @@
+begin
+  comment Motzkin 1970 Transversals Prover;
+  comment hyperplanes_m >= dimension_d;
+
+  integer dimD, hyperplanesM, transSound, sound, latch;
+
+  dimD := 3;
+  hyperplanesM := 4;
+
+  if hyperplanesM >= dimD then transSound := 1 else transSound := 0;
+  sound := transSound;
+  latch := 1470169088 + dimD * 65536 + hyperplanesM
+end

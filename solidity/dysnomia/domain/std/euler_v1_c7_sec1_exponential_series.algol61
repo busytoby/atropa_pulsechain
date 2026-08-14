@@ -1,0 +1,22 @@
+begin
+  comment Euler Volume 1 Chapter 7 Section 1 Exponential Series Engine;
+  comment a^z = 1 + psi*z + (psi^2*z^2)/2! + ...;
+
+  real z, psi, expSum, term;
+  integer termsCount, sound, latch, k;
+
+  z := 0.1;
+  psi := 1.0;
+  termsCount := 4;
+  expSum := 1.0;
+  term := 1.0;
+
+  for k := 1 step 1 until termsCount do
+  begin
+    term := term * (psi * z) / k;
+    expSum := expSum + term
+  end;
+
+  if expSum > 1.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(expSum * 1000000.0)
+end

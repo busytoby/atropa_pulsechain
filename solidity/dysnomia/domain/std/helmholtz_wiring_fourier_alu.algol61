@@ -1,0 +1,12 @@
+begin
+  comment Helmholtz Wiring vs Fourier ALU Comparative Engine;
+  comment coil_count and harmonic_bins comparison;
+
+  integer coilCount, harmonicBins, sound, latch;
+
+  coilCount := 8;
+  harmonicBins := 64;
+
+  if coilCount > 0 and harmonicBins > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (coilCount - (coilCount // 256) * 256) * 256 + (harmonicBins - (harmonicBins // 256) * 256)
+end

@@ -1,0 +1,23 @@
+begin
+  comment Euler Volume 1 Chapter 10 Section 2 Exponential Link Engine;
+  comment e^(ix) = cos(x) + i*sin(x) exponential bridge;
+
+  real xRad, realPart, imagPart;
+  integer randX, randY, randY2, phiX, phiY, phiY2, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  randY2 := 17;
+  phiX := randX;
+  phiY := randY;
+  phiY2 := randY2;
+
+  xRad := 0.1;
+  realPart := 1.0 - (xRad * xRad) / 2.0 + (xRad * xRad * xRad * xRad) / 24.0;
+  imagPart := xRad - (xRad * xRad * xRad) / 6.0 + (xRad * xRad * xRad * xRad * xRad) / 120.0;
+
+  if realPart > 0.0 and imagPart > 0.0 and phiX > 0 and phiY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + entier(realPart * 1000000.0)
+end

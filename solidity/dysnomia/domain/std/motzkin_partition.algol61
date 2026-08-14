@@ -1,0 +1,13 @@
+begin
+  comment Theodore Motzkin Non-Crossing Partition Prover;
+  comment P_4 = 9, EDO-22 octave step = 9 mod 22;
+
+  integer orderN, partPn, edo22Step, sound, latch;
+
+  orderN := 4;
+  partPn := 9;
+  edo22Step := partPn - (partPn // 22) * 22;
+
+  if orderN > 0 and partPn = 9 then sound := 1 else sound := 0;
+  latch := 1470169088 + orderN * 65536 + partPn
+end

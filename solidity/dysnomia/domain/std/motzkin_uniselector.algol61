@@ -1,0 +1,18 @@
+begin
+  comment Theodore Motzkin Uniselector State Machine Prover;
+  comment SCSI keycode register (32 for d, 30 for a) and quaternary symbol Q;
+
+  integer procedure decodeSymbol(kc);
+  value kc; integer kc;
+  begin
+    decodeSymbol := kc - (kc // 4) * 4
+  end;
+
+  integer keycode, steps, symbolQ, validKey, sound, latch;
+  keycode := 32;
+  steps := 10;
+  if keycode = 32 or keycode = 30 then validKey := 1 else validKey := 0;
+  symbolQ := decodeSymbol(keycode);
+  if validKey = 1 and steps > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + steps * 65536 + keycode
+end

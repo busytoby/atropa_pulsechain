@@ -1,0 +1,14 @@
+begin
+  comment Euler Volume 1 PNP vs NPN Transistor Pair Engine;
+  comment FET discharge physics and push-pull transistor pair;
+
+  integer pnp0, npn0, operatingData, rule10Holds, sound, latch;
+
+  pnp0 := 12;
+  npn0 := 8;
+  operatingData := 1;
+
+  if operatingData > 0 then rule10Holds := 1 else rule10Holds := 0;
+  sound := rule10Holds;
+  latch := 1470169088 + (pnp0 - (pnp0 // 256) * 256) * 256 + (npn0 - (npn0 // 256) * 256)
+end

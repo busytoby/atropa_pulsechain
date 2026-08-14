@@ -1,0 +1,14 @@
+begin
+  comment Motzkin-Straus 1965 Max Clique Theorem Prover;
+  comment expected_f = 1 - 1/omega;
+
+  integer cliqueOmega, strausSound, sound, latch;
+  real expectedF;
+
+  cliqueOmega := 4;
+  expectedF := 1.0 - (1.0 / cliqueOmega);
+
+  if expectedF = 0.75 then strausSound := 1 else strausSound := 0;
+  sound := strausSound;
+  latch := 1470169088 + cliqueOmega * 65536 + entier(expectedF * 100.0)
+end

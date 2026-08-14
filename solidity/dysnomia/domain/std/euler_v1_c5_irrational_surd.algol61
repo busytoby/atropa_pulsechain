@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 5 Irrational Surd Engine;
+  comment a + b * sqrt(x) where radicand k = x;
+
+  integer ratBase, surdMult, randX, radicandK, kEqualsX, sound, latch;
+
+  ratBase := 3;
+  surdMult := 2;
+  randX := 5;
+
+  if randX > 0 then radicandK := randX else radicandK := 2;
+  if randX > 0 and radicandK = randX then kEqualsX := 1 else kEqualsX := 0;
+
+  sound := kEqualsX;
+  latch := 1470169088 + (ratBase - (ratBase // 256) * 256) * 256 + surdMult
+end

@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 8 Tangent Pass-Through Ray Perspective Engine;
+  comment Entry Vector E = X - tan(theta)*Y, Exit L = X + tan(theta)*Y, I = sqrt(E*L);
+
+  integer randX, randY, entryScaled, exitScaled, intensityScaled, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  entryScaled := 4732707;
+  exitScaled := 5217332;
+  intensityScaled := 4969485;
+
+  if entryScaled > 0 and exitScaled > 0 and intensityScaled > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (intensityScaled - (intensityScaled // 256) * 256) * 256 + 3
+end

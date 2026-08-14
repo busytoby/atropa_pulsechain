@@ -1,0 +1,23 @@
+begin
+  comment Euler Volume 1 Chapter 9 Section 1 Logarithmic Terms Power Series;
+  comment ln(1+x) = x - x^2/2 + x^3/3 - x^4/4 + ...;
+
+  real xVal, logSum, xPower;
+  integer termsCount, sound, latch, k, sign;
+
+  xVal := 0.1;
+  termsCount := 4;
+  logSum := 0.0;
+  xPower := xVal;
+  sign := 1;
+
+  for k := 1 step 1 until termsCount do
+  begin
+    logSum := logSum + sign * (xPower / k);
+    xPower := xPower * xVal;
+    sign := -sign
+  end;
+
+  if logSum > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(logSum * 1000000.0)
+end

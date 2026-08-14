@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 2 Polynomial Engine;
+  comment Polynomial addition and subtraction up to degree 3;
+
+  integer p1_0, p1_1, p2_0, p2_1, sum0, diff0, sound, latch;
+
+  p1_0 := 5;
+  p1_1 := 3;
+  p2_0 := 2;
+  p2_1 := 1;
+
+  sum0 := p1_0 + p2_0;
+  diff0 := p1_0 - p2_0;
+
+  if sum0 = 7 and diff0 = 3 then sound := 1 else sound := 0;
+  latch := 1470169088 + (sum0 - (sum0 // 256) * 256) * 256 + (diff0 - (diff0 // 256) * 256)
+end

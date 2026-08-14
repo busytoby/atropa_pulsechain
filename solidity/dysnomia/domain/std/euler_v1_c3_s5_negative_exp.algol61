@@ -1,0 +1,13 @@
+begin
+  comment Euler Volume 1 Chapter 3 Section 5 Negative Exponents Engine;
+  comment Zero exponent unity x^0 = 1, reciprocal x^(-n) = 1/x^n;
+
+  integer negN, zeroExpUnity, reciprocalSound, sound, latch;
+
+  negN := -2;
+  zeroExpUnity := 1;
+
+  if negN <= 0 then reciprocalSound := 1 else reciprocalSound := 0;
+  if zeroExpUnity = 1 and reciprocalSound = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + (negN - (negN // 256) * 256)
+end

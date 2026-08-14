@@ -1,0 +1,12 @@
+begin
+  comment HathiTrust Opera Omnia Volume 1 Full-Text Page Reader Engine;
+  comment Page offset = page_number * 512;
+
+  integer pageNumber, offset, sound, latch;
+
+  pageNumber := 42;
+  offset := pageNumber * 512;
+
+  if pageNumber > 0 and pageNumber <= 512 then sound := 1 else sound := 0;
+  latch := 1470169088 + 256 + (pageNumber - (pageNumber // 256) * 256)
+end

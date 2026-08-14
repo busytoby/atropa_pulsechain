@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 7 Section 6 Logarithmic Calculation Engine;
+  comment Decimal log modulus M = 1/ln(10) and prime logs log10(2), log10(3);
+
+  integer modulusMScaled, log102Scaled, log103Scaled, primeLogsCnt, sound, latch;
+
+  modulusMScaled := 434294;
+  log102Scaled := 301030;
+  log103Scaled := 477121;
+  primeLogsCnt := 25;
+
+  if modulusMScaled > 0 and log102Scaled > 0 and primeLogsCnt = 25 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (modulusMScaled - (modulusMScaled // 256) * 256) * 256 + primeLogsCnt
+end

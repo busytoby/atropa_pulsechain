@@ -1,0 +1,12 @@
+begin
+  comment HathiTrust Multi-Page Page-Seeker Engine;
+  comment Direct page seek index lookup;
+
+  integer targetPage, pageOffset, sound, latch;
+
+  targetPage := 42;
+  pageOffset := targetPage * 512;
+
+  if targetPage > 0 and pageOffset > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + targetPage
+end

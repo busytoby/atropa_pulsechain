@@ -1,0 +1,19 @@
+begin
+  comment Euler Volume 1 Chapter 7 Multi-Party WMQ/STANAG VFIO Mountable Register Engine;
+  comment WinchesterMQ SCSI hardware register latching and STANAG VFIO NIC routing;
+
+  integer nicPort, targetParties, randX, randY, xMountable, yMountable, sound, latch;
+
+  nicPort := 8080;
+  targetParties := 4;
+  randX := 12;
+  randY := 18;
+
+  if randX > 0 then xMountable := 1 else xMountable := 0;
+  if randY > 0 then yMountable := 1 else yMountable := 0;
+
+  if xMountable = 1 and yMountable = 1 and targetParties > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + nicPort + targetParties
+end

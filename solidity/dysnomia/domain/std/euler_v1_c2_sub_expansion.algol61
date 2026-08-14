@@ -1,0 +1,18 @@
+begin
+  comment Euler Volume 1 Chapter 2 Polynomial Subtraction Expansion;
+  comment diff[i] = minuend[i] - subtrahend[i];
+
+  integer min0, min1, sub0, sub1, diff0, diff1, signFlipped, sound, latch;
+
+  min0 := 10;
+  min1 := 5;
+  sub0 := 3;
+  sub1 := 2;
+
+  diff0 := min0 - sub0;
+  diff1 := min1 - sub1;
+  signFlipped := 1;
+
+  if diff0 = 7 and diff1 = 3 and signFlipped = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + (diff0 - (diff0 // 256) * 256) * 256 + (diff1 - (diff1 // 256) * 256)
+end

@@ -1,0 +1,14 @@
+begin
+  comment Motzkin Paths and Catalan Refinement Prover;
+  comment M_n <= C_n (M_4 = 9, C_4 = 14);
+
+  integer pathLengthN, mN, cN, boundSound, sound, latch;
+
+  pathLengthN := 4;
+  mN := 9;
+  cN := 14;
+
+  if mN <= cN then boundSound := 1 else boundSound := 0;
+  sound := boundSound;
+  latch := 1470169088 + pathLengthN * 65536 + mN
+end

@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 9 Section 2 Non-Transcendental Discrete Partition;
+  comment ibis active node = (x*y) mod (x+y), sedis passive = (x^2+y^2) mod (x+y);
+
+  integer randX, randY, partSum, ibisNode, sedisNode, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  partSum := randX + randY;
+
+  ibisNode := (randX * randY) - (((randX * randY) // partSum) * partSum);
+  sedisNode := (randX * randX + randY * randY) - (((randX * randX + randY * randY) // partSum) * partSum);
+
+  if partSum > 0 and ibisNode # sedisNode then sound := 1 else sound := 0;
+  latch := 1470169088 + ibisNode * 256 + sedisNode
+end

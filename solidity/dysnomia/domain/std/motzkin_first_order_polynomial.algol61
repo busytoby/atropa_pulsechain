@@ -1,0 +1,15 @@
+begin
+  comment First-Order Classified Polynomial Consistency Prover;
+  comment P1 = x - 1, Q = (x - 1)^2 >= 0;
+
+  real evalX, p1, q;
+  integer consistency, sound, latch;
+
+  evalX := 2.5;
+  p1 := evalX - 1.0;
+  q := (evalX - 1.0) * (evalX - 1.0);
+
+  if q >= 0.0 then consistency := 1 else consistency := 0;
+  sound := consistency;
+  latch := 1470169088 + entier(q * 100.0)
+end

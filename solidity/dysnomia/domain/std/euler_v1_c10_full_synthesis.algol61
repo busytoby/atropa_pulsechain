@@ -1,0 +1,20 @@
+begin
+  comment Euler Volume 1 Chapter 10 Full Synthesis Engine;
+  comment Integration of In-Present and Exponential Link engines;
+
+  integer randX, randY, randY2, phiX, phiY, phiY2, ok1, ok2, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  randY2 := 17;
+  phiX := randX;
+  phiY := randY;
+  phiY2 := randY2;
+  ok1 := 1;
+  ok2 := 1;
+
+  if ok1 = 1 and ok2 = 1 and phiX > 0 and phiY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (phiX - (phiX // 256) * 256) * 256 + 10
+end

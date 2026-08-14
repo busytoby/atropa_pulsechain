@@ -1,0 +1,16 @@
+begin
+  comment Motzkin 1981 Vector Density Prover;
+  comment density = 1.0, limit_L = 1.0 / dimension_d;
+
+  integer countN, dimD, densitySound, sound, latch;
+  real density, limitL;
+
+  countN := 16;
+  dimD := 4;
+  density := 1.0;
+  limitL := 1.0 / dimD;
+
+  if density = 1.0 and limitL = 0.25 then densitySound := 1 else densitySound := 0;
+  sound := densitySound;
+  latch := 1470169088 + countN * 65536 + entier(density * 100.0)
+end

@@ -1,0 +1,17 @@
+begin
+  comment Theodore Motzkin Double Sequences Matrix Kernel Prover;
+  comment Diagonal sequence element a_{8,8} = 323 mod MotzkinPrime;
+
+  integer rows, cols, diagVal, bubble, sound, latch;
+  real charge;
+
+  rows := 8;
+  cols := 8;
+  diagVal := 323;
+  charge := 4.50;
+
+  if charge >= 3.75 then bubble := 1 else bubble := 0;
+  if bubble = 1 and diagVal = 323 then sound := 1 else sound := 0;
+
+  latch := 1470169088 + rows * 65536 + cols
+end

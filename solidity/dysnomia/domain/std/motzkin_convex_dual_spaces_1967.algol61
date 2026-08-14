@@ -1,0 +1,14 @@
+begin
+  comment Motzkin 1967 Convex Dual Spaces Prover;
+  comment Dual facets m = vertices k = 4;
+
+  integer verticesK, dimD, dualFacets, polarSound, sound, latch;
+
+  verticesK := 4;
+  dimD := 3;
+  dualFacets := verticesK;
+
+  if dualFacets > 0 then polarSound := 1 else polarSound := 0;
+  sound := polarSound;
+  latch := 1470169088 + verticesK * 65536 + dimD
+end

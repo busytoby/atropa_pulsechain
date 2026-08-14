@@ -1,0 +1,17 @@
+begin
+  comment Fast Inference Ring Locus R_k Prover;
+  comment R_k = (base + secret * k * 17) mod MotzkinPrime;
+
+  integer baseB, secretS, stepK, prime, rK, sound, latch;
+
+  baseB := 100;
+  secretS := 20;
+  stepK := 4;
+  prime := 953467954114363;
+
+  rK := baseB + secretS * stepK * 17;
+  rK := rK - (rK // prime) * prime;
+
+  if rK > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + stepK * 65536 + (rK - (rK // 65536) * 65536)
+end

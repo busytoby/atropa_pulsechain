@@ -1,0 +1,14 @@
+begin
+  comment Motzkin-Straus Theorem and Max Clique Optimization Prover;
+  comment max_f = 0.5 * (1 - 1/omega);
+
+  integer cliqueSizeOmega, strausSound, sound, latch;
+  real maxF;
+
+  cliqueSizeOmega := 4;
+  maxF := 0.5 * (1.0 - (1.0 / cliqueSizeOmega));
+
+  if maxF >= 0.0 and maxF < 0.5 then strausSound := 1 else strausSound := 0;
+  sound := strausSound;
+  latch := 1470169088 + cliqueSizeOmega * 65536 + entier(maxF * 10000.0)
+end

@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 6 Fundamental Logarithm Engine;
+  comment result_val = base_a^exponent_y with totient expansion;
+
+  integer baseA, expY, resultVal, phiX, sound, latch, i;
+
+  baseA := 2;
+  expY := 4;
+  phiX := 4;
+
+  resultVal := 1;
+  for i := 1 step 1 until expY do resultVal := resultVal * baseA;
+
+  if resultVal = 16 and baseA > 1 and phiX > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (resultVal - (resultVal // 256) * 256) * 256 + expY
+end

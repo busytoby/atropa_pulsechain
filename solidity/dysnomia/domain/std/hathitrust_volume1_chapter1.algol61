@@ -1,0 +1,14 @@
+begin
+  comment HathiTrust Opera Omnia Volume 1 Chapter 1 of 15 Full-Text Engine;
+  comment Chapter start page 1, end page 32;
+
+  integer chapterIdx, totalChapters, startPage, endPage, sound, latch;
+
+  chapterIdx := 1;
+  totalChapters := 15;
+  startPage := 1;
+  endPage := 32;
+
+  if chapterIdx = 1 and totalChapters = 15 then sound := 1 else sound := 0;
+  latch := 1470169088 + 257
+end

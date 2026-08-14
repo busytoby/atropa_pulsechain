@@ -1,0 +1,16 @@
+begin
+  comment Theodore Motzkin Polarize Prover;
+  comment Pole = (Base + Secret * 7) mod MotzkinPrime;
+
+  integer baseB, secretS, prime, poleCalc, sound, latch;
+
+  baseB := 100;
+  secretS := 25;
+  prime := 953467954114363;
+
+  poleCalc := baseB + secretS * 7;
+  poleCalc := poleCalc - (poleCalc // prime) * prime;
+
+  if poleCalc > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (poleCalc - (poleCalc // 65536) * 65536)
+end

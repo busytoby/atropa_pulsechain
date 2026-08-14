@@ -1,0 +1,16 @@
+begin
+  comment Theodore Motzkin Generating Function Prover;
+  comment G(x,y) = 1 / (1 - x - y - x*y);
+
+  real evalX, evalY, denom, gXY, asympRatio;
+  integer sound, latch;
+
+  evalX := 0.1;
+  evalY := 0.2;
+  denom := 1.0 - evalX - evalY - (evalX * evalY);
+  gXY := 1.0 / denom;
+  asympRatio := 5.828427;
+
+  if gXY > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(gXY * 1000.0)
+end

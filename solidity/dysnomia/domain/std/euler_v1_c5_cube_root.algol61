@@ -1,0 +1,20 @@
+begin
+  comment Euler Volume 1 Chapter 5 Cube Root Extraction Engine;
+  comment (x + y*sqrt(k))^3 = (x^3 + 3xy^2 k) + (3x^2 y + y^3 k)*sqrt(k);
+
+  integer a, b, randX, radicandK, xRoot, yRoot, expA, expB, sound, latch;
+
+  a := 38;
+  b := 17;
+  randX := 5;
+  radicandK := randX;
+
+  xRoot := 2;
+  yRoot := 1;
+
+  expA := (xRoot * xRoot * xRoot) + (3 * xRoot * yRoot * yRoot * radicandK);
+  expB := (3 * xRoot * xRoot * yRoot) + (yRoot * yRoot * yRoot * radicandK);
+
+  if expA = a and expB = b then sound := 1 else sound := 0;
+  latch := 1470169088 + (xRoot - (xRoot // 256) * 256) * 256 + (yRoot - (yRoot // 256) * 256)
+end

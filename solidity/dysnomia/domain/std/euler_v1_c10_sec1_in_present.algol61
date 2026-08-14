@@ -1,0 +1,23 @@
+begin
+  comment Euler Volume 1 Chapter 10 Section 1 In-Present Circular Series Engine;
+  comment In-present totient compliance and Euler identity e^(ix) = cos(x) + i*sin(x);
+
+  real xRad, cosVal, sinVal;
+  integer randX, randY, randY2, phiX, phiY, phiY2, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  randY2 := 17;
+  phiX := randX;
+  phiY := randY;
+  phiY2 := randY2;
+
+  xRad := 0.1;
+  cosVal := 1.0 - (xRad * xRad) / 2.0 + (xRad * xRad * xRad * xRad) / 24.0;
+  sinVal := xRad - (xRad * xRad * xRad) / 6.0 + (xRad * xRad * xRad * xRad * xRad) / 120.0;
+
+  if cosVal > 0.0 and sinVal > 0.0 and phiX > 0 and phiY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + entier(cosVal * 1000000.0)
+end

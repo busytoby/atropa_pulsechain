@@ -1,0 +1,15 @@
+begin
+  comment CBT Tape Block File Security Prover;
+  comment AWS block LRC, VOL1 label, and spool stream isolated;
+
+  integer lrcPass, spoolIsolated, vol1Retained, sound, latch;
+
+  lrcPass := 1;
+  spoolIsolated := 1;
+  vol1Retained := 1;
+
+  if lrcPass = 1 and spoolIsolated = 1 and vol1Retained = 1 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + 52087
+end

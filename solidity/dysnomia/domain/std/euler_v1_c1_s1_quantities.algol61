@@ -1,0 +1,12 @@
+begin
+  comment Euler Volume 1 Chapter 1 Section 1 Quantities Evaluator;
+  comment constants (a-m) and variables (n-z);
+
+  integer constants, variables, sound, latch;
+
+  constants := 3;
+  variables := 2;
+
+  if constants > 0 or variables > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + constants * 256 + variables
+end

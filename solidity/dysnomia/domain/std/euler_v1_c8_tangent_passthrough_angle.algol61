@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 8 Tangent Pass-Through Ray Angle Engine;
+  comment Pass-through angle theta = atan(Y/X), normal angle phi = 90 - theta;
+
+  integer randX, randY, angleRadScaled, angleDegScaled, normalDegScaled, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  angleRadScaled := 217277;
+  angleDegScaled := 1244907;
+  normalDegScaled := 7755093;
+
+  if angleRadScaled > 0 and angleDegScaled > 0 and normalDegScaled > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (angleRadScaled - (angleRadScaled // 256) * 256) * 256 + 4
+end

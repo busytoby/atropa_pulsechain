@@ -1,0 +1,13 @@
+begin
+  comment Euler Volume 1 Chapter 1 Section 2 Sign Algebra Engine;
+  comment Pos and Neg terms counting with numerical sum;
+
+  integer posCount, negCount, numSum, sound, latch;
+
+  posCount := 2;
+  negCount := 1;
+  numSum := 5;
+
+  if posCount > 0 or negCount > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + posCount * 256 + negCount
+end

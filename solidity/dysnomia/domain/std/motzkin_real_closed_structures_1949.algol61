@@ -1,0 +1,16 @@
+begin
+  comment Motzkin 1949 Real Closed Field Structures Prover;
+  comment R = (base + secret * 17) mod MotzkinPrime;
+
+  integer baseB, secretS, prime, rVal, sound, latch;
+
+  baseB := 100;
+  secretS := 20;
+  prime := 953467954114363;
+
+  rVal := baseB + secretS * 17;
+  rVal := rVal - (rVal // prime) * prime;
+
+  if rVal > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (rVal - (rVal // 65536) * 65536)
+end

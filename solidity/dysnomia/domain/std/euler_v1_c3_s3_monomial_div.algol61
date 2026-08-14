@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 3 Section 3 Monomial Division Engine;
+  comment quot_coeff = coeff_a // coeff_b, quot_exp = exp_m - exp_n;
+
+  integer coeffA, expM, coeffB, expN, quotCoeff, quotExp, sound, latch;
+
+  coeffA := 12;
+  expM := 5;
+  coeffB := 3;
+  expN := 2;
+
+  quotCoeff := coeffA // coeffB;
+  quotExp := expM - expN;
+
+  if quotCoeff = 4 and quotExp = 3 then sound := 1 else sound := 0;
+  latch := 1470169088 + (quotCoeff - (quotCoeff // 256) * 256) * 256 + quotExp
+end

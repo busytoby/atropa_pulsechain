@@ -1,0 +1,15 @@
+begin
+  comment TTL Circuit Convex Semidefinite Programming Prover;
+  comment v_diff = v_npn - v_pnp >= 0.25;
+
+  real vNpn, vPnp, vDiff;
+  integer sdpPositivity, sound, latch;
+
+  vNpn := 1.2;
+  vPnp := 0.8;
+  vDiff := vNpn - vPnp;
+
+  if vDiff >= 0.25 then sdpPositivity := 1 else sdpPositivity := 0;
+  sound := sdpPositivity;
+  latch := 1470169088 + entier(vDiff * 100.0)
+end

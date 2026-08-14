@@ -1,0 +1,17 @@
+begin
+  comment HathiTrust Opera Omnia Volume 1 Chapter 6 Full-Text Engine;
+  comment Caput VI De logarithmis in genere pages 161 to 192;
+
+  integer startPage, endPage, totalPages, sectionCnt, paragraphCnt, sound, latch;
+
+  startPage := 161;
+  endPage := 192;
+  totalPages := (endPage - startPage) + 1;
+  sectionCnt := 25;
+  paragraphCnt := 42;
+
+  if totalPages = 32 and sectionCnt = 25 and paragraphCnt = 42 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + startPage * 256 + totalPages
+end

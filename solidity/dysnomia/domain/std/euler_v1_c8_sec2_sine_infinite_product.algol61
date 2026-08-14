@@ -1,0 +1,21 @@
+begin
+  comment Euler Volume 1 Chapter 8 Section 2 Sine Infinite Product Formula;
+  comment sin(z) = z * prod (1 - z^2 / (k^2 * pi^2));
+
+  real z, piConst, prodVal, factor;
+  integer factorsCount, sound, latch, k;
+
+  z := 0.1;
+  piConst := 3.14159265;
+  factorsCount := 4;
+  prodVal := z;
+
+  for k := 1 step 1 until factorsCount do
+  begin
+    factor := 1.0 - (z * z) / (k * k * piConst * piConst);
+    prodVal := prodVal * factor
+  end;
+
+  if prodVal > 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(prodVal * 1000000.0)
+end

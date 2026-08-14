@@ -1,0 +1,15 @@
+begin
+  comment Euler Volume 1 Chapter 4 Section 3 Fraction Mult Engine;
+  comment (N1/D1) * (N2/D2) = (N1*N2)/(D1*D2);
+
+  integer n1, d1, n2, d2, prodNum, prodDen, sound, latch;
+
+  n1 := 2; d1 := 3;
+  n2 := 4; d2 := 5;
+
+  prodNum := n1 * n2;
+  prodDen := d1 * d2;
+
+  if prodNum = 8 and prodDen = 15 then sound := 1 else sound := 0;
+  latch := 1470169088 + (prodNum - (prodNum // 256) * 256) * 256 + (prodDen - (prodDen // 256) * 256)
+end

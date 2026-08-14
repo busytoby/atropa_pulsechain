@@ -1,0 +1,14 @@
+begin
+  comment EDSAC Initial Orders 3 Max Clique Prover;
+  comment Motzkin-Straus bound max_f = 0.5 * (1 - 1/omega);
+
+  integer cliqueSizeOmega, io3Sound, sound, latch;
+  real maxF;
+
+  cliqueSizeOmega := 4;
+  maxF := 0.5 * (1.0 - (1.0 / cliqueSizeOmega));
+
+  if maxF >= 0.0 and maxF < 0.5 then io3Sound := 1 else io3Sound := 0;
+  sound := io3Sound;
+  latch := 1470169088 + cliqueSizeOmega * 65536 + entier(maxF * 10000.0)
+end

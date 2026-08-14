@@ -1,0 +1,19 @@
+begin
+  comment Euler Volume 1 Chapter 5 Sequential Totient Pipeline;
+  comment Stage 1 Variable, Stage 2 Radicand, Stage 3 Trinomialium Trinity;
+
+  integer randX, radicandK, phiStage1, phiStage2, s1Valid, s2Valid, s3Valid, sound, latch;
+
+  randX := 5;
+  if randX > 0 then s1Valid := 1 else s1Valid := 0;
+  phiStage1 := randX;
+
+  radicandK := randX;
+  if s1Valid = 1 and radicandK = randX then s2Valid := 1 else s2Valid := 0;
+  phiStage2 := radicandK;
+
+  if s2Valid = 1 and phiStage1 = phiStage2 then s3Valid := 1 else s3Valid := 0;
+
+  sound := s3Valid;
+  latch := 1470169088 + (phiStage1 - (phiStage1 // 256) * 256) * 256 + 3
+end

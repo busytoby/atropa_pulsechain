@@ -1,0 +1,26 @@
+begin
+  comment David Wheeler Lemma Prover;
+  comment Cumulative ordered paper tape checksum C_k = (C_{k-1} + S_k * k) mod 65535;
+
+  integer procedure wheelerChecksum(frames);
+  value frames; integer frames;
+  begin
+    integer ck, k, s;
+    ck := 0;
+    for k := 1 step 1 until frames do
+    begin
+      if k = 1 then s := 65;
+      if k = 2 then s := 66;
+      if k = 3 then s := 67;
+      if k = 4 then s := 68;
+      ck := ck + s * k;
+      ck := ck - (ck // 65535) * 65535
+    end;
+    wheelerChecksum := ck
+  end;
+
+  integer ckSum, sound, latch;
+  ckSum := wheelerChecksum(4);
+  if ckSum > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + 4 * 65536 + ckSum
+end

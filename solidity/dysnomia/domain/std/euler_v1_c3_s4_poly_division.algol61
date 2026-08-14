@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 3 Section 4 Polynomial Division Engine;
+  comment P(x) long division by D(x): P(x) = Q(x)*D(x) + R;
+
+  integer p0, p1, p2, d0, d1, q0, q1, rem, sound, latch;
+
+  p0 := 6; p1 := 5; p2 := 1;
+  d0 := 2; d1 := 1;
+
+  q1 := p2 // d1;
+  q0 := (p1 - q1 * d0) // d1;
+  rem := p0 - q0 * d0;
+
+  if q1 = 1 and q0 = 3 and rem = 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + (q1 - (q1 // 256) * 256) * 256 + (q0 - (q0 // 256) * 256)
+end

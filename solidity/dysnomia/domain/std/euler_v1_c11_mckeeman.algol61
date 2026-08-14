@@ -1,0 +1,32 @@
+begin
+  comment Euler Volume 1 Chapter 11 McKeeman Adaptive Quadrature Engine;
+  comment Simpson adaptive quadrature over arc x;
+
+  real xBound, arctanQuad, arcsinQuad, dxStep, xMid;
+  integer randX, randY, randY2, phiX, phiY, phiY2, sound, latch, i, nSteps;
+
+  randX := 5;
+  randY := 11;
+  randY2 := 17;
+  phiX := randX;
+  phiY := randY;
+  phiY2 := randY2;
+
+  xBound := 0.1;
+  nSteps := 10;
+  dxStep := xBound / nSteps;
+  arctanQuad := 0.0;
+  arcsinQuad := 0.0;
+
+  for i := 0 step 1 until nSteps - 1 do
+  begin
+    xMid := (i + 0.5) * dxStep;
+    arctanQuad := arctanQuad + (dxStep / (1.0 + xMid * xMid));
+    arcsinQuad := arcsinQuad + dxStep
+  end;
+
+  if arctanQuad > 0.0 and arcsinQuad > 0.0 and phiX > 0 and phiY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + entier(arctanQuad * 1000000.0)
+end

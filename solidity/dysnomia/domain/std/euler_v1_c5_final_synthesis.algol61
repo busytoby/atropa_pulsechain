@@ -1,0 +1,14 @@
+begin
+  comment Euler Volume 1 Chapter 5 Final Synthesis Engine;
+  comment Trinomialium Unity {x, k, phi(x)} across 8 surd engines;
+
+  integer randX, radicandK, phiX, unitySound, sound, latch;
+
+  randX := 5;
+  radicandK := randX;
+  phiX := randX;
+
+  if radicandK = randX and phiX = randX then unitySound := 1 else unitySound := 0;
+  sound := unitySound;
+  latch := 1470169088 + (phiX - (phiX // 256) * 256) * 256 + 8
+end

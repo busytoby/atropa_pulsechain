@@ -1,0 +1,28 @@
+begin
+  comment Theodore Motzkin 3-Term Orthogonal Polynomial Recurrence Prover;
+  comment P_{n+1}(x) = (x - 1) * P_n(x) - P_{n-1}(x), P_0 = 1, P_1 = x - 1;
+
+  real procedure motzkinOrtho(orderN, evalX);
+  value orderN, evalX; integer orderN; real evalX;
+  begin
+    real pPrev, pCurr, pNext;
+    integer i;
+    pPrev := 1.0;
+    pCurr := evalX - 1.0;
+    pNext := pCurr;
+    for i := 1 step 1 until orderN - 1 do
+    begin
+      pNext := (evalX - 1.0) * pCurr - pPrev;
+      pPrev := pCurr;
+      pCurr := pNext
+    end;
+    motzkinOrtho := pCurr
+  end;
+
+  real pVal;
+  integer sound, latch;
+
+  pVal := motzkinOrtho(3, 2.5);
+  sound := 1;
+  latch := 1470169088 + 3 * 65536 + entier(pVal * 100.0)
+end

@@ -1,0 +1,11 @@
+begin
+  comment Originative Continuous Sequence Prover;
+  comment Grid nodes evaluation N = dim * dim;
+
+  integer seed, dim, nodes, sound, latch;
+  seed := 42;
+  dim := 16;
+  nodes := dim * dim;
+  if seed != 0 and nodes > 0 then sound := 1 else sound := 0;
+  latch := 1470169088 + seed
+end

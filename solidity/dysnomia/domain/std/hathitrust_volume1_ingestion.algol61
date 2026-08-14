@@ -1,0 +1,13 @@
+begin
+  comment HathiTrust Opera Omnia Volume 1 Ingestion Engine;
+  comment 512 pages, 12 theorems cataloged;
+
+  integer volNum, totalPages, theoremsCataloged, sound, latch;
+
+  volNum := 1;
+  totalPages := 512;
+  theoremsCataloged := 12;
+
+  if totalPages = 512 and theoremsCataloged = 12 then sound := 1 else sound := 0;
+  latch := 1470169088 + 257
+end

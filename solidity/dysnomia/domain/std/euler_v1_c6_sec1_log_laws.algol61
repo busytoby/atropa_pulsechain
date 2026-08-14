@@ -1,0 +1,20 @@
+begin
+  comment Euler Volume 1 Chapter 6 Section 1 Logarithmic Operational Laws Engine;
+  comment log(u*v) = log(u)+log(v), log(u/v) = log(u)-log(v), log(u^n) = n*log(u);
+
+  integer baseA, inputU, inputV, powerN, logU, logV, logProd, logQuot, logPow, sound, latch;
+
+  baseA := 2;
+  inputU := 4;
+  inputV := 8;
+  powerN := 3;
+
+  logU := 2;
+  logV := 3;
+  logProd := logU + logV;
+  logQuot := logV - logU;
+  logPow := powerN * logU;
+
+  if logProd = 5 and logQuot = 1 and logPow = 6 then sound := 1 else sound := 0;
+  latch := 1470169088 + logProd * 256 + logPow
+end

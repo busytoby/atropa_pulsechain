@@ -1,0 +1,16 @@
+begin
+  comment Motzkin Uniselector Cumulative Checksum Prover;
+  comment C_k = (C_{k-1} + S_k * k) mod 65535;
+
+  integer stepK, priorCk, keycode, nextCk, sound, latch;
+
+  stepK := 2;
+  priorCk := 65;
+  keycode := 32;
+
+  nextCk := priorCk + keycode * stepK;
+  nextCk := nextCk - (nextCk // 65535) * 65535;
+
+  if stepK > 0 and (keycode = 32 or keycode = 30) then sound := 1 else sound := 0;
+  latch := 1470169088 + stepK * 65536 + nextCk
+end

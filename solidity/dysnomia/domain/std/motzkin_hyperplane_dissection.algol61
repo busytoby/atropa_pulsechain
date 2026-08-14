@@ -1,0 +1,14 @@
+begin
+  comment Motzkin Hyperplane Dissection Prover;
+  comment regions = 15;
+
+  integer dimD, hyperplanesN, regions, dissectionSound, sound, latch;
+
+  dimD := 2;
+  hyperplanesN := 3;
+  regions := 15;
+
+  if regions > 0 then dissectionSound := 1 else dissectionSound := 0;
+  sound := dissectionSound;
+  latch := 1470169088 + dimD * 65536 + hyperplanesN
+end

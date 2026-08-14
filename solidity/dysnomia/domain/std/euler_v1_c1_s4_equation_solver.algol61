@@ -1,0 +1,14 @@
+begin
+  comment Euler Volume 1 Chapter 1 Section 4 Equation Solver Engine;
+  comment a*x + b = 0 => x = -b // a;
+
+  integer coeffA, constB, rootX, holds, sound, latch;
+
+  coeffA := 2;
+  constB := -6;
+  rootX := -constB // coeffA;
+
+  if (coeffA * rootX + constB) = 0 then holds := 1 else holds := 0;
+  sound := holds;
+  latch := 1470169088 + (rootX - (rootX // 65536) * 65536)
+end

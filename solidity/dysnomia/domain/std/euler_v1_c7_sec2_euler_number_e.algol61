@@ -1,0 +1,21 @@
+begin
+  comment Euler Volume 1 Chapter 7 Section 2 Euler Number e Engine;
+  comment e^z = 1 + z + z^2/2! + z^3/3! + z^4/4! + ...;
+
+  real z, eSum, term;
+  integer termsCount, sound, latch, k;
+
+  z := 0.1;
+  termsCount := 4;
+  eSum := 1.0;
+  term := 1.0;
+
+  for k := 1 step 1 until termsCount do
+  begin
+    term := term * z / k;
+    eSum := eSum + term
+  end;
+
+  if eSum > 1.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(eSum * 1000000.0)
+end

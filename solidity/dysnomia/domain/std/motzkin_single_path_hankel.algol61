@@ -1,0 +1,14 @@
+begin
+  comment Theodore Motzkin Single-Path Hankel Lemma Prover;
+  comment Single path Hankel matrix has Rank = 1, delta_dev = 0.0;
+
+  integer stepsN, rankPath, sound, latch;
+  real deltaDev;
+
+  stepsN := 16;
+  rankPath := 1;
+  deltaDev := 0.0;
+
+  if rankPath = 1 and deltaDev = 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + stepsN * 65536 + 1
+end

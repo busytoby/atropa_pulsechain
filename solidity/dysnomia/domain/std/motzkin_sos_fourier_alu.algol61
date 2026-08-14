@@ -1,0 +1,15 @@
+begin
+  comment SOS Fourier Transform ALU & EDSAC Initial Orders Prover;
+  comment energy_E = x^2 + 1.0 >= 0;
+
+  real evalX, energyE;
+  integer parsevalSound, initialOrders, sound, latch;
+
+  evalX := 2.0;
+  energyE := evalX * evalX + 1.0;
+  initialOrders := 1;
+
+  if energyE >= 0.0 then parsevalSound := 1 else parsevalSound := 0;
+  if parsevalSound = 1 and initialOrders = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + entier(energyE * 100.0)
+end

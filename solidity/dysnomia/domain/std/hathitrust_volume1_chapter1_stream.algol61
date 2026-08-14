@@ -1,0 +1,13 @@
+begin
+  comment HathiTrust Opera Omnia Volume 1 Chapter 1 Stream Parser;
+  comment 32 pages parsed, 24 sections parsed;
+
+  integer pageCount, totalSections, streamBytes, sound, latch;
+
+  pageCount := 32;
+  totalSections := 24;
+  streamBytes := 16384;
+
+  if pageCount = 32 and totalSections = 24 then sound := 1 else sound := 0;
+  latch := 1470169088 + 16384
+end

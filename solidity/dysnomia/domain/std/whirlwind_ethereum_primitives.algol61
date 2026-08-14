@@ -1,0 +1,15 @@
+begin
+  comment Whirlwind I Ethereum Block Security Primitives Prover;
+  comment Electrostatic clock strobe, pulse transformer latch;
+
+  integer pulseLatch, clockStrobe, ferriteRetained, sound, latch;
+
+  pulseLatch := 1;
+  clockStrobe := 1;
+  ferriteRetained := 1;
+
+  if pulseLatch = 1 and clockStrobe = 1 and ferriteRetained = 1 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + 225
+end

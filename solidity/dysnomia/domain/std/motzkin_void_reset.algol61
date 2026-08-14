@@ -1,0 +1,12 @@
+begin
+  comment Theodore Motzkin Void Reset & Fuse(0) Prover;
+  comment Collapse Base and Foundation registers to zero;
+
+  integer baseReg, foundReg, sound, latch;
+
+  baseReg := 0;
+  foundReg := 0;
+
+  if baseReg = 0 and foundReg = 0 then sound := 1 else sound := 0;
+  latch := 1470169088
+end

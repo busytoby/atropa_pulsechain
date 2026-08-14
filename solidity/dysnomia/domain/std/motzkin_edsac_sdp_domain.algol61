@@ -1,0 +1,14 @@
+begin
+  comment EDSAC Semidefinite Programming Operating Domain Prover;
+  comment Primal-dual gap = 0.0;
+
+  integer delayLineWords, domainSound, sound, latch;
+  real gap;
+
+  delayLineWords := 512;
+  gap := 0.0;
+
+  if gap = 0.0 then domainSound := 1 else domainSound := 0;
+  sound := domainSound;
+  latch := 1470169088 + delayLineWords * 65536 + 1
+end

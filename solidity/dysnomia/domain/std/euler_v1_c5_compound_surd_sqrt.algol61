@@ -1,0 +1,22 @@
+begin
+  comment Euler Volume 1 Chapter 5 Compound Surd Sqrt Engine;
+  comment sqrt(a + b*sqrt(k)) = sqrt(x_part) + sqrt(y_part);
+
+  integer a, b, randX, radicandK, d2, d, xPart, yPart, sound, latch;
+
+  a := 7;
+  b := 2;
+  randX := 10;
+
+  radicandK := randX;
+  d2 := a * a - b * b * radicandK;
+  d := 3;
+
+  xPart := (a + d) // 2;
+  yPart := (a - d) // 2;
+
+  if (xPart + yPart) = a and (4 * xPart * yPart) = (b * b * radicandK) then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (xPart - (xPart // 256) * 256) * 256 + (yPart - (yPart // 256) * 256)
+end

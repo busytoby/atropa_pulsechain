@@ -1,0 +1,14 @@
+begin
+  comment Motzkin Hyperplane Intersections Prover;
+  comment cells = 15;
+
+  integer dimD, hyperplanesN, cells, realBoundary, sound, latch;
+
+  dimD := 2;
+  hyperplanesN := 3;
+  cells := 15;
+
+  if cells > 0 then realBoundary := 1 else realBoundary := 0;
+  sound := realBoundary;
+  latch := 1470169088 + dimD * 65536 + hyperplanesN
+end

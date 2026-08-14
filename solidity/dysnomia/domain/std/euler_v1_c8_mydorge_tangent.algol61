@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 8 Mydorge Dimensional Perspective Tangent Engine;
+  comment X = x*cos(z), Y = y*sin(z), R = sqrt(X^2+Y^2), tan theta = Y/X;
+
+  integer randX, randY, eulerTanScaled, mydorgeTanScaled, rayRScaled, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  eulerTanScaled := 100334;
+  mydorgeTanScaled := 220735;
+  rayRScaled := 5094890;
+
+  if eulerTanScaled > 0 and mydorgeTanScaled > 0 and rayRScaled > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (mydorgeTanScaled - (mydorgeTanScaled // 256) * 256) * 256 + 1
+end

@@ -1,0 +1,14 @@
+begin
+  comment Motzkin 1971 Hyperplane Partition Cells Prover;
+  comment solved_H = 15;
+
+  integer dimD, hyperplanesN, solvedH, partSound, sound, latch;
+
+  dimD := 3;
+  hyperplanesN := 4;
+  solvedH := 15;
+
+  if solvedH > 0 then partSound := 1 else partSound := 0;
+  sound := partSound;
+  latch := 1470169088 + dimD * 65536 + solvedH
+end

@@ -1,0 +1,24 @@
+begin
+  comment Motzkin 1969 Unorthogonal Polynomial Recurrence Prover;
+  comment P_{n+1}(x) = (x - 1) * P_n(x) - P_{n-1}(x);
+
+  real evalX, pPrev, pCurr, pNext;
+  integer degreeN, threeTermSound, sound, latch, i;
+
+  evalX := 0.0;
+  degreeN := 4;
+
+  pPrev := 1.0;
+  pCurr := evalX - 1.0;
+  pNext := pCurr;
+  for i := 1 step 1 until degreeN - 1 do
+  begin
+    pNext := (evalX - 1.0) * pCurr - pPrev;
+    pPrev := pCurr;
+    pCurr := pNext
+  end;
+
+  if pCurr = -1.0 then threeTermSound := 1 else threeTermSound := 0;
+  sound := threeTermSound;
+  latch := 1470169088 + degreeN * 65536 + 100
+end

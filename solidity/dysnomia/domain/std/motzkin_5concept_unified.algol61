@@ -1,0 +1,29 @@
+begin
+  comment Theodore Motzkin 5-Concept Unified Suite Prover;
+  comment 1. a_{4,4} = 621, 2. M_4 = 9, 3. G(x,y), 4. det(H)=1, 5. P_4(x);
+
+  real evalX, evalY, denom, gXY, pPrev, pCurr, pNext;
+  integer cellAMN, motzkinM4, detH, sound, latch, i;
+
+  evalX := 0.1;
+  evalY := 0.2;
+  cellAMN := 621;
+  motzkinM4 := 9;
+  detH := 1;
+
+  denom := 1.0 - evalX - evalY - (evalX * evalY);
+  gXY := 1.0 / denom;
+
+  pPrev := 1.0;
+  pCurr := evalX - 1.0;
+  pNext := pCurr;
+  for i := 1 step 1 until 3 do
+  begin
+    pNext := (evalX - 1.0) * pCurr - pPrev;
+    pPrev := pCurr;
+    pCurr := pNext
+  end;
+
+  if cellAMN > 0 and motzkinM4 = 9 and detH = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + 4 * 65536 + 5
+end

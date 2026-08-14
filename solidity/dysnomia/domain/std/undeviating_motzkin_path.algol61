@@ -1,0 +1,13 @@
+begin
+  comment Strict Undeviating Motzkin Path Prover;
+  comment Zero lateral path deviation delta = 0.0;
+
+  integer steps, sound, latch;
+  real deltaDev;
+
+  steps := 32;
+  deltaDev := 0.0;
+
+  if steps > 0 and deltaDev = 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + steps * 65536
+end

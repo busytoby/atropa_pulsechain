@@ -1,0 +1,14 @@
+begin
+  comment HathiTrust Opera Omnia Volume 1 Chapter 7 Full-Text Engine;
+  comment Caput VII De quantitatum exponentialium pages 193 to 224;
+
+  integer startPage, endPage, totalPages, sectionCnt, sound, latch;
+
+  startPage := 193;
+  endPage := 224;
+  totalPages := (endPage - startPage) + 1;
+  sectionCnt := 25;
+
+  if totalPages = 32 and sectionCnt = 25 then sound := 1 else sound := 0;
+  latch := 1470169088 + startPage * 256 + totalPages
+end

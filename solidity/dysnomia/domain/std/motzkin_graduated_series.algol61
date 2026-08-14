@@ -1,0 +1,29 @@
+begin
+  comment Graduated Functional Series Procession Prover;
+  comment S_N = sum 1/(k+1) * P_k(x);
+
+  real evalX, sumS, pPrev, pCurr, pNext, prevSum;
+  integer maxOrderN, monotonic, sound, latch, k;
+
+  maxOrderN := 3;
+  evalX := 2.5;
+
+  pPrev := 1.0;
+  pCurr := evalX - 1.0;
+  sumS := (1.0 * pPrev) + (0.5 * pCurr);
+  prevSum := sumS;
+  monotonic := 1;
+
+  for k := 2 step 1 until maxOrderN do
+  begin
+    pNext := (evalX - 1.0) * pCurr - pPrev;
+    pPrev := pCurr;
+    pCurr := pNext;
+    sumS := sumS + (1.0 / (k + 1)) * pCurr;
+    if sumS < prevSum then monotonic := 0;
+    prevSum := sumS
+  end;
+
+  if sumS != 0.0 then sound := 1 else sound := 0;
+  latch := 1470169088 + maxOrderN * 65536 + entier(sumS * 100.0)
+end

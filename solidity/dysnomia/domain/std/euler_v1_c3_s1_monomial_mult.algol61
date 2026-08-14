@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 3 Section 1 Monomial Multiplication Engine;
+  comment prod_coeff = coeff_a * coeff_b, prod_exp = exp_m + exp_n;
+
+  integer coeffA, expM, coeffB, expN, prodCoeff, prodExp, sound, latch;
+
+  coeffA := 3;
+  expM := 2;
+  coeffB := 4;
+  expN := 3;
+
+  prodCoeff := coeffA * coeffB;
+  prodExp := expM + expN;
+
+  if prodCoeff = 12 and prodExp = 5 then sound := 1 else sound := 0;
+  latch := 1470169088 + (prodCoeff - (prodCoeff // 256) * 256) * 256 + prodExp
+end

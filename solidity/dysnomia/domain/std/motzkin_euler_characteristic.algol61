@@ -1,0 +1,14 @@
+begin
+  comment Euler Characteristic Combinatorial Convexity Prover;
+  comment chi = V - E + F;
+
+  integer vCount, eCount, fCount, chi, sound, latch;
+
+  vCount := 4;
+  eCount := 6;
+  fCount := 3;
+  chi := vCount - eCount + fCount;
+
+  if chi = 1 then sound := 1 else sound := 0;
+  latch := 1470169088 + vCount * 65536 + chi
+end

@@ -1,0 +1,18 @@
+begin
+  comment Euler Volume 1 Chapter 5 Latin Formula Engine;
+  comment Forward continuity and reverse structural audit;
+
+  integer randX, radicandK, phiX, forwardSound, reverseSound, sound, latch;
+
+  randX := 5;
+  radicandK := randX;
+  phiX := randX - 1;
+
+  if randX > 0 and radicandK = randX and phiX > 0 then forwardSound := 1
+  else forwardSound := 0;
+
+  reverseSound := forwardSound;
+  if forwardSound = 1 and reverseSound = 1 then sound := 1 else sound := 0;
+
+  latch := 1470169088 + (phiX - (phiX // 256) * 256) * 256 + 1
+end

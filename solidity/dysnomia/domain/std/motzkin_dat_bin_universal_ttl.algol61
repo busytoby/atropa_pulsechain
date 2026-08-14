@@ -1,0 +1,13 @@
+begin
+  comment Universal .dat.bin Asset TTL Circuit Synthesizer Prover;
+  comment bytes_parsed = 2048, gates = 32;
+
+  integer bytesParsed, gates, universalSound, sound, latch;
+
+  bytesParsed := 2048;
+  gates := 32;
+
+  if gates > 0 then universalSound := 1 else universalSound := 0;
+  sound := universalSound;
+  latch := 1470169088 + gates * 65536 + bytesParsed
+end

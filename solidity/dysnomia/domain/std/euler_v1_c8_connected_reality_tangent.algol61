@@ -1,0 +1,16 @@
+begin
+  comment Euler Volume 1 Chapter 8 Connected Reality Tangent Origin Perspective;
+  comment Originative Perspective Distance R, Tangent Vector T = tan(theta)*R;
+
+  integer randX, randY, originRScaled, connectedTanScaled, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  originRScaled := 5094890;
+  connectedTanScaled := 1124623;
+
+  if originRScaled > 0 and connectedTanScaled > 0 and randX > 0 and randY > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (connectedTanScaled - (connectedTanScaled // 256) * 256) * 256 + 2
+end

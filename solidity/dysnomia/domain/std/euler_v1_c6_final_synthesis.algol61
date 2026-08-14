@@ -1,0 +1,14 @@
+begin
+  comment Euler Volume 1 Chapter 6 Final Synthesis Engine;
+  comment 4 log engines synthesis across dual inputs (x, y);
+
+  integer randX, randY, phiX, enginesCnt, sound, latch;
+
+  randX := 5;
+  randY := 7;
+  phiX := randX - 1;
+  enginesCnt := 4;
+
+  if randX > 0 and randY > 0 and enginesCnt = 4 then sound := 1 else sound := 0;
+  latch := 1470169088 + (phiX - (phiX // 256) * 256) * 256 + enginesCnt
+end

@@ -1,0 +1,14 @@
+begin
+  comment Euler Volume 1 Chapter 1 Section 3 Mult/Div Engine;
+  comment product = a * b, quotient = a // b;
+
+  integer a, b, product, quotient, sound, latch;
+
+  a := 12;
+  b := 4;
+  product := a * b;
+  quotient := a // b;
+
+  if product = 48 and quotient = 3 then sound := 1 else sound := 0;
+  latch := 1470169088 + (product - (product // 65536) * 65536)
+end

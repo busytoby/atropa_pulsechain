@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 5 Approximate Sqrt Engine;
+  comment Rational convergent r + d/(2r) where k = r^2 + d;
+
+  integer randX, radicandK, r, d, c1Num, c1Den, sound, latch;
+
+  randX := 5;
+  radicandK := randX;
+  r := 2;
+  d := radicandK - (r * r);
+
+  c1Num := (2 * r * r) + d;
+  c1Den := 2 * r;
+
+  if c1Num = 9 and c1Den = 4 then sound := 1 else sound := 0;
+  latch := 1470169088 + (c1Num - (c1Num // 256) * 256) * 256 + (c1Den - (c1Den // 256) * 256)
+end

@@ -1,0 +1,19 @@
+begin
+  comment Euler Volume 1 Chapter 2 Rational Polynomial Engine;
+  comment s_num = p1_num * p2_den + p2_num * p1_den, s_den = p1_den * p2_den;
+
+  integer p1Num0, p1Den0, p2Num0, p2Den0, sNum0, sDen0, dNum0, dDen0, sound, latch;
+
+  p1Num0 := 1;
+  p1Den0 := 2;
+  p2Num0 := 1;
+  p2Den0 := 3;
+
+  sNum0 := p1Num0 * p2Den0 + p2Num0 * p1Den0;
+  sDen0 := p1Den0 * p2Den0;
+  dNum0 := p1Num0 * p2Den0 - p2Num0 * p1Den0;
+  dDen0 := p1Den0 * p2Den0;
+
+  if sNum0 = 5 and sDen0 = 6 then sound := 1 else sound := 0;
+  latch := 1470169088 + (sNum0 - (sNum0 // 256) * 256) * 256 + (sDen0 - (sDen0 // 256) * 256)
+end

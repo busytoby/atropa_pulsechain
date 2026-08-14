@@ -1,0 +1,17 @@
+begin
+  comment Euler Volume 1 Chapter 6 Section 2 Logarithmic Base Change Engine;
+  comment log_b(y) = log_a(y) / log_a(b);
+
+  integer baseA, baseB, opY, logAY, logAB, logBY, sound, latch;
+
+  baseA := 2;
+  baseB := 4;
+  opY := 16;
+
+  logAY := 4;
+  logAB := 2;
+  logBY := logAY // logAB;
+
+  if logBY = 2 and (logBY * logAB) = logAY then sound := 1 else sound := 0;
+  latch := 1470169088 + logBY * 256 + logAB
+end

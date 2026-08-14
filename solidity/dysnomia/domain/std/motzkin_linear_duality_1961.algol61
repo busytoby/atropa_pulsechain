@@ -1,0 +1,16 @@
+begin
+  comment Motzkin 1961 Linear Duality Prover;
+  comment gap = |primal - dual| < 1e-6;
+
+  real primalC, dualB, gap;
+  integer lpSound, sound, latch;
+
+  primalC := 100.0;
+  dualB := 100.0;
+  gap := primalC - dualB;
+  if gap < 0.0 then gap := -gap;
+
+  if gap < 0.000001 then lpSound := 1 else lpSound := 0;
+  sound := lpSound;
+  latch := 1470169088 + entier(primalC * 100.0)
+end

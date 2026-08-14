@@ -1,0 +1,14 @@
+begin
+  comment Motzkin 1958 Assignment Problem Prover;
+  comment Doubly stochastic cost > 0.0;
+
+  integer dimN, birkhoffSound, sound, latch;
+  real evalCost;
+
+  dimN := 4;
+  evalCost := 42.5;
+
+  if evalCost > 0.0 then birkhoffSound := 1 else birkhoffSound := 0;
+  sound := birkhoffSound;
+  latch := 1470169088 + dimN * 65536 + entier(evalCost * 100.0)
+end

@@ -1,0 +1,19 @@
+begin
+  comment Euler Volume 1 Chapter 9 Section 3 Conic Section Attendeeship Manifold;
+  comment Qualification of x, y, and y2 as Attendees through totient compliance;
+
+  integer randX, randY, randY2, phiX, phiY, phiY2, activeAttendees, sound, latch;
+
+  randX := 5;
+  randY := 11;
+  randY2 := 17;
+  phiX := randX;
+  phiY := randY;
+  phiY2 := randY2;
+  activeAttendees := 3;
+
+  if phiX > 0 and phiY > 0 and activeAttendees > 0 then sound := 1
+  else sound := 0;
+
+  latch := 1470169088 + (phiX - (phiX // 256) * 256) * 256 + activeAttendees
+end
