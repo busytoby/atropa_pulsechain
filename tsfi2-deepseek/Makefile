@@ -498,6 +498,9 @@ bin/benchmark_neuro_activation: tests/benchmark_neuro_activation.c $(CORE_OBJS) 
 bin/test_hogan_integration: tests/test_hogan_integration.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_sovereign_saat_hogan_bridge: tests/test_sovereign_saat_hogan_bridge.c src/tsfi_frejlich_domain_governance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
