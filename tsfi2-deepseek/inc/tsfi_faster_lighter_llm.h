@@ -7287,4 +7287,28 @@ bool tsfi_clawvm_multi_tier_offload_eval(
     tsfi_clawvm_multi_tier_offload_state_t *offload_out
 );
 
+// OpenClaw (EuroMLSys 2026) Multi-Agent Cooperative Session Orchestrator (Section 3.5, 4.5)
+typedef struct {
+    uint32_t agent_id;
+    uint32_t parent_session_id;
+    uint32_t shared_pages_count;
+    uint32_t peer_sync_messages;
+    float sync_barrier_latency_us;
+    bool session_tree_coherent;
+} tsfi_openclaw_cooperative_agent_t;
+
+typedef struct {
+    uint32_t total_active_agents;
+    uint32_t cross_agent_tool_delegations;
+    uint32_t memory_conflicts_resolved;
+    float multi_agent_throughput_lift;
+    bool lockless_consensus_verified;
+} tsfi_openclaw_orchestration_state_t;
+
+bool tsfi_openclaw_orchestrate_agents(
+    uint32_t num_agents,
+    uint32_t session_root_id,
+    tsfi_openclaw_orchestration_state_t *orch_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
