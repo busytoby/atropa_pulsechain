@@ -7463,4 +7463,21 @@ bool tsfi_clawvm_pinning_balancer_eval(
     tsfi_clawvm_pinning_balancer_state_t *balancer_out
 );
 
+// ClawVM (EuroMLSys 2026) Writeback Invariant Checkpointer & Atomic Journal Replay Engine (Section 3.6, 4.4)
+typedef struct {
+    uint32_t checkpoint_id;
+    uint32_t staged_entries_committed;
+    uint32_t journal_bytes_flushed;
+    float checkpoint_sync_latency_us;
+    bool atomic_flush_verified;
+    bool wal_replay_integrity_verified;
+} tsfi_clawvm_checkpoint_sync_state_t;
+
+bool tsfi_clawvm_checkpoint_sync_eval(
+    uint32_t session_id,
+    uint32_t num_staged_mutations,
+    const char *dat_bin_wal_path,
+    tsfi_clawvm_checkpoint_sync_state_t *sync_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

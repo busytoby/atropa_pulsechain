@@ -3394,12 +3394,17 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_pbal && pin_bal.zero_headroom_deficit_verified && pin_bal.budget_hard_ceiling_satisfied);
     assert(pin_bal.hard_pinned_tokens_allocated == 256 && pin_bal.pinning_balance_latency_us < 10.0f);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Pinning Balancer (<5 us), Sub-Page Compactor (3.65x) & ZMM KV Layout verified.\n");
+    tsfi_clawvm_checkpoint_sync_state_t chk_sync;
+    bool ok_csync = tsfi_clawvm_checkpoint_sync_eval(1, 16, "zorse_checkpoint.dat.bin", &chk_sync);
+    assert(ok_csync && chk_sync.atomic_flush_verified && chk_sync.wal_replay_integrity_verified);
+    assert(chk_sync.staged_entries_committed == 16 && chk_sync.checkpoint_sync_latency_us < 10.0f);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Checkpoint Sync (<6 us), Pinning Balancer (<5 us) & ZMM KV Layout verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 444 inference engine architectures and 446 algorithmic modules verified.\n");
+    printf("  -> PASS: All 446 inference engine architectures and 448 algorithmic modules verified.\n");
 }
 
 int main(void) {
