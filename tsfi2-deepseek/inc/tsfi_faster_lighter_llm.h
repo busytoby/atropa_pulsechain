@@ -7353,4 +7353,20 @@ bool tsfi_clawvm_zmm_kv_layout_eval(
     tsfi_clawvm_zmm_kv_state_t *zmm_out
 );
 
+// OpenClaw (EuroMLSys 2026) Autonomous Event Loop & Sub-Turn Hardware Streaming Engine (Section 3.3, 4.7)
+typedef struct {
+    uint32_t loop_iteration_count;
+    uint32_t sub_turns_dispatched;
+    uint32_t hardware_events_polled;
+    uint32_t asynchronous_callbacks_invoked;
+    float loop_cycle_overhead_us;
+    bool lockless_event_drain_verified;
+} tsfi_openclaw_event_loop_state_t;
+
+bool tsfi_openclaw_event_loop_step(
+    tsfi_openclaw_runtime_state_t *runtime,
+    uint32_t max_sub_turns,
+    tsfi_openclaw_event_loop_state_t *loop_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
