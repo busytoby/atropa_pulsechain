@@ -1690,6 +1690,20 @@ tests/bench_zero_overhead: tests/bench_zero_overhead.c $(CORE_OBJS) $(OBJ_DIR)/v
 tests/bench_deepseek_mla: tests/bench_deepseek_mla.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	@mkdir -p tests
 	$(CC) $(filter-out -fstack-protector-strong -D_FORTIFY_SOURCE=3, $(CFLAGS)) -ffast-math -funroll-loops -fomit-frame-pointer $(INCLUDES) $^ -o $@ $(LDFLAGS)
-.PHONY: profile
+
+bin/test_zorse_gguf_flllm_suite: tests/test_zorse_gguf_flllm_suite.c $(OBJ_DIR)/tsfi_faster_lighter_llm.o $(OBJ_DIR)/tsfi_gguf_loader.o $(OBJ_DIR)/tsfi_ai_core.o $(OBJ_DIR)/tsfi_xplos_shell_cbt_vtam.o $(OBJ_DIR)/tsfi_helmholtz_ring.o $(OBJ_DIR)/tsfi_chamberland_duality.o $(OBJ_DIR)/tsfi_alessandrini_condenser.o $(OBJ_DIR)/tsfi_stekloff_duality.o $(OBJ_DIR)/tsfi_zorse_tomography.o $(OBJ_DIR)/tsfi_geometric_algebra.o $(OBJ_DIR)/tsfi_subword_trie_cache.o $(OBJ_DIR)/tsfi_quantized_rag.o $(OBJ_DIR)/tsfi_code_review.o $(OBJ_DIR)/tsfi_telpa_program_analysis.o $(OBJ_DIR)/tsfi_flash_deepseek.o $(OBJ_DIR)/tsfi_totient_qing_tomography.o $(OBJ_DIR)/tsfi_zhu_model_compression.o $(OBJ_DIR)/tsfi_loraprune_deepseek.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -Wno-unused-result -Wno-unused-parameter -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -I../inc -Isrc -O3 -g -march=native -flax-vector-conversions -fPIC $^ -o $@ -lm
+
+bin/zorse_prompt: tools/zorse_prompt.c $(OBJ_DIR)/tsfi_faster_lighter_llm.o $(OBJ_DIR)/tsfi_gguf_loader.o $(OBJ_DIR)/tsfi_ai_core.o $(OBJ_DIR)/tsfi_xplos_shell_cbt_vtam.o $(OBJ_DIR)/tsfi_helmholtz_ring.o $(OBJ_DIR)/tsfi_chamberland_duality.o $(OBJ_DIR)/tsfi_alessandrini_condenser.o $(OBJ_DIR)/tsfi_stekloff_duality.o $(OBJ_DIR)/tsfi_zorse_tomography.o $(OBJ_DIR)/tsfi_geometric_algebra.o $(OBJ_DIR)/tsfi_subword_trie_cache.o $(OBJ_DIR)/tsfi_quantized_rag.o $(OBJ_DIR)/tsfi_code_review.o $(OBJ_DIR)/tsfi_telpa_program_analysis.o $(OBJ_DIR)/tsfi_flash_deepseek.o $(OBJ_DIR)/tsfi_totient_qing_tomography.o $(OBJ_DIR)/tsfi_zhu_model_compression.o $(OBJ_DIR)/tsfi_loraprune_deepseek.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -Wno-unused-result -Wno-unused-parameter -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -I../inc -Isrc -O3 -g -march=native -flax-vector-conversions -fPIC $^ -o $@ -lm
+
+.PHONY: test_flllm check_flllm profile
+test_flllm: bin/test_zorse_gguf_flllm_suite
+	./bin/test_zorse_gguf_flllm_suite
+
+check_flllm: test_flllm
+
 profile:
 	bash benchmarks/profiler_suite/run_benchmarks.sh

@@ -142,6 +142,7 @@ double tsfi_displacementshader_eval_mckeeman_adaptive_quadrature(
     double (*func)(double x, void *user_data),
     void *user_data
 ) {
+    (void)ds;
     if (!func || a >= b) return 0.0;
     if (tol <= 0.0) tol = 1e-6;
 

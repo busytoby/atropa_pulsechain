@@ -78,11 +78,10 @@ bool tsfi_vsen_sna_acb_rpl_session_bridge(
 }
 
 /* STANAG VFIO Direct NIC DMA Memory Bridge for Microsecond Telemetry Traversal */
-typedef struct __attribute__((aligned(64))) {
+typedef struct __attribute__((aligned(16))) {
     uint32_t vfio_group_id;
     uint32_t pci_slot_id;
     uint64_t dma_phys_addr;
-    uint8_t  ring_buffer[4096]; // Aligned DMA ring buffer
 } StanagVfioNicRing;
 
 bool tsfi_stanag_vfio_nic_dma_bridge(uint32_t pci_slot, void *target_kv_cache, size_t len) {

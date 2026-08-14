@@ -23,7 +23,7 @@ int tsfi_plated_wire_step(TsfiPlatedWireCell *cell, float word_current, float bi
     // Bit current creates easy axis steering field (circumferential)
     float h_easy = bit_current * 1.5f;
 
-    // 2. Coherent rotation dynamics (Landau-Lifshitz-Gilbert style relaxation)
+    // 2. Coherent rotation dynamics (magnetic spin precession relaxation)
     // dtheta/dt = - (1/tau) * dE/dtheta
     // E(theta) = K * sin^2(theta) - H_easy * cos(theta) - H_hard * sin(theta)
     // dE/dtheta = K * sin(2*theta) + H_easy * sin(theta) - H_hard * cos(theta)

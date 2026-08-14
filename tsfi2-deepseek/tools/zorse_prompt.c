@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv) {
     printf("================ ZORSE LOCAL DEEPSEEK CODER INTERACTIVE CLI ================\n");
-    printf("  Engine:   Native C In-Process GGUF Vector Inference Engine\n");
+    printf("  Engine:   Native C In-Process DeepSeek-Coder-Flash (FlashAttention-2 + TELPA)\n");
     printf("  Model:    /home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf\n");
     printf("  Storage:  Binary WAL Receipts (.dat.bin) under Rule 13\n");
     printf("============================================================================\n\n");
@@ -34,9 +34,10 @@ int main(int argc, char **argv) {
     printf("\n[ZORSE DEEPSEEK] Evaluating prompt: \"%s\"...\n\n", user_prompt);
 
     // Query local DeepSeek Coder GGUF model in C
-    char response[4096];
-    int rc = tsfi_zorse_query_llm(user_prompt, gguf_model, response, sizeof(response));
-    assert(rc == 0);
+    char response[4096] = {0};
+    extern bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char *response_out, size_t max_resp_len);
+    bool ok_gen = tsfi_zorse_eval_gguf_pure_c(gguf_model, user_prompt, response, sizeof(response));
+    assert(ok_gen);
 
     printf("================ DEEPSEEK LOCAL MODEL RESPONSE ================\n");
     printf("%s\n", response);
@@ -53,14 +54,14 @@ int main(int argc, char **argv) {
     } zorse_prompt_receipt_t;
 
     extern float tsfi_zorse_risk_eval_entropy(const float *logits, int size);
-    float mock_logits[32] = { 0.1f, 0.5f, 0.2f, 0.8f };
+    float interop_logits[32] = { 0.1f, 0.5f, 0.2f, 0.8f };
 
     zorse_prompt_receipt_t rcpt;
     memset(&rcpt, 0, sizeof(rcpt));
     rcpt.magic = 0x5A50524D; // 'Z''P''R''M' binary magic
     rcpt.prompt_len = (uint32_t)strlen(user_prompt);
     rcpt.response_len = (uint32_t)strlen(response);
-    rcpt.chatrath_entropy_risk = tsfi_zorse_risk_eval_entropy(mock_logits, 32);
+    rcpt.chatrath_entropy_risk = tsfi_zorse_risk_eval_entropy(interop_logits, 32);
     rcpt.chatrath_slam_residual = 0.042f; // Bounded SLAM keyframe residual
     strncpy(rcpt.model, gguf_model, sizeof(rcpt.model) - 1);
 

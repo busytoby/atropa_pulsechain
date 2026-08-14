@@ -64,7 +64,8 @@ volumetric_test/
 
 # Experiments and Third-Party Bloat
 experiments/
-thunks/
+thunks/*.so
+thunks/**/*.so
 sd_cpp/
 SPIRV-Tools/
 tsfi-vulkan-dist/
