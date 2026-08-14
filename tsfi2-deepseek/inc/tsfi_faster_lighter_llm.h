@@ -7239,4 +7239,28 @@ bool tsfi_stanag_vfio_nic_stream_dispatch(
     tsfi_openclaw_dual_stream_ipc_t *ipc_stream
 );
 
+// ClawVM (EuroMLSys 2026) Adaptive Eviction & Access-Frequency Predictor Engine (Section 4.4, Figure 6)
+typedef struct {
+    uint32_t page_id;
+    uint32_t access_frequency;
+    uint32_t recency_step;
+    float utility_decay_weight;
+    bool is_hard_pinned;
+} tsfi_clawvm_page_access_histogram_t;
+
+typedef struct {
+    uint32_t total_pages_monitored;
+    uint32_t hot_pages_count;
+    uint32_t cold_pages_evicted;
+    float eviction_accuracy;
+    float hit_rate_improvement_pct;
+    bool zero_churn_guaranteed;
+} tsfi_clawvm_adaptive_eviction_state_t;
+
+bool tsfi_clawvm_adaptive_eviction_eval(
+    uint32_t num_pages,
+    uint32_t current_turn,
+    tsfi_clawvm_adaptive_eviction_state_t *evict_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
