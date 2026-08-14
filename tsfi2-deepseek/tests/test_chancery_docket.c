@@ -49,17 +49,48 @@ int main(void) {
     printf("   Mainframe Register R15 Return Code: %ld\n", (long)r15_val);
     assert(r15_val == 1);
 
-    printf("\n3. Resolving Docket Entry via R15 Value:\n");
+    printf("\n3. Resolving Parent Docket #7000 via R15 Value:\n");
     bool ok = tsfi_chancery_docket_resolve_zmm_r15(&docket, doc_id, r15_val, DOCKET_RULING_UNAUTHORIZED_BLOCK);
     assert(ok);
     printf("   Docket #%u Status: RESOLVED [UNAUTHORIZED_BLOCK]\n", doc_id);
 
-    printf("\n4. Executing Chancery Docket Cryptographic Merkle Audit...\n");
+    printf("\n4. Filing Subordinate Dockets #7001 (Verhandelingen TOC) & #7002 (Mierosławski Boundaries)...\n");
+    uint32_t doc_7001 = tsfi_chancery_docket_file_subordinate(
+        &docket,
+        doc_id,
+        "Verhandelingen 1854 Deel 01 Remote TOC Traversal via CLI",
+        "solidity/dysnomia/domain/std/hathitrust_chapter_indexer.algol61",
+        2026
+    );
+    uint32_t doc_7002 = tsfi_chancery_docket_file_subordinate(
+        &docket,
+        doc_id,
+        "Mierosławski Memoir Sequence Boundaries Remote Plaintext Query",
+        "solidity/dysnomia/domain/std/hathitrust_page_seeker.algol61",
+        2026
+    );
+    assert(doc_7001 == 7001);
+    assert(doc_7002 == 7002);
+
+    printf("5. Closing Subordinate Dockets #7001 & #7002 by Direct Inheritance of Parent Ruling #7000...\n");
+    bool sub1_ok = tsfi_chancery_docket_resolve_subordinate(&docket, doc_7001, doc_id);
+    bool sub2_ok = tsfi_chancery_docket_resolve_subordinate(&docket, doc_7002, doc_id);
+    assert(sub1_ok && sub2_ok);
+
+    printf("   Docket #%u [Parent #%u]: Status -> RESOLVED [%s]\n",
+           doc_7001, docket.entries[1].parent_docket_id,
+           docket.entries[1].ruling == DOCKET_RULING_UNAUTHORIZED_BLOCK ? "UNAUTHORIZED_BLOCK" : "OTHER");
+    printf("   Docket #%u [Parent #%u]: Status -> RESOLVED [%s]\n",
+           doc_7002, docket.entries[2].parent_docket_id,
+           docket.entries[2].ruling == DOCKET_RULING_UNAUTHORIZED_BLOCK ? "UNAUTHORIZED_BLOCK" : "OTHER");
+
+    printf("\n6. Executing Chancery Docket Cryptographic Merkle Audit...\n");
     char audit_report[2048];
     uint64_t root = tsfi_chancery_docket_audit(&docket, audit_report, sizeof(audit_report));
     assert(root != 0);
     printf("\n%s\n", audit_report);
 
-    printf("=== ALL CHANCERY DOCKET & ZMM R15 DISPATCH PROOFS PASSED CLEANLY ===\n");
+    assert(docket.total_resolved_count == 3); // 7000 + 7001 + 7002
+    printf("=== ALL CHANCERY DOCKET & SUBORDINATE RESOLUTION PROOFS PASSED CLEANLY ===\n");
     return 0;
 }

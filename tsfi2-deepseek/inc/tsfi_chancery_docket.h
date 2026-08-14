@@ -18,6 +18,7 @@ typedef enum {
 
 typedef struct {
     uint32_t docket_id;
+    uint32_t parent_docket_id;             // 0 if root; non-zero if subordinate to parent ruling
     char assertion_summary[128];
     char target_prover_path[128];          // Path to matching std .algol61 prover
     uint32_t zmm_opcode;                   // ZMM hardware instruction mapping
@@ -46,12 +47,28 @@ uint32_t tsfi_chancery_docket_file(
     uint64_t timestamp
 );
 
+// File a subordinate assertion onto the Chancery Docket tied to a parent ruling
+uint32_t tsfi_chancery_docket_file_subordinate(
+    ChanceryDocketState *state,
+    uint32_t parent_docket_id,
+    const char *summary,
+    const char *prover_path,
+    uint64_t timestamp
+);
+
 // Execute Zorse LLM Traversal & COBOL ZMM Prover over R15 register
 bool tsfi_chancery_docket_resolve_zmm_r15(
     ChanceryDocketState *state,
     uint32_t docket_id,
     int64_t r15_input_code,
     ChanceryDocketRuling ruling
+);
+
+// Close a subordinate docket entry by direct reference and inheritance of parent ruling
+bool tsfi_chancery_docket_resolve_subordinate(
+    ChanceryDocketState *state,
+    uint32_t subordinate_docket_id,
+    uint32_t parent_docket_id
 );
 
 // Compute Merkle proof and emit Chancery Docket Audit Report

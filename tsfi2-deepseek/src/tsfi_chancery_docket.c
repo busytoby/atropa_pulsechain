@@ -33,11 +33,22 @@ uint32_t tsfi_chancery_docket_file(
     const char *prover_path,
     uint64_t timestamp
 ) {
+    return tsfi_chancery_docket_file_subordinate(state, 0, summary, prover_path, timestamp);
+}
+
+uint32_t tsfi_chancery_docket_file_subordinate(
+    ChanceryDocketState *state,
+    uint32_t parent_docket_id,
+    const char *summary,
+    const char *prover_path,
+    uint64_t timestamp
+) {
     if (!state || !summary || state->entry_count >= CHANCERY_MAX_DOCKET_ITEMS) return 0;
 
     uint32_t docket_id = 7000 + state->entry_count;
     ChanceryDocketEntry *entry = &state->entries[state->entry_count++];
     entry->docket_id = docket_id;
+    entry->parent_docket_id = parent_docket_id;
     strncpy(entry->assertion_summary, summary, sizeof(entry->assertion_summary) - 1);
     if (prover_path) {
         strncpy(entry->target_prover_path, prover_path, sizeof(entry->target_prover_path) - 1);
@@ -73,6 +84,43 @@ bool tsfi_chancery_docket_resolve_zmm_r15(
             return true;
         }
     }
+    return false;
+}
+
+bool tsfi_chancery_docket_resolve_subordinate(
+    ChanceryDocketState *state,
+    uint32_t subordinate_docket_id,
+    uint32_t parent_docket_id
+) {
+    if (!state) return false;
+
+    // Find parent entry to inherit ruling and R15 code
+    ChanceryDocketRuling parent_ruling = DOCKET_RULING_PENDING;
+    int64_t parent_r15 = -1;
+    bool found_parent = false;
+
+    for (uint32_t i = 0; i < state->entry_count; i++) {
+        if (state->entries[i].docket_id == parent_docket_id) {
+            parent_ruling = state->entries[i].ruling;
+            parent_r15 = state->entries[i].r15_register_result;
+            found_parent = true;
+            break;
+        }
+    }
+
+    if (!found_parent || parent_ruling == DOCKET_RULING_PENDING) return false;
+
+    for (uint32_t i = 0; i < state->entry_count; i++) {
+        ChanceryDocketEntry *e = &state->entries[i];
+        if (e->docket_id == subordinate_docket_id) {
+            e->parent_docket_id = parent_docket_id;
+            e->r15_register_result = parent_r15;
+            e->ruling = parent_ruling;
+            state->total_resolved_count++;
+            return true;
+        }
+    }
+
     return false;
 }
 
