@@ -1734,6 +1734,12 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         tsfi_clawvm_writeback_state_t wb_live;
         tsfi_clawvm_writeback_journal_eval("prompt_session_state", 1, 1, true, &wb_live);
 
+        tsfi_clawvm_prompt_knapsack_state_t knap_live;
+        tsfi_clawvm_prompt_knapsack_eval(300, 16, 2.0f, 0.6f, 0.4f, &knap_live);
+
+        tsfi_clawvm_session_page_table_state_t pt_live;
+        tsfi_clawvm_session_page_table_eval((uint32_t)gen_step + 1, 0, 0, &pt_live);
+
         // Dynamic Double Crostics 4-State Grammar Automaton State Update
         grammar_state = (grammar_state + gen_step) % 4;
 

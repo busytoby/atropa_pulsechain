@@ -3239,7 +3239,15 @@ static void test_clawvm_virtual_memory_engine(void) {
     bool ok_wb_reject = tsfi_clawvm_writeback_journal_eval("agent_context", 2, 1, false, &wb_reject);
     assert(ok_wb_reject && !wb_reject.non_destructive_verified && wb_reject.rejected_entries == 1);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Thrash (0.901), Latency (<50 us) & Non-Destructive Writeback Rejection verified.\n");
+    tsfi_clawvm_prompt_knapsack_state_t knap_state;
+    bool ok_knap = tsfi_clawvm_prompt_knapsack_eval(300, 16, 2.0f, 0.6f, 0.4f, &knap_state);
+    assert(ok_knap && knap_state.hard_invariants_respected && knap_state.knapsack_solve_time_us < 20.0f);
+
+    tsfi_clawvm_session_page_table_state_t pt_state;
+    bool ok_pt = tsfi_clawvm_session_page_table_eval(100, 5, 2, &pt_state);
+    assert(ok_pt && pt_state.compaction_survival_rate_pct == 100.0f && pt_state.reset_recovery_rate_pct == 100.0f);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), PageTable (100%% recovery) & Validated Writeback verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {

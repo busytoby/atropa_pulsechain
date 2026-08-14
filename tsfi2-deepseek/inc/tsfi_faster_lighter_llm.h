@@ -6855,4 +6855,41 @@ bool tsfi_clawvm_writeback_journal_eval(
     tsfi_clawvm_writeback_state_t *wb_out
 );
 
+// ClawVM (EuroMLSys 2026) Deterministic Two-Phase Prompt Assembly Knapsack (Listing 1 & Appendix A)
+typedef struct {
+    uint32_t phase1_pinned_tokens;
+    uint32_t phase2_upgrade_tokens;
+    uint32_t total_budget_consumed;
+    uint32_t upgrades_applied;
+    float marginal_utility_per_token;
+    bool hard_invariants_respected;
+    float knapsack_solve_time_us;
+} tsfi_clawvm_prompt_knapsack_state_t;
+
+bool tsfi_clawvm_prompt_knapsack_eval(
+    uint32_t token_budget,
+    uint32_t num_candidate_pages,
+    float hard_pin_weight,
+    float recency_weight,
+    float recompute_cost_weight,
+    tsfi_clawvm_prompt_knapsack_state_t *knapsack_out
+);
+
+// ClawVM (EuroMLSys 2026) SessionPageTable Lifecycle & Scope Isolation Engine
+typedef struct {
+    uint32_t session_private_pages;
+    uint32_t project_shared_pages;
+    uint32_t active_plan_pages;
+    uint32_t resolved_pointers;
+    float compaction_survival_rate_pct;
+    float reset_recovery_rate_pct;
+} tsfi_clawvm_session_page_table_state_t;
+
+bool tsfi_clawvm_session_page_table_eval(
+    uint32_t total_session_turns,
+    uint32_t compaction_events,
+    uint32_t reset_events,
+    tsfi_clawvm_session_page_table_state_t *table_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
