@@ -10,6 +10,7 @@
 #include "../inc/tsfi_hogan.h"
 #include "../inc/tsfi_chancery_docket.h"
 #include "../src/auncient_cloth_material_bridge.h"
+#include "../src/auncient_timeline_autodin.h"
 
 // Authentic SSA Mainframe Site Resolver from tsfi_cade_imf_nato.c
 extern int tsfi_mf_ssa_resolve_issuance_site(const char *ssn, char *site_name_out, int max_len);
@@ -38,8 +39,10 @@ int main(void) {
     assert(strcmp(ssn_out, "007-12-3456") == 0);
     assert(strcmp(site_out, "Maine") == 0);
 
-    // 3. Register Authentic Hogan Bank Account in live Hogan Umbrella System
-    printf("\n2. Live Hogan Bank System Account Provisioning & Endowment:\n");
+    // 3. Register and Validate Account with Real Hogan Systems (Umbrella & Auncient Ledger)
+    printf("\n2. Live Hogan Bank System Account Provisioning & Validation:\n");
+
+    // A. Hogan Umbrella System Validation
     hogan_umbrella_system hogan_sys;
     tsfi_hogan_init(&hogan_sys);
 
@@ -48,12 +51,30 @@ int main(void) {
 
     int reg_rc = tsfi_hogan_register_account(&hogan_sys, bear_account_id, endowment_saat);
     assert(reg_rc == 0);
-    printf("   Hogan Account ID:   %u\n", bear_account_id);
-    printf("   Initial Balance:    %lu Saat (100%% Rule 16 Qualified)\n", (unsigned long)hogan_sys.accounts[0].balance);
-    printf("   Account Status:     %s\n", hogan_sys.accounts[0].active ? "ACTIVE" : "INACTIVE");
 
-    assert(hogan_sys.accounts[0].balance == 1000000);
+    // Validate account directly from Hogan Umbrella internal state
+    assert(hogan_sys.accounts[0].account_id == bear_account_id);
+    assert(hogan_sys.accounts[0].balance == endowment_saat);
     assert(hogan_sys.accounts[0].active == 1);
+    printf("   ✓ Hogan Umbrella System Account [%u] provisioned and active.\n", bear_account_id);
+
+    // B. Auncient Hogan Ledger Account Validation
+    uint8_t dna_payload[8];
+    memcpy(dna_payload, &newborn_material.seed, sizeof(newborn_material.seed));
+
+    HoganAccount newborn_account;
+    memset(&newborn_account, 0, sizeof(newborn_account));
+
+    bool auncient_reg_ok = auncient_hogan_register_account(bear_account_id, dna_payload, sizeof(dna_payload), &newborn_account);
+    assert(auncient_reg_ok);
+    assert(newborn_account.account_id == bear_account_id);
+    assert(newborn_account.balance_saat == 1000000);
+    assert(newborn_account.is_active == true);
+    printf("   ✓ Auncient Hogan Ledger Account [%u] recorded on block with 1,000,000 Saat endowment.\n", bear_account_id);
+
+    // C. Verify Hogan Ledger Chain Integrity via real Hogan system
+    assert(auncient_hogan_verify_chain() == true);
+    printf("   ✓ Hogan System cryptographic block chain integrity verified.\n");
 
     // 4. Resolve Chancery Docket #7003 on the record
     printf("\n3. Recording Resolution on Chancery Docket:\n");
