@@ -73,6 +73,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_deepseek_stanag_kermit.o \
             $(OBJ_DIR)/tsfi_deepseek_agent_vm_operator.o \
             $(OBJ_DIR)/tsfi_deepseek_cordis_composability.o \
+            $(OBJ_DIR)/tsfi_deepseek_extensions.o \
             $(OBJ_DIR)/tsfi_zmm_winchester_handshake.o \
             $(OBJ_DIR)/tsfi_depthoffield.o \
             $(OBJ_DIR)/tsfi_riinterface.o \
@@ -1759,8 +1760,12 @@ bin/test_deepseek_cordis_composability: tests/test_deepseek_cordis_composability
 	@mkdir -p bin
 	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
 
+bin/test_deepseek_extensions: tests/test_deepseek_extensions.c $(OBJ_DIR)/tsfi_deepseek_extensions.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
 .PHONY: test_flllm check_flllm profile test_cordis
-test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test_deepseek_cordis_tools bin/test_deepseek_cordis_chain bin/test_deepseek_edsac_acp_firewall bin/test_deepseek_stanag_kermit bin/test_deepseek_agent_vm_operator bin/test_deepseek_cordis_composability
+test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test_deepseek_cordis_tools bin/test_deepseek_cordis_chain bin/test_deepseek_edsac_acp_firewall bin/test_deepseek_stanag_kermit bin/test_deepseek_agent_vm_operator bin/test_deepseek_cordis_composability bin/test_deepseek_extensions
 	./bin/test_deepseek_cordis
 	./bin/test_deepseek_cordis_advanced
 	./bin/test_deepseek_cordis_tools
@@ -1769,6 +1774,7 @@ test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test
 	./bin/test_deepseek_stanag_kermit
 	./bin/test_deepseek_agent_vm_operator
 	./bin/test_deepseek_cordis_composability
+	./bin/test_deepseek_extensions
 
 test_flllm: bin/test_zorse_gguf_flllm_suite bin/zorse_prompt bin/zorse_trace_inspector test_cordis
 	./bin/test_zorse_gguf_flllm_suite
