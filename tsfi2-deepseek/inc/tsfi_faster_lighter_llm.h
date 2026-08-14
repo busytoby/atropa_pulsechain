@@ -7328,4 +7328,29 @@ bool tsfi_clawvm_dynamic_context_compact_eval(
     tsfi_clawvm_context_compaction_state_t *compact_out
 );
 
+// Dysnomia ZMM 512-Bit Vector Register Direct-Mapped KV-Cache Layout Engine (Rule 5 & Rule 9 Compliant)
+typedef struct {
+    uint32_t zmm_register_index; // ZMM0-ZMM31 (512-bit hardware lanes)
+    uint32_t dynamic_contract_addr; // dynamic_<address> resolution under Rule 9
+    uint64_t motzkin_field_stride; // Modulo MotzkinPrime (953467954114363)
+    uint32_t num_fp16_lanes_packed; // 32 fp16 values per 512-bit ZMM lane
+    float vector_gather_latency_ns;
+    bool zmm_lane_alignment_verified;
+} tsfi_clawvm_zmm_kv_lane_t;
+
+typedef struct {
+    uint32_t total_zmm_lanes_mapped;
+    uint32_t dynamic_contracts_resolved;
+    uint64_t total_vector_bytes_transferred;
+    float zmm_attention_speedup_x;
+    bool sub_microsecond_gather_guaranteed;
+} tsfi_clawvm_zmm_kv_state_t;
+
+bool tsfi_clawvm_zmm_kv_layout_eval(
+    uint32_t num_heads,
+    uint32_t head_dim,
+    uint32_t contract_addr,
+    tsfi_clawvm_zmm_kv_state_t *zmm_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
