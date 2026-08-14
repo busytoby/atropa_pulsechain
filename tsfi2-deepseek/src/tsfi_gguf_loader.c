@@ -1084,18 +1084,17 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     const block_q4_K *blk = &w_blocks[b];
                     float d = tsfi_fp16_to_fp32(blk->d);
                     float dmin = tsfi_fp16_to_fp32(blk->dmin);
-                    const uint8_t *scales = blk->scales;
-                    const uint8_t *q = blk->qs;
-
+                    const uint8_t *sc = blk->scales;
                     uint8_t sc_arr[8];
                     uint8_t min_arr[8];
-                    for (int s = 0; s < 4; s++) {
-                        sc_arr[s] = scales[s] & 0x3F;
-                        min_arr[s] = scales[s + 4] & 0x3F;
-                        sc_arr[s + 4] = (scales[s] >> 6) | ((scales[s + 8] & 0x0F) << 2);
-                        min_arr[s + 4] = (scales[s + 4] >> 6) | ((scales[s + 8] >> 4) << 2);
+                    for (int k = 0; k < 4; ++k) {
+                        sc_arr[k]     = sc[k] & 0x3F;
+                        min_arr[k]    = sc[4 + k] & 0x3F;
+                        sc_arr[k + 4] = ((sc[8 + k] & 0x0F) | ((sc[k] >> 6) << 4)) & 0x3F;
+                        min_arr[k + 4] = ((sc[8 + k] >> 4)   | ((sc[4 + k] >> 6) << 4)) & 0x3F;
                     }
 
+                    const uint8_t *q = blk->qs;
                     for (int g = 0; g < 8; g++) {
                         float d_sub = d * (float)sc_arr[g];
                         float m_sub = dmin * (float)min_arr[g];
@@ -1709,23 +1708,44 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
 
         // Feed winning next_token_id embedding signal auto-regressively into activation vector x
-        uint64_t next_tok_offset = t_tok_emb ? (t_tok_emb->offset + (uint64_t)next_token_id * (dim / 2)) : 0;
-        if (t_tok_emb && fseek(f, next_tok_offset, SEEK_SET) == 0) {
-            uint8_t *fb_buf = (uint8_t *)calloc(dim, 1);
-            if (fb_buf) {
-                if (fread(fb_buf, 1, dim / 2, f) == (size_t)(dim / 2)) {
-                    for (int i = 0; i < dim; i++) {
-                        uint8_t nibble = (fb_buf[i / 2] >> ((i % 2) * 4)) & 0x0F;
-                        float fb_val = ((float)nibble - 8.0f) * 0.125f;
-                        x[i] = x[i] * 0.50f + fb_val * 0.50f;
+        if (t_tok_emb) {
+            size_t num_q4_blocks = dim / 256;
+            size_t q4_row_bytes = num_q4_blocks * sizeof(block_q4_K);
+            uint64_t next_tok_offset = t_tok_emb->offset + (uint64_t)next_token_id * q4_row_bytes;
+            if (fseek(f, next_tok_offset, SEEK_SET) == 0) {
+                block_q4_K *blocks = (block_q4_K *)calloc(num_q4_blocks, sizeof(block_q4_K));
+                if (blocks) {
+                    if (fread(blocks, sizeof(block_q4_K), num_q4_blocks, f) == num_q4_blocks) {
+                        for (size_t b = 0; b < num_q4_blocks; b++) {
+                            float d = tsfi_fp16_to_fp32(blocks[b].d);
+                            float dmin = tsfi_fp16_to_fp32(blocks[b].dmin);
+                            const uint8_t *sc = blocks[b].scales;
+                            uint8_t sc_arr[8];
+                            uint8_t min_arr[8];
+                            for (int k = 0; k < 4; ++k) {
+                                sc_arr[k]     = sc[k] & 0x3F;
+                                min_arr[k]    = sc[4 + k] & 0x3F;
+                                sc_arr[k + 4] = ((sc[8 + k] & 0x0F) | ((sc[k] >> 6) << 4)) & 0x3F;
+                                min_arr[k + 4] = ((sc[8 + k] >> 4)   | ((sc[4 + k] >> 6) << 4)) & 0x3F;
+                            }
+                            const uint8_t *q = blocks[b].qs;
+                            for (int g = 0; g < 8; g++) {
+                                float d_sub = d * (float)sc_arr[g];
+                                float m_sub = dmin * (float)min_arr[g];
+                                int x_base = (int)(b * 256 + g * 32);
+                                for (int j = 0; j < 32; j++) {
+                                    int q_idx = (g / 2) * 32 + j;
+                                    uint8_t q_val = (g % 2 == 0) ? (q[q_idx] & 0x0F) : (q[q_idx] >> 4);
+                                    float emb_val = d_sub * (float)q_val - m_sub;
+                                    if (x_base + j < dim) {
+                                        x[x_base + j] = x[x_base + j] * 0.70f + emb_val * 0.30f;
+                                    }
+                                }
+                            }
+                        }
                     }
+                    free(blocks);
                 }
-                free(fb_buf);
-            }
-        } else {
-            for (int i = 0; i < dim; i++) {
-                float token_signal = (float)((next_token_id * 109 + i * 31 + gen_step * 17) % 256) / 255.0f;
-                x[i] = x[i] * 0.70f + token_signal * 0.30f;
             }
         }
         float cov_val = tsfi_zorse_chatrath_slam_covariance_tracker(x, dim);
