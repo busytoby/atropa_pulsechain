@@ -507,6 +507,9 @@ bin/test_authentic_teddy_hogan_ssa: tests/test_authentic_teddy_hogan_ssa.c src/t
 bin/test_zorse_vdso_hogan_units: tests/test_zorse_vdso_hogan_units.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_motzkin_recurrence_handshake: tests/test_motzkin_recurrence_handshake.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
