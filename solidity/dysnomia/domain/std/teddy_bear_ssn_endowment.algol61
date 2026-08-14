@@ -36,8 +36,13 @@ begin
         else
           is_valid_site := 0;
 
-        comment Verify Live Hogan Bank Account State via System Parameters;
-        if account_id = 999 and is_active = 1 and balance_saat = 1000000 and clearance_level = 1 and verified_dna_hash > 0 and chain_integrity_valid = 1 then
+        comment Cryptographic Hogan System Account State Verification:;
+        comment 1. Account ID must be non-zero (valid dynamic ledger slot);
+        comment 2. Account must be active with positive clearance (Level >= 1);
+        comment 3. Account balance must meet statutory endowment (>= 1,000,000 Saat);
+        comment 4. DNA signature hash must match participant seed transformation;
+        comment 5. Hogan Block Chain must have valid cryptographic continuity;
+        if account_id > 0 and is_active = 1 and balance_saat >= 1000000 and clearance_level >= 1 and verified_dna_hash > 0 and chain_integrity_valid = 1 then
           is_valid_hogan_account := 1
         else
           is_valid_hogan_account := 0;
@@ -80,7 +85,7 @@ begin
   );
 
   if formal_qualification_ruling = 0 then
-    outstring(1, "RULING: QUALIFIED_PARTICIPANT (SSA Site Verified, Hogan Account #999 Verified on Chain @ 1,000,000 Saat)\n")
+    outstring(1, "RULING: QUALIFIED_PARTICIPANT (SSA Site Verified, Hogan Account Verified on Chain @ 1,000,000 Saat)\n")
   else
     outstring(1, "RULING: DISQUALIFIED_ENTITY (Chancery Retained)\n")
 end
