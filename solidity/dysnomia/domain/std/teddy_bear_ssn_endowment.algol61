@@ -1,0 +1,64 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Teddy Bear SSA & Hogan Bank Endowment;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Enforces Rule 16: Entity qualification, DNA-to-SSN mapping, and 1,000,000 Saat endowment;
+
+  integer procedure verify_teddy_bear_participant(dna_seed, default_endowment, min_required_endowment);
+  value dna_seed, default_endowment, min_required_endowment;
+  integer dna_seed, default_endowment, min_required_endowment;
+  begin
+    comment Verification Codes:
+            0 = QUALIFIED_PARTICIPANT (Valid SSN Derived & 1,000,000 Saat Endowed)
+            1 = INVALID_DNA_SEED
+            2 = DEFICIENT_ENDOWMENT (Failed Hogan Bank Rule 16 Threshold);
+
+    integer prime, dna_hash, site_index, ssn_area, ssn_group, ssn_serial;
+
+    if dna_seed = 0 then
+      verify_teddy_bear_participant := 1
+    else if default_endowment < min_required_endowment then
+      verify_teddy_bear_participant := 2
+    else
+      begin
+        prime := 953467954114363;
+
+        comment FNV-1a Style Transformation over Motzkin Prime;
+        dna_hash := (dna_seed * 1099511628211) - ((dna_seed * 1099511628211) // prime) * prime;
+
+        comment Derive SSA Regional Issuance Site Index (1..9);
+        site_index := (dna_hash - (dna_hash // 9) * 9) + 1;
+
+        comment Derive 9-Digit Structured SSN (AAA-GG-SSSS);
+        ssn_area   := site_index * 100 + (dna_hash - (dna_hash // 89) * 89) + 10;
+        ssn_group  := (dna_hash - (dna_hash // 89) * 89) + 10;
+        ssn_serial := (dna_hash - (dna_hash // 8999) * 8999) + 1000;
+
+        comment Verify non-zero parameters;
+        if ssn_area > 0 and ssn_group > 0 and ssn_serial > 0 and default_endowment = 1000000 then
+          verify_teddy_bear_participant := 0
+        else
+          verify_teddy_bear_participant := 2
+      end
+  end;
+
+  comment Domain Input Telemetry for Newborn Teddy Bear Participant;
+  integer teddy_dna_seed;
+  integer initial_saat_deposit;
+  integer required_statutory_endowment;
+  integer formal_qualification_ruling;
+
+  teddy_dna_seed                := 1782856474572;
+  initial_saat_deposit          := 1000000;
+  required_statutory_endowment  := 1000000;
+
+  formal_qualification_ruling := verify_teddy_bear_participant(
+    teddy_dna_seed,
+    initial_saat_deposit,
+    required_statutory_endowment
+  );
+
+  if formal_qualification_ruling = 0 then
+    outstring(1, "RULING: QUALIFIED_PARTICIPANT (SSN Verified, Hogan Account Endowed 1,000,000 Saat)\n")
+  else
+    outstring(1, "RULING: UNQUALIFIED_ENTITY (Chancery Retained)\n")
+end
