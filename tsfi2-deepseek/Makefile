@@ -1725,8 +1725,40 @@ bin/zorse_trace_inspector: tools/zorse_trace_inspector.c
 	@mkdir -p bin
 	$(CC) -Wall -Wextra -std=c11 -O3 -g $^ -o $@
 
-.PHONY: test_flllm check_flllm profile
-test_flllm: bin/test_zorse_gguf_flllm_suite bin/zorse_prompt bin/zorse_trace_inspector
+bin/test_deepseek_cordis: tests/test_deepseek_cordis.c $(OBJ_DIR)/tsfi_deepseek_cordis_harness.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
+bin/test_deepseek_cordis_advanced: tests/test_deepseek_cordis_advanced.c $(OBJ_DIR)/tsfi_deepseek_cordis_harness.o $(OBJ_DIR)/tsfi_deepseek_cordis_advanced.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
+bin/test_deepseek_cordis_tools: tests/test_deepseek_cordis_tools.c $(OBJ_DIR)/tsfi_deepseek_cordis_tools.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
+bin/test_deepseek_cordis_chain: tests/test_deepseek_cordis_chain.c $(OBJ_DIR)/tsfi_deepseek_cordis_harness.o $(OBJ_DIR)/tsfi_deepseek_cordis_chain.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
+bin/test_deepseek_edsac_acp_firewall: tests/test_deepseek_edsac_acp_firewall.c $(OBJ_DIR)/tsfi_deepseek_cordis_harness.o $(OBJ_DIR)/tsfi_deepseek_edsac_acp_firewall.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
+bin/test_deepseek_stanag_kermit: tests/test_deepseek_stanag_kermit.c $(OBJ_DIR)/tsfi_deepseek_stanag_kermit.o
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
+
+.PHONY: test_flllm check_flllm profile test_cordis
+test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test_deepseek_cordis_tools bin/test_deepseek_cordis_chain bin/test_deepseek_edsac_acp_firewall bin/test_deepseek_stanag_kermit
+	./bin/test_deepseek_cordis
+	./bin/test_deepseek_cordis_advanced
+	./bin/test_deepseek_cordis_tools
+	./bin/test_deepseek_cordis_chain
+	./bin/test_deepseek_edsac_acp_firewall
+	./bin/test_deepseek_stanag_kermit
+
+test_flllm: bin/test_zorse_gguf_flllm_suite bin/zorse_prompt bin/zorse_trace_inspector test_cordis
 	./bin/test_zorse_gguf_flllm_suite
 
 check_flllm: test_flllm
