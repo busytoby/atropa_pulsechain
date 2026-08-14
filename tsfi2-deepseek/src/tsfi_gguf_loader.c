@@ -1082,8 +1082,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
                 for (size_t b = 0; b < num_q4_blocks; b++) {
                     const block_q4_K *blk = &w_blocks[b];
-                    float d = (float)blk->d;
-                    float dmin = (float)blk->dmin;
+                    float d = tsfi_fp16_to_fp32(blk->d);
+                    float dmin = tsfi_fp16_to_fp32(blk->dmin);
                     const uint8_t *scales = blk->scales;
                     const uint8_t *q = blk->qs;
 
