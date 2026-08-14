@@ -6892,4 +6892,36 @@ bool tsfi_clawvm_session_page_table_eval(
     tsfi_clawvm_session_page_table_state_t *table_out
 );
 
+// ClawVM (EuroMLSys 2026) Bounded Lookahead Replay Oracle Engine (Section 3 & 5.1)
+typedef struct {
+    uint32_t lookahead_horizon_h;
+    uint32_t oracle_fault_count;
+    uint32_t online_fault_count;
+    uint32_t oracle_gap;
+    float future_demand_weight;
+    bool zero_headroom_confirmed;
+} tsfi_clawvm_replay_oracle_state_t;
+
+bool tsfi_clawvm_replay_oracle_eval(
+    uint32_t horizon_h,
+    uint32_t total_trace_turns,
+    uint32_t token_budget,
+    tsfi_clawvm_replay_oracle_state_t *oracle_out
+);
+
+// ClawVM (EuroMLSys 2026) Tier-1 Lifecycle Regression Gate Engine (Table 3)
+typedef struct {
+    bool post_compaction_bootstrap_passed;
+    bool reset_dirty_flush_miss_passed;
+    bool threshold_jump_race_passed;
+    bool silent_recall_visibility_passed;
+    bool unsafe_persistence_rejection_passed;
+    bool evidence_churn_duplicate_tool_passed;
+    uint32_t total_gate_assertions_verified;
+} tsfi_clawvm_tier1_regression_state_t;
+
+bool tsfi_clawvm_tier1_regression_gate_eval(
+    tsfi_clawvm_tier1_regression_state_t *gate_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

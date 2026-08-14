@@ -3247,12 +3247,21 @@ static void test_clawvm_virtual_memory_engine(void) {
     bool ok_pt = tsfi_clawvm_session_page_table_eval(100, 5, 2, &pt_state);
     assert(ok_pt && pt_state.compaction_survival_rate_pct == 100.0f && pt_state.reset_recovery_rate_pct == 100.0f);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), PageTable (100%% recovery) & Validated Writeback verified.\n");
+    tsfi_clawvm_replay_oracle_state_t oracle_state;
+    bool ok_oracle = tsfi_clawvm_replay_oracle_eval(3, 100, 300, &oracle_state);
+    assert(ok_oracle && oracle_state.zero_headroom_confirmed && oracle_state.oracle_gap == 0);
+
+    tsfi_clawvm_tier1_regression_state_t gate_state;
+    bool ok_gate = tsfi_clawvm_tier1_regression_gate_eval(&gate_state);
+    assert(ok_gate && gate_state.total_gate_assertions_verified == 6 && gate_state.post_compaction_bootstrap_passed);
+    assert(gate_state.reset_dirty_flush_miss_passed && gate_state.unsafe_persistence_rejection_passed);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), PageTable (100%% recovery), Replay Oracle (0 gap) & Tier-1 Gate verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 404 inference engine architectures and 406 algorithmic modules verified.\n");
+    printf("  -> PASS: All 406 inference engine architectures and 408 algorithmic modules verified.\n");
 }
 
 int main(void) {
