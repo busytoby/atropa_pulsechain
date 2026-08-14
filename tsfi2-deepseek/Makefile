@@ -501,6 +501,9 @@ bin/test_hogan_integration: tests/test_hogan_integration.c $(CORE_OBJS) $(OBJ_DI
 bin/test_sovereign_saat_hogan_bridge: tests/test_sovereign_saat_hogan_bridge.c src/tsfi_frejlich_domain_governance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_authentic_teddy_hogan_ssa: tests/test_authentic_teddy_hogan_ssa.c src/tsfi_chancery_docket.c src/auncient_cloth_material_bridge.c src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
