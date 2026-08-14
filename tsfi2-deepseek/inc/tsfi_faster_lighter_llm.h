@@ -7311,4 +7311,21 @@ bool tsfi_openclaw_orchestrate_agents(
     tsfi_openclaw_orchestration_state_t *orch_out
 );
 
+// ClawVM (EuroMLSys 2026) Dynamic Context Compactor & Semantic Summary Sieve (Section 4.6, Table 4)
+typedef struct {
+    uint32_t original_tokens_total;
+    uint32_t compacted_tokens_retained;
+    uint32_t semantic_nodes_preserved;
+    float compression_ratio;
+    float information_retention_score;
+    float compaction_latency_us;
+    bool semantic_integrity_verified;
+} tsfi_clawvm_context_compaction_state_t;
+
+bool tsfi_clawvm_dynamic_context_compact_eval(
+    uint32_t source_token_count,
+    uint32_t target_token_budget,
+    tsfi_clawvm_context_compaction_state_t *compact_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
