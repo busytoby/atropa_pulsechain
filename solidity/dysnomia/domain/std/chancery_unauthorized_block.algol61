@@ -1,0 +1,41 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Chancery Classification of Remote CLI Block;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Verifies the HTTP 403 / Cloudflare Challenge barrier and formally rules it UNAUTHORIZED_BLOCK;
+
+  integer procedure classify_chancery_endpoint(status_code, has_turnstile_html, has_binary_stream);
+  value status_code, has_turnstile_html, has_binary_stream;
+  integer status_code, has_turnstile_html, has_binary_stream;
+  begin
+    comment Classification Taxonomy:
+            0 = PROVEN_AUTHENTIC_STREAM
+            1 = UNAUTHORIZED_BLOCK (Cloudflare Turnstile Edge Barrier)
+            2 = UNRESOLVED_CHANCERY_CONTINUANCE;
+
+    if status_code = 200 and has_binary_stream = 1 and has_turnstile_html = 0 then
+      classify_chancery_endpoint := 0
+    else if status_code = 403 or (status_code = 200 and has_turnstile_html = 1) then
+      classify_chancery_endpoint := 1
+    else
+      classify_chancery_endpoint := 2
+  end;
+
+  comment Domain Input Telemetry;
+  integer http_status;
+  integer turnstile_present;
+  integer binary_stream_present;
+  integer formal_ruling;
+
+  comment Live parameters recorded from raw OpenSSL TLS socket probe;
+  http_status           := 403;
+  turnstile_present     := 1;
+  binary_stream_present := 0;
+
+  formal_ruling := classify_chancery_endpoint(http_status, turnstile_present, binary_stream_present);
+
+  comment Formal Decision Boundary;
+  if formal_ruling = 1 then
+    outstring(1, "RULING: UNAUTHORIZED_BLOCK (Chancery Resolved and Quarantined)\n")
+  else
+    outstring(1, "RULING: CHANCERY_CONTINUANCE\n")
+end
