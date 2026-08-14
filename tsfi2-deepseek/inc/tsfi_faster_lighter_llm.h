@@ -7085,4 +7085,32 @@ bool tsfi_invariant_branch_record(
     tsfi_invariant_branch_journal_t *journal_out
 );
 
+// In-Memory Stack Space & Compliant RDBMS Binary Data Section Layout (Rule 13)
+#define TSFI_INVARIANT_STACK_CAPACITY 512
+
+typedef struct {
+    uint32_t count;
+    uint32_t capacity;
+    tsfi_invariant_branch_entry_t entries[TSFI_INVARIANT_STACK_CAPACITY];
+} tsfi_invariant_stack_section_t;
+
+typedef struct {
+    uint32_t total_stack_entries;
+    uint64_t total_section_bytes;
+    uint32_t rdbms_table_rows_synced;
+    bool committed_to_dat_bin;
+    bool stack_bounds_safe;
+} tsfi_invariant_section_audit_t;
+
+bool tsfi_invariant_stack_push(
+    tsfi_invariant_stack_section_t *stack,
+    const tsfi_invariant_branch_entry_t *entry
+);
+
+bool tsfi_invariant_stack_commit_dat_bin(
+    const tsfi_invariant_stack_section_t *stack,
+    const char *target_dat_bin_path,
+    tsfi_invariant_section_audit_t *audit_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

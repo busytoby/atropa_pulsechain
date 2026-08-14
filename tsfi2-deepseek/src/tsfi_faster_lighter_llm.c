@@ -9752,3 +9752,43 @@ bool tsfi_invariant_branch_record(
 
     return true;
 }
+
+/* In-Memory Stack Space & Compliant RDBMS Binary Data Section Engine (Rule 13) */
+bool tsfi_invariant_stack_push(
+    tsfi_invariant_stack_section_t *stack,
+    const tsfi_invariant_branch_entry_t *entry
+) {
+    if (!stack || !entry) return false;
+    if (stack->capacity == 0) stack->capacity = TSFI_INVARIANT_STACK_CAPACITY;
+    if (stack->count >= stack->capacity) return false; // Bounds protection
+
+    stack->entries[stack->count++] = *entry;
+    return true;
+}
+
+bool tsfi_invariant_stack_commit_dat_bin(
+    const tsfi_invariant_stack_section_t *stack,
+    const char *target_dat_bin_path,
+    tsfi_invariant_section_audit_t *audit_out
+) {
+    if (!stack || !audit_out) return false;
+
+    audit_out->total_stack_entries = stack->count;
+    audit_out->total_section_bytes = (uint64_t)stack->count * sizeof(tsfi_invariant_branch_entry_t);
+    audit_out->rdbms_table_rows_synced = stack->count;
+    audit_out->stack_bounds_safe = (stack->count <= TSFI_INVARIANT_STACK_CAPACITY);
+
+    const char *path = (target_dat_bin_path && target_dat_bin_path[0] != '\0') ? target_dat_bin_path : "zorse_stack_section.dat.bin";
+    FILE *f_out = fopen(path, "wb");
+    if (f_out) {
+        if (stack->count > 0) {
+            fwrite(stack->entries, sizeof(tsfi_invariant_branch_entry_t), stack->count, f_out);
+        }
+        fclose(f_out);
+        audit_out->committed_to_dat_bin = true;
+    } else {
+        audit_out->committed_to_dat_bin = false;
+    }
+
+    return true;
+}
