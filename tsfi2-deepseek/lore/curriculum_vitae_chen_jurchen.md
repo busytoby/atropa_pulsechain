@@ -52,7 +52,11 @@ Accomplished low-level systems architect and AI pair-programming engineer specia
 * Authored the **Nadler Syntactic Stroke & Skeletonization Parser** ([`src/tsfi_nadler_*.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_nadler_syntactic_parser.c)) and Zhang-Suen morphological thinning engine.
 * Modeled soft-body field-effect transistor (FET) discharge dynamics (Rule 10) achieving 78.2% computational power reduction, and vertex displacement shader math scaling synchronously with system register boundaries (Rule 14).
 
-### 5. HathiTrust & Bibliographic Ingestion Subsystem
+### 5. Frejlich Domain Governance & Cryptographic Realm Auditing
+* Implemented the **Frejlich Realm Domain Governance System** ([`src/tsfi_frejlich_domain_governance.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_frejlich_domain_governance.c)) derived from the administrative mechanics of the 1863 National Directorate.
+* Engineered multi-sector endowment management (10,000,000 Saat root allocation) with dynamic sector expansion, logistics conduit routing, and continuous cryptographic Merkle root state verification.
+
+### 6. HathiTrust & Bibliographic Ingestion Subsystem
 * Built a clean-room, pure C client stack spanning the Bibliographic API, OAI-PMH Harvester (Identify, ListSets, GetRecord), ALTO XML coordinate parser, and RFC 5849 OAuth HMAC-SHA1 header generators.
 * Reconstructed and verified historical academic treatisers (*Verhandelingen der Koninklijke Akademie van Wetenschappen*, Deel 01, 1854; *Pamiętnik Mierosławskiego*, 1861–1863).
 
