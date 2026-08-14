@@ -60,9 +60,10 @@ Accomplished low-level systems architect and AI pair-programming engineer specia
 ### 6. Evelyn Waugh Currency Monopoly & Sovereign Seigniorage Engine
 * Formulated and implemented the **Evelyn Waugh Currency Monopoly Engine** ([`src/tsfi_waugh_monopoly.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_waugh_monopoly.c)), establishing King Chen Jurchen's cryptographic monarch seals, 100% reserve vault backing, and statutory 5% seigniorage tariffs on foreign specie conversions.
 
-### 7. HathiTrust & Bibliographic Ingestion Subsystem
+### 7. HathiTrust Bibliographic Ingestion & Chancery Prover Subsystem
 * Built a clean-room, pure C client stack spanning the Bibliographic API, OAI-PMH Harvester (Identify, ListSets, GetRecord), ALTO XML coordinate parser, and RFC 5849 OAuth HMAC-SHA1 header generators.
 * Reconstructed and verified historical academic treatisers (*Verhandelingen der Koninklijke Akademie van Wetenschappen*, Deel 01, 1854; *Pamiętnik Mierosławskiego*, 1861–1863).
+* Formulated and proven the standard **ALGOL 61 Chancery Resolution Prover** ([`solidity/dysnomia/domain/std/chancery_unauthorized_block.algol61`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/solidity/dysnomia/domain/std/chancery_unauthorized_block.algol61)) and C live network telemetry driver ([`tests/test_algol61_hathitrust_scoop.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_algol61_hathitrust_scoop.c)), officially ruling edge CLI interceptions as `UNAUTHORIZED_BLOCK` and resolving the outstanding Chancery on the record.
 
 ---
 
