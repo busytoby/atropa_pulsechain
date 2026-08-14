@@ -7113,4 +7113,42 @@ bool tsfi_invariant_stack_commit_dat_bin(
     tsfi_invariant_section_audit_t *audit_out
 );
 
+// OpenClaw (EuroMLSys 2026) Standalone Agent Runtime & Multi-Turn Dispatcher
+typedef enum {
+    OPENCLAW_CMD_PROMPT   = 0x01, // User prompt execution
+    OPENCLAW_CMD_TOOL_RES = 0x02, // Tool execution result writeback
+    OPENCLAW_CMD_COMPACT  = 0x03, // In-memory session compaction
+    OPENCLAW_CMD_RESET    = 0x04  // Session reset with verified dirty page flush
+} tsfi_openclaw_command_type_t;
+
+typedef struct {
+    uint32_t session_id;
+    uint32_t active_turn;
+    uint32_t total_pages_tracked;
+    uint32_t pinned_tokens_count;
+    uint32_t unpinned_tokens_count;
+    uint32_t tool_executions_total;
+    uint32_t dirty_pages_flushed;
+    uint32_t faults_intercepted;
+    float cumulative_latency_ms;
+    bool writeback_journal_valid;
+    bool dat_bin_wal_active;
+} tsfi_openclaw_runtime_state_t;
+
+bool tsfi_openclaw_init_session(
+    uint32_t session_id,
+    uint32_t token_budget,
+    tsfi_openclaw_runtime_state_t *runtime_out
+);
+
+bool tsfi_openclaw_dispatch_turn(
+    tsfi_openclaw_runtime_state_t *runtime,
+    tsfi_openclaw_command_type_t cmd,
+    const char *payload_text,
+    uint32_t token_budget,
+    char *assembled_prompt_out,
+    size_t max_prompt_len,
+    tsfi_clawvm_prompt_knapsack_state_t *knapsack_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

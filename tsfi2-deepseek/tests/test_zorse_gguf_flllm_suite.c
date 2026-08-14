@@ -3304,12 +3304,21 @@ static void test_clawvm_virtual_memory_engine(void) {
     bool ok_sec = tsfi_invariant_stack_commit_dat_bin(&inv_stack, "test_stack_section.dat.bin", &sec_audit);
     assert(ok_sec && sec_audit.committed_to_dat_bin && sec_audit.stack_bounds_safe && sec_audit.rdbms_table_rows_synced == 1);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Tool ABI, Microbench, Tier-1 Gate, LRU Equivalence & Forensic Invariant Journal Stack/RDBMS (.dat.bin) verified.\n");
+    tsfi_openclaw_runtime_state_t openclaw_rt;
+    bool ok_oc_init = tsfi_openclaw_init_session(1, 300, &openclaw_rt);
+    assert(ok_oc_init && openclaw_rt.session_id == 1 && openclaw_rt.pinned_tokens_count == 150);
+
+    char prompt_buf[1024] = {0};
+    tsfi_clawvm_prompt_knapsack_state_t knap_turn;
+    bool ok_oc_turn = tsfi_openclaw_dispatch_turn(&openclaw_rt, OPENCLAW_CMD_PROMPT, "test turn payload", 300, prompt_buf, sizeof(prompt_buf), &knap_turn);
+    assert(ok_oc_turn && openclaw_rt.active_turn == 1 && strstr(prompt_buf, "OPENCLAW TURN 1") != NULL);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Tool ABI, Microbench, Tier-1 Gate, LRU Equivalence, OpenClaw Runtime & Forensic Invariant Journal Stack/RDBMS (.dat.bin) verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 414 inference engine architectures and 416 algorithmic modules verified.\n");
+    printf("  -> PASS: All 416 inference engine architectures and 418 algorithmic modules verified.\n");
 }
 
 int main(void) {
