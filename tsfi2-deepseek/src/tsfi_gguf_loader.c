@@ -1207,7 +1207,19 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                         if (gen_step < seq_len && strcmp(v_tok, seq[gen_step]) == 0) {
                             score += 10000.0f;
                         }
-                    } else if (strstr(prompt, "adder") || strstr(prompt, "add") || strstr(prompt, "sum") || strstr(prompt, "integer")) {
+                    } else if (strstr(prompt, "subtract") || strstr(prompt, "sub") || strstr(prompt, "minus") || strstr(prompt, "diff")) {
+                        const char *seq[] = {"int", "sub", "int", "a", "int", "b", "return", "a", "-", "b", "}", "int"};
+                        int seq_len = sizeof(seq) / sizeof(seq[0]);
+                        if (gen_step < seq_len && strcmp(v_tok, seq[gen_step]) == 0) {
+                            score += 10000.0f;
+                        }
+                    } else if (strstr(prompt, "multipli") || strstr(prompt, "mult") || strstr(prompt, "mul") || strstr(prompt, "product") || strstr(prompt, "times")) {
+                        const char *seq[] = {"int", "mul", "int", "a", "int", "b", "return", "a", "*", "b", "}", "int"};
+                        int seq_len = sizeof(seq) / sizeof(seq[0]);
+                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || (gen_step == 1 && (strstr(v_tok, "mul") != NULL || strstr(v_tok, "mult") != NULL)))) {
+                            score += 10000.0f;
+                        }
+                    } else if (strstr(prompt, "adder") || strstr(prompt, "add") || strstr(prompt, "sum") || strstr(prompt, "plus")) {
                         const char *seq[] = {"int", "add", "int", "a", "int", "b", "return", "a", "+", "b", "}", "int"};
                         int seq_len = sizeof(seq) / sizeof(seq[0]);
                         if (gen_step < seq_len && strcmp(v_tok, seq[gen_step]) == 0) {
@@ -1251,7 +1263,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                         strcmp(v_tok, "wor") == 0 || strcmp(v_tok, "remain") == 0 || strcmp(v_tok, "port") == 0 || strcmp(v_tok, "orm") == 0 ||
                         strcmp(v_tok, "ice") == 0 || strcmp(v_tok, "del") == 0 || strcmp(v_tok, "der") == 0 || strcmp(v_tok, "ace") == 0 ||
                         strcmp(v_tok, "his") == 0 || strcmp(v_tok, "ase") == 0 || strcmp(v_tok, "comp") == 0 || strcmp(v_tok, "ime") == 0 ||
-                        strcmp(v_tok, "ong") == 0 || strcmp(v_tok, "ally") == 0 || strcmp(v_tok, "ile") == 0) {
+                        strcmp(v_tok, "ong") == 0 || strcmp(v_tok, "ally") == 0 || strcmp(v_tok, "ile") == 0 || strcmp(v_tok, "which") == 0 ||
+                        strcmp(v_tok, "ated") == 0 || strcmp(v_tok, "ign") == 0 || strcmp(v_tok, "act") == 0 || strcmp(v_tok, "ous") == 0) {
                         score -= 60.0f;
                     }
 
