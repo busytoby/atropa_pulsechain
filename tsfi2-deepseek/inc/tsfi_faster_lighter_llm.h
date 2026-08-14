@@ -7480,4 +7480,22 @@ bool tsfi_clawvm_checkpoint_sync_eval(
     tsfi_clawvm_checkpoint_sync_state_t *sync_out
 );
 
+// ClawVM (EuroMLSys 2026) Radix Context Deduplication & Paged Slab Cache Engine (Section 4.5, 5.2)
+typedef struct {
+    uint32_t radix_nodes_allocated;
+    uint32_t prefix_tokens_shared;
+    uint32_t memory_slab_bytes_saved;
+    float deduplication_hit_rate_pct;
+    float trie_traversal_latency_us;
+    bool zero_duplicate_prefix_verified;
+    bool radix_cow_atomic;
+} tsfi_clawvm_radix_dedup_state_t;
+
+bool tsfi_clawvm_radix_dedup_eval(
+    uint32_t num_sessions,
+    uint32_t common_prefix_len,
+    uint32_t unique_suffix_len,
+    tsfi_clawvm_radix_dedup_state_t *dedup_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
