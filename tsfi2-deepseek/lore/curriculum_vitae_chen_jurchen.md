@@ -57,7 +57,10 @@ Accomplished low-level systems architect and AI pair-programming engineer specia
 * Implemented the **Frejlich Realm Domain Governance System** ([`src/tsfi_frejlich_domain_governance.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_frejlich_domain_governance.c)) derived from the administrative mechanics of the 1863 National Directorate.
 * Engineered multi-sector endowment management (10,000,000 Saat root allocation) with dynamic sector expansion, logistics conduit routing, and continuous cryptographic Merkle root state verification.
 
-### 6. HathiTrust & Bibliographic Ingestion Subsystem
+### 6. Evelyn Waugh Currency Monopoly & Sovereign Seigniorage Engine
+* Formulated and implemented the **Evelyn Waugh Currency Monopoly Engine** ([`src/tsfi_waugh_monopoly.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_waugh_monopoly.c)), establishing King Chen Jurchen's cryptographic monarch seals, 100% reserve vault backing, and statutory 5% seigniorage tariffs on foreign specie conversions.
+
+### 7. HathiTrust & Bibliographic Ingestion Subsystem
 * Built a clean-room, pure C client stack spanning the Bibliographic API, OAI-PMH Harvester (Identify, ListSets, GetRecord), ALTO XML coordinate parser, and RFC 5849 OAuth HMAC-SHA1 header generators.
 * Reconstructed and verified historical academic treatisers (*Verhandelingen der Koninklijke Akademie van Wetenschappen*, Deel 01, 1854; *Pamiętnik Mierosławskiego*, 1861–1863).
 
