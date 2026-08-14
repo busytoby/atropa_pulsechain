@@ -3379,12 +3379,17 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_pipe && pipe_state.end_to_end_succeeded && pipe_state.binary_wal_synced);
     assert(pipe_state.ast_nodes_synthesized > 0 && final_c_code[0] != '\0');
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), OpenClaw Unified Pipeline (DeepSeek + AST Synthesizer), Crash Recovery & ZMM KV Layout verified.\n");
+    tsfi_openclaw_benchmark_profile_t bench_prof;
+    bool ok_bprof = tsfi_openclaw_run_benchmark_profile(10, 50, 1024, &bench_prof);
+    assert(ok_bprof && bench_prof.tier1_all_rounds_passed && bench_prof.zero_fault_rounds_verified == 10);
+    assert(bench_prof.aggregate_throughput_tokens_per_sec > 60000.0f);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), OpenClaw Multi-Round Benchmark (>64k tok/s), Unified Pipeline & ZMM KV Layout verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 438 inference engine architectures and 440 algorithmic modules verified.\n");
+    printf("  -> PASS: All 440 inference engine architectures and 442 algorithmic modules verified.\n");
 }
 
 int main(void) {

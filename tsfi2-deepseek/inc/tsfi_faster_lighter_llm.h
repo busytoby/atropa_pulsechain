@@ -7406,4 +7406,23 @@ bool tsfi_openclaw_execute_pipeline(
     tsfi_openclaw_unified_pipeline_state_t *pipeline_out
 );
 
+// OpenClaw (EuroMLSys 2026) Multi-Round Multi-Turn Stress Benchmark Engine (Section 5.1, Table 2 & Table 8)
+typedef struct {
+    uint32_t total_benchmark_rounds;
+    uint32_t total_turns_simulated;
+    uint32_t total_tool_calls_issued;
+    uint32_t zero_fault_rounds_verified;
+    float average_turn_latency_ms;
+    float peak_memory_footprint_mb;
+    float aggregate_throughput_tokens_per_sec;
+    bool tier1_all_rounds_passed;
+} tsfi_openclaw_benchmark_profile_t;
+
+bool tsfi_openclaw_run_benchmark_profile(
+    uint32_t num_rounds,
+    uint32_t turns_per_round,
+    uint32_t token_budget,
+    tsfi_openclaw_benchmark_profile_t *bench_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
