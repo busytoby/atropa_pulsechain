@@ -7571,4 +7571,53 @@ bool tsfi_openclaw_heterogeneous_router_eval(
     tsfi_openclaw_heterogeneous_router_state_t *router_out
 );
 
+// 1. OpenClaw In-Process Isolated Code Execution Sandbox & Compiler Feedback Loop
+typedef struct {
+    uint32_t compilation_passes;
+    uint32_t syntax_errors_caught;
+    uint32_t runtime_assertions_verified;
+    float sandbox_execution_latency_us;
+    bool sandboxed_execution_clean;
+    bool telpa_counter_example_emitted;
+} tsfi_openclaw_sandbox_state_t;
+
+bool tsfi_openclaw_sandbox_eval(
+    const char *c_source_code,
+    uint32_t execution_timeout_ms,
+    tsfi_openclaw_sandbox_state_t *sandbox_out
+);
+
+// 2. OpenClaw Dynamic LoRA Adapter Switching Engine (Rank-r Delta Injection)
+typedef struct {
+    uint32_t adapter_id;
+    uint32_t lora_rank;
+    uint32_t weight_deltas_applied;
+    float lora_switch_latency_us;
+    bool adapter_hot_swapped;
+    bool quant_base_preserved;
+} tsfi_openclaw_lora_switch_state_t;
+
+bool tsfi_openclaw_lora_switch_eval(
+    uint32_t target_adapter_id,
+    uint32_t rank,
+    float alpha_scaling,
+    tsfi_openclaw_lora_switch_state_t *lora_out
+);
+
+// 3. OpenClaw STANAG 5066 / 4538 Physical Loopback SCSI Socket Interface (Rule 5 & Auncient Routing)
+typedef struct {
+    uint32_t socket_fd;
+    uint32_t frames_transmitted;
+    uint32_t bytes_verified_crc32;
+    float loopback_latency_ns;
+    bool scsi_handshake_synced;
+    bool zero_packet_loss_verified;
+} tsfi_openclaw_stanag_loopback_state_t;
+
+bool tsfi_openclaw_stanag_loopback_eval(
+    uint32_t port_id,
+    uint32_t frame_count,
+    tsfi_openclaw_stanag_loopback_state_t *loopback_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
