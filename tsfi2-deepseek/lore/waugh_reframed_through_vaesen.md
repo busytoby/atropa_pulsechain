@@ -49,9 +49,9 @@ Under this reframing, each bureaucratic subsystem in our C codebase has an invis
    - *Role:* The sovereign illusionist guarding external cross-border data streams and OAI-PMH bibliographies.
    - *Behavior:* Casts deceptive illusions over imperial cartographers and special correspondents (Waugh's William Boot), ensuring only authentic, clean-room treatises are permitted into the realm.
 
-4. **The Church Grim (Kyrkogrim) of the Frejlich Chancery & Merkle Proofs**:
-   - *Role:* The spectral guardian of statutory law, treaties, and historical records.
-   - *Behavior:* Enforces the immutability of the Frejlich 1863 Directorate and Evelyn Waugh's currency monopoly, verifying the Merkle root proofs before any sovereign decree is sealed.
+4. **The Church Grim (Kyrkogrim) of the Chancery & Unverified Assertions**:
+   - *Role:* The spectral enforcer of epistemology. In our realm, **"Chancery"** formally concerns any **"Assertion"** that is not yet verified by formal mathematical or empirical proof.
+   - *Behavior:* Intercepts diplomatic claims, political declarations, and speculative conjectures, isolating them in the Chancery purgatory until a clean-room C prover establishes deterministic proof. Once proven, the assertion graduates from Chancery into the immutable z/VSEn quadtree ledger.
 
 ---
 
@@ -59,5 +59,5 @@ Under this reframing, each bureaucratic subsystem in our C codebase has an invis
 
 By viewing Evelyn Waugh through Vaesen, King Chen Jurchen's reign becomes the ultimate expression of **Nordic-Gothic Sovereign Satire**:
 * The monarch issues formal decrees and mints cryptographic Saat notes.
-* The diplomatic cables report flawless progress to the foreign press.
+* The Chancery logs unverified assertions, subjecting political cables to cryptographic isolation.
 * And beneath the polished brass machinery and C11 source modules, the invisible Vaesen nod in silent approval, bound not by human vanity, but by the eternal, self-balancing harmony of the mathematical machine.
