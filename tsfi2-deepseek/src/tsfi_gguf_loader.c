@@ -1186,68 +1186,6 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     float telpa_b = tsfi_telpa_evaluate_candidate_bonus(v_idx, &telpa_state);
                     float score = dot + telpa_b;
 
-                    // Structured C Code Syntax Progression Pipeline for DeepSeek-Coder
-                    if (strstr(prompt, "include") && strstr(prompt, "main") && strstr(prompt, "return")) {
-                        // Continuation sequence following complete hello world / basic C program
-                        const char *seq[] = {"//", "Execution", "completed", "successfully", "\n"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && strcmp(v_tok, seq[gen_step]) == 0) {
-                            score += 100000.0f;
-                        }
-                    } else if (strstr(prompt, "hello") || strstr(prompt, "world") || strstr(prompt, "Hello") || strstr(prompt, "World")) {
-                        const char *sub_seq[] = {"include", "stdio", "int", "main", "printf", "Hello", "World", "return", "0", "}"};
-                        int sub_len = sizeof(sub_seq) / sizeof(sub_seq[0]);
-                        if (gen_step < sub_len) {
-                            if (strcmp(v_tok, sub_seq[gen_step]) == 0) {
-                                score += 100000.0f;
-                            } else if (gen_step == 1 && strstr(v_tok, "stdio") != NULL) {
-                                score += 100000.0f;
-                            }
-                        }
-                    } else if (strstr(prompt, "fibonacci") || strstr(prompt, "fib")) {
-                        const char *seq[] = {"int", "fib(int", "n)", "{\n   ", "if", "(n", "<=", "2)", "return", "1;\n   ", "return", "fib(n-1)", "+", "fib(n-2);\n}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || strstr(v_tok, seq[gen_step]) != NULL)) {
-                            score += 10000.0f;
-                        }
-                    } else if (strstr(prompt, "subtract") || strstr(prompt, "sub") || strstr(prompt, "minus") || strstr(prompt, "diff")) {
-                        const char *seq[] = {"int", "sub(int", "a,", "int", "b)", "{\n   ", "return", "a", "-", "b;\n}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || strstr(v_tok, seq[gen_step]) != NULL)) {
-                            score += 10000.0f;
-                        }
-                    } else if (strstr(prompt, "multipli") || strstr(prompt, "mult") || strstr(prompt, "mul") || strstr(prompt, "product") || strstr(prompt, "times")) {
-                        const char *seq[] = {"int", "mul(int", "a,", "int", "b)", "{\n   ", "return", "a", "*", "b;\n}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || strstr(v_tok, seq[gen_step]) != NULL)) {
-                            score += 10000.0f;
-                        }
-                    } else if (strstr(prompt, "adder") || strstr(prompt, "add") || strstr(prompt, "sum") || strstr(prompt, "plus")) {
-                        const char *seq[] = {"int", "add(int", "a,", "int", "b)", "{\n   ", "return", "a", "+", "b;\n}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || strstr(v_tok, seq[gen_step]) != NULL)) {
-                            score += 10000.0f;
-                        }
-                    } else if (strstr(prompt, "hash") || strstr(prompt, "fnv")) {
-                        const char *seq[] = {"uint64_t", "fnv1a(const", "char", "*str)", "{\n   ", "uint64_t", "h", "=", "14695981039346656037ULL;\n   ", "while", "(*str)", "{\n      ", "h", "^=", "(unsigned", "char)*str++;\n      ", "h", "*=", "1099511628211ULL;\n   ", "}\n   ", "return", "h;\n}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || strstr(v_tok, seq[gen_step]) != NULL)) {
-                            score += 10000.0f;
-                        }
-                    } else if (strstr(prompt, "diffie") || strstr(prompt, "hellman") || strstr(prompt, "dh") || strstr(prompt, "exchange")) {
-                        const char *seq[] = {"uint", "dh", "mod", "exp", "uint", "base", "uint", "exp", "uint", "mod", "uint", "res", "1", "while", "exp", "res", "base", "mod", "return", "res", "}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && (strcmp(v_tok, seq[gen_step]) == 0 || strstr(v_tok, seq[gen_step]) != NULL)) {
-                            score += 100000.0f;
-                        }
-                    } else if (strstr(prompt, "test") || strstr(prompt, "Test")) {
-                        const char *seq[] = {"void", "test_suite(void)", "{\n   ", "assert(1);", "\n   ", "printf(\"PASS\\n\");\n}"};
-                        int seq_len = sizeof(seq) / sizeof(seq[0]);
-                        if (gen_step < seq_len && strcmp(v_tok, seq[gen_step]) == 0) {
-                            score += 10000.0f;
-                        }
-                    }
-
                     // Reject conversational words and partial syllable fragments during C code synthesis
                     if (t_len < 2 || strcmp(v_tok, "the") == 0 || strcmp(v_tok, "The") == 0 || strcmp(v_tok, "ing") == 0 || strcmp(v_tok, "ion") == 0 || 
                         strcmp(v_tok, "and") == 0 || strcmp(v_tok, "ent") == 0 || strcmp(v_tok, "for") == 0 || strcmp(v_tok, "ver") == 0 || 
@@ -1850,11 +1788,6 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     break;
                 }
             }
-        }
-
-        // Cleanly format full hello world code if synthesized in pieces
-        if ((strstr(prompt, "hello") || strstr(prompt, "world") || strstr(prompt, "Hello") || strstr(prompt, "World")) && strstr(response_out, "Hello") && strstr(response_out, "World")) {
-            snprintf(response_out, max_resp_len, "#include <stdio.h>\n\nint main(void) {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}");
         }
 
         // Feed winning next_token_id embedding signal auto-regressively into activation vector x
