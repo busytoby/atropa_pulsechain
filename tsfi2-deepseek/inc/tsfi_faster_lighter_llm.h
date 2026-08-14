@@ -7263,4 +7263,28 @@ bool tsfi_clawvm_adaptive_eviction_eval(
     tsfi_clawvm_adaptive_eviction_state_t *evict_out
 );
 
+// ClawVM (EuroMLSys 2026) Hierarchical Multi-Tier KV-Cache Offload & Prefill Sieve Engine (Section 5.2, Figure 8)
+typedef struct {
+    uint32_t tier_level; // Tier 0: SRAM/L2, Tier 1: Host DRAM, Tier 2: NVMe/.dat.bin
+    uint32_t page_capacity;
+    uint32_t active_pages;
+    float read_bandwidth_gbs;
+    float transfer_latency_us;
+    bool pci_p2p_active;
+} tsfi_clawvm_kv_tier_descriptor_t;
+
+typedef struct {
+    uint32_t total_transferred_pages;
+    uint64_t total_reclaimed_vram_bytes;
+    float prefill_sieve_speedup;
+    float decode_ttft_reduction_pct;
+    bool zero_copy_dma_verified;
+} tsfi_clawvm_multi_tier_offload_state_t;
+
+bool tsfi_clawvm_multi_tier_offload_eval(
+    uint32_t num_layers,
+    uint32_t active_sequence_length,
+    tsfi_clawvm_multi_tier_offload_state_t *offload_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
