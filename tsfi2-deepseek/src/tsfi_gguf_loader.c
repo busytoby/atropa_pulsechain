@@ -1771,6 +1771,12 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         tsfi_clawvm_adversarial_stress_state_t stress_live;
         tsfi_clawvm_adversarial_stress_eval(1, 300, 16, &stress_live);
 
+        tsfi_clawvm_real_trace_replay_state_t trace_replay_live;
+        tsfi_clawvm_real_trace_replay_eval(100, 300, &trace_replay_live);
+
+        tsfi_clawvm_lru_equivalence_state_t lru_live;
+        tsfi_clawvm_lru_equivalence_eval(180, 4, &lru_live);
+
         // Dynamic Double Crostics 4-State Grammar Automaton State Update
         grammar_state = (grammar_state + gen_step) % 4;
 

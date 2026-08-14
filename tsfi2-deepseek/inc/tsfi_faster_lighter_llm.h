@@ -6957,4 +6957,36 @@ bool tsfi_clawvm_adversarial_stress_eval(
     tsfi_clawvm_adversarial_stress_state_t *stress_out
 );
 
+// ClawVM (EuroMLSys 2026) Real-Session Trace Replay Engine (Section 5.3, Appendix B, Table 10)
+typedef struct {
+    uint32_t session_turns_replayed;
+    uint32_t total_real_traces;
+    uint32_t explicit_faults_observed;
+    float median_fault_count;
+    float trace_thrash_index;
+    bool zero_fault_scaling_verified;
+} tsfi_clawvm_real_trace_replay_state_t;
+
+bool tsfi_clawvm_real_trace_replay_eval(
+    uint32_t session_length_turns, // 100 or 200 turns
+    uint32_t token_budget,
+    tsfi_clawvm_real_trace_replay_state_t *replay_out
+);
+
+// ClawVM (EuroMLSys 2026) LRU vs Utility Structural Invariant Equivalence Engine (Section 5.2)
+typedef struct {
+    uint32_t lru_explicit_faults;
+    uint32_t utility_explicit_faults;
+    float lru_thrash_index;
+    float utility_thrash_index;
+    bool phase1_structural_safety_guaranteed;
+    bool utility_quality_differentiation_active;
+} tsfi_clawvm_lru_equivalence_state_t;
+
+bool tsfi_clawvm_lru_equivalence_eval(
+    uint32_t budget,
+    uint32_t num_workloads,
+    tsfi_clawvm_lru_equivalence_state_t *lru_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

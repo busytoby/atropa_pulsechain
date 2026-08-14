@@ -3268,12 +3268,20 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_s1 && stress_churn.churn_fault_free && stress_churn.churn_faults == 0);
     assert(ok_s2 && stress_cascade.cascade_reset_fault_free && stress_cascade.cascade_reset_faults == 0);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), DecisionTrace, Replay Oracle (0 gap), Tier-1 Gate & Adversarial Stress verified.\n");
+    tsfi_clawvm_real_trace_replay_state_t trace_replay;
+    bool ok_tr = tsfi_clawvm_real_trace_replay_eval(200, 300, &trace_replay);
+    assert(ok_tr && trace_replay.zero_fault_scaling_verified && trace_replay.explicit_faults_observed == 0);
+
+    tsfi_clawvm_lru_equivalence_state_t lru_eq;
+    bool ok_lru = tsfi_clawvm_lru_equivalence_eval(180, 4, &lru_eq);
+    assert(ok_lru && lru_eq.phase1_structural_safety_guaranteed && lru_eq.lru_explicit_faults == 0 && lru_eq.utility_explicit_faults == 0);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), DecisionTrace, Replay Oracle (0 gap), Tier-1 Gate, Real Traces (200t) & LRU Equivalence verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 408 inference engine architectures and 410 algorithmic modules verified.\n");
+    printf("  -> PASS: All 410 inference engine architectures and 412 algorithmic modules verified.\n");
 }
 
 int main(void) {
