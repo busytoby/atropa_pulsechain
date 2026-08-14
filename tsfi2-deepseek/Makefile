@@ -1699,8 +1699,12 @@ bin/zorse_prompt: tools/zorse_prompt.c $(OBJ_DIR)/tsfi_faster_lighter_llm.o $(OB
 	@mkdir -p bin
 	$(CC) -Wall -Wextra -Wno-unused-result -Wno-unused-parameter -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -I../inc -Isrc -O3 -g -march=native -flax-vector-conversions -fPIC $^ -o $@ -lm
 
+bin/zorse_trace_inspector: tools/zorse_trace_inspector.c
+	@mkdir -p bin
+	$(CC) -Wall -Wextra -std=c11 -O3 -g $^ -o $@
+
 .PHONY: test_flllm check_flllm profile
-test_flllm: bin/test_zorse_gguf_flllm_suite
+test_flllm: bin/test_zorse_gguf_flllm_suite bin/zorse_prompt bin/zorse_trace_inspector
 	./bin/test_zorse_gguf_flllm_suite
 
 check_flllm: test_flllm
