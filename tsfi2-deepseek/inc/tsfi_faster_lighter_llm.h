@@ -7444,4 +7444,23 @@ bool tsfi_clawvm_subpage_migration_eval(
     tsfi_clawvm_subpage_migration_state_t *migration_out
 );
 
+// ClawVM (EuroMLSys 2026) Dynamic Page Pinning Budget Balancer & Headroom Deficit Manager (Section 4.1, Table 1)
+typedef struct {
+    uint32_t hard_pinned_tokens_allocated;
+    uint32_t dynamic_budget_headroom_remaining;
+    uint32_t headroom_deficit_interceptions;
+    uint32_t invariant_spills_prevented;
+    float knapsack_solvability_ratio;
+    float pinning_balance_latency_us;
+    bool zero_headroom_deficit_verified;
+    bool budget_hard_ceiling_satisfied;
+} tsfi_clawvm_pinning_balancer_state_t;
+
+bool tsfi_clawvm_pinning_balancer_eval(
+    uint32_t total_budget,
+    uint32_t requested_pinned_tokens,
+    uint32_t requested_dynamic_tokens,
+    tsfi_clawvm_pinning_balancer_state_t *balancer_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
