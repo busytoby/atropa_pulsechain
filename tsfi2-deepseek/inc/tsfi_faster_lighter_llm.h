@@ -6924,4 +6924,37 @@ bool tsfi_clawvm_tier1_regression_gate_eval(
     tsfi_clawvm_tier1_regression_state_t *gate_out
 );
 
+// ClawVM (EuroMLSys 2026) DecisionTrace Append-Only Audit Log Engine (Section 4)
+typedef struct {
+    uint32_t trace_events_logged;
+    uint32_t prompt_assembly_decisions;
+    uint32_t writeback_validations;
+    uint32_t fault_observations;
+    float trace_audit_overhead_us;
+    bool audit_log_immutable;
+} tsfi_clawvm_decision_trace_state_t;
+
+bool tsfi_clawvm_decision_trace_eval(
+    uint32_t turn_index,
+    const char *session_id,
+    tsfi_clawvm_decision_trace_state_t *trace_out
+);
+
+// ClawVM (EuroMLSys 2026) Adversarial Stress Test Engine (Section 5.3 & Table 9)
+typedef struct {
+    uint32_t starvation_pinned_misses; // Budget 40 starvation
+    uint32_t churn_faults;             // 50 evidence pages churn
+    uint32_t cascade_reset_faults;     // 9 cascade resets in 30 turns
+    bool starvation_diagnosable;
+    bool churn_fault_free;
+    bool cascade_reset_fault_free;
+} tsfi_clawvm_adversarial_stress_state_t;
+
+bool tsfi_clawvm_adversarial_stress_eval(
+    uint32_t scenario_id, // 0: Starvation, 1: Churn, 2: Cascade Reset
+    uint32_t budget,
+    uint32_t turns,
+    tsfi_clawvm_adversarial_stress_state_t *stress_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

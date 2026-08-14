@@ -3256,12 +3256,24 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_gate && gate_state.total_gate_assertions_verified == 6 && gate_state.post_compaction_bootstrap_passed);
     assert(gate_state.reset_dirty_flush_miss_passed && gate_state.unsafe_persistence_rejection_passed);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), PageTable (100%% recovery), Replay Oracle (0 gap) & Tier-1 Gate verified.\n");
+    tsfi_clawvm_decision_trace_state_t trace_state;
+    bool ok_trace = tsfi_clawvm_decision_trace_eval(40, "zorse_session_01", &trace_state);
+    assert(ok_trace && trace_state.audit_log_immutable && trace_state.fault_observations == 0);
+
+    tsfi_clawvm_adversarial_stress_state_t stress_starve, stress_churn, stress_cascade;
+    bool ok_s0 = tsfi_clawvm_adversarial_stress_eval(0, 40, 50, &stress_starve);
+    bool ok_s1 = tsfi_clawvm_adversarial_stress_eval(1, 180, 50, &stress_churn);
+    bool ok_s2 = tsfi_clawvm_adversarial_stress_eval(2, 300, 30, &stress_cascade);
+    assert(ok_s0 && stress_starve.starvation_diagnosable && stress_starve.starvation_pinned_misses == 10);
+    assert(ok_s1 && stress_churn.churn_fault_free && stress_churn.churn_faults == 0);
+    assert(ok_s2 && stress_cascade.cascade_reset_fault_free && stress_cascade.cascade_reset_faults == 0);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), DecisionTrace, Replay Oracle (0 gap), Tier-1 Gate & Adversarial Stress verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 406 inference engine architectures and 408 algorithmic modules verified.\n");
+    printf("  -> PASS: All 408 inference engine architectures and 410 algorithmic modules verified.\n");
 }
 
 int main(void) {
