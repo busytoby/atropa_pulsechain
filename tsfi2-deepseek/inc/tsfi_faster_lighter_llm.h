@@ -7498,4 +7498,77 @@ bool tsfi_clawvm_radix_dedup_eval(
     tsfi_clawvm_radix_dedup_state_t *dedup_out
 );
 
+// 1. ClawVM (EuroMLSys 2026) Deterministic Execution Path Replay & Delta-Checkpointer (Section 4.4, Figure 7)
+typedef struct {
+    uint32_t trace_steps_replayed;
+    uint32_t incremental_diff_bytes;
+    uint32_t branch_splits_resolved;
+    float replay_fidelity_pct;
+    float delta_checkpoint_latency_us;
+    bool zero_divergence_verified;
+    bool branch_replay_atomic;
+} tsfi_clawvm_path_replay_state_t;
+
+bool tsfi_clawvm_path_replay_eval(
+    uint32_t total_steps,
+    uint32_t num_branches,
+    const char *dat_bin_wal_path,
+    tsfi_clawvm_path_replay_state_t *replay_out
+);
+
+// 2. OpenClaw (EuroMLSys 2026) Cross-Agent Zero-Copy Paged Message Bus (Section 3.5, 4.5)
+typedef struct {
+    uint32_t messages_dispatched;
+    uint32_t shared_pages_referenced;
+    uint32_t zero_copy_transfers_count;
+    float bus_throughput_msg_per_sec;
+    float message_latency_ns;
+    bool lockless_ring_spin_verified;
+    bool page_isolation_retained;
+} tsfi_openclaw_message_bus_state_t;
+
+bool tsfi_openclaw_message_bus_eval(
+    uint32_t num_agents,
+    uint32_t num_messages,
+    uint32_t pages_per_message,
+    tsfi_openclaw_message_bus_state_t *bus_out
+);
+
+// 3. ClawVM (EuroMLSys 2026) Dynamic Budget Elasticity & Token Reclaim Engine (Section 4.1, Figure 4)
+typedef struct {
+    uint32_t total_elastic_pool_tokens;
+    uint32_t tokens_loaned_prefill;
+    uint32_t tokens_reclaimed_decode;
+    uint32_t budget_starvations_prevented;
+    float pool_utilization_pct;
+    float reclaim_latency_us;
+    bool zero_overcommit_verified;
+    bool budget_solvability_guaranteed;
+} tsfi_clawvm_budget_elasticity_state_t;
+
+bool tsfi_clawvm_budget_elasticity_eval(
+    uint32_t pool_capacity,
+    uint32_t concurrent_sessions,
+    uint32_t burst_prefill_tokens,
+    tsfi_clawvm_budget_elasticity_state_t *elasticity_out
+);
+
+// 4. OpenClaw (EuroMLSys 2026) Multi-Model Heterogeneous Dispatch Router (Section 5.4, Table 9)
+typedef struct {
+    uint32_t queries_routed_total;
+    uint32_t deepseek_coder_tasks;
+    uint32_t speculative_verifier_tasks;
+    uint32_t typestate_classifications_count;
+    float routing_accuracy_pct;
+    float routing_overhead_us;
+    bool optimal_tier_assigned;
+    bool heterogeneous_sync_valid;
+} tsfi_openclaw_heterogeneous_router_state_t;
+
+bool tsfi_openclaw_heterogeneous_router_eval(
+    uint32_t num_tasks,
+    const char *typestate_mask,
+    tsfi_openclaw_heterogeneous_router_state_t *router_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
