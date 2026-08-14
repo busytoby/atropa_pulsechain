@@ -1048,6 +1048,7 @@ int tsfi_cbt_sna_virtual_route_bind(
     uint8_t vr_id,
     uint8_t pacing_window
 ) {
+    (void)vr_id;
     if (!sess || !contract_address || !dat_bin_route_path || pacing_window == 0) return -1;
 
     /* Rule 13 Media Layout Enforcement */
@@ -1229,6 +1230,7 @@ int tsfi_cbt_sna_path_control_nat_engine(
     uint16_t subarea_id,
     uint16_t element_id
 ) {
+    (void)element_id;
     if (!sess || !contract_address || !dat_bin_nat_path || subarea_id == 0) return -1;
 
     /* Rule 13 Media Format Enforcement */
@@ -1256,6 +1258,7 @@ int tsfi_cbt_sna_explicit_route_inspector(
     uint64_t zmm_mann_latch,
     uint32_t renderman_ris_context_id
 ) {
+    (void)renderman_ris_context_id;
     if (!sess || !contract_address || !dat_bin_er_path || explicit_route_number == 0 || zmm_mann_latch == 0) return -1;
 
     /* Rule 13 Media Format Enforcement */

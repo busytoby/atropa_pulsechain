@@ -1,4 +1,5 @@
 #include "tsfi_zmm_vm.h"
+#include "tsfi_riinterface.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,8 +53,6 @@ void tsfi_zmm_winchester_handshake(TsfiZmmVmState *vm_state, uint8_t keycode) {
 void tsfi_zmm_winchester_deconvolve_handshake(TsfiZmmVmState *vm_state, void *ri_void) {
     if (!vm_state || !ri_void) return;
     
-    // We import tsfi_riinterface.h context
-    #include "tsfi_riinterface.h"
     TSFiRiInterface *ri = (TSFiRiInterface *)ri_void;
     
     // Format EDoF Deconvolution command selector 0xed0f5900

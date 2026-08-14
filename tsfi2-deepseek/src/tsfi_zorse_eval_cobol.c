@@ -1156,95 +1156,6 @@ int tsfi_erara_analyze_polite_language_diet(const char *doi, uint32_t page_num, 
     return 0;
 }
 
-int tsfi_zorse_query_llm(const char *prompt, const char *model_name, char *response_out, size_t max_resp_len) {
-    if (!prompt || !model_name || !response_out || max_resp_len == 0) return -1;
-    
-    response_out[0] = '\0';
-
-    // If model_name points to a GGUF asset file path on disk (e.g. ~/src/tsfi2/assets/*.gguf)
-    size_t m_len = strlen(model_name);
-    if (m_len > 5 && strcmp(model_name + m_len - 5, ".gguf") == 0) {
-        FILE *fp = fopen(model_name, "rb");
-        if (!fp) return -2; // GGUF asset file not found
-
-        uint8_t magic[4] = {0};
-        size_t read_bytes = fread(magic, 1, 4, fp);
-        fclose(fp);
-
-        if (read_bytes < 4 || magic[0] != 'G' || magic[1] != 'G' || magic[2] != 'U' || magic[3] != 'F') {
-            return -3; // Invalid GGUF header magic
-        }
-    }
-    
-    // Direct binary C payload mapping over GGUF asset without JSON or external drivers
-    typedef struct {
-        uint32_t magic;
-        uint32_t prompt_len;
-        char prompt_buf[1024];
-        char model_path[512];
-    } zorse_binary_payload_t;
-
-    zorse_binary_payload_t bin_payload;
-    memset(&bin_payload, 0, sizeof(bin_payload));
-    bin_payload.magic = 0x5A4F5253; // 'Z''O''R''S' binary magic
-    bin_payload.prompt_len = (uint32_t)strlen(prompt);
-    strncpy(bin_payload.prompt_buf, prompt, sizeof(bin_payload.prompt_buf) - 1);
-    strncpy(bin_payload.model_path, model_name, sizeof(bin_payload.model_path) - 1);
-
-    // Save binary payload directly to .dat.bin under Rule 13
-    FILE *bin_fp = fopen("zorse_binary_query.dat.bin", "wb");
-    if (bin_fp) {
-        fwrite(&bin_payload, sizeof(bin_payload), 1, bin_fp);
-        fclose(bin_fp);
-    }
-
-    // Direct C in-process execution over GGUF tensor binary weights via pure C matrix vector engine
-    extern bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char *response_out, size_t max_resp_len);
-    if (tsfi_zorse_eval_gguf_pure_c(model_name, prompt, response_out, max_resp_len)) {
-        return 0;
-    }
-    return -1;
-}
-
-int tsfi_zorse_query_llm_gguf(const char *prompt, const char *gguf_asset_path, char *response_out, size_t max_resp_len) {
-    if (!prompt || !gguf_asset_path || !response_out || max_resp_len == 0) return -1;
-    response_out[0] = '\0';
-
-    // Verify presence of GGUF asset file on disk (e.g. ~/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf)
-    FILE *fp = fopen(gguf_asset_path, "rb");
-    if (!fp) return -2; // GGUF asset not found
-
-    // Read GGUF header magic (4 bytes: 'G''G''U''F')
-    uint8_t magic[4] = {0};
-    size_t read_bytes = fread(magic, 1, 4, fp);
-    fclose(fp);
-
-    if (read_bytes < 4 || magic[0] != 'G' || magic[1] != 'G' || magic[2] != 'U' || magic[3] != 'F') {
-        return -3; // Invalid GGUF header magic
-    }
-
-    // Direct binding over DeepSeek GGUF model asset
-    return tsfi_zorse_query_llm(prompt, gguf_asset_path, response_out, max_resp_len);
-}
-
-int tsfi_zorse_query_moondream_vlm(const char *b64_image_data, const char *prompt, char *response_out, size_t max_resp_len) {
-    if (!b64_image_data || !prompt || !response_out || max_resp_len == 0) return -1;
-    response_out[0] = '\0';
-
-    // Route multimodal vision payload through native AI core tsfi_ai_evaluate_vlm
-    return tsfi_ai_evaluate_vlm(b64_image_data, prompt, response_out, max_resp_len);
-}
-
-int tsfi_zorse_audit_screen_visual(const char *b64_screen_img, const char *model_name, char *alert_level_out, size_t max_len) {
-    if (!b64_screen_img || !alert_level_out || max_len == 0) return -1;
-    return tsfi_zorse_query_moondream_vlm(b64_screen_img, "Audit 3270 visual console display and return alert level", alert_level_out, max_len);
-}
-
-int tsfi_zorse_generate_jcl_from_flowchart(const char *b64_flowchart_img, const char *model_name, char *jcl_out, size_t max_len) {
-    if (!b64_flowchart_img || !jcl_out || max_len == 0) return -1;
-    return tsfi_zorse_query_moondream_vlm(b64_flowchart_img, "Generate z/VSEn JCL job stream from visual flowchart diagram", jcl_out, max_len);
-}
-
 int tsfi_zorse_submit_jcl_cobol_batch(const char *jcl_source, const char *cobol_source, const char *model_asset_path, zorse_jcl_batch_receipt_t *receipt_out) {
     if (!jcl_source || !receipt_out) return -1;
     memset(receipt_out, 0, sizeof(zorse_jcl_batch_receipt_t));
@@ -1280,7 +1191,8 @@ int tsfi_zorse_submit_jcl_cobol_batch(const char *jcl_source, const char *cobol_
     char eval_buf[512];
     int eval_rc = 0;
     if (receipt_out->model_type == 2) {
-        eval_rc = tsfi_zorse_query_moondream_vlm("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "Process JCL visual batch step", eval_buf, sizeof(eval_buf));
+        extern int tsfi_zorse_audit_screen_visual(const char *b64_screen_img, const char *model_name, char *alert_level_out, size_t max_len);
+        eval_rc = tsfi_zorse_audit_screen_visual("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "moondream", eval_buf, sizeof(eval_buf));
     } else {
         eval_rc = tsfi_zorse_query_llm(cobol_source ? cobol_source : "Process JCL batch step", model_asset_path ? model_asset_path : "/home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf", eval_buf, sizeof(eval_buf));
     }
@@ -1295,11 +1207,6 @@ int tsfi_zorse_submit_jcl_cobol_batch(const char *jcl_source, const char *cobol_
     }
 
     return 0;
-}
-
-int tsfi_zorse_map_dasd_space(const char *b64_layout_img, const char *model_name, char *space_out, size_t max_len) {
-    if (!b64_layout_img || !space_out || max_len == 0) return -1;
-    return tsfi_zorse_query_moondream_vlm(b64_layout_img, "Map visual DASD layout diagram into JCL SPACE parameters under Rule 13", space_out, max_len);
 }
 
 int tsfi_zorse_read_source_file(const char *filepath, char *content_out, size_t max_len) {
