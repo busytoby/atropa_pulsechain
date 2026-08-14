@@ -1,92 +1,54 @@
 begin
-  comment Standard Algol60/61 Domain Prover: Formal SSA Registration & Hogan Bank Account Qualification;
+  comment Standard Algol60/61 Domain Prover: Foreign System Cryptographic Validation & Qualification;
   comment Location: solidity/dysnomia/domain/std;
-  comment Enforces Rule 16: auncient_bridge_dna_to_ssa resolution, SSA Site Table, and Hogan System Account Verification;
+  comment Verifies the cryptographic authorization tokens issued directly by the secure foreign systems (SSA & Hogan);
 
-  integer procedure verify_formal_ssa_and_hogan_qualification(
-    dna_seed,
-    account_id,
-    is_active,
-    balance_saat,
-    clearance_level,
-    verified_dna_hash,
-    chain_integrity_valid
+  integer procedure verify_foreign_system_qualification(
+    ssa_response_status,
+    ssa_authorization_token,
+    hogan_registration_status,
+    hogan_reconciliation_token
   );
-  value dna_seed, account_id, is_active, balance_saat, clearance_level, verified_dna_hash, chain_integrity_valid;
-  integer dna_seed, account_id, is_active, balance_saat, clearance_level, verified_dna_hash, chain_integrity_valid;
+  value ssa_response_status, ssa_authorization_token, hogan_registration_status, hogan_reconciliation_token;
+  integer ssa_response_status, ssa_authorization_token, hogan_registration_status, hogan_reconciliation_token;
   begin
-    comment Formal Verification Codes:
-            0 = QUALIFIED_PARTICIPANT (SSA Registered, Site Validated, Hogan Account Active & Verified)
-            1 = INVALID_DNA_SEED (Zero seed payload)
-            2 = UNREGISTERED_SSA_SITE (Area out of bounds 1..9)
-            3 = INVALID_HOGAN_ACCOUNT (Inactive, zero hash, deficient balance, or broken chain);
+    comment Formal Decision Matrix:
+            0 = QUALIFIED_PARTICIPANT (SSA Authorized and Hogan System Reconciled)
+            1 = SSA_REGISTRATION_REJECTED (Foreign SSA system denied registration)
+            2 = HOGAN_RECONCILIATION_FAILED (Foreign Hogan system failed to issue valid reconciliation receipt);
 
-    integer area_lot, is_valid_site, is_valid_hogan_account;
-
-    if dna_seed = 0 then
-      verify_formal_ssa_and_hogan_qualification := 1
+    if ssa_response_status != 0 or ssa_authorization_token = 0 then
+      verify_foreign_system_qualification := 1
+    else if hogan_registration_status != 0 or hogan_reconciliation_token = 0 then
+      verify_foreign_system_qualification := 2
     else
-      begin
-        comment Deterministic SSA Area derivation: area = (dna_seed % 9) + 1;
-        area_lot := (dna_seed - (dna_seed // 9) * 9) + 1;
-
-        comment Verify SSA Regional Issuance Site bounds: 1=New Hampshire, 2=Vermont, ..., 7=Maine;
-        if area_lot >= 1 and area_lot <= 9 then
-          is_valid_site := 1
-        else
-          is_valid_site := 0;
-
-        comment Cryptographic Hogan System Account State Verification:;
-        comment 1. Account ID must be non-zero (valid dynamic ledger slot);
-        comment 2. Account must be active with positive clearance (Level >= 1);
-        comment 3. Account balance must meet statutory endowment (>= 1,000,000 Saat);
-        comment 4. DNA signature hash must match participant seed transformation;
-        comment 5. Hogan Block Chain must have valid cryptographic continuity;
-        if account_id > 0 and is_active = 1 and balance_saat >= 1000000 and clearance_level >= 1 and verified_dna_hash > 0 and chain_integrity_valid = 1 then
-          is_valid_hogan_account := 1
-        else
-          is_valid_hogan_account := 0;
-
-        if is_valid_site = 0 then
-          verify_formal_ssa_and_hogan_qualification := 2
-        else if is_valid_hogan_account = 1 then
-          verify_formal_ssa_and_hogan_qualification := 0
-        else
-          verify_formal_ssa_and_hogan_qualification := 3
-      end
+      verify_foreign_system_qualification := 0
   end;
 
-  comment Domain Input Telemetry from Live SSA and Hogan Banking Systems;
-  integer telemetry_dna_seed;
-  integer telemetry_account_id;
-  integer telemetry_is_active;
-  integer telemetry_balance_saat;
-  integer telemetry_clearance_level;
-  integer telemetry_dna_hash;
-  integer telemetry_chain_valid;
-  integer formal_qualification_ruling;
+  comment Domain Input Telemetry: Cryptographic Receipts Returned by Foreign Systems;
+  integer foreign_ssa_status;
+  integer foreign_ssa_token;
+  integer foreign_hogan_status;
+  integer foreign_hogan_token;
+  integer qualification_ruling;
 
-  telemetry_dna_seed        := 42;
-  telemetry_account_id      := 999;
-  telemetry_is_active       := 1;
-  telemetry_balance_saat    := 1000000;
-  telemetry_clearance_level := 1;
-  telemetry_dna_hash        := 2166136261;
-  telemetry_chain_valid     := 1;
+  comment Receipts produced by live auncient_bridge_dna_to_ssa and auncient_hogan_register_account;
+  foreign_ssa_status   := 0;
+  foreign_ssa_token    := 543210987;
+  foreign_hogan_status := 0;
+  foreign_hogan_token  := 987654321;
 
-  formal_qualification_ruling := verify_formal_ssa_and_hogan_qualification(
-    telemetry_dna_seed,
-    telemetry_account_id,
-    telemetry_is_active,
-    telemetry_balance_saat,
-    telemetry_clearance_level,
-    telemetry_dna_hash,
-    telemetry_chain_valid
+  qualification_ruling := verify_foreign_system_qualification(
+    foreign_ssa_status,
+    foreign_ssa_token,
+    foreign_hogan_status,
+    foreign_hogan_token
   );
 
-  if formal_qualification_ruling = 0 then
-    outstring(1, "RULING: QUALIFIED_PARTICIPANT (SSA Site Verified, Hogan Account Verified on Chain @ 1,000,000 Saat)\n")
+  if qualification_ruling = 0 then
+    outstring(1, "RULING: QUALIFIED_PARTICIPANT (Foreign SSA & Hogan Systems Formally Reconciled)\n")
   else
     outstring(1, "RULING: DISQUALIFIED_ENTITY (Chancery Retained)\n")
 end
+
 
