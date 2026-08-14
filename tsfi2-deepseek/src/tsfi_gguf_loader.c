@@ -719,14 +719,18 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
     // Pure C Greedy Longest-Subword BPE Tokenizer Algorithm over GGUF vocabulary table
     static float cand_logits[32256] = {0};
-    uint32_t prompt_tokens[64];
+    uint32_t prompt_tokens[128];
     int num_prompt_tokens = 0;
     prompt_tokens[num_prompt_tokens++] = 100000; // DeepSeek-Coder BOS token boundary
-    size_t prompt_len = strlen(prompt);
+
+    // Format prompt into DeepSeek-Coder native instruction template
+    char formatted_prompt[4096] = {0};
+    snprintf(formatted_prompt, sizeof(formatted_prompt), "### Instruction:\n%s\n\n### Response:\n", prompt);
+    size_t prompt_len = strlen(formatted_prompt);
     if (prompt_len == 0) prompt_len = 1;
 
     size_t p_idx = 0;
-    while (p_idx < prompt_len && num_prompt_tokens < 64) {
+    while (p_idx < prompt_len && num_prompt_tokens < 120) {
         uint32_t best_token_match = 0;
         size_t best_match_len = 0;
 
@@ -736,7 +740,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                 if (strncmp(v_str, "\xc4\xa0", 2) == 0) v_str += 2;
                 size_t v_len = strlen(v_str);
                 if (v_len > 0 && v_len > best_match_len) {
-                    if (strncmp(prompt + p_idx, v_str, v_len) == 0) {
+                    if (strncmp(formatted_prompt + p_idx, v_str, v_len) == 0) {
                         best_match_len = v_len;
                         best_token_match = j;
                     }
@@ -745,7 +749,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         }
 
         if (best_match_len == 0) {
-            prompt_tokens[num_prompt_tokens++] = (uint32_t)(unsigned char)prompt[p_idx];
+            prompt_tokens[num_prompt_tokens++] = (uint32_t)(unsigned char)formatted_prompt[p_idx];
             p_idx++;
         } else {
             prompt_tokens[num_prompt_tokens++] = best_token_match;
@@ -1133,44 +1137,6 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     float telpa_b = tsfi_telpa_evaluate_candidate_bonus(v_idx, &telpa_state);
                     float score = dot + telpa_b;
 
-                    // Reject conversational words and partial syllable fragments during C code synthesis
-                    if (t_len < 2 || strcmp(v_tok, "the") == 0 || strcmp(v_tok, "The") == 0 || strcmp(v_tok, "ing") == 0 || strcmp(v_tok, "ion") == 0 || 
-                        strcmp(v_tok, "and") == 0 || strcmp(v_tok, "ent") == 0 || strcmp(v_tok, "for") == 0 || strcmp(v_tok, "ver") == 0 || 
-                        strcmp(v_tok, "ation") == 0 || strcmp(v_tok, "you") == 0 || strcmp(v_tok, "that") == 0 || strcmp(v_tok, "ith") == 0 || 
-                        strcmp(v_tok, "con") == 0 || strcmp(v_tok, "with") == 0 || strcmp(v_tok, "ter") == 0 || strcmp(v_tok, "est") == 0 || 
-                        strcmp(v_tok, "res") == 0 || strcmp(v_tok, "pro") == 0 || strcmp(v_tok, "ist") == 0 || strcmp(v_tok, "com") == 0 || 
-                        strcmp(v_tok, "ate") == 0 || strcmp(v_tok, "ill") == 0 || strcmp(v_tok, "ess") == 0 || strcmp(v_tok, "her") == 0 || 
-                        strcmp(v_tok, "ant") == 0 || strcmp(v_tok, "out") == 0 || strcmp(v_tok, "ers") == 0 || strcmp(v_tok, "end") == 0 || 
-                        strcmp(v_tok, "our") == 0 || strcmp(v_tok, "are") == 0 || strcmp(v_tok, "ore") == 0 || strcmp(v_tok, "rom") == 0 || 
-                        strcmp(v_tok, "art") == 0 || strcmp(v_tok, "all") == 0 || strcmp(v_tok, "this") == 0 || strcmp(v_tok, "was") == 0 || 
-                        strcmp(v_tok, "ort") == 0 || strcmp(v_tok, "not") == 0 || strcmp(v_tok, "ain") == 0 || strcmp(v_tok, "ight") == 0 || 
-                        strcmp(v_tok, "ction") == 0 || strcmp(v_tok, "ure") == 0 || strcmp(v_tok, "have") == 0 || strcmp(v_tok, "ity") == 0 || 
-                        strcmp(v_tok, "ass") == 0 || strcmp(v_tok, "ment") == 0 || strcmp(v_tok, "ame") == 0 || strcmp(v_tok, "ould") == 0 || 
-                        strcmp(v_tok, "from") == 0 || strcmp(v_tok, "ies") == 0 || strcmp(v_tok, "ine") == 0 || strcmp(v_tok, "can") == 0 || 
-                        strcmp(v_tok, "ust") == 0 || strcmp(v_tok, "ell") == 0 || strcmp(v_tok, "ive") == 0 || strcmp(v_tok, "age") == 0 || 
-                        strcmp(v_tok, "ard") == 0 || strcmp(v_tok, "ome") == 0 || strcmp(v_tok, "ial") == 0 || strcmp(v_tok, "ect") == 0 || 
-                        strcmp(v_tok, "ack") == 0 || strcmp(v_tok, "red") == 0 || strcmp(v_tok, "ost") == 0 || strcmp(v_tok, "able") == 0 || 
-                        strcmp(v_tok, "ath") == 0 || strcmp(v_tok, "per") == 0 || strcmp(v_tok, "ich") == 0 || strcmp(v_tok, "ind") == 0 || 
-                        strcmp(v_tok, "your") == 0 || strcmp(v_tok, "ans") == 0 || strcmp(v_tok, "ult") == 0 || strcmp(v_tok, "ast") == 0 || 
-                        strcmp(v_tok, "rou") == 0 || strcmp(v_tok, "whe") == 0 || strcmp(v_tok, "ide") == 0 || strcmp(v_tok, "ite") == 0 ||
-                        strcmp(v_tok, "will") == 0 || strcmp(v_tok, "into") == 0 || strcmp(v_tok, "but") == 0 || strcmp(v_tok, "ions") == 0 ||
-                        strcmp(v_tok, "wor") == 0 || strcmp(v_tok, "remain") == 0 || strcmp(v_tok, "port") == 0 || strcmp(v_tok, "orm") == 0 ||
-                        strcmp(v_tok, "ice") == 0 || strcmp(v_tok, "del") == 0 || strcmp(v_tok, "der") == 0 || strcmp(v_tok, "ace") == 0 ||
-                        strcmp(v_tok, "his") == 0 || strcmp(v_tok, "ase") == 0 || strcmp(v_tok, "comp") == 0 || strcmp(v_tok, "ime") == 0 ||
-                        strcmp(v_tok, "ong") == 0 || strcmp(v_tok, "ally") == 0 || strcmp(v_tok, "ile") == 0 || strcmp(v_tok, "which") == 0 ||
-                        strcmp(v_tok, "ated") == 0 || strcmp(v_tok, "ign") == 0 || strcmp(v_tok, "act") == 0 || strcmp(v_tok, "ous") == 0) {
-                        score -= 60.0f;
-                    }
-
-                    // Prefer meaningful code keywords, identifiers, and syntax symbols
-                    if (t_len > 2) {
-                        score += 5.50f;
-                    } else if (t_len == 1 && ((v_tok[0] >= 'a' && v_tok[0] <= 'z') || (v_tok[0] >= 'A' && v_tok[0] <= 'Z') || v_tok[0] == '\n' || v_tok[0] == ';' || v_tok[0] == '"')) {
-                        score += 2.00f;
-                    } else {
-                        score -= 8.00f; // Strongly penalize standalone punctuation clusters like !#$%&'{}[]_
-                    }
-
                     // ACM CSUR (2025) Multi-Scale Dynamic Repetition Penalty Decay
                     if (ring_domain_count > 0) {
                         tsfi_repetition_decay_state_t rep_decay;
@@ -1179,7 +1145,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                             if (ring_domain_buf[r_i] == v_idx) {
                                 float distance = (float)(ring_domain_count - r_i);
                                 float decay = 1.0f / (1.0f + 0.15f * distance);
-                                score -= (rep_decay.active_repetition_penalty_factor * 40.0f * decay);
+                                score -= (rep_decay.active_repetition_penalty_factor * 25.0f * decay);
                             }
                         }
                     }
@@ -1188,7 +1154,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     tsfi_grammar_verify_state_t gram_state;
                     bool syntax_ok = tsfi_grammar_eval_pushdown_verification(v_tok, "C_CODE_BNF", 16, &gram_state);
                     if (syntax_ok && gram_state.grammar_parse_satisfied) {
-                        score += 3.00f;
+                        score += 8.00f;
                     }
 
                     rb_root = tsfi_rb_tree_insert(rb_root, v_idx + 1, score);

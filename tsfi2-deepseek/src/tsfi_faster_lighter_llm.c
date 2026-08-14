@@ -9641,6 +9641,21 @@ bool tsfi_secondary_pass_synthesize_ast(
         }
     }
 
+    // If braces remain open, close them cleanly
+    while (indent_level > 0 && out_pos < max_out_len - 8) {
+        indent_level--;
+        if (!at_line_start) {
+            if (out_pos < max_out_len - 2) formatted_code_out[out_pos++] = '\n';
+            at_line_start = true;
+        }
+        for (int ind = 0; ind < indent_level && out_pos < max_out_len - 5; ind++) {
+            out_pos += snprintf(formatted_code_out + out_pos, max_out_len - out_pos, "    ");
+        }
+        formatted_code_out[out_pos++] = '}';
+        if (out_pos < max_out_len - 2) formatted_code_out[out_pos++] = '\n';
+        st.braces_balanced++;
+    }
+
     formatted_code_out[out_pos] = '\0';
     st.syntax_nodes_assembled = (uint32_t)out_pos;
     st.valid_c_compilable = true;
