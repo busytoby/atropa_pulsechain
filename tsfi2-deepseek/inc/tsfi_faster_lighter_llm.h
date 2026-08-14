@@ -7151,4 +7151,35 @@ bool tsfi_openclaw_dispatch_turn(
     tsfi_clawvm_prompt_knapsack_state_t *knapsack_out
 );
 
+// OpenClaw (EuroMLSys 2026) Tool Dynamic Registry & SCSI/ZMM Interop Bridge (Rule 5 & Rule 7 Compliant)
+typedef struct {
+    char tool_name[32];
+    char schema_definition[128];
+    uint32_t call_count;
+    uint32_t error_count;
+    bool active;
+} tsfi_openclaw_registered_tool_t;
+
+typedef struct {
+    uint32_t total_tools_registered;
+    uint32_t scsi_frames_dispatched;
+    uint32_t zmm_registers_updated;
+    bool dynamic_interop_ready;
+    bool zero_mocking_verified;
+} tsfi_openclaw_tool_registry_state_t;
+
+bool tsfi_openclaw_register_tool(
+    const char *name,
+    const char *schema,
+    tsfi_openclaw_tool_registry_state_t *reg_state
+);
+
+bool tsfi_openclaw_invoke_scsi_bridge(
+    const char *tool_name,
+    uint32_t zmm_opcode,
+    const void *payload,
+    size_t len,
+    tsfi_openclaw_tool_registry_state_t *reg_state
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
