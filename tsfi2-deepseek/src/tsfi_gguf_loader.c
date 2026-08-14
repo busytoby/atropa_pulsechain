@@ -1737,6 +1737,11 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         } else {
             next_token_id = (uint32_t)((prompt_tokens[0] + gen_step * 37) % (vocab_size > 0 ? vocab_size : 32256));
         }
+
+        // Forensic Structural Invariant Branch Journaling (.dat.bin Binary Media under Rule 13)
+        tsfi_invariant_branch_journal_t inv_j = {0};
+        tsfi_invariant_branch_record((uint32_t)gen_step, INVARIANT_BRANCH_PDA_GRAMMAR, next_token_id, next_token_id, 1.0f, 1.0f, (uint32_t)grammar_state, (uint32_t)((grammar_state + 1) % 4), "zorse_invariant_branches.dat.bin", &inv_j);
+
         if (rb_root) tsfi_rb_tree_free(rb_root);
 
         // N. B. Willms Ring Domain SO(2) Radial Symmetry Audit

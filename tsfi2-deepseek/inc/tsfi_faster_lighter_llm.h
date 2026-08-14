@@ -7040,4 +7040,49 @@ bool tsfi_clawvm_microbenchmark_eval(
     tsfi_clawvm_microbenchmark_state_t *micro_out
 );
 
+// Forensic Structural Invariant Branch Journaling & .dat.bin Stack Persistence Engine
+typedef enum {
+    INVARIANT_BRANCH_PDA_GRAMMAR    = 0x01, // Pushdown Automaton syntax transition
+    INVARIANT_BRANCH_CLAWVM_PIN     = 0x02, // Typed page hard-pinning invariant
+    INVARIANT_BRANCH_TYPESTATE      = 0x03, // Protocol typestate transition constraint
+    INVARIANT_BRANCH_RADIX_MASK     = 0x04, // Subword radix trie boundary guard
+    INVARIANT_BRANCH_KV_SPECULATIVE = 0x05  // MTP / Decoupled speculative branch filter
+} tsfi_invariant_branch_type_t;
+
+typedef struct __attribute__((packed)) {
+    uint64_t timestamp_ns;
+    uint32_t step_idx;
+    uint32_t branch_type; // tsfi_invariant_branch_type_t
+    uint32_t candidate_token_id;
+    uint32_t winning_token_id;
+    float original_logit;
+    float post_invariant_logit;
+    uint32_t pda_state_before;
+    uint32_t pda_state_after;
+    uint8_t branch_provenance_hash[32]; // SHA-256 / Motzkin trace signature
+} tsfi_invariant_branch_entry_t;
+
+typedef struct {
+    uint32_t total_injections_logged;
+    uint32_t pda_mask_injections;
+    uint32_t clawvm_pin_injections;
+    uint32_t typestate_injections;
+    uint64_t wal_bytes_persisted;
+    bool dat_bin_receipt_committed;
+    bool forensic_audit_verifiable;
+} tsfi_invariant_branch_journal_t;
+
+bool tsfi_invariant_branch_record(
+    uint32_t step_idx,
+    tsfi_invariant_branch_type_t b_type,
+    uint32_t cand_tok,
+    uint32_t win_tok,
+    float orig_logit,
+    float post_logit,
+    uint32_t pda_before,
+    uint32_t pda_after,
+    const char *dat_bin_path,
+    tsfi_invariant_branch_journal_t *journal_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

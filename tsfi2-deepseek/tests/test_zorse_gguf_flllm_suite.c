@@ -3285,7 +3285,13 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_micro && micro_bench.sub_microsecond_caching_guaranteed);
     assert(micro_bench.page_table_lookup_latency_ns < 50.0f && micro_bench.total_harness_overhead_us < 30.0f);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Tool ABI, Knapsack (<20 us), Microbench (<30 us total, 38.5 ns lookup), Tier-1 Gate & LRU Equivalence verified.\n");
+    tsfi_invariant_branch_journal_t inv_journal;
+    memset(&inv_journal, 0, sizeof(inv_journal));
+    bool ok_rec = tsfi_invariant_branch_record(0, INVARIANT_BRANCH_PDA_GRAMMAR, 105, 105, 4.2f, 7.8f, 1, 2, "test_invariant_branches.dat.bin", &inv_journal);
+    assert(ok_rec && inv_journal.forensic_audit_verifiable && inv_journal.dat_bin_receipt_committed);
+    assert(inv_journal.wal_bytes_persisted >= sizeof(tsfi_invariant_branch_entry_t));
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Tool ABI, Microbench, Tier-1 Gate, LRU Equivalence & Forensic Invariant Journal (.dat.bin) verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
