@@ -97,6 +97,7 @@ bool tsfi_code_review_rewrite_prompt(
     const tsfi_code_review_state_t *review_state
 ) {
     if (!code_stub || max_len == 0 || !review_state) return false;
+    (void)prompt;
 
     if (review_state->verdict == REVIEW_VERDICT_REJECT_STYLE_MISMATCH) {
         char *p = strstr(code_stub, "ancient");
@@ -109,71 +110,7 @@ bool tsfi_code_review_rewrite_prompt(
             strcat(code_stub, "\n  }\n");
         }
     } else if (review_state->verdict == REVIEW_VERDICT_REJECT_NO_BENEFIT) {
-        // Synthesize tailored pure C code based on prompt keywords
-        if (prompt && (strstr(prompt, "fibonacci") || strstr(prompt, "fib"))) {
-            snprintf(code_stub, max_len,
-                "#include <stdio.h>\n"
-                "#include <stdint.h>\n\n"
-                "// Fast Iterative Fibonacci in Pure C (O(N) time, O(1) space)\n"
-                "uint64_t fibonacci(uint32_t n) {\n"
-                "    if (n <= 1) return n;\n"
-                "    uint64_t a = 0, b = 1;\n"
-                "    for (uint32_t i = 2; i <= n; i++) {\n"
-                "        uint64_t next = a + b;\n"
-                "        a = b;\n"
-                "        b = next;\n"
-                "    }\n"
-                "    return b;\n"
-                "}\n\n"
-                "int main(void) {\n"
-                "    printf(\"Fibonacci(10) = %%lu\\n\", fibonacci(10));\n"
-                "    return 0;\n"
-                "}\n"
-            );
-        } else if (prompt && (strstr(prompt, "hash") || strstr(prompt, "fnv"))) {
-            snprintf(code_stub, max_len,
-                "#include <stdio.h>\n"
-                "#include <stdint.h>\n\n"
-                "// FNV-1a 64-Bit Hash Implementation in Pure C\n"
-                "uint64_t compute_fnv1a_hash(const char *key) {\n"
-                "    uint64_t hash = 0xcbf29ce484222325ULL;\n"
-                "    while (*key) {\n"
-                "        hash ^= (uint8_t)(*key++);\n"
-                "        hash *= 0x100000001b3ULL;\n"
-                "    }\n"
-                "    return hash;\n"
-                "}\n\n"
-                "int main(void) {\n"
-                "    printf(\"Hash = 0x%%016lx\\n\", compute_fnv1a_hash(\"atropa_pulsechain\"));\n"
-                "    return 0;\n"
-                "}\n"
-            );
-        } else if (prompt && (strstr(prompt, "struct") || strstr(prompt, "node") || strstr(prompt, "list"))) {
-            snprintf(code_stub, max_len,
-                "#include <stdio.h>\n"
-                "#include <stdlib.h>\n\n"
-                "// Singly-Linked List Node in Pure C\n"
-                "typedef struct Node {\n"
-                "    int id;\n"
-                "    struct Node *next;\n"
-                "} Node;\n\n"
-                "Node* create_node(int id) {\n"
-                "    Node *n = (Node *)calloc(1, sizeof(Node));\n"
-                "    if (n) n->id = id;\n"
-                "    return n;\n"
-                "}\n"
-            );
-        } else {
-            snprintf(code_stub, max_len,
-                "#include <stdio.h>\n"
-                "#include <stdint.h>\n\n"
-                "// Pure C DeepSeek-Coder-6.7B Synthesis\n"
-                "int main(void) {\n"
-                "    printf(\"DeepSeek-Coder 6.7B: Hello World!\\n\");\n"
-                "    return 0;\n"
-                "}\n"
-            );
-        }
+        // No synthetic prompt override: preserve original code stub
     }
     return true;
 }

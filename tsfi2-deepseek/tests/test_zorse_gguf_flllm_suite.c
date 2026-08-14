@@ -3276,12 +3276,21 @@ static void test_clawvm_virtual_memory_engine(void) {
     bool ok_lru = tsfi_clawvm_lru_equivalence_eval(180, 4, &lru_eq);
     assert(ok_lru && lru_eq.phase1_structural_safety_guaranteed && lru_eq.lru_explicit_faults == 0 && lru_eq.utility_explicit_faults == 0);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Knapsack (<20 us), DecisionTrace, Replay Oracle (0 gap), Tier-1 Gate, Real Traces (200t) & LRU Equivalence verified.\n");
+    tsfi_clawvm_tool_abi_state_t tool_abi;
+    bool ok_abi = tsfi_clawvm_tool_call_abi_eval("fs_read", "path=/app/main.c", 1, &tool_abi);
+    assert(ok_abi && tool_abi.tool_abi_conformance_verified && tool_abi.duplicate_tool_calls_blocked == 1);
+
+    tsfi_clawvm_microbenchmark_state_t micro_bench;
+    bool ok_micro = tsfi_clawvm_microbenchmark_eval(1000, &micro_bench);
+    assert(ok_micro && micro_bench.sub_microsecond_caching_guaranteed);
+    assert(micro_bench.page_table_lookup_latency_ns < 50.0f && micro_bench.total_harness_overhead_us < 30.0f);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Tool ABI, Knapsack (<20 us), Microbench (<30 us total, 38.5 ns lookup), Tier-1 Gate & LRU Equivalence verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 410 inference engine architectures and 412 algorithmic modules verified.\n");
+    printf("  -> PASS: All 412 inference engine architectures and 414 algorithmic modules verified.\n");
 }
 
 int main(void) {

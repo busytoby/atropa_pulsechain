@@ -7008,4 +7008,36 @@ bool tsfi_secondary_pass_synthesize_ast(
     tsfi_secondary_pass_state_t *state_out
 );
 
+// ClawVM (EuroMLSys 2026) Explicit Tool Calling & Deterministic Memory Mutation ABI (Section 3.2, 4.2)
+typedef struct {
+    uint32_t tool_invocations_executed;
+    uint32_t memory_mutations_validated;
+    uint32_t duplicate_tool_calls_blocked;
+    uint32_t refetch_faults_intercepted;
+    float tool_execution_time_us;
+    bool tool_abi_conformance_verified;
+} tsfi_clawvm_tool_abi_state_t;
+
+bool tsfi_clawvm_tool_call_abi_eval(
+    const char *tool_name,
+    const char *tool_args_payload,
+    uint32_t current_version,
+    tsfi_clawvm_tool_abi_state_t *abi_out
+);
+
+// ClawVM (EuroMLSys 2026) Low-Level Latency Microbenchmark Engine (Section 5.4, Table 5)
+typedef struct {
+    float prompt_knapsack_latency_us;    // < 20.0 us
+    float page_table_lookup_latency_ns;   // < 50.0 ns
+    float writeback_journal_latency_us;   // < 5.0 us
+    float decision_trace_append_us;       // < 4.5 us
+    float total_harness_overhead_us;      // < 30.0 us (0.01% of model inference TTFT)
+    bool sub_microsecond_caching_guaranteed;
+} tsfi_clawvm_microbenchmark_state_t;
+
+bool tsfi_clawvm_microbenchmark_eval(
+    uint32_t num_iterations,
+    tsfi_clawvm_microbenchmark_state_t *micro_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

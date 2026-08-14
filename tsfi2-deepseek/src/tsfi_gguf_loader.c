@@ -1108,13 +1108,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         (void)read_count;
     }
 
-    int target_gen_steps = 16;
-    if (strstr(prompt, "include") && strstr(prompt, "main") && strstr(prompt, "return")) target_gen_steps = 6;
-    else if (strstr(prompt, "hello") || strstr(prompt, "world")) target_gen_steps = 10;
-    else if (strstr(prompt, "fibonacci") || strstr(prompt, "fib")) target_gen_steps = 12;
-    else if (strstr(prompt, "diffie") || strstr(prompt, "hellman") || strstr(prompt, "dh")) target_gen_steps = 32;
-    else if (strstr(prompt, "hash") || strstr(prompt, "fnv")) target_gen_steps = 10;
-    else if (strstr(prompt, "test") || strstr(prompt, "Test")) target_gen_steps = 10;
+    int target_gen_steps = 32;
 
     for (int gen_step = 0; gen_step < target_gen_steps && offset < (int)max_resp_len - 128; gen_step++) {
         GgufRedBlackNode *rb_root = NULL;
