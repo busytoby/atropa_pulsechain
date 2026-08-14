@@ -67,11 +67,24 @@ int main(int argc, char **argv) {
     openclaw_knap_t knap_out;
     tsfi_openclaw_dispatch_turn(&oc_runtime, 1, user_prompt, 1024, openclaw_assembled_prompt, sizeof(openclaw_assembled_prompt), &knap_out);
 
-    // Query local DeepSeek Coder GGUF model in C using OpenClaw assembled prompt
-    char response[4096] = {0};
-    extern bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char *response_out, size_t max_resp_len);
-    bool ok_gen = tsfi_zorse_eval_gguf_pure_c(gguf_model, user_prompt, response, sizeof(response));
-    assert(ok_gen);
+    // Step 2 & 3: Run OpenClaw Unified End-to-End Pipeline (Knapsack + DeepSeek-Coder GGUF + Secondary AST Pass)
+    char response[8192] = {0};
+    extern bool tsfi_openclaw_execute_pipeline(const char *gguf_model_path, const char *user_prompt, uint32_t token_budget, char *final_code_output, size_t max_output_len, void *pipeline_out);
+    
+    typedef struct {
+        uint32_t prompt_tokens_assembled;
+        uint32_t generated_tokens_count;
+        uint32_t ast_nodes_synthesized;
+        float harness_overhead_us;
+        float forward_pass_latency_ms;
+        float secondary_pass_latency_us;
+        bool end_to_end_succeeded;
+        bool binary_wal_synced;
+    } openclaw_pipeline_diag_t;
+
+    openclaw_pipeline_diag_t p_diag;
+    bool ok_pipe = tsfi_openclaw_execute_pipeline(gguf_model, user_prompt, 1024, response, sizeof(response), &p_diag);
+    assert(ok_pipe);
 
     printf("================ DEEPSEEK LOCAL MODEL RESPONSE ================\n");
     printf("%s\n", response);

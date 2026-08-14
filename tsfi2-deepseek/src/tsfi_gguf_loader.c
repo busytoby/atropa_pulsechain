@@ -1108,7 +1108,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         (void)read_count;
     }
 
-    int target_gen_steps = 32;
+    // Enable extensive and complex code generation budget
+    int target_gen_steps = 128;
 
     for (int gen_step = 0; gen_step < target_gen_steps && offset < (int)max_resp_len - 128; gen_step++) {
         GgufRedBlackNode *rb_root = NULL;
