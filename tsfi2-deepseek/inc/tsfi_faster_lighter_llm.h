@@ -6989,4 +6989,23 @@ bool tsfi_clawvm_lru_equivalence_eval(
     tsfi_clawvm_lru_equivalence_state_t *lru_out
 );
 
+// DeepSeek-Coder Universal Secondary Pass AST Synthesizer & Code Decorator Engine
+typedef struct {
+    uint32_t raw_tokens_processed;
+    uint32_t syntax_nodes_assembled;
+    uint32_t decorators_injected;
+    uint32_t braces_balanced;
+    uint32_t semicolons_inserted;
+    bool valid_c_compilable;
+    bool execution_flow_complete;
+} tsfi_secondary_pass_state_t;
+
+bool tsfi_secondary_pass_synthesize_ast(
+    const char *prompt,
+    const char *raw_token_stream,
+    char *formatted_code_out,
+    size_t max_out_len,
+    tsfi_secondary_pass_state_t *state_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
