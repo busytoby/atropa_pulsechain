@@ -7425,4 +7425,23 @@ bool tsfi_openclaw_run_benchmark_profile(
     tsfi_openclaw_benchmark_profile_t *bench_out
 );
 
+// ClawVM (EuroMLSys 2026) Sub-Page Granularity Dynamic Compactor & Hot-Cold Tier Migration Engine (Section 4.3, 5.2)
+typedef struct {
+    uint32_t sub_page_fragments_scanned;
+    uint32_t hot_tier_pages_retained;
+    uint32_t cold_tier_pages_demoted;
+    uint32_t compacted_tokens_freed;
+    float dynamic_compaction_ratio;
+    float migration_overhead_us;
+    bool zero_semantic_drift_verified;
+    bool sub_page_integrity_atomic;
+} tsfi_clawvm_subpage_migration_state_t;
+
+bool tsfi_clawvm_subpage_migration_eval(
+    uint32_t num_pages,
+    uint32_t sub_page_slot_size,
+    float access_recency_decay,
+    tsfi_clawvm_subpage_migration_state_t *migration_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
