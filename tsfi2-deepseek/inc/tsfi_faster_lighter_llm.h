@@ -7182,4 +7182,34 @@ bool tsfi_openclaw_invoke_scsi_bridge(
     tsfi_openclaw_tool_registry_state_t *reg_state
 );
 
+// OpenClaw (EuroMLSys 2026) Dual-Stream IPC Channel & Ephemeral Context Cache (Section 3.4, 4.3)
+typedef struct {
+    uint32_t channel_id;
+    uint32_t control_messages_sent;
+    uint32_t data_payload_bytes_transferred;
+    uint32_t lockless_ring_head;
+    uint32_t lockless_ring_tail;
+    bool stream_sync_established;
+} tsfi_openclaw_dual_stream_ipc_t;
+
+typedef struct {
+    uint32_t total_ephemeral_pages;
+    uint32_t cache_hits;
+    uint32_t cache_evictions;
+    uint64_t total_reclaimed_tokens;
+    float time_to_evict_us;
+    bool eviction_clean_confirmed;
+} tsfi_openclaw_ephemeral_cache_state_t;
+
+bool tsfi_openclaw_init_dual_stream_ipc(
+    uint32_t channel_id,
+    tsfi_openclaw_dual_stream_ipc_t *ipc_out
+);
+
+bool tsfi_openclaw_eval_ephemeral_cache(
+    uint32_t turn_count,
+    uint32_t token_pressure_threshold,
+    tsfi_openclaw_ephemeral_cache_state_t *cache_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H

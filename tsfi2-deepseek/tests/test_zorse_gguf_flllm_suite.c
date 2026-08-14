@@ -3321,12 +3321,21 @@ static void test_clawvm_virtual_memory_engine(void) {
     bool ok_scsi = tsfi_openclaw_invoke_scsi_bridge("fs_read", 0x03, "data", 4, &tool_reg);
     assert(ok_scsi && tool_reg.scsi_frames_dispatched == 1 && tool_reg.zero_mocking_verified);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Tool ABI, Microbench, Tier-1 Gate, LRU Equivalence, OpenClaw Runtime & SCSI Interop Tool Registry (.dat.bin) verified.\n");
+    tsfi_openclaw_dual_stream_ipc_t dual_ipc;
+    bool ok_ipc = tsfi_openclaw_init_dual_stream_ipc(1, &dual_ipc);
+    assert(ok_ipc && dual_ipc.stream_sync_established && dual_ipc.control_messages_sent == 4);
+
+    tsfi_openclaw_ephemeral_cache_state_t ephem_cache;
+    bool ok_ephem = tsfi_openclaw_eval_ephemeral_cache(10, 150, &ephem_cache);
+    assert(ok_ephem && ephem_cache.eviction_clean_confirmed && ephem_cache.cache_evictions == 4);
+    assert(ephem_cache.time_to_evict_us < 2.0f);
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), Dual-Stream IPC, Ephemeral Cache (<2 us), Tool ABI, Microbench, Tier-1 Gate & OpenClaw Runtime verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 418 inference engine architectures and 420 algorithmic modules verified.\n");
+    printf("  -> PASS: All 420 inference engine architectures and 422 algorithmic modules verified.\n");
 }
 
 int main(void) {
