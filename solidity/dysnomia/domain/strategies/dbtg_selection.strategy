@@ -1,3 +1,8 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. PROG-DBTG-SELECTION.
+
+PROCEDURE DIVISION.
+
 # Olle DBTG Set Selection Rule Strategy Example
 # Sets priority scale metrics, shifts register configurations, and evaluates the record tree.
 

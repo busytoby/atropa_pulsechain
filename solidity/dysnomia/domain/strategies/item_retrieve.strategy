@@ -1,3 +1,6 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. PROG-ITEM-RETRIEVE.
+
 # COBOL Item Retrieval Strategy Example
 # Pops stored items from the stack, applies thresholds, and evaluates.
 

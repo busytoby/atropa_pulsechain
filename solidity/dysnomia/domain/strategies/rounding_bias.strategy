@@ -1,3 +1,8 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. PROG-ROUNDING-BIAS.
+
+PROCEDURE DIVISION.
+
 # COBOL Rounding Bias Strategy Example
 # Customizes precision thresholds and weights based on transaction depth.
 

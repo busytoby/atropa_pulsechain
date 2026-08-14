@@ -1,3 +1,8 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. PROG-DSDL-MAPPING.
+
+PROCEDURE DIVISION.
+
 # Olle DSDL Physical Storage Mapper Strategy Example
 # Sets evaluation scales and modifies weights for device page location keys.
 

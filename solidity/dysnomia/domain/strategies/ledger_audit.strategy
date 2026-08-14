@@ -1,3 +1,8 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. PROG-LEDGER-AUDIT.
+
+PROCEDURE DIVISION.
+
 # COBOL Financial Ledger Audit Strategy Example
 # Sets evaluation scales and weights for account ledger validations.
 

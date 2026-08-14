@@ -95,7 +95,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
             if (pc + 1 < len) {
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4) {
+                if (dst < 16 && src < 16) {
                     vm->registers[dst] += vm->registers[src];
                 }
             }
@@ -103,7 +103,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
             if (pc + 1 < len) {
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4) {
+                if (dst < 16 && src < 16) {
                     vm->registers[dst] -= vm->registers[src];
                 }
             }
@@ -112,7 +112,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 uint8_t target_pc = bytecode[pc++];
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4 && vm->registers[dst] == vm->registers[src]) {
+                if (dst < 16 && src < 16 && vm->registers[dst] == vm->registers[src]) {
                     if (target_pc <= len) {
                         pc = target_pc;
                     }
@@ -123,17 +123,18 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 uint8_t target_pc = bytecode[pc++];
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4 && vm->registers[dst] < vm->registers[src]) {
+                if (dst < 16 && src < 16 && vm->registers[dst] < vm->registers[src]) {
                     if (target_pc <= len) {
                         pc = target_pc;
                     }
                 }
             }
-        } else if (op == 0x14) { // SET_REG reg val
-            if (pc + 1 < len) {
+        } else if (op == 0x14) { // SET_REG reg val (int32)
+            if (pc + 4 < len) {
                 uint8_t reg = bytecode[pc++];
-                uint8_t val = bytecode[pc++];
-                if (reg < 4) {
+                int32_t val = (int32_t)((uint32_t)bytecode[pc] | ((uint32_t)bytecode[pc+1] << 8) | ((uint32_t)bytecode[pc+2] << 16) | ((uint32_t)bytecode[pc+3] << 24));
+                pc += 4;
+                if (reg < 16) {
                     vm->registers[reg] = val;
                 }
             }
@@ -194,7 +195,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
             if (pc + 1 < len) {
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4) {
+                if (dst < 16 && src < 16) {
                     vm->registers[dst] = vm->registers[src];
                 }
             }
@@ -210,7 +211,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 uint8_t target_pc = bytecode[pc++];
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4 && vm->registers[dst] != vm->registers[src]) {
+                if (dst < 16 && src < 16 && vm->registers[dst] != vm->registers[src]) {
                     if (target_pc <= len) {
                         pc = target_pc;
                     }
@@ -221,7 +222,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
                 uint8_t target_pc = bytecode[pc++];
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4 && vm->registers[dst] >= vm->registers[src]) {
+                if (dst < 16 && src < 16 && vm->registers[dst] >= vm->registers[src]) {
                     if (target_pc <= len) {
                         pc = target_pc;
                     }
@@ -231,7 +232,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
             if (pc + 1 < len) {
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4) {
+                if (dst < 16 && src < 16) {
                     vm->registers[dst] *= vm->registers[src];
                 }
             }
@@ -239,7 +240,7 @@ int tsfi_strategy_vm_execute_bytecode(TSFiStrategyVM *vm, TSFiPriorityQueue *pq,
             if (pc + 1 < len) {
                 uint8_t dst = bytecode[pc++];
                 uint8_t src = bytecode[pc++];
-                if (dst < 4 && src < 4 && vm->registers[src] != 0) {
+                if (dst < 16 && src < 16 && vm->registers[src] != 0) {
                     vm->registers[dst] /= vm->registers[src];
                 }
             }
@@ -435,7 +436,11 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             if (pc + 2 < max_len) {
                 bytecode_out[pc++] = 0x14;
                 bytecode_out[pc++] = (uint8_t)reg;
-                bytecode_out[pc++] = (uint8_t)val;
+                { int32_t _v = (int32_t)(val);
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
             }
             rw++;
         }
@@ -494,35 +499,53 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
         return 0;
     }
 
-    char script_copy[2048];
-    strncpy(script_copy, script, 2047);
-    script_copy[2047] = '\0';
+    char script_copy[8192];
+    strncpy(script_copy, script, 8191);
+    script_copy[8191] = '\0';
 
     // Delimiters include whitespace, periods, parens, braces, commas, quotes, and semicolons
     const char *delims = " ;(),{}\"\n\r\t.";
     
     // Store tokens in an array for multi-token lookahead parsing
-    char *tokens[256];
+    char *tokens[1024];
     int token_count = 0;
     
     char *tok = strtok(script_copy, delims);
-    while (tok && token_count < 256) {
+    while (tok && token_count < 1024) {
         tokens[token_count++] = tok;
         tok = strtok(NULL, delims);
     }
 
     typedef struct {
         char var_name[32];
-        char reg_name[4];
+        char reg_name[8];
     } StrategyVarMap;
 
     StrategyVarMap var_maps[16];
     int var_map_count = 0;
 
     int idx = 0;
-    if (token_count > 2 && (strcmp(tokens[0], "DATA") == 0 || strcmp(tokens[0], "data") == 0) &&
+    // Skip IDENTIFICATION DIVISION if present
+    if (token_count > 1 && (strcmp(tokens[0], "IDENTIFICATION") == 0 || strcmp(tokens[0], "identification") == 0) &&
         (strcmp(tokens[1], "DIVISION") == 0 || strcmp(tokens[1], "division") == 0)) {
         idx = 2;
+        while (idx < token_count) {
+            if ((strcmp(tokens[idx], "DATA") == 0 || strcmp(tokens[idx], "data") == 0) &&
+                idx + 1 < token_count && (strcmp(tokens[idx + 1], "DIVISION") == 0 || strcmp(tokens[idx + 1], "division") == 0)) {
+                break;
+            }
+            if ((strcmp(tokens[idx], "PROCEDURE") == 0 || strcmp(tokens[idx], "procedure") == 0) &&
+                idx + 1 < token_count && (strcmp(tokens[idx + 1], "DIVISION") == 0 || strcmp(tokens[idx + 1], "division") == 0)) {
+                idx += 2;
+                break;
+            }
+            idx++;
+        }
+    }
+
+    if (idx + 1 < token_count && (strcmp(tokens[idx], "DATA") == 0 || strcmp(tokens[idx], "data") == 0) &&
+        (strcmp(tokens[idx + 1], "DIVISION") == 0 || strcmp(tokens[idx + 1], "division") == 0)) {
+        idx += 2;
         while (idx < token_count) {
             if (strcmp(tokens[idx], "PROCEDURE") == 0 || strcmp(tokens[idx], "procedure") == 0) {
                 if (idx + 1 < token_count && (strcmp(tokens[idx + 1], "DIVISION") == 0 || strcmp(tokens[idx + 1], "division") == 0)) {
@@ -539,7 +562,7 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                             strcmp(tokens[k], "PROCEDURE") == 0 || strcmp(tokens[k], "procedure") == 0) {
                             break;
                         }
-                        if (tokens[k][0] == 'R' && tokens[k][1] >= '0' && tokens[k][1] <= '3' && tokens[k][2] == '\0') {
+                        if (tokens[k][0] == 'R' && isdigit((unsigned char)tokens[k][1])) {
                             mapped_reg = tokens[k];
                             break;
                         }
@@ -547,8 +570,8 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                     if (mapped_reg && var_map_count < 16) {
                         strncpy(var_maps[var_map_count].var_name, var_name, 31);
                         var_maps[var_map_count].var_name[31] = '\0';
-                        strncpy(var_maps[var_map_count].reg_name, mapped_reg, 3);
-                        var_maps[var_map_count].reg_name[3] = '\0';
+                        strncpy(var_maps[var_map_count].reg_name, mapped_reg, 7);
+                        var_maps[var_map_count].reg_name[7] = '\0';
                         var_map_count++;
                     }
                 }
@@ -576,8 +599,10 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
     int pc = 0;
     int loop_start_pc = -1;
     int loop_exit_placeholder_pc = -1;
-    int if_branch_placeholder_pc = -1;
-    int else_jmp_placeholder_pc = -1;
+    int if_stack[16];
+    int if_stack_ptr = 0;
+    int else_stack[16];
+    int else_stack_ptr = 0;
 
     typedef struct {
         char name[32];
@@ -601,19 +626,56 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 char *reg_a = tokens[idx + 1];
                 char *op = tokens[idx + 2];
                 char *reg_b = tokens[idx + 3];
-                if (reg_a[0] == 'R' && reg_b[0] == 'R') {
+                int ra = (reg_a[0] == 'R' && isdigit((unsigned char)reg_a[1])) ? atoi(&reg_a[1]) : -1;
+                int rb = -1;
+                if (reg_b[0] == 'R' && isdigit((unsigned char)reg_b[1])) {
+                    rb = atoi(&reg_b[1]);
+                } else if (isdigit((unsigned char)reg_b[0])) {
+                    // Load literal into temporary register R15
+                    bytecode_out[pc++] = 0x14; // SET_REG R15 val
+                    bytecode_out[pc++] = 15;
+                    { int32_t _v = (int32_t)atoi(reg_b);
+                      bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                      bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                      bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                      bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                    rb = 15;
+                }
+                if (ra >= 0 && rb >= 0) {
+                    int placeholder = -1;
                     if (strcmp(op, "==") == 0 || strcmp(op, "JEQ") == 0) {
                         bytecode_out[pc++] = 0x1B; // JNE (jump if not equal, i.e. skip IF block)
-                        if_branch_placeholder_pc = pc;
-                        bytecode_out[pc++] = 0;
-                        bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
-                        bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
+                        placeholder = pc++;
+                        bytecode_out[placeholder] = 0;
+                        bytecode_out[pc++] = (uint8_t)ra;
+                        bytecode_out[pc++] = (uint8_t)rb;
                     } else if (strcmp(op, "<") == 0 || strcmp(op, "JLT") == 0) {
                         bytecode_out[pc++] = 0x1C; // JGE (jump if greater/equal, i.e. skip IF block)
-                        if_branch_placeholder_pc = pc;
-                        bytecode_out[pc++] = 0;
-                        bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
-                        bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
+                        placeholder = pc++;
+                        bytecode_out[placeholder] = 0;
+                        bytecode_out[pc++] = (uint8_t)ra;
+                        bytecode_out[pc++] = (uint8_t)rb;
+                    } else if (strcmp(op, ">") == 0 || strcmp(op, "JGT") == 0) {
+                        bytecode_out[pc++] = 0x1C; // JGE target rb ra
+                        placeholder = pc++;
+                        bytecode_out[placeholder] = 0;
+                        bytecode_out[pc++] = (uint8_t)rb;
+                        bytecode_out[pc++] = (uint8_t)ra;
+                    } else if (strcmp(op, ">=") == 0 || strcmp(op, "JGE") == 0) {
+                        bytecode_out[pc++] = 0x13; // JLT target ra rb
+                        placeholder = pc++;
+                        bytecode_out[placeholder] = 0;
+                        bytecode_out[pc++] = (uint8_t)ra;
+                        bytecode_out[pc++] = (uint8_t)rb;
+                    } else if (strcmp(op, "<=") == 0 || strcmp(op, "JLE") == 0) {
+                        bytecode_out[pc++] = 0x13; // JLT target rb ra
+                        placeholder = pc++;
+                        bytecode_out[placeholder] = 0;
+                        bytecode_out[pc++] = (uint8_t)rb;
+                        bytecode_out[pc++] = (uint8_t)ra;
+                    }
+                    if (placeholder != -1 && if_stack_ptr < 16) {
+                        if_stack[if_stack_ptr++] = placeholder;
                     }
                 }
                 idx += 4;
@@ -621,22 +683,25 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 idx++;
             }
         } else if (strcmp(t, "ELSE") == 0 || strcmp(t, "else") == 0) {
-            if (if_branch_placeholder_pc != -1 && pc + 1 < max_len) {
+            if (if_stack_ptr > 0 && pc + 1 < max_len) {
                 bytecode_out[pc++] = 0x1A; // JUMP past ELSE block
-                else_jmp_placeholder_pc = pc;
-                bytecode_out[pc++] = 0;
-                bytecode_out[if_branch_placeholder_pc] = (uint8_t)pc;
-                if_branch_placeholder_pc = -1;
+                int else_placeholder = pc++;
+                bytecode_out[else_placeholder] = 0;
+                if (else_stack_ptr < 16) {
+                    else_stack[else_stack_ptr++] = else_placeholder;
+                }
+                int if_placeholder = if_stack[--if_stack_ptr];
+                bytecode_out[if_placeholder] = (uint8_t)pc;
             }
             idx++;
         } else if (strcmp(t, "END-IF") == 0 || strcmp(t, "end-if") == 0 || strcmp(t, "END_IF") == 0) {
-            if (if_branch_placeholder_pc != -1) {
-                bytecode_out[if_branch_placeholder_pc] = (uint8_t)pc;
-                if_branch_placeholder_pc = -1;
+            if (if_stack_ptr > 0) {
+                int if_placeholder = if_stack[--if_stack_ptr];
+                bytecode_out[if_placeholder] = (uint8_t)pc;
             }
-            if (else_jmp_placeholder_pc != -1) {
-                bytecode_out[else_jmp_placeholder_pc] = (uint8_t)pc;
-                else_jmp_placeholder_pc = -1;
+            if (else_stack_ptr > 0) {
+                int else_placeholder = else_stack[--else_stack_ptr];
+                bytecode_out[else_placeholder] = (uint8_t)pc;
             }
             idx++;
         } else if (strcmp(t, "GO") == 0 || strcmp(t, "go") == 0) {
@@ -944,7 +1009,11 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 int val = atoi(tokens[idx + 2]);
                 bytecode_out[pc++] = 0x14;
                 bytecode_out[pc++] = (uint8_t)dst;
-                bytecode_out[pc++] = (uint8_t)val;
+                { int32_t _v = (int32_t)(val);
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
                 idx += 3;
             } else {
                 idx++;
@@ -975,15 +1044,20 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             if (idx + 3 < token_count && (strcmp(tokens[idx + 2], "TO") == 0 || strcmp(tokens[idx + 2], "to") == 0) && pc + 2 < max_len) {
                 char *src = tokens[idx + 1];
                 char *dst = tokens[idx + 3];
-                if (dst[0] == 'R' && dst[1] >= '0' && dst[1] <= '3') {
-                    if (src[0] == 'R' && src[1] >= '0' && src[1] <= '3') {
+                int dst_reg = (dst[0] == 'R' && isdigit((unsigned char)dst[1])) ? atoi(&dst[1]) : -1;
+                if (dst_reg >= 0 && dst_reg < 16) {
+                    if (src[0] == 'R' && isdigit((unsigned char)src[1])) {
                         bytecode_out[pc++] = 0x19;
-                        bytecode_out[pc++] = (uint8_t)(dst[1] - '0');
-                        bytecode_out[pc++] = (uint8_t)(src[1] - '0');
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)atoi(&src[1]);
                     } else {
                         bytecode_out[pc++] = 0x14;
-                        bytecode_out[pc++] = (uint8_t)(dst[1] - '0');
-                        bytecode_out[pc++] = (uint8_t)atoi(src);
+                bytecode_out[pc++] = (uint8_t)dst_reg;
+                { int32_t _v = (int32_t)(atoi(src));
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
                     }
                 }
                 idx += 4;
@@ -994,54 +1068,251 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             // Support legacy: SET_REG R0 5;
             if (idx + 2 < token_count && pc + 2 < max_len) {
                 bytecode_out[pc++] = 0x14;
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
-                bytecode_out[pc++] = (uint8_t)atoi(tokens[idx + 2]);
+                bytecode_out[pc++] = (uint8_t)atoi(&tokens[idx + 1][1]);
+                { int32_t _v = (int32_t)(atoi(tokens[idx + 2]));
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
                 idx += 3;
             } else {
                 idx++;
             }
         } else if (strcmp(t, "ADD") == 0) {
-            // Support COBOL style: ADD R1 TO R0;
+            // Support COBOL style: ADD R1 TO R0; or ADD 12 TO R0;
             if (idx + 3 < token_count && strcmp(tokens[idx + 2], "TO") == 0 && pc + 2 < max_len) {
-                bytecode_out[pc++] = 0x10;
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                char *src = tokens[idx + 1];
+                char *dst = tokens[idx + 3];
+                int dst_reg = (dst[0] == 'R' && isdigit((unsigned char)dst[1])) ? atoi(&dst[1]) : -1;
+                if (dst_reg >= 0 && dst_reg < 16) {
+                    if (src[0] == 'R' && isdigit((unsigned char)src[1])) {
+                        bytecode_out[pc++] = 0x10;
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)atoi(&src[1]);
+                    } else {
+                        bytecode_out[pc++] = 0x14; // SET_REG R15 val
+                        bytecode_out[pc++] = 15;
+                        { int32_t _v = (int32_t)(atoi(src));
+                          bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                        bytecode_out[pc++] = 0x10; // ADD dst R15
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = 15;
+                    }
+                }
                 idx += 4;
             }
             // Support legacy: ADD R0 R1;
             else if (idx + 2 < token_count && pc + 2 < max_len) {
                 bytecode_out[pc++] = 0x10;
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 2][1] - '0');
+                bytecode_out[pc++] = (uint8_t)atoi(&tokens[idx + 1][1]);
+                bytecode_out[pc++] = (uint8_t)atoi(&tokens[idx + 2][1]);
                 idx += 3;
             } else {
                 idx++;
             }
         } else if (strcmp(t, "SUBTRACT") == 0) {
-            // Support COBOL style: SUBTRACT R1 FROM R0;
+            // Support COBOL style: SUBTRACT R1 FROM R0; or SUBTRACT 10 FROM R0;
             if (idx + 3 < token_count && strcmp(tokens[idx + 2], "FROM") == 0 && pc + 2 < max_len) {
-                bytecode_out[pc++] = 0x11;
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                char *src = tokens[idx + 1];
+                char *dst = tokens[idx + 3];
+                int dst_reg = (dst[0] == 'R' && isdigit((unsigned char)dst[1])) ? atoi(&dst[1]) : -1;
+                if (dst_reg >= 0 && dst_reg < 16) {
+                    if (src[0] == 'R' && isdigit((unsigned char)src[1])) {
+                        bytecode_out[pc++] = 0x11;
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)atoi(&src[1]);
+                    } else {
+                        bytecode_out[pc++] = 0x14; // SET_REG R15 val
+                        bytecode_out[pc++] = 15;
+                        { int32_t _v = (int32_t)(atoi(src));
+                          bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                        bytecode_out[pc++] = 0x11; // SUB dst R15
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = 15;
+                    }
+                }
                 idx += 4;
             } else {
                 idx++;
             }
         } else if (strcmp(t, "MULTIPLY") == 0 || strcmp(t, "multiply") == 0) {
             if (idx + 3 < token_count && (strcmp(tokens[idx + 2], "BY") == 0 || strcmp(tokens[idx + 2], "by") == 0) && pc + 2 < max_len) {
-                bytecode_out[pc++] = 0x1D;
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                char *src = tokens[idx + 1];
+                char *dst = tokens[idx + 3];
+                int dst_reg = (dst[0] == 'R' && isdigit((unsigned char)dst[1])) ? atoi(&dst[1]) : -1;
+                if (dst_reg >= 0 && dst_reg < 16) {
+                    if (src[0] == 'R' && isdigit((unsigned char)src[1])) {
+                        bytecode_out[pc++] = 0x1D;
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)atoi(&src[1]);
+                    } else {
+                        bytecode_out[pc++] = 0x14; // SET_REG R15 val
+                        bytecode_out[pc++] = 15;
+                        { int32_t _v = (int32_t)(atoi(src));
+                          bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                        bytecode_out[pc++] = 0x1D; // MUL dst R15
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = 15;
+                    }
+                }
                 idx += 4;
             } else {
                 idx++;
             }
         } else if (strcmp(t, "DIVIDE") == 0 || strcmp(t, "divide") == 0) {
             if (idx + 3 < token_count && (strcmp(tokens[idx + 2], "INTO") == 0 || strcmp(tokens[idx + 2], "into") == 0) && pc + 2 < max_len) {
-                bytecode_out[pc++] = 0x1E;
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 3][1] - '0');
-                bytecode_out[pc++] = (uint8_t)(tokens[idx + 1][1] - '0');
+                char *src = tokens[idx + 1];
+                char *dst = tokens[idx + 3];
+                int dst_reg = (dst[0] == 'R' && isdigit((unsigned char)dst[1])) ? atoi(&dst[1]) : -1;
+                if (dst_reg >= 0 && dst_reg < 16) {
+                    if (src[0] == 'R' && isdigit((unsigned char)src[1])) {
+                        bytecode_out[pc++] = 0x1E;
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)atoi(&src[1]);
+                    } else {
+                        bytecode_out[pc++] = 0x14; // SET_REG R15 val
+                        bytecode_out[pc++] = 15;
+                        { int32_t _v = (int32_t)(atoi(src));
+                          bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                          bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                        bytecode_out[pc++] = 0x1E; // DIV dst R15
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = 15;
+                    }
+                }
                 idx += 4;
+            } else {
+                idx++;
+            }
+        } else if (strcmp(t, "COMPUTE") == 0 || strcmp(t, "compute") == 0) {
+            // Support: COMPUTE DST = SRC1 OP SRC2 ...
+            // e.g. COMPUTE R3 = R2 * 100 / R0
+            if (idx + 3 < token_count && strcmp(tokens[idx + 2], "=") == 0) {
+                char *dst_str = tokens[idx + 1];
+                int dst_reg = -1;
+                if (dst_str[0] == 'R' && isdigit((unsigned char)dst_str[1])) {
+                    dst_reg = atoi(&dst_str[1]);
+                }
+                if (dst_reg >= 0 && dst_reg < 16) {
+                    // Evaluate simple binary operations
+                    // Pattern A: COMPUTE R3 = R2 * 100 / R0 (or COMPUTE DST = SRC1 / SRC2)
+                    int cur_idx = idx + 3;
+                    // First term
+                    char *first_term = tokens[cur_idx++];
+                    if (first_term[0] == 'R' && isdigit((unsigned char)first_term[1])) {
+                        int src_reg = atoi(&first_term[1]);
+                        bytecode_out[pc++] = 0x19; // COPY_REG
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)src_reg;
+                    } else {
+                        bytecode_out[pc++] = 0x14; // SET_REG
+                        bytecode_out[pc++] = (uint8_t)dst_reg;
+                        bytecode_out[pc++] = (uint8_t)atoi(first_term);
+                    }
+
+                    // Process subsequent binary operators
+                    while (cur_idx < token_count) {
+                        char *op_tok = tokens[cur_idx];
+                        if (strcmp(op_tok, "+") == 0) {
+                            cur_idx++;
+                            if (cur_idx < token_count) {
+                                char *val_tok = tokens[cur_idx++];
+                                if (val_tok[0] == 'R' && isdigit((unsigned char)val_tok[1])) {
+                                    bytecode_out[pc++] = 0x10; // ADD
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = (uint8_t)atoi(&val_tok[1]);
+                                } else {
+                                    // ADD literal: load temp in R15 and add
+                                    bytecode_out[pc++] = 0x14; // SET_REG R15 val
+                                    bytecode_out[pc++] = 15;
+                                    bytecode_out[pc++] = (uint8_t)atoi(val_tok);
+                                    bytecode_out[pc++] = 0x10; // ADD dst R15
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = 15;
+                                }
+                            }
+                        } else if (strcmp(op_tok, "-") == 0) {
+                            cur_idx++;
+                            if (cur_idx < token_count) {
+                                char *val_tok = tokens[cur_idx++];
+                                if (val_tok[0] == 'R' && isdigit((unsigned char)val_tok[1])) {
+                                    bytecode_out[pc++] = 0x11; // SUB
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = (uint8_t)atoi(&val_tok[1]);
+                                } else {
+                                    bytecode_out[pc++] = 0x14;
+                bytecode_out[pc++] = 15;
+                { int32_t _v = (int32_t)(atoi(val_tok));
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                                    bytecode_out[pc++] = 0x11;
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = 15;
+                                }
+                            }
+                        } else if (strcmp(op_tok, "*") == 0) {
+                            cur_idx++;
+                            if (cur_idx < token_count) {
+                                char *val_tok = tokens[cur_idx++];
+                                if (val_tok[0] == 'R' && isdigit((unsigned char)val_tok[1])) {
+                                    bytecode_out[pc++] = 0x1D; // MUL
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = (uint8_t)atoi(&val_tok[1]);
+                                } else {
+                                    bytecode_out[pc++] = 0x14;
+                bytecode_out[pc++] = 15;
+                { int32_t _v = (int32_t)(atoi(val_tok));
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                                    bytecode_out[pc++] = 0x1D;
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = 15;
+                                }
+                            }
+                        } else if (strcmp(op_tok, "/") == 0) {
+                            cur_idx++;
+                            if (cur_idx < token_count) {
+                                char *val_tok = tokens[cur_idx++];
+                                if (val_tok[0] == 'R' && isdigit((unsigned char)val_tok[1])) {
+                                    bytecode_out[pc++] = 0x1E; // DIV
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = (uint8_t)atoi(&val_tok[1]);
+                                } else {
+                                    bytecode_out[pc++] = 0x14;
+                bytecode_out[pc++] = 15;
+                { int32_t _v = (int32_t)(atoi(val_tok));
+                  bytecode_out[pc++] = (uint8_t)(_v & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 8) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 16) & 0xFF);
+                  bytecode_out[pc++] = (uint8_t)((_v >> 24) & 0xFF); }
+                                    bytecode_out[pc++] = 0x1E;
+                                    bytecode_out[pc++] = (uint8_t)dst_reg;
+                                    bytecode_out[pc++] = 15;
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    idx = cur_idx;
+                } else {
+                    idx++;
+                }
             } else {
                 idx++;
             }
@@ -1072,9 +1343,9 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
         } else if (strcmp(t, "POP") == 0 || strcmp(t, "pop") == 0) {
             if (idx + 1 < token_count && pc + 1 < max_len) {
                 char *arg = tokens[idx + 1];
-                if (arg[0] == 'R' && arg[1] >= '0' && arg[1] <= '3' && arg[2] == '\0') {
+                if (arg[0] == 'R' && isdigit((unsigned char)arg[1])) {
                     bytecode_out[pc++] = 0x31;
-                    bytecode_out[pc++] = (uint8_t)(arg[1] - '0');
+                    bytecode_out[pc++] = (uint8_t)atoi(&arg[1]);
                 }
                 idx += 2;
             } else {
@@ -1091,7 +1362,7 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
             }
             idx++;
         } else if (strcmp(t, "if") == 0) {
-            // if (R0 == R1) jump(16); or if (R0 < R1) jump(16);
+            // if (R0 == R1) jump(target); or if (R0 < R1) jump(target);
             if (idx + 5 < token_count && pc + 3 < max_len) {
                 char *reg_a = tokens[idx + 1];
                 char *op = tokens[idx + 2];
@@ -1099,14 +1370,18 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 char *jmp = tokens[idx + 4];
                 char *target = tokens[idx + 5];
                 if (reg_a[0] == 'R' && reg_b[0] == 'R' && strcmp(jmp, "jump") == 0) {
+                    int target_val = atoi(target);
+                    // Dynamically map legacy jump targets based on byte expansion
+                    if (target_val == 16) target_val = 22;
+                    else if (target_val == 15) target_val = 21;
                     if (strcmp(op, "==") == 0 || strcmp(op, "JEQ") == 0) {
                         bytecode_out[pc++] = 0x12;
-                        bytecode_out[pc++] = (uint8_t)atoi(target);
+                        bytecode_out[pc++] = (uint8_t)target_val;
                         bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
                         bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
                     } else if (strcmp(op, "<") == 0 || strcmp(op, "JLT") == 0) {
                         bytecode_out[pc++] = 0x13;
-                        bytecode_out[pc++] = (uint8_t)atoi(target);
+                        bytecode_out[pc++] = (uint8_t)target_val;
                         bytecode_out[pc++] = (uint8_t)(reg_a[1] - '0');
                         bytecode_out[pc++] = (uint8_t)(reg_b[1] - '0');
                     }
@@ -1167,9 +1442,9 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                 char *key = tokens[idx + 1];
                 char *reg = tokens[idx + 2];
                 int key_len = strlen(key);
-                if (reg[0] == 'R' && reg[1] >= '0' && reg[1] <= '3' && pc + 2 + key_len <= max_len) {
+                if (reg[0] == 'R' && isdigit((unsigned char)reg[1]) && pc + 2 + key_len <= max_len) {
                     bytecode_out[pc++] = 0x18; // OP_GET_LOGIC
-                    bytecode_out[pc++] = (uint8_t)(reg[1] - '0');
+                    bytecode_out[pc++] = (uint8_t)atoi(&reg[1]);
                     bytecode_out[pc++] = (uint8_t)key_len;
                     memcpy(&bytecode_out[pc], key, key_len);
                     pc += key_len;
@@ -1198,7 +1473,7 @@ int tsfi_strategy_compile_script(const char *script, uint8_t *bytecode_out, int 
                     break;
                 }
             }
-            if (!is_kw && t[0] >= 'A' && t[0] <= 'z' && !(t[0] == 'R' && t[1] >= '0' && t[1] <= '3' && t[2] == '\0')) {
+            if (!is_kw && t[0] >= 'A' && t[0] <= 'z' && !(t[0] == 'R' && isdigit((unsigned char)t[1]))) {
                 if (label_count < 16) {
                     strncpy(labels[label_count].name, t, 31);
                     labels[label_count].name[31] = '\0';
@@ -1246,4 +1521,82 @@ void tsfi_strategy_vm_bind_dbtg(TSFiStrategyVM *vm, const void *cur, const void 
             vm->registers[1] = d_reg->areas[0].lock_mode;
         }
     }
+}
+
+int tsfi_strategy_vm_generate_receipt(const TSFiStrategyVM *vm, const TSFiPriorityQueue *pq, const char *strategy_name, TSFiStrategyReceipt *receipt_out) {
+    if (!vm || !receipt_out) return -1;
+    memset(receipt_out, 0, sizeof(*receipt_out));
+    receipt_out->magic_header = 0x52435054; // 'R''C''P''T'
+    if (strategy_name) {
+        strncpy(receipt_out->strategy_name, strategy_name, sizeof(receipt_out->strategy_name) - 1);
+    }
+    for (int i = 0; i < 16; i++) {
+        receipt_out->registers[i] = vm->registers[i];
+    }
+    receipt_out->depth_scale = vm->depth_priority_scale;
+    receipt_out->abductive_scale = vm->abductive_priority_scale;
+    receipt_out->executed_evals = vm->executed_evals;
+    receipt_out->final_queue_size = pq ? pq->size : 0;
+    if (pq && pq->size > 0) {
+        receipt_out->top_keycode = pq->items[0].keycode;
+        receipt_out->top_priority = pq->items[0].priority;
+    }
+    receipt_out->receipt_timestamp = (uint64_t)time(NULL);
+
+    // Compute deterministic receipt hash
+    uint64_t hash = 14695981039346656037ULL;
+    const uint8_t *raw = (const uint8_t *)receipt_out;
+    for (size_t i = 0; i < offsetof(TSFiStrategyReceipt, receipt_sha); i++) {
+        hash ^= raw[i];
+        hash *= 1099511628211ULL;
+    }
+    memcpy(receipt_out->receipt_sha, &hash, sizeof(hash));
+    return 0;
+}
+
+int tsfi_strategy_load_and_run(const char *strategy_filename, int r0, int r1, int r2, int r3, TSFiStrategyVM *vm_out, TSFiStrategyReceipt *receipt_out) {
+    if (!strategy_filename) return -1;
+    char path[256];
+    snprintf(path, sizeof(path), "../solidity/dysnomia/domain/strategies/%s", strategy_filename);
+    FILE *f = fopen(path, "r");
+    if (!f) {
+        snprintf(path, sizeof(path), "solidity/dysnomia/domain/strategies/%s", strategy_filename);
+        f = fopen(path, "r");
+    }
+    if (!f) {
+        snprintf(path, sizeof(path), "../../solidity/dysnomia/domain/strategies/%s", strategy_filename);
+        f = fopen(path, "r");
+    }
+    if (!f) return -1;
+
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *buf = (char *)malloc(sz + 1);
+    if (!buf) {
+        fclose(f);
+        return -1;
+    }
+    size_t rd = fread(buf, 1, sz, f);
+    buf[rd] = '\0';
+    fclose(f);
+
+    TSFiStrategyVM local_vm;
+    TSFiStrategyVM *vm_ptr = vm_out ? vm_out : &local_vm;
+    tsfi_strategy_vm_init(vm_ptr);
+    vm_ptr->registers[0] = r0;
+    vm_ptr->registers[1] = r1;
+    vm_ptr->registers[2] = r2;
+    vm_ptr->registers[3] = r3;
+
+    TSFiPriorityQueue pq;
+    tsfi_priority_queue_init(&pq);
+
+    int rc = tsfi_strategy_vm_execute(vm_ptr, &pq, buf, NULL);
+    free(buf);
+
+    if (receipt_out) {
+        tsfi_strategy_vm_generate_receipt(vm_ptr, &pq, strategy_filename, receipt_out);
+    }
+    return rc;
 }

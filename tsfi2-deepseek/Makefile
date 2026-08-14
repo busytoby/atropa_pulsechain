@@ -1769,8 +1769,20 @@ bin/test_deepseek_gguf_extended: tests/test_deepseek_gguf_extended.c $(OBJ_DIR)/
 	@mkdir -p bin
 	$(CC) -Wall -Wextra -std=c11 -O2 -Iinc -Isrc $^ -o $@ -lm
 
+bin/test_melting_point_correspondence: tests/test_melting_point_correspondence.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+bin/test_all_strategies_equivalence: tests/test_all_strategies_equivalence.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
+bin/test_cobol_compliance: tests/test_cobol_compliance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+
 .PHONY: test_flllm check_flllm profile test_cordis
-test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test_deepseek_cordis_tools bin/test_deepseek_cordis_chain bin/test_deepseek_edsac_acp_firewall bin/test_deepseek_stanag_kermit bin/test_deepseek_agent_vm_operator bin/test_deepseek_cordis_composability bin/test_deepseek_extensions bin/test_deepseek_gguf_extended
+test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test_deepseek_cordis_tools bin/test_deepseek_cordis_chain bin/test_deepseek_edsac_acp_firewall bin/test_deepseek_stanag_kermit bin/test_deepseek_agent_vm_operator bin/test_deepseek_cordis_composability bin/test_deepseek_extensions bin/test_deepseek_gguf_extended bin/test_melting_point_correspondence bin/test_all_strategies_equivalence bin/test_cobol_compliance
 	./bin/test_deepseek_cordis
 	./bin/test_deepseek_cordis_advanced
 	./bin/test_deepseek_cordis_tools
@@ -1781,6 +1793,9 @@ test_cordis: bin/test_deepseek_cordis bin/test_deepseek_cordis_advanced bin/test
 	./bin/test_deepseek_cordis_composability
 	./bin/test_deepseek_extensions
 	./bin/test_deepseek_gguf_extended
+	./bin/test_melting_point_correspondence
+	./bin/test_all_strategies_equivalence
+	./bin/test_cobol_compliance
 
 test_flllm: bin/test_zorse_gguf_flllm_suite bin/zorse_prompt bin/zorse_trace_inspector test_cordis
 	./bin/test_zorse_gguf_flllm_suite

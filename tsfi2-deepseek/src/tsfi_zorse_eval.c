@@ -633,3 +633,40 @@ int tsfi_zorse_validate_black_dml(const char *dml_src, int *is_valid_out) {
 
     return 0;
 }
+
+#include "tsfi_strategy_lang.h"
+
+int tsfi_zorse_select_and_execute_strategy(
+    const char *strategy_name,
+    int r0, int r1, int r2, int r3,
+    TSFiStrategyVM *vm_out,
+    TSFiStrategyReceipt *receipt_out
+) {
+    if (!strategy_name) return -1;
+    return tsfi_strategy_load_and_run(strategy_name, r0, r1, r2, r3, vm_out, receipt_out);
+}
+
+int tsfi_zorse_query_with_strategy(
+    const char *prompt,
+    const char *model_name,
+    const char *strategy_name,
+    int r0, int r1, int r2, int r3,
+    char *response_out,
+    size_t max_resp_len,
+    TSFiStrategyReceipt *receipt_out
+) {
+    if (!prompt || !model_name || !response_out || max_resp_len == 0) return -1;
+
+    TSFiStrategyVM vm;
+    TSFiStrategyReceipt receipt;
+    int strat_res = 0;
+    if (strategy_name && strlen(strategy_name) > 0) {
+        strat_res = tsfi_strategy_load_and_run(strategy_name, r0, r1, r2, r3, &vm, &receipt);
+        if (receipt_out) {
+            memcpy(receipt_out, &receipt, sizeof(TSFiStrategyReceipt));
+        }
+    }
+
+    int llm_res = tsfi_zorse_query_llm(prompt, model_name, response_out, max_resp_len);
+    return (strat_res == 0 && llm_res == 0) ? 0 : -1;
+}

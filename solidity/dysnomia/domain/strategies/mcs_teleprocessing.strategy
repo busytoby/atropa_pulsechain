@@ -1,3 +1,6 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. PROG-MCS-TELEPROCESSING.
+
 # COBOL MCS Teleprocessing Strategy
 # Prioritizes telecommunication queue segments over background routines.
 

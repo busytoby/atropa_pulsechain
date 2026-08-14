@@ -879,4 +879,24 @@ int tsfi_zorse_validate_vse_power_class_status_override_list(const char *jcl_lin
 // COBOL Report Writer Control Heading Spacing Limit Override Auditor
 int tsfi_zorse_validate_cobol_ch_spacing_limit_override(const char *cobol_src, int *is_valid_out);
 
+#include "tsfi_strategy_lang.h"
+
+// Zorse Broad Dynamic COBOL Strategy Selection & Execution Interfaces
+int tsfi_zorse_select_and_execute_strategy(
+    const char *strategy_name,
+    int r0, int r1, int r2, int r3,
+    TSFiStrategyVM *vm_out,
+    TSFiStrategyReceipt *receipt_out
+);
+
+int tsfi_zorse_query_with_strategy(
+    const char *prompt,
+    const char *model_name,
+    const char *strategy_name,
+    int r0, int r1, int r2, int r3,
+    char *response_out,
+    size_t max_resp_len,
+    TSFiStrategyReceipt *receipt_out
+);
+
 #endif // TSFI_ZORSE_EVAL_H

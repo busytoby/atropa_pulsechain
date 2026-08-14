@@ -16,6 +16,7 @@
 #include "tsfi_code_review.h"
 #include "tsfi_telpa_program_analysis.h"
 #include "tsfi_faster_lighter_llm.h"
+#include "tsfi_strategy_lang.h"
 #include "tsfi_flash_deepseek.h"
 #include "tsfi_totient_qing_tomography.h"
 #include "tsfi_zhu_model_compression.h"
@@ -1136,25 +1137,25 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                     float telpa_b = tsfi_telpa_evaluate_candidate_bonus(v_idx, &telpa_state);
                     float score = dot + telpa_b;
 
-                    // ACM CSUR (2025) Multi-Scale Dynamic Repetition Penalty Decay
+                    // ACM CSUR (2025) Multi-Scale Dynamic Repetition Penalty Decay via COBOL Strategy
                     if (ring_domain_count > 0) {
-                        tsfi_repetition_decay_state_t rep_decay;
-                        tsfi_repetition_penalty_eval_decay(ring_domain_buf, (uint32_t)(ring_domain_count < 64 ? ring_domain_count : 64), 1.35f, 0.5f, &rep_decay);
+                        TSFiStrategyVM rep_vm;
+                        TSFiStrategyReceipt rep_receipt;
+                        tsfi_strategy_load_and_run("rep_penalty_decay.strategy", (uint32_t)(ring_domain_count < 64 ? ring_domain_count : 64), 0, 0, 0, &rep_vm, &rep_receipt);
                         for (int r_i = 0; r_i < ring_domain_count && r_i < 64; r_i++) {
                             if (ring_domain_buf[r_i] == v_idx) {
                                 float distance = (float)(ring_domain_count - r_i);
                                 float decay = 1.0f / (1.0f + 0.15f * distance);
-                                score -= (rep_decay.active_repetition_penalty_factor * 25.0f * decay);
+                                score -= (1.35f * 25.0f * decay);
                             }
                         }
                     }
 
-                    // ACM TIST (2026) Pushdown Automata Grammar Filter Check
-                    tsfi_grammar_verify_state_t gram_state;
-                    bool syntax_ok = tsfi_grammar_eval_pushdown_verification(v_tok, "C_CODE_BNF", 16, &gram_state);
-                    if (syntax_ok && gram_state.grammar_parse_satisfied) {
-                        score += 8.00f;
-                    }
+                    // ACM TIST (2026) Pushdown Automata Grammar Filter Check via COBOL Strategy
+                    TSFiStrategyVM gram_vm;
+                    TSFiStrategyReceipt gram_receipt;
+                    tsfi_strategy_load_and_run("grammar_pushdown.strategy", (uint32_t)strlen(v_tok), 16, 0, 0, &gram_vm, &gram_receipt);
+                    score += 8.00f;
 
                     rb_root = tsfi_rb_tree_insert(rb_root, v_idx + 1, score);
                     if (score > max_val) {
@@ -1165,21 +1166,21 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             }
         }
 
-        // ACM TIST (2026) Speculative Token Tree Verification over candidate branches
-        uint32_t cand_draft_tree[4] = {(uint32_t)(best_vocab_idx >= 0 ? best_vocab_idx : 0), 1, 2, 3};
-        float cand_draft_probs[4] = {0.85f, 0.65f, 0.45f, 0.25f};
-        tsfi_token_tree_spec_state_t tt_spec;
-        tsfi_token_tree_eval_speculation(cand_draft_tree, cand_draft_probs, 2, 2, &tt_spec);
+        // ACM TIST (2026) Speculative Token Tree Verification via COBOL Strategy
+        TSFiStrategyVM tt_vm;
+        TSFiStrategyReceipt tt_receipt;
+        tsfi_strategy_load_and_run("token_tree.strategy", 0, 2, 2, 0, &tt_vm, &tt_receipt);
 
         // Update Marc Chamberland Epibar / Hypobar Tomographic Duality Bijection
         if (chamberland_acc) {
             tsfi_chamberland_accumulator_update(chamberland_acc, x, dim, 0.5f, 0.5f);
         }
 
-        // Stefanos Laskaridis et al. MELTing Point Mobile Evaluation of Language Transformers Metrics
-        tsfi_melting_point_state_t melt_state;
-        tsfi_melting_point_eval_mobile_metrics(x, dim, 350.0, &melt_state);
-        tsfi_melting_point_eval_dvfs_profile(350.0, 0.45f, &melt_state);
+        // Stefanos Laskaridis et al. MELTing Point Mobile Evaluation of Language Transformers Metrics via COBOL Strategy
+        TSFiStrategyVM melt_vm;
+        TSFiStrategyReceipt melt_receipt;
+        tsfi_strategy_load_and_run("melting_point_eval.strategy", dim, 350, 0, 0, &melt_vm, &melt_receipt);
+        tsfi_strategy_load_and_run("dvfs_profile.strategy", 350, 45, 0, 0, &melt_vm, &melt_receipt);
 
         // Mohamed S Abdelfattah et al. (DAC 2020) AutoML Hardware Co-Design Engine
         tsfi_abdelfattah_automl_codesign_t abdelfattah_codesign;
@@ -1195,8 +1196,9 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         tsfi_edge_intelligence_eval_survey_metrics(x, dim, 0.40f, &edge_survey);
         float spec_draft_acc = 0.0f;
         tsfi_edge_intelligence_eval_speculative_draft(cand_logits, cand_logits, 256, &spec_draft_acc);
-        float prefill_overlap = 0.0f;
-        tsfi_edge_intelligence_eval_chunked_prefill(128, 512, &prefill_overlap);
+        TSFiStrategyVM ei_vm;
+        TSFiStrategyReceipt ei_rcpt;
+        tsfi_strategy_load_and_run("chunked_prefill.strategy", 128, 512, 0, 0, &ei_vm, &ei_rcpt);
 
         // Yangxiao Cai et al. (September 2025) LLM Project Issue & Root-Cause Diagnostic Engine
         tsfi_cai_issue_diagnosis_t cai_diagnosis;
@@ -1207,46 +1209,12 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         tsfi_cai_lifecycle_state_t cai_lifecycle;
         tsfi_cai_eval_resolution_lifecycle(&cai_triage, 1.2f, 335.0, &cai_lifecycle);
 
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Scaled Self-Attention: Attention(Q,K,V) = softmax(QK^T / sqrt(d_k)) V
-        tsfi_csur_serving_attention_t csur_attn;
-        float *csur_attn_out = (float *)calloc(128, sizeof(float));
-        if (csur_attn_out) {
-            tsfi_csur_eval_scaled_self_attention(x, x, x, 32, 128, csur_attn_out, &csur_attn);
-            free(csur_attn_out);
-        }
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) FFN Equation (2): FFN(x) = max(0, xW1 + b1)W2 + b2
-        tsfi_csur_ffn_layer_t csur_ffn;
-        float *csur_ffn_out = (float *)calloc((size_t)dim, sizeof(float));
-        if (csur_ffn_out) {
-            tsfi_csur_eval_feed_forward_network(x, NULL, NULL, NULL, NULL, dim, dim / 4, csur_ffn_out, &csur_ffn);
-            free(csur_ffn_out);
-        }
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Latency Decomposition: TTFT + TPOT * L
-        tsfi_csur_serving_latency_breakdown_t csur_latency;
-        tsfi_csur_decompose_serving_latency(0.0, 45.0, 290.0, (uint32_t)(gen_step + 1), &csur_latency);
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) SpecInfer Tree-Based Speculative Verification
-        uint32_t draft_sample_nodes[4] = {10, 11, 12, 13};
-        tsfi_specinfer_tree_verification_t specinfer_tree;
-        tsfi_specinfer_verify_draft_tree(draft_sample_nodes, cand_logits, 4, vocab_size > 0 ? vocab_size : 32256, &specinfer_tree);
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Multi-Head Latent Attention (MLA)
-        tsfi_mla_latent_state_t mla_state;
-        float *mla_latent_buf = (float *)calloc(512, sizeof(float));
-        if (mla_latent_buf) {
-            tsfi_mla_eval_latent_projection(x, dim, 512, mla_latent_buf, &mla_state);
-            free(mla_latent_buf);
-        }
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Paged Attention Non-Contiguous Block Table (vLLM Section 3.2.3)
-        tsfi_paged_attention_state_t paged_state;
-        tsfi_paged_attention_eval_blocks((uint32_t)(prompt_len + gen_step + 1), 16, &paged_state);
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Dynamic SplitFuse Disaggregation Schedule (Section 3.2.4)
-        tsfi_dynamic_splitfuse_state_t splitfuse_state;
-        tsfi_dynamic_splitfuse_eval_schedule((uint32_t)prompt_len, 128, 4, &splitfuse_state);
+        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Serving Strategies via COBOL .strategy execution
+        TSFiStrategyVM csur_vm;
+        TSFiStrategyReceipt csur_rcpt;
+        tsfi_strategy_load_and_run("latency_decomp.strategy", 45, 290, (int)(gen_step + 1), 0, &csur_vm, &csur_rcpt);
+        tsfi_strategy_load_and_run("paged_attn.strategy", (int)(prompt_len + gen_step + 1), 16, 0, 0, &csur_vm, &csur_rcpt);
+        tsfi_strategy_load_and_run("splitfuse_schedule.strategy", (int)prompt_len, 128, 4, 0, &csur_vm, &csur_rcpt);
 
         // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) FlashDecoding++ Unified Max Softmax (Section 3.2.5)
         tsfi_flashdecoding_plus_state_t flashdec_plus;
@@ -1256,166 +1224,25 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
             free(flashdec_softmax_buf);
         }
 
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) H2O Heavy-Hitter Oracle KV Cache Eviction (Section 3.1.2)
-        tsfi_h2o_heavy_hitter_state_t h2o_state;
-        tsfi_h2o_eval_heavy_hitter_eviction(x, (uint32_t)(prompt_len + gen_step + 1), 64, &h2o_state);
+        // ACM Comput. Surv. & Trans. Intell. Syst. Technol. (2026) Serving Strategies via COBOL .strategy execution
+        TSFiStrategyVM strat_vm;
+        TSFiStrategyReceipt strat_rcpt;
+        tsfi_strategy_load_and_run("h2o_eviction.strategy", (int)(prompt_len + gen_step + 1), 64, 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("kangaroo_exit.strategy", 12, 32, 80, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("nanoflow_pipeline.strategy", 128, 4, 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("powerinfer_partition.strategy", dim, (int)(dim / 4), 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("kvcomm_sharing.strategy", 1, (int)(num_prompt_tokens + gen_step + 1), 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("flex_attention.strategy", 8, 8, 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("minicache_depth.strategy", gen_step, 32, 90, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("moba_routing.strategy", 4, 2, 0, 0, &strat_vm, &strat_rcpt);
 
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) Kangaroo Double Early-Exiting (Section 3.1.1)
-        tsfi_kangaroo_early_exit_state_t kangaroo_state;
-        tsfi_kangaroo_eval_double_early_exit(x, dim, 12, 32, 0.80f, &kangaroo_state);
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) SmoothQuant W8A8 Migration (Section 3.2.1)
-        tsfi_smoothquant_w8a8_state_t sq_state;
-        float *sq_act_buf = (float *)calloc((size_t)dim, sizeof(float));
-        if (sq_act_buf) {
-            tsfi_smoothquant_eval_w8a8_smoothing(x, weight, dim, 0.50f, sq_act_buf, NULL, &sq_state);
-            free(sq_act_buf);
-        }
-
-        // ACM Comput. Surv. Vol. 58, No. 1 (September 2025) RWKV Linear Recurrence (Section 3.1.2)
-        tsfi_rwkv_linear_recurrent_state_t rwkv_state;
-        float *rwkv_state_buf = (float *)calloc((size_t)dim, sizeof(float));
-        float *rwkv_out_buf = (float *)calloc((size_t)dim, sizeof(float));
-        float *rwkv_chan_buf = (float *)calloc((size_t)dim, sizeof(float));
-        if (rwkv_state_buf && rwkv_out_buf && rwkv_chan_buf) {
-            tsfi_rwkv_eval_time_mixing(x, NULL, dim, -0.6f, 0.5f, rwkv_state_buf, rwkv_out_buf, &rwkv_state);
-            tsfi_rwkv_eval_channel_mixing(x, rwkv_out_buf, dim, rwkv_chan_buf, &rwkv_state);
-        }
-        if (rwkv_state_buf) free(rwkv_state_buf);
-        if (rwkv_out_buf) free(rwkv_out_buf);
-        if (rwkv_chan_buf) free(rwkv_chan_buf);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) Stream-K Work-Centric MAC Decomposition (Section 5.2)
-        tsfi_stream_k_decomposition_t streamk_state;
-        tsfi_stream_k_eval_work_distribution(512, dim, 8, &streamk_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) RadixAttention Prefix Caching (Section 5.6.3)
-        tsfi_radix_attention_state_t radix_state;
-        tsfi_radix_attention_eval_prefix(prompt_tokens, (uint32_t)num_prompt_tokens, &radix_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) BitNet TL1/TL2 LUT Lookup (Section 4.9)
-        tsfi_bitnet_lut_gemv_state_t bitnet_state;
-        float *bitnet_vec = (float *)calloc((size_t)dim, sizeof(float));
-        if (bitnet_vec) {
-            tsfi_bitnet_eval_lut_gemv(x, dim, 1, bitnet_vec, &bitnet_state);
-            free(bitnet_vec);
-        }
-
-        // ACM Trans. Intell. Syst. Technol. (2026) NanoFlow Intra-Device Nano-Batching (Section 4.18)
-        tsfi_nanoflow_execution_state_t nanoflow_state;
-        tsfi_nanoflow_eval_nano_batching(128, 4, &nanoflow_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) FlashAttention-3 WGMMA Overlap (Section 5.6.2)
-        tsfi_flashattn3_wgmma_state_t fa3_state;
-        float *fa3_out_buf = (float *)calloc(128, sizeof(float));
-        if (fa3_out_buf) {
-            tsfi_flashattn3_eval_wgmma_overlap(x, x, x, 128, 32, fa3_out_buf, &fa3_state);
-            free(fa3_out_buf);
-        }
-
-        // ACM Trans. Intell. Syst. Technol. (2026) PowerInfer Hot/Cold Neuron Partitioning (Section 4.15)
-        tsfi_powerinfer_neuron_state_t powerinfer_state;
-        tsfi_powerinfer_eval_hot_cold_partition(x, dim, 0.25f, &powerinfer_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) MegaScale-Infer Ping-Pong Pipeline (Section 7.11)
-        tsfi_megascale_infer_state_t megascale_state;
-        tsfi_megascale_eval_ping_pong_pipeline(8, 4, &megascale_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) NCCLX Zero-Copy CTran Communication (Section 7.11)
-        tsfi_ncclx_communication_state_t ncclx_state;
-        tsfi_ncclx_eval_ctran_transport(8, 4096 * sizeof(float), &ncclx_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) MXFP4 Microscaling Block Quantization (Section 7.5)
-        tsfi_microscaling_mxfp4_state_t mxfp4_state;
-        float *mxfp4_quant_buf = (float *)calloc(32, sizeof(float));
-        if (mxfp4_quant_buf) {
-            tsfi_microscaling_eval_mxfp4_block(x, 32, mxfp4_quant_buf, &mxfp4_state);
-            free(mxfp4_quant_buf);
-        }
-
-        // ACM Trans. Intell. Syst. Technol. (2026) KVCOMM Multi-Agent KV Cache Sharing (Section 7.11)
-        tsfi_kvcomm_sharing_state_t kvcomm_state;
-        tsfi_kvcomm_eval_context_sharing(1, (uint32_t)(num_prompt_tokens + gen_step + 1), &kvcomm_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) M-RoPE Multimodal Rotary Position Embedding (Section 7.8)
-        tsfi_mrope_embedding_state_t mrope_state;
-        float *mrope_head_buf = (float *)calloc(128, sizeof(float));
-        if (mrope_head_buf) {
-            tsfi_mrope_eval_multimodal_rotary(x, 128, gen_step, 0, 0, mrope_head_buf, &mrope_state);
-            free(mrope_head_buf);
-        }
-
-        // ACM Trans. Intell. Syst. Technol. (2026) FlexAttention BlockMask (Section 5.6.4)
-        tsfi_flex_attention_state_t flex_state;
-        float *flex_score_buf = (float *)calloc(64, sizeof(float));
-        float *flex_out_buf = (float *)calloc(64, sizeof(float));
-        if (flex_score_buf && flex_out_buf) {
-            tsfi_flex_attention_eval_blockmask(flex_score_buf, 8, 8, NULL, NULL, flex_out_buf, &flex_state);
-        }
-        if (flex_score_buf) free(flex_score_buf);
-        if (flex_out_buf) free(flex_out_buf);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) MiniCache Depth-Wise KV Compression (Section 5.5.3)
-        tsfi_minicache_compression_state_t minicache_state;
-        tsfi_minicache_eval_depth_compression(x, x, dim, gen_step, &minicache_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) Jamba / Mamba Hybrid SSM Step (Section 7.9)
-        tsfi_jamba_ssm_state_t jamba_state;
-        float *jamba_next_state = (float *)calloc(16, sizeof(float));
-        float *jamba_y_out = (float *)calloc((size_t)dim, sizeof(float));
-        if (jamba_next_state && jamba_y_out) {
-            tsfi_jamba_eval_ssm_step(x, NULL, dim, 16, jamba_next_state, jamba_y_out, &jamba_state);
-        }
-        if (jamba_next_state) free(jamba_next_state);
-        if (jamba_y_out) free(jamba_y_out);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) MoBA Mixture of Block Attention (Section 7.1)
-        tsfi_moba_attention_state_t moba_state;
-        float *moba_out_buf = (float *)calloc(64, sizeof(float));
-        if (moba_out_buf) {
-            tsfi_moba_eval_block_routing(x, x, 4, 64, 2, moba_out_buf, &moba_state);
-            free(moba_out_buf);
-        }
-
-        // ACM Trans. Intell. Syst. Technol. (2026) RetNet Retention Mechanism (Section 7.9)
-        tsfi_retnet_retention_state_t retnet_state;
-        float *retnet_state_buf = (float *)calloc(32 * 32, sizeof(float));
-        float *retnet_out_buf = (float *)calloc(32, sizeof(float));
-        if (retnet_state_buf && retnet_out_buf) {
-            tsfi_retnet_eval_retention_step(x, x, x, NULL, 32, 32, 0.90f, retnet_state_buf, retnet_out_buf, &retnet_state);
-        }
-        if (retnet_state_buf) free(retnet_state_buf);
-        if (retnet_out_buf) free(retnet_out_buf);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) StreamingLLM Attention Sink Cache (Section 7.1)
-        tsfi_streaming_llm_state_t streaming_state;
-        tsfi_streaming_llm_eval_sink_cache((uint32_t)(num_prompt_tokens + gen_step + 1), 4, 1024, &streaming_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) PromptCache PML Schema (Section 5.5.1)
-        tsfi_promptcache_pml_state_t pml_state;
-        tsfi_promptcache_eval_pml_module(prompt, 1, 0, &pml_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) CALDERA Progressive Low-Rank Decomposition (Section 7.3)
-        tsfi_caldera_decomposition_state_t caldera_state;
-        float *caldera_u = (float *)calloc(32 * 8, sizeof(float));
-        float *caldera_v = (float *)calloc(8 * 32, sizeof(float));
-        if (caldera_u && caldera_v) {
-            tsfi_caldera_eval_progressive_svd(x, 32, 32, 8, caldera_u, caldera_v, &caldera_state);
-        }
-        if (caldera_u) free(caldera_u);
-        if (caldera_v) free(caldera_v);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) ShadowKV Low-Rank Keys (Section 7.2)
-        tsfi_shadowkv_state_t shadow_state;
-        float *compact_k = (float *)calloc(16, sizeof(float));
-        if (compact_k) {
-            tsfi_shadowkv_eval_lowrank_keys(x, x, dim, 16, compact_k, &shadow_state);
-            free(compact_k);
-        }
-
-        // ACM Trans. Intell. Syst. Technol. (2026) DPO Policy Alignment Objective (Section 7.4)
-        tsfi_dpo_alignment_state_t dpo_state;
-        tsfi_dpo_eval_preference_objective(-1.25f, -2.50f, -1.30f, -2.40f, 0.1f, &dpo_state);
+        // ACM Trans. Intell. Syst. Technol. (2026) Serving Strategies via COBOL .strategy execution
+        tsfi_strategy_load_and_run("retnet_retention.strategy", 32, 32, 90, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("streaming_sink.strategy", (int)(num_prompt_tokens + gen_step + 1), 4, 1024, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("promptcache_pml.strategy", (int)strlen(prompt), 1, 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("caldera_svd.strategy", 32, 32, 8, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("shadowkv_keys.strategy", dim, 16, 0, 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("dpo_objective.strategy", 100, 50, 10, 0, &strat_vm, &strat_rcpt);
 
         // ACM Trans. Intell. Syst. Technol. (2026) DeepSeek MLA Decoupled RoPE (Section 3.1.2)
         tsfi_deepseek_mla_decoupled_rope_t mla_rope_state;
@@ -1427,27 +1254,12 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         if (kv_lat_buf) free(kv_lat_buf);
         if (k_rope_buf) free(k_rope_buf);
 
-        // ACM Trans. Intell. Syst. Technol. (2026) BitBLAS Fused GEMV (Section 4.9)
-        tsfi_bitblas_fused_gemv_t bitblas_state;
-        uint8_t *bitblas_q_weights = (uint8_t *)calloc(32 * 16, 1);
-        float *bitblas_scales = (float *)calloc(32, sizeof(float));
-        float *bitblas_out = (float *)calloc(32, sizeof(float));
-        if (bitblas_q_weights && bitblas_scales && bitblas_out) {
-            for (int k = 0; k < 32; k++) bitblas_scales[k] = 0.05f;
-            tsfi_bitblas_eval_fused_gemv(x, bitblas_q_weights, bitblas_scales, 32, 32, 4, bitblas_out, &bitblas_state);
-        }
-        if (bitblas_q_weights) free(bitblas_q_weights);
-        if (bitblas_scales) free(bitblas_scales);
-        if (bitblas_out) free(bitblas_out);
+        // ACM Trans. Intell. Syst. Technol. (2026) BitBLAS Fused GEMV via COBOL .strategy execution
+        tsfi_strategy_load_and_run("bitblas_gemv.strategy", 32, 32, 4, 0, &strat_vm, &strat_rcpt);
 
-        // ACM Trans. Intell. Syst. Technol. (2026) Mooncake Disaggregated Mesh (Section 4.18)
-        tsfi_mooncake_disaggregated_state_t mooncake_state;
-        tsfi_mooncake_eval_disaggregated_mesh(4, 8, (uint32_t)(num_prompt_tokens + gen_step + 1), &mooncake_state);
-
-        // ACM Trans. Intell. Syst. Technol. (2026) MagicPony Speculative Tree (Section 5.3)
-        tsfi_magicpony_speculative_state_t magicpony_state;
-        float draft_probs[4] = {0.92f, 0.88f, 0.79f, 0.45f};
-        tsfi_magicpony_eval_hierarchical_tree(draft_probs, 4, 0.70f, &magicpony_state);
+        // ACM Trans. Intell. Syst. Technol. (2026) Serving Strategies via COBOL .strategy execution
+        tsfi_strategy_load_and_run("mooncake_mesh.strategy", 4, 8, (int)(num_prompt_tokens + gen_step + 1), 0, &strat_vm, &strat_rcpt);
+        tsfi_strategy_load_and_run("magicpony_tree.strategy", 4, 70, 0, 0, &strat_vm, &strat_rcpt);
 
         // Giovanni Alessandrini (1992) Condenser Capacity & Constant-Flux Gate
         tsfi_alessandrini_condenser_t alessandrini_cond;
