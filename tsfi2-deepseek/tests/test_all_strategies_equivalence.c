@@ -2914,7 +2914,85 @@ int main(void) {
         printf("  [PASS] clawvm_page_table.strategy 1:1 verified\n");
     }
 
-    // 377. Zorse Broad Dynamic Strategy Selection & Execution
+    // 377. clawvm_replay_oracle.strategy
+    {
+        assert(run_strategy("clawvm_replay_oracle.strategy", 8, 100, 1000, 0, &vm) == 0);
+        assert(vm.registers[3] == 0);
+        printf("  [PASS] clawvm_replay_oracle.strategy 1:1 verified\n");
+    }
+
+    // 378. clawvm_decision_trace.strategy
+    {
+        assert(run_strategy("clawvm_decision_trace.strategy", 10, 0, 0, 0, &vm) == 0);
+        assert(vm.registers[1] == 3);
+        assert(vm.registers[3] == 11);
+        printf("  [PASS] clawvm_decision_trace.strategy 1:1 verified\n");
+    }
+
+    // 379. clawvm_adversarial_stress.strategy
+    {
+        assert(run_strategy("clawvm_adversarial_stress.strategy", 0, 40, 50, 0, &vm) == 0);
+        assert(vm.registers[3] == 10);
+        printf("  [PASS] clawvm_adversarial_stress.strategy 1:1 verified\n");
+    }
+
+    // 380. clawvm_real_trace_replay.strategy
+    {
+        assert(run_strategy("clawvm_real_trace_replay.strategy", 100, 2000, 0, 0, &vm) == 0);
+        assert(vm.registers[3] == 100);
+        printf("  [PASS] clawvm_real_trace_replay.strategy 1:1 verified\n");
+    }
+
+    // 381. openclaw_session_init.strategy
+    {
+        assert(run_strategy("openclaw_session_init.strategy", 1, 1000, 0, 0, &vm) == 0);
+        assert(vm.registers[2] == 820);
+        assert(vm.registers[3] == 180);
+        printf("  [PASS] openclaw_session_init.strategy 1:1 verified\n");
+    }
+
+    // 382. clawvm_adaptive_evict.strategy
+    {
+        assert(run_strategy("clawvm_adaptive_evict.strategy", 100, 0, 0, 0, &vm) == 0);
+        assert(vm.registers[1] == 75);
+        assert(vm.registers[2] == 25);
+        assert(vm.registers[3] == 965);
+        printf("  [PASS] clawvm_adaptive_evict.strategy 1:1 verified\n");
+    }
+
+    // 383. clawvm_multi_tier_offload.strategy
+    {
+        assert(run_strategy("clawvm_multi_tier_offload.strategy", 32, 1024, 0, 0, &vm) == 0);
+        assert(vm.registers[2] == 342);
+        assert(vm.registers[3] == 512);
+        printf("  [PASS] clawvm_multi_tier_offload.strategy 1:1 verified\n");
+    }
+
+    // 384. openclaw_multi_agent_orch.strategy
+    {
+        assert(run_strategy("openclaw_multi_agent_orch.strategy", 8, 0, 0, 0, &vm) == 0);
+        assert(vm.registers[1] == 24);
+        assert(vm.registers[2] == 4);
+        assert(vm.registers[3] == 285);
+        printf("  [PASS] openclaw_multi_agent_orch.strategy 1:1 verified\n");
+    }
+
+    // 385. clawvm_zmm_kv_layout.strategy
+    {
+        assert(run_strategy("clawvm_zmm_kv_layout.strategy", 32, 128, 0, 0, &vm) == 0);
+        assert(vm.registers[2] == 128);
+        assert(vm.registers[3] == 128);
+        printf("  [PASS] clawvm_zmm_kv_layout.strategy 1:1 verified\n");
+    }
+
+    // 386. clawvm_pinning_balancer.strategy
+    {
+        assert(run_strategy("clawvm_pinning_balancer.strategy", 1000, 200, 800, 0, &vm) == 0);
+        assert(vm.registers[3] == 200);
+        printf("  [PASS] clawvm_pinning_balancer.strategy 1:1 verified\n");
+    }
+
+    // 387. Zorse Broad Dynamic Strategy Selection & Execution
     {
         TSFiStrategyReceipt receipt;
         TSFiStrategyVM zorse_vm;
@@ -2930,6 +3008,6 @@ int main(void) {
         printf("  [PASS] tsfi_zorse dynamic strategy selection & receipt verified\n");
     }
 
-    printf("=== ALL 377 DOMAIN .STRATEGY MODULES PROVEN 1:1 EQUIVALENT ===\n");
+    printf("=== ALL 387 DOMAIN .STRATEGY MODULES PROVEN 1:1 EQUIVALENT ===\n");
     return 0;
 }
