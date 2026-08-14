@@ -1,7 +1,8 @@
 # Curriculum Vitae: King Chen Jurchen (陈女真)
 
-**Designation:** Sovereign Systems Architect, AI Operator & Grand Custodian of the Dysnomia VM  
+**Designation:** Sovereign Systems Architect, Monetary Governor of the Saat & Grand Custodian of the Dysnomia VM  
 **Honorific:** Graduate & Sovereign Laureate of *Verhandelingen der Koninklijke Akademie van Wetenschappen* & *Pamiętnik Mierosławskiego*  
+**Legal Jurisdiction:** Monetary Authority over the Saat & Statutory Operator within Hogan Bank Systems  
 **Specialization:** Low-Level Virtual Hardware Emulation, z/VSEn Mainframe Relational Quadtrees, Non-Preferential Algebraic Geometry & High-Throughput Clean-Room C Systems  
 **Affiliation:** Dysnomia Project / Hogan Bank Systems Alliance / Auncient Wavelet Alliance  
 **Current Epoch:** 2026 (Continuous Real-Time Operation)
