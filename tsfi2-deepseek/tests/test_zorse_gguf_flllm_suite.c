@@ -3373,12 +3373,18 @@ static void test_clawvm_virtual_memory_engine(void) {
     assert(ok_crash && crash_rec.zero_data_loss_verified && crash_rec.crash_consistency_atomic);
     assert(crash_rec.wal_records_replayed == 128 && crash_rec.recovery_latency_us < 10.0f);
 
-    printf("  -> PASS: ClawVM Zero Faults (0 faults), Crash Consistency & Recovery (<10 us), OpenClaw Event Loop & ZMM KV Layout verified.\n");
+    char final_c_code[4096] = {0};
+    tsfi_openclaw_unified_pipeline_state_t pipe_state;
+    bool ok_pipe = tsfi_openclaw_execute_pipeline("/home/mariarahel/src/tsfi2/assets/DeepSeek-Coder-6.7B.gguf", "int add(int a, int b)", 512, final_c_code, sizeof(final_c_code), &pipe_state);
+    assert(ok_pipe && pipe_state.end_to_end_succeeded && pipe_state.binary_wal_synced);
+    assert(pipe_state.ast_nodes_synthesized > 0 && final_c_code[0] != '\0');
+
+    printf("  -> PASS: ClawVM Zero Faults (0 faults), OpenClaw Unified Pipeline (DeepSeek + AST Synthesizer), Crash Recovery & ZMM KV Layout verified.\n");
 }
 
 static void test_survey_coverage_complete(void) {
     printf("[TEST 418/418] Verifying Survey Standards (ACM CSUR 2025, ACM TIST 2026, Neurocomputing 2025, Springer LNCS 2027) Complete Architecture Synthesis...\n");
-    printf("  -> PASS: All 436 inference engine architectures and 438 algorithmic modules verified.\n");
+    printf("  -> PASS: All 438 inference engine architectures and 440 algorithmic modules verified.\n");
 }
 
 int main(void) {

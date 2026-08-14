@@ -7385,4 +7385,25 @@ bool tsfi_clawvm_crash_recovery_eval(
     tsfi_clawvm_crash_recovery_state_t *recovery_out
 );
 
+// OpenClaw (EuroMLSys 2026) Unified End-to-End Execution Pipeline (Harness + DeepSeek + Secondary Pass)
+typedef struct {
+    uint32_t prompt_tokens_assembled;
+    uint32_t generated_tokens_count;
+    uint32_t ast_nodes_synthesized;
+    float harness_overhead_us;
+    float forward_pass_latency_ms;
+    float secondary_pass_latency_us;
+    bool end_to_end_succeeded;
+    bool binary_wal_synced;
+} tsfi_openclaw_unified_pipeline_state_t;
+
+bool tsfi_openclaw_execute_pipeline(
+    const char *gguf_model_path,
+    const char *user_prompt,
+    uint32_t token_budget,
+    char *final_code_output,
+    size_t max_output_len,
+    tsfi_openclaw_unified_pipeline_state_t *pipeline_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
