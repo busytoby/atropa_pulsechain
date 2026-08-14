@@ -1707,6 +1707,18 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         tsfi_shen_cpu_inference_state_t shen_live;
         tsfi_shen_cpu_inference_eval(32, (uint32_t)gen_step, 16, &shen_live);
 
+        tsfi_shen_amx_tiling_state_t shen_tiling;
+        tsfi_shen_amx_tiling_eval(32, (uint32_t)dim, 64, &shen_tiling);
+
+        tsfi_shen_numa_stream_state_t shen_numa;
+        tsfi_shen_numa_stream_eval(16, 128, &shen_numa);
+
+        tsfi_shen_flashdecoding_cpu_state_t shen_flash;
+        tsfi_shen_flashdecoding_cpu_eval(32, 2048, 16, &shen_flash);
+
+        tsfi_shen_asymmetric_codesign_state_t shen_asym;
+        tsfi_shen_asymmetric_codesign_eval(x, dim, 4, &shen_asym);
+
         // Tang et al. (MobiCom 2023) Lut-NN Centroid Lookup Bypass
         tsfi_tang_lut_nn_state_t tang_live;
         tsfi_tang_lut_nn_eval(x, dim, 16, &tang_live);
@@ -1714,6 +1726,13 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         // VIA 6522 Yul Controller & Totient-Weight H-Bridge Transformer Delivery State Evaluation
         tsfi_via6522_hbridge_transformer_state_t trans_live;
         tsfi_via6522_hbridge_transformer_eval(prompt, x, dim, 953467954114363ULL, NULL, 0, &trans_live);
+
+        // ClawVM (EuroMLSys 2026) Harness Virtual Memory Layer & Validated Writeback
+        tsfi_clawvm_engine_state_t clawvm_live;
+        tsfi_clawvm_engine_eval(300, 16, (gen_step == target_gen_steps - 1), &clawvm_live);
+
+        tsfi_clawvm_writeback_state_t wb_live;
+        tsfi_clawvm_writeback_journal_eval("prompt_session_state", 1, 1, true, &wb_live);
 
         // Dynamic Double Crostics 4-State Grammar Automaton State Update
         grammar_state = (grammar_state + gen_step) % 4;

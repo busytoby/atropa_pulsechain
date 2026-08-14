@@ -6735,4 +6735,124 @@ bool tsfi_pda_speculative_branch_eval(
     tsfi_pda_speculative_branch_state_t *branch_out
 );
 
+// Shen et al. (Springer 2025) 1. AMX/AVX-512 Fused Vector-Matrix Tiling
+typedef struct {
+    uint32_t zmm_tiles_allocated;
+    uint32_t stride_bytes;
+    float amx_tile_efficiency_pct;
+    float tiling_speedup_x;
+} tsfi_shen_amx_tiling_state_t;
+
+bool tsfi_shen_amx_tiling_eval(
+    uint32_t dim_m,
+    uint32_t dim_k,
+    uint32_t dim_n,
+    tsfi_shen_amx_tiling_state_t *tiling_out
+);
+
+// Shen et al. (Springer 2025) 2. NUMA-Aware Disaggregated Cache Streaming
+typedef struct {
+    uint32_t numa_nodes_bound;
+    float sustained_bandwidth_gbps;
+    float l3_hit_rate_pct;
+    float numa_bus_saturation_pct;
+} tsfi_shen_numa_stream_state_t;
+
+bool tsfi_shen_numa_stream_eval(
+    uint32_t num_cores,
+    uint32_t kv_cache_mb,
+    tsfi_shen_numa_stream_state_t *stream_out
+);
+
+// Shen et al. (Springer 2025) 3. FlashDecoding-CPU Cross-Core Partitioning
+typedef struct {
+    uint32_t attention_heads_partitioned;
+    uint32_t sequence_chunks;
+    float reduction_tree_latency_us;
+    float flash_decoding_cpu_speedup_x;
+} tsfi_shen_flashdecoding_cpu_state_t;
+
+bool tsfi_shen_flashdecoding_cpu_eval(
+    uint32_t num_heads,
+    uint32_t seq_len,
+    uint32_t num_threads,
+    tsfi_shen_flashdecoding_cpu_state_t *flash_out
+);
+
+// Shen et al. (Springer 2025) 4. Weight-Only Int4/Int8 Asymmetric Co-Design
+typedef struct {
+    uint32_t weights_packed_bits;
+    float dequant_fused_mac_speedup_x;
+    float memory_energy_reduction_pct;
+    float asymmetric_snr_db;
+} tsfi_shen_asymmetric_codesign_state_t;
+
+bool tsfi_shen_asymmetric_codesign_eval(
+    const float *activations,
+    uint32_t dim,
+    uint32_t bit_width,
+    tsfi_shen_asymmetric_codesign_state_t *codesign_out
+);
+
+// ClawVM (EuroMLSys 2026) Typed Page & Representation Hierarchy (Section 3)
+typedef enum {
+    TSFI_CLAWVM_REP_FULL = 0,       // Verbatim text
+    TSFI_CLAWVM_REP_COMPRESSED = 1, // Token-reduced representation (e.g. LLMLingua-2)
+    TSFI_CLAWVM_REP_STRUCTURED = 2, // Typed fields satisfying invariants
+    TSFI_CLAWVM_REP_POINTER = 3     // Resolvable handle with metadata
+} tsfi_clawvm_rep_level_t;
+
+typedef enum {
+    TSFI_CLAWVM_PAGE_BOOTSTRAP = 0,
+    TSFI_CLAWVM_PAGE_CONSTRAINT = 1,
+    TSFI_CLAWVM_PAGE_PLAN = 2,
+    TSFI_CLAWVM_PAGE_PREFERENCE = 3,
+    TSFI_CLAWVM_PAGE_EVIDENCE = 4,
+    TSFI_CLAWVM_PAGE_CONVERSATION = 5
+} tsfi_clawvm_page_type_t;
+
+// ClawVM (EuroMLSys 2026) Harness Virtual Memory Engine State
+typedef struct {
+    uint32_t total_pages_managed;
+    uint32_t hard_pinned_pages;
+    uint32_t resident_pages;
+    uint32_t token_budget_used;
+    uint32_t token_budget_capacity;
+    float thrash_index;
+    uint32_t refetch_faults;
+    uint32_t duplicate_tool_faults;
+    uint32_t pinned_invariant_misses;
+    uint32_t bootstrap_faults;
+    uint32_t flush_miss_faults;
+    uint32_t staged_writebacks;
+    uint32_t committed_writebacks;
+    uint32_t rejected_destructive_ops;
+    float policy_decision_latency_us;
+} tsfi_clawvm_engine_state_t;
+
+bool tsfi_clawvm_engine_eval(
+    uint32_t prompt_token_budget,
+    uint32_t num_pages,
+    bool is_lifecycle_boundary,
+    tsfi_clawvm_engine_state_t *clawvm_out
+);
+
+// ClawVM (EuroMLSys 2026) Three-Phase Validated Writeback Journal Engine
+typedef struct {
+    uint32_t staged_entries;
+    uint32_t validated_entries;
+    uint32_t committed_entries;
+    uint32_t rejected_entries;
+    bool non_destructive_verified;
+    uint32_t wal_receipts_appended;
+} tsfi_clawvm_writeback_state_t;
+
+bool tsfi_clawvm_writeback_journal_eval(
+    const char *key,
+    uint32_t current_version,
+    uint32_t staged_version,
+    bool is_append_merge,
+    tsfi_clawvm_writeback_state_t *wb_out
+);
+
 #endif // TSFI_FASTER_LIGHTER_LLM_H
