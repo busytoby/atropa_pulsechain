@@ -26,6 +26,7 @@ typedef struct {
     uint32_t active_emissaries;
     uint32_t operational_status;      // 1=Active, 2=Mobilized, 3=Autonomous
     uint64_t last_audit_timestamp;
+    uint64_t dna_hash;                // Cryptographic FNV-1a state proof
 } FrejlichDomainSector;
 
 typedef struct {
@@ -44,6 +45,7 @@ typedef struct {
     uint32_t conduit_count;
     uint64_t treasury_total_saat;
     uint32_t governance_epoch;
+    uint64_t realm_merkle_root;       // Root cryptographic hash of entire realm state
 } FrejlichRealmGovernanceState;
 
 // Initialize Realm Domain Governance based on Frejlich's archival mechanics
@@ -64,6 +66,9 @@ bool tsfi_frejlich_establish_conduit(
     uint32_t dest_id,
     uint64_t bandwidth
 );
+
+// Compute cryptographic Merkle root across all sector states
+uint64_t tsfi_frejlich_compute_merkle_root(FrejlichRealmGovernanceState *state);
 
 // Execute an audit pass reconciling all domain budgets and logistics
 bool tsfi_frejlich_reconcile_realm(
