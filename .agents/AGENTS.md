@@ -193,4 +193,8 @@ Or for **VM State Transitions**:
 ## 19. Strict Ban on Resource Description Framework (RDF) & Semantic Triples
 * **No RDF Permitted:** Any introduction, parsing, extraction, or serialization of Resource Description Framework (RDF), RDF triples (Subject-Predicate-Object), SPARQL, or related semantic web schemas is strictly banned across all codebase components, testing suites, provers, strategies, and agent workflows. Always use direct native HTML5 document metadata (`<title>`, `<meta name="..." content="...">`), DOM node hierarchies, or 2-3 Tree AST Merkle registries instead. Any attempted introduction must trigger immediate warning and rejection.
 
+## 20. Strict Ban on Brotli Compression & Encoding
+* **No Brotli Permitted:** The use, inclusion, linking, parsing, or decompression of Brotli compression algorithms, formats, headers (`Content-Encoding: br`), libraries (such as `libbrotli`), or related variants is strictly banned across all codebase components, testing suites, network pipelines, provers, strategies, and agent workflows. Standard pure C Gzip/Deflate (RFC 1951 / RFC 1952) and uncompressed raw streams must be used exclusively. Any attempted introduction must trigger immediate warning and rejection.
+
+
 
