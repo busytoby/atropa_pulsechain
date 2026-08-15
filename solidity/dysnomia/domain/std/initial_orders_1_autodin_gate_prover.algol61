@@ -1,0 +1,128 @@
+begin
+  comment Standard Algol60/61 Domain Prover: EDSAC Initial Orders 1 & AUTODIN Nonce Verification Gate;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Asserts that EDSAC Initial Orders 1 speculative prefetch gate requires formal AUTODIN nonce certification before opcode decoding;
+
+  integer procedure verify_initial_orders_1_autodin_gate(
+    cycle_index_n,
+    current_nonce,
+    previous_nonce,
+    autodin_validation_receipt,
+    auth_secret,
+    auth_chi,
+    prohibited_opcode_mask,
+    instruction_opcode
+  );
+  value cycle_index_n, current_nonce, previous_nonce, autodin_validation_receipt, auth_secret, auth_chi, prohibited_opcode_mask, instruction_opcode;
+  integer cycle_index_n, current_nonce, previous_nonce, autodin_validation_receipt, auth_secret, auth_chi, prohibited_opcode_mask, instruction_opcode;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Initial Orders 1 Gate Open: AUTODIN Certified & Permitted Opcode)
+            1 = AUTODIN_PRE_REQUISITE_FAILED (Uncertified or forged nonce receipt)
+            2 = PROHIBITED_OPCODE_REJECT (Instruction opcode prohibited in Initial Orders 1)
+            3 = TEMPORAL_NONCE_DERIVATION_ERROR (Broken ln2/lne recurrence step);
+
+    integer motzkin_prime;
+    integer ln2_over_lne_fixed_scaled;
+    integer pow2_k;
+    integer expected_nonce;
+    integer base_val, exp_val, receipt_acc, expected_receipt;
+    integer opcode_bit_check;
+
+    motzkin_prime := 953467954;
+    ln2_over_lne_fixed_scaled := 693;
+    pow2_k := 32; comment 2^5 = 32;
+
+    comment Pre-requisite 1: AUTODIN Nonce Derivation & Recurrence Check;
+    if cycle_index_n > 1 then
+      begin
+        expected_nonce := ((ln2_over_lne_fixed_scaled * previous_nonce) / 1000) + (((pow2_k - 1) * previous_nonce) / pow2_k) + 1;
+        if expected_nonce >= motzkin_prime then
+          expected_nonce := expected_nonce - motzkin_prime;
+
+        if current_nonce != expected_nonce then
+          begin
+            verify_initial_orders_1_autodin_gate := 3;
+            go to exit_gate;
+          end
+      end;
+
+    comment Pre-requisite 2: AUTODIN Cryptographic Receipt Verification (Nonce^Secret + Chi) pmod MotzkinPrime;
+    base_val := current_nonce;
+    exp_val := auth_secret;
+    receipt_acc := 1;
+
+    for exp_val := exp_val step -1 until 1 do
+      begin
+        receipt_acc := (receipt_acc * base_val);
+        if receipt_acc >= motzkin_prime then
+          receipt_acc := receipt_acc - ((receipt_acc / motzkin_prime) * motzkin_prime);
+      end;
+
+    expected_receipt := receipt_acc + auth_chi;
+    if expected_receipt >= motzkin_prime then
+      expected_receipt := expected_receipt - ((expected_receipt / motzkin_prime) * motzkin_prime);
+
+    if autodin_validation_receipt != expected_receipt then
+      begin
+        verify_initial_orders_1_autodin_gate := 1;
+        go to exit_gate;
+      end;
+
+    comment Stage 3: EDSAC Initial Orders 1 Instruction Opcode Bitmask Audit;
+    comment Evaluate prohibited opcodes bitmask;
+    if instruction_opcode >= 65 and instruction_opcode <= 90 then
+      begin
+        opcode_bit_check := instruction_opcode - 65;
+        if ((prohibited_opcode_mask / (2^opcode_bit_check)) - (((prohibited_opcode_mask / (2^opcode_bit_check)) / 2) * 2)) = 1 then
+          verify_initial_orders_1_autodin_gate := 2
+        else
+          verify_initial_orders_1_autodin_gate := 0
+      end
+    else
+      verify_initial_orders_1_autodin_gate := 2;
+
+  exit_gate:
+  end;
+
+  comment Domain Input Telemetry: Initial Orders 1 Entry Pass with Valid AUTODIN Receipt;
+  integer target_cycle;
+  integer prev_nonce, curr_nonce;
+  integer secret, chi;
+  integer receipt;
+  integer mask, test_opcode;
+  integer gate_ruling;
+
+  target_cycle := 2;
+  prev_nonce   := 100000;
+  curr_nonce   := ((693 * 100000) / 1000) + ((31 * 100000) / 32) + 1;
+  secret       := 3;
+  chi          := 17;
+
+  comment Compute valid receipt;
+  receipt := (curr_nonce * curr_nonce);
+  receipt := receipt - ((receipt / 953467954) * 953467954);
+  receipt := (receipt * curr_nonce);
+  receipt := receipt - ((receipt / 953467954) * 953467954);
+  receipt := receipt + chi;
+  receipt := receipt - ((receipt / 953467954) * 953467954);
+
+  mask        := 8388608; comment Prohibit 'X' (bit 23);
+  test_opcode := 65;      comment Opcode 'A' (Add, permitted);
+
+  gate_ruling := verify_initial_orders_1_autodin_gate(
+    target_cycle,
+    curr_nonce,
+    prev_nonce,
+    receipt,
+    secret,
+    chi,
+    mask,
+    test_opcode
+  );
+
+  if gate_ruling = 0 then
+    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (Initial Orders 1 Gate Open: AUTODIN Certified Nonce)\n")
+  else
+    outstring(1, "RULING: UNRESOLVED_CONTINUANCE (Initial Orders 1 Reject: Halt CPU)\n")
+end
