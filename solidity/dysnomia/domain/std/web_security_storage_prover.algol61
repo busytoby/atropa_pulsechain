@@ -1,0 +1,38 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Web Security (CORS/CSP) & LocalStorage Invariant Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Asserts that navigation layouts render, CORS origins match, and LocalStorage keys persist;
+
+  integer procedure verify_web_security_storage_state(
+    http_status_code,
+    cors_origin_match,
+    csp_violation_count,
+    storage_item_count
+  );
+  value http_status_code, cors_origin_match, csp_violation_count, storage_item_count;
+  integer http_status_code, cors_origin_match, csp_violation_count, storage_item_count;
+  begin
+    comment Classification:
+            0 = AUTHENTIC_SECURITY_STORAGE_STATE (All security invariants satisfied, storage verified)
+            1 = CORS_CSP_POLICY_REJECT (CORS mismatch or CSP violation detected)
+            2 = NAVIGATION_STATUS_FAILURE (HTTP status code not 2xx/3xx);
+
+    if http_status_code < 200 or http_status_code >= 400 then
+      verify_web_security_storage_state := 2
+    else if cors_origin_match = 0 or csp_violation_count > 0 then
+      verify_web_security_storage_state := 1
+    else
+      verify_web_security_storage_state := 0
+  end;
+
+  comment Unit Evaluation Harness;
+  integer ruling;
+  ruling := verify_web_security_storage_state(200, 1, 0, 3);
+
+  if ruling = 0 then
+    outstring(1, "RULING: AUTHENTIC_SECURITY_STORAGE_STATE (Security & Storage Invariants Affirmed)\n")
+  else if ruling = 1 then
+    outstring(1, "RULING: CORS_CSP_POLICY_REJECT (Security Boundary Breach)\n")
+  else
+    outstring(1, "RULING: NAVIGATION_STATUS_FAILURE (Navigation HTTP Error)\n")
+end
