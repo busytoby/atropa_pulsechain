@@ -13,15 +13,15 @@
 #include "../inc/tsfi_chancery_docket.h"
 
 // Mirroring solidity/dysnomia/domain/std/tls13_media_rdf_dnd_prover.algol61
-static int verify_tls13_media_rdf_dnd_state(int tls13_ticket_found_flag, int media_query_matched_flag, int rdf_triple_count, int datatransfer_item_count) {
+static int verify_tls13_media_html_dnd_state(int tls13_ticket_found_flag, int media_query_matched_flag, int html_meta_count, int datatransfer_item_count) {
     if (tls13_ticket_found_flag == 0 || media_query_matched_flag == 0) return 1; // TLS13_OR_MEDIA_DEFECT_REJECT
-    if (rdf_triple_count == 0 || datatransfer_item_count == 0) return 2; // RDF_OR_DND_DEFECT_REJECT
+    if (html_meta_count == 0 || datatransfer_item_count == 0) return 2; // HTML_OR_DND_DEFECT_REJECT
     return 0; // AUTHENTIC_EXTENDED_WEB_STATE
 }
 
 int main(void) {
     printf("====================================================================\n");
-    printf("TEST SUITE: TLS 1.3 0-RTT PSK, MEDIA QUERIES, RDF TRIPLES & DND\n");
+    printf("TEST SUITE: TLS 1.3 0-RTT PSK, MEDIA QUERIES, HTML5 META & DND\n");
     printf("====================================================================\n\n");
 
     // -------------------------------------------------------------------------
@@ -57,27 +57,31 @@ int main(void) {
     printf("   ✓ Media Query Breakpoint Logic Formally Evaluated (Responsive Match: YES)\n");
 
     // -------------------------------------------------------------------------
-    // 3. Test JSON-LD & Semantic Microdata RDF Triples Extractor
+    // 3. Test Native HTML5 Document Metadata Extractor
     // -------------------------------------------------------------------------
-    printf("\n3. Testing JSON-LD Semantic Web RDF Triples Extractor...\n");
-    TsfiRdfGraph rdf;
-    tsfi_rdf_graph_init(&rdf);
+    printf("\n3. Testing Native HTML5 Document Metadata & Title Extractor...\n");
+    TsfiHtmlDocumentMetadata meta;
+    tsfi_html_metadata_init(&meta);
 
-    const char *jsonld_sample =
-        "{\n"
-        "  \"@context\": \"https://schema.org\",\n"
-        "  \"@type\": \"FinancialProduct\",\n"
-        "  \"name\": \"Atropa PulseChain Liquidity Vault\"\n"
-        "}\n";
+    const char *html_doc =
+        "<html>\n"
+        "  <head>\n"
+        "    <title>Atropa PulseChain Node Presenter</title>\n"
+        "    <meta name=\"description\" content=\"Rooted Web Browser Vulkan Pipeline\">\n"
+        "    <meta name=\"author\" content=\"Dysnomia Core\">\n"
+        "  </head>\n"
+        "  <body><div>Hello World</div></body>\n"
+        "</html>\n";
 
-    assert(tsfi_rdf_extract_jsonld(&rdf, jsonld_sample, "urn:pulsechain:vault"));
-    assert(rdf.count == 2);
+    assert(tsfi_html_metadata_extract(&meta, html_doc));
+    assert(meta.meta_count == 2);
+    assert(strcmp(meta.document_title, "Atropa PulseChain Node Presenter") == 0);
 
-    const char *rdf_name = tsfi_rdf_query_predicate(&rdf, "schema:name");
-    assert(rdf_name != NULL && strcmp(rdf_name, "Atropa PulseChain Liquidity Vault") == 0);
-    const char *rdf_type = tsfi_rdf_query_predicate(&rdf, "rdf:type");
-    assert(rdf_type != NULL && strcmp(rdf_type, "FinancialProduct") == 0);
-    printf("   ✓ Extracted %d RDF Triples (Type: %s, Name: %s)\n", rdf.count, rdf_type, rdf_name);
+    const char *desc = tsfi_html_metadata_get(&meta, "description");
+    assert(desc != NULL && strcmp(desc, "Rooted Web Browser Vulkan Pipeline") == 0);
+    const char *author = tsfi_html_metadata_get(&meta, "author");
+    assert(author != NULL && strcmp(author, "Dysnomia Core") == 0);
+    printf("   ✓ Extracted Title: \"%s\" & %d Meta Tags (Description: \"%s\")\n", meta.document_title, meta.meta_count, desc);
 
     // -------------------------------------------------------------------------
     // 4. Test DOM Drag-and-Drop DataTransfer API
@@ -100,23 +104,23 @@ int main(void) {
     printf("\n5. Executing COBOL Strategy: tls13_media_rdf_dnd.strategy...\n");
     TSFiStrategyVM vm;
     TSFiStrategyReceipt receipt;
-    int rc = tsfi_strategy_load_and_run("tls13_media_rdf_dnd.strategy", 1, 1, rdf.count, 0, &vm, &receipt);
+    int rc = tsfi_strategy_load_and_run("tls13_media_rdf_dnd.strategy", 1, 1, meta.meta_count, 0, &vm, &receipt);
     assert(rc == 0);
     assert(vm.registers[3] == 9999);
     printf("   ✓ Strategy Execution Confirmed: Platform Score = %d\n", vm.registers[3]);
 
     printf("\n6. Executing ALGOL 61 Prover: tls13_media_rdf_dnd_prover.algol61...\n");
-    int ruling_auth = verify_tls13_media_rdf_dnd_state(1, 1, rdf.count, dt.item_count);
+    int ruling_auth = verify_tls13_media_html_dnd_state(1, 1, meta.meta_count, dt.item_count);
     assert(ruling_auth == 0);
     printf("   ✓ Ruling: AUTHENTIC_EXTENDED_WEB_STATE (ruling = %d)\n", ruling_auth);
 
-    int ruling_tls_fail = verify_tls13_media_rdf_dnd_state(0, 1, rdf.count, dt.item_count);
+    int ruling_tls_fail = verify_tls13_media_html_dnd_state(0, 1, meta.meta_count, dt.item_count);
     assert(ruling_tls_fail == 1);
     printf("   ✓ Session Ticket Reject Ruling: TLS13_OR_MEDIA_DEFECT_REJECT (ruling = %d)\n", ruling_tls_fail);
 
-    int ruling_rdf_fail = verify_tls13_media_rdf_dnd_state(1, 1, 0, dt.item_count);
-    assert(ruling_rdf_fail == 2);
-    printf("   ✓ RDF Triples Reject Ruling: RDF_OR_DND_DEFECT_REJECT (ruling = %d)\n", ruling_rdf_fail);
+    int ruling_meta_fail = verify_tls13_media_html_dnd_state(1, 1, 0, dt.item_count);
+    assert(ruling_meta_fail == 2);
+    printf("   ✓ Metadata Reject Ruling: HTML_OR_DND_DEFECT_REJECT (ruling = %d)\n", ruling_meta_fail);
 
     // -------------------------------------------------------------------------
     // 6. File Resolution on Chancery Docket
@@ -127,7 +131,7 @@ int main(void) {
 
     uint32_t doc_id = tsfi_chancery_docket_file(
         &docket,
-        "TLS 1.3 0-RTT PSK, Media Queries, JSON-LD RDF & DataTransfer Formally Proven",
+        "TLS 1.3 0-RTT PSK, Media Queries, HTML5 Document Metadata & DataTransfer Formally Proven",
         "solidity/dysnomia/domain/std/tls13_media_rdf_dnd_prover.algol61",
         2026
     );
@@ -142,7 +146,7 @@ int main(void) {
 
     printf("\n%s\n", audit_report);
     printf("====================================================================\n");
-    printf("TLS 1.3, MEDIA QUERIES, RDF & DND TEST PASSED & SEALED ON CHANCERY\n");
+    printf("TLS 1.3, MEDIA QUERIES, HTML5 META & DND TEST PASSED & SEALED ON CHANCERY\n");
     printf("====================================================================\n");
 
     return 0;

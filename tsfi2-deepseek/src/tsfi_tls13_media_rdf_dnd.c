@@ -84,57 +84,65 @@ bool tsfi_media_query_eval(const TsfiMediaQuery *mq, int viewport_w, int viewpor
 }
 
 // -----------------------------------------------------------------------------
-// 3. JSON-LD & Semantic Microdata RDF Triples Extractor
+// 3. Native HTML5 Meta Tags & Document Title Key-Value Extractor
 // -----------------------------------------------------------------------------
-void tsfi_rdf_graph_init(TsfiRdfGraph *graph) {
-    if (!graph) return;
-    memset(graph, 0, sizeof(TsfiRdfGraph));
+void tsfi_html_metadata_init(TsfiHtmlDocumentMetadata *meta) {
+    if (!meta) return;
+    memset(meta, 0, sizeof(TsfiHtmlDocumentMetadata));
 }
 
-bool tsfi_rdf_extract_jsonld(TsfiRdfGraph *graph, const char *jsonld_str, const char *default_subject) {
-    if (!graph || !jsonld_str || graph->count >= 32) return false;
+bool tsfi_html_metadata_extract(TsfiHtmlDocumentMetadata *meta, const char *html_str) {
+    if (!meta || !html_str) return false;
 
-    const char *subj = default_subject ? default_subject : "urn:dysnomia:node";
-
-    // Simple schema extraction for @type, name, description
-    const char *name_pos = strstr(jsonld_str, "\"name\":");
-    if (name_pos && graph->count < 32) {
-        name_pos += 7;
-        while (*name_pos && (*name_pos == ' ' || *name_pos == '\"')) name_pos++;
-        char val[128] = {0};
-        int vi = 0;
-        while (*name_pos && *name_pos != '\"' && *name_pos != ',' && vi < 127) {
-            val[vi++] = *name_pos++;
+    // Extract <title>...</title>
+    const char *t_start = strstr(html_str, "<title>");
+    if (t_start) {
+        t_start += 7;
+        const char *t_end = strstr(t_start, "</title>");
+        if (t_end) {
+            size_t t_len = (size_t)(t_end - t_start);
+            if (t_len >= sizeof(meta->document_title)) t_len = sizeof(meta->document_title) - 1;
+            strncpy(meta->document_title, t_start, t_len);
+            meta->document_title[t_len] = '\0';
         }
-        TsfiRdfTriple *t = &graph->triples[graph->count++];
-        strncpy(t->subject, subj, sizeof(t->subject) - 1);
-        strncpy(t->predicate, "schema:name", sizeof(t->predicate) - 1);
-        strncpy(t->object, val, sizeof(t->object) - 1);
     }
 
-    const char *type_pos = strstr(jsonld_str, "\"@type\":");
-    if (type_pos && graph->count < 32) {
-        type_pos += 8;
-        while (*type_pos && (*type_pos == ' ' || *type_pos == '\"')) type_pos++;
-        char val[128] = {0};
-        int vi = 0;
-        while (*type_pos && *type_pos != '\"' && *type_pos != ',' && vi < 127) {
-            val[vi++] = *type_pos++;
+    // Extract <meta name="..." content="...">
+    const char *m_pos = html_str;
+    while ((m_pos = strstr(m_pos, "<meta ")) != NULL && meta->meta_count < 16) {
+        m_pos += 6;
+        const char *name_pos = strstr(m_pos, "name=\"");
+        const char *content_pos = strstr(m_pos, "content=\"");
+        if (name_pos && content_pos) {
+            name_pos += 6;
+            char m_name[64] = {0};
+            int ni = 0;
+            while (*name_pos && *name_pos != '\"' && ni < 63) {
+                m_name[ni++] = *name_pos++;
+            }
+
+            content_pos += 9;
+            char m_content[256] = {0};
+            int ci = 0;
+            while (*content_pos && *content_pos != '\"' && ci < 255) {
+                m_content[ci++] = *content_pos++;
+            }
+
+            TsfiHtmlMetaTag *tag = &meta->meta_tags[meta->meta_count++];
+            snprintf(tag->name, sizeof(tag->name), "%s", m_name);
+            snprintf(tag->content, sizeof(tag->content), "%s", m_content);
+
         }
-        TsfiRdfTriple *t = &graph->triples[graph->count++];
-        strncpy(t->subject, subj, sizeof(t->subject) - 1);
-        strncpy(t->predicate, "rdf:type", sizeof(t->predicate) - 1);
-        strncpy(t->object, val, sizeof(t->object) - 1);
     }
 
-    return (graph->count > 0);
+    return (strlen(meta->document_title) > 0 || meta->meta_count > 0);
 }
 
-const char* tsfi_rdf_query_predicate(const TsfiRdfGraph *graph, const char *predicate) {
-    if (!graph || !predicate) return NULL;
-    for (int i = 0; i < graph->count; i++) {
-        if (strcmp(graph->triples[i].predicate, predicate) == 0) {
-            return graph->triples[i].object;
+const char* tsfi_html_metadata_get(const TsfiHtmlDocumentMetadata *meta, const char *name) {
+    if (!meta || !name) return NULL;
+    for (int i = 0; i < meta->meta_count; i++) {
+        if (strcasecmp(meta->meta_tags[i].name, name) == 0) {
+            return meta->meta_tags[i].content;
         }
     }
     return NULL;

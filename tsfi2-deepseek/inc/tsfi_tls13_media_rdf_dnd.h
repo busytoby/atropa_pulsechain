@@ -1,5 +1,5 @@
-#ifndef TSFI_TLS13_MEDIA_RDF_DND_H
-#define TSFI_TLS13_MEDIA_RDF_DND_H
+#ifndef TSFI_TLS13_MEDIA_HTML_DND_H
+#define TSFI_TLS13_MEDIA_HTML_DND_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -42,22 +42,22 @@ bool tsfi_media_query_parse(TsfiMediaQuery *mq, const char *query_str);
 bool tsfi_media_query_eval(const TsfiMediaQuery *mq, int viewport_w, int viewport_h, bool is_dark);
 
 // -----------------------------------------------------------------------------
-// 3. JSON-LD & Semantic Microdata RDF Triples Extractor
+// 3. Native HTML5 Meta Tags & Document Title Key-Value Extractor
 // -----------------------------------------------------------------------------
 typedef struct {
-    char subject[128];
-    char predicate[64];
-    char object[256];
-} TsfiRdfTriple;
+    char name[64];
+    char content[256];
+} TsfiHtmlMetaTag;
 
 typedef struct {
-    TsfiRdfTriple triples[32];
-    int count;
-} TsfiRdfGraph;
+    char document_title[128];
+    TsfiHtmlMetaTag meta_tags[16];
+    int meta_count;
+} TsfiHtmlDocumentMetadata;
 
-void tsfi_rdf_graph_init(TsfiRdfGraph *graph);
-bool tsfi_rdf_extract_jsonld(TsfiRdfGraph *graph, const char *jsonld_str, const char *default_subject);
-const char* tsfi_rdf_query_predicate(const TsfiRdfGraph *graph, const char *predicate);
+void tsfi_html_metadata_init(TsfiHtmlDocumentMetadata *meta);
+bool tsfi_html_metadata_extract(TsfiHtmlDocumentMetadata *meta, const char *html_str);
+const char* tsfi_html_metadata_get(const TsfiHtmlDocumentMetadata *meta, const char *name);
 
 // -----------------------------------------------------------------------------
 // 4. DOM Drag-and-Drop & Clipboard DataTransfer API
@@ -77,4 +77,4 @@ void tsfi_datatransfer_init(TsfiDataTransfer *dt);
 bool tsfi_datatransfer_set_data(TsfiDataTransfer *dt, const char *mime, const char *data);
 const char* tsfi_datatransfer_get_data(const TsfiDataTransfer *dt, const char *mime);
 
-#endif // TSFI_TLS13_MEDIA_RDF_DND_H
+#endif // TSFI_TLS13_MEDIA_HTML_DND_H
