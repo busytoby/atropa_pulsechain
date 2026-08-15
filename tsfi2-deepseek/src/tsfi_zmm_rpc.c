@@ -14,7 +14,9 @@
 #include "lau_memory.h"
 #include "tsfi_block_monitor.h"
 #include "tsfi_mainframe_computerworld.h"
+#include "tsfi_mariner_fabric_dispatch.h"
 #include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -632,9 +634,11 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
         g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "input.mouse_button", "31");
         g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "input.keyboard", "32");
         g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "tariffs_query", "50");
+        g_rpc_tst_router = tsfi_tst_insert(g_rpc_tst_router, "mariner.dispatch_vector", "79");
     }
 
     char method_name[128];
+
     extract_json_method(json_in, method_name, sizeof(method_name));
     int method_type = tsfi_tst_resolve_rpc(g_rpc_tst_router, method_name);
     if (method_type == 0) return 0;
@@ -1251,6 +1255,34 @@ int tsfi_zmm_rpc_dispatch(TsfiZmmVmState *state, const char *json_in, char *outp
                  run.test_suite_name, run.assertions_run, run.passes, run.assertions_failed, (unsigned long)run.total_latency_ns, report, id);
         return 1;
     }
+    if (method_type == 79) { // mariner.dispatch_vector
+        int channel_id = extract_json_int(min_ptr, "\"channel_id\"", 0);
+        int element_count = extract_json_int(min_ptr, "\"element_count\"", 64);
+        int k_exp = extract_json_int(min_ptr, "\"k_exponent\"", 8);
+
+        static MarinerFabricDispatcher g_rpc_mariner_disp;
+        tsfi_mariner_fabric_init(&g_rpc_mariner_disp);
+
+
+        float coords[128];
+        for (int i = 0; i < 128; i++) coords[i] = (float)i * 0.1f;
+
+        tsfi_mariner_fabric_stage_vectors(&g_rpc_mariner_disp, (uint32_t)channel_id, coords, coords, coords, coords, (size_t)element_count);
+
+        uint64_t exec_proof = 0;
+        bool ok = tsfi_mariner_fabric_execute_simd(&g_rpc_mariner_disp, (uint32_t)k_exp, &exec_proof);
+
+        snprintf(output_buf, out_max,
+                 "{\"jsonrpc\": \"2.0\", \"result\": {"
+                 "\"status\": \"%s\", \"channel_id\": %d, \"vectors_dispatched\": %d, \"execution_proof\": \"0x%016lx\""
+                 "}, \"id\": %d}\n",
+                 ok ? "success" : "failed", channel_id, element_count, (unsigned long)exec_proof, id);
+        return 1;
+    }
+
+
+
     snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"error\": \"Method not found\", \"id\": %d}\n", id);
     return 1;
 }
+

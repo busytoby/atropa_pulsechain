@@ -531,6 +531,9 @@ bin/test_mariner_bio_zmm_binding: tests/test_mariner_bio_zmm_binding.c src/tsfi_
 bin/test_mariner_fabric_dispatch: tests/test_mariner_fabric_dispatch.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_mariner_rpc_dispatch: tests/test_mariner_rpc_dispatch.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
