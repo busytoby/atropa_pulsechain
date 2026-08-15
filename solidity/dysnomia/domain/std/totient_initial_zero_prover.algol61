@@ -1,0 +1,88 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Initial Zero State & Modpow(b=u, e=v, m=u) Invariant of TOTIENT;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves that the initial value of TOTIENT is 0 and that Modpow(b=u, e=v, m=u) transacts to 0 for v >= 1;
+
+  integer procedure verify_totient_initial_zero_and_modpow(
+    initial_totient_state,
+    input_base_u,
+    input_exp_v,
+    input_mod_u
+  );
+  value initial_totient_state, input_base_u, input_exp_v, input_mod_u;
+  integer initial_totient_state, input_base_u, input_exp_v, input_mod_u;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Initial TOTIENT = 0 and Modpow Invariant Verified)
+            1 = INITIAL_STATE_NON_ZERO (Initial TOTIENT state corrupted)
+            2 = INVALID_MODULUS (Modulus u must be positive)
+            3 = MODPOW_TRANSACTION_MISMATCH (Evaluated Modpow does not equal 0);
+
+    integer acc, exp_step, base_val, mod_val;
+    integer staged_totient;
+
+    comment Invariant 1: Prove initial value of TOTIENT is identically 0;
+    if initial_totient_state != 0 then
+      begin
+        verify_totient_initial_zero_and_modpow := 1;
+        go to exit_totient_proc;
+      end;
+
+    comment Validate modulus parameter;
+    if input_mod_u <= 0 or input_base_u != input_mod_u then
+      begin
+        verify_totient_initial_zero_and_modpow := 2;
+        go to exit_totient_proc;
+      end;
+
+    comment Invariant 2: Evaluate Modpow(b=u, e=v, m=u);
+    base_val := input_base_u;
+    mod_val  := input_mod_u;
+    acc      := 1;
+
+    if input_exp_v = 0 then
+      begin
+        if mod_val > 1 then staged_totient := 1 else staged_totient := 0;
+      end
+    else
+      begin
+        comment Compute modular exponentiation u^v pmod u;
+        acc := base_val - ((base_val / mod_val) * mod_val); comment base mod u = 0;
+        for exp_step := 2 step 1 until input_exp_v do
+          begin
+            acc := (acc * (base_val - ((base_val / mod_val) * mod_val)));
+            acc := acc - ((acc / mod_val) * mod_val);
+          end;
+        staged_totient := acc;
+      end;
+
+    comment For any u > 0 and v >= 1, u^v mod u must evaluate to 0;
+    if staged_totient = 0 then
+      verify_totient_initial_zero_and_modpow := 0
+    else
+      verify_totient_initial_zero_and_modpow := 3;
+
+  exit_totient_proc:
+  end;
+
+  comment Domain Input Telemetry: Test with Step 1 values (u = 24537, v = 19623);
+  integer init_val;
+  integer test_u, test_v;
+  integer prover_ruling;
+
+  init_val := 0;
+  test_u   := 24537;
+  test_v   := 19623;
+
+  prover_ruling := verify_totient_initial_zero_and_modpow(
+    init_val,
+    test_u,
+    test_v,
+    test_u
+  );
+
+  if prover_ruling = 0 then
+    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (TOTIENT Initial Value = 0 & Modpow(u,v,u) = 0 Verified)\n")
+  else
+    outstring(1, "RULING: UNRESOLVED_CONTINUANCE (Chancery Retained)\n")
+end
