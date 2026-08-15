@@ -567,6 +567,10 @@ bin/test_compound_prover_strategy: tests/test_compound_prover_strategy.c src/tsf
 bin/test_web_media_transport: tests/test_web_media_transport.c src/tsfi_web_media_transport.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lz
 
+bin/test_webgl_audio_js_doh: tests/test_webgl_audio_js_doh.c src/tsfi_webgl_audio_js_doh.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+
 
 
 
