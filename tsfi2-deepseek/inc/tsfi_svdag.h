@@ -136,4 +136,7 @@ int tsfi_svdag_compile_zorse(TSFiHelmholtzSVDAG *dag, const char *zorse_source);
 // Image to SVDAG Voxelizer
 int tsfi_svdag_voxelize_image(TSFiHelmholtzSVDAG *dag, const uint32_t *pixels, int w, int h, float threshold);
 
+// Project Mariner Phase 2: Ingests transduced biological receptors into the Helmholtz SVDAG Voxel Fabric
+int tsfi_svdag_ingest_biological_receptor(TSFiHelmholtzSVDAG *dag, const void *bio_state_ptr);
+
 #endif // TSFI_SVDAG_H

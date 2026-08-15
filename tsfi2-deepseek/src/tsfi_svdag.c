@@ -443,3 +443,44 @@ int tsfi_svdag_voxelize_image(TSFiHelmholtzSVDAG *dag, const uint32_t *pixels, i
     return 0;
 }
 
+#include "tsfi_mariner_biological_receptor.h"
+
+int tsfi_svdag_ingest_biological_receptor(TSFiHelmholtzSVDAG *dag, const void *bio_state_ptr) {
+    if (!dag || !bio_state_ptr) return -1;
+
+    const MarinerBiologicalState *bio = (const MarinerBiologicalState *)bio_state_ptr;
+    if (!bio->is_receptor_bound || bio->node_count == 0) return -2;
+
+    size_t count = 0;
+    for (uint32_t i = 0; i < bio->node_count && count < dag->stream_capacity; i++) {
+        const MarinerReceptorNode *node = &bio->nodes[i];
+
+        // Map continuous 3D receptor coordinates to discrete 128x128x128 SVDAG voxel indices
+        int vx = (int)((node->x + 15.0f) * (127.0f / 30.0f));
+        int vy = (int)((node->y + 15.0f) * (127.0f / 30.0f));
+        int vz = (int)((node->z + 15.0f) * (127.0f / 30.0f));
+
+        if (vx < 0) { vx = 0; }
+        if (vx > 127) { vx = 127; }
+        if (vy < 0) { vy = 0; }
+        if (vy > 127) { vy = 127; }
+        if (vz < 0) { vz = 0; }
+        if (vz > 127) { vz = 127; }
+
+
+        uint32_t spatial_idx = (uint32_t)(vz * 128 * 128 + vy * 128 + vx);
+        float intensity = 0.5f + (node->charge_potential * 0.5f); // Normalized [0, 1]
+        if (intensity < 0.1f) intensity = 0.1f;
+        if (intensity > 1.0f) intensity = 1.0f;
+
+        dag->intensity_stream[count] = intensity;
+        dag->phase_stream[count] = (float)node->residue_code / 255.0f;
+        dag->index_stream[count] = spatial_idx;
+        count++;
+    }
+
+    dag->stream_size = count;
+    return 0;
+}
+
+
