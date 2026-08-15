@@ -582,6 +582,10 @@ bin/test_svg_xpath_tex_worker: tests/test_svg_xpath_tex_worker.c src/tsfi_svg_xp
 bin/test_tls13_media_rdf_dnd: tests/test_tls13_media_rdf_dnd.c src/tsfi_tls13_media_rdf_dnd.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_compositor_cascade_search_url: tests/test_compositor_cascade_search_url.c src/tsfi_compositor_cascade_search_url.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 
