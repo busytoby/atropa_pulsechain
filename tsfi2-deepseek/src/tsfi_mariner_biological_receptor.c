@@ -151,3 +151,46 @@ bool tsfi_mariner_bio_verify_binding(
     return (proof != 0);
 }
 
+bool tsfi_mariner_bio_save_dat_bin(
+    const MarinerBiologicalState *state,
+    const char *filepath
+) {
+    if (!state || !filepath) return false;
+
+    // Enforce Rule 13: strictly only .dat.bin extensions permitted
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
+        return false;
+    }
+
+    FILE *f = fopen(filepath, "wb");
+    if (!f) return false;
+
+    size_t written = fwrite(state, sizeof(MarinerBiologicalState), 1, f);
+    fclose(f);
+
+    return (written == 1);
+}
+
+bool tsfi_mariner_bio_load_dat_bin(
+    MarinerBiologicalState *state,
+    const char *filepath
+) {
+    if (!state || !filepath) return false;
+
+    // Enforce Rule 13: strictly only .dat.bin extensions permitted
+    size_t len = strlen(filepath);
+    if (len < 8 || strcmp(filepath + len - 8, ".dat.bin") != 0) {
+        return false;
+    }
+
+    FILE *f = fopen(filepath, "rb");
+    if (!f) return false;
+
+    size_t read_bytes = fread(state, sizeof(MarinerBiologicalState), 1, f);
+    fclose(f);
+
+    return (read_bytes == 1);
+}
+
+

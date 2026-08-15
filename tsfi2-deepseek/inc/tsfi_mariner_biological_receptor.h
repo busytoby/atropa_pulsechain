@@ -60,5 +60,17 @@ bool tsfi_mariner_bio_verify_binding(
     uint64_t *out_binding_proof
 );
 
+// Enforces Rule 13: Binary .dat.bin Persistence for Biological State Slices
+bool tsfi_mariner_bio_save_dat_bin(
+    const MarinerBiologicalState *state,
+    const char *filepath
+);
+
+bool tsfi_mariner_bio_load_dat_bin(
+    MarinerBiologicalState *state,
+    const char *filepath
+);
+
 #endif // TSFI_MARINER_BIOLOGICAL_RECEPTOR_H
+
 
