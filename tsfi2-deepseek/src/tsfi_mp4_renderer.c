@@ -179,6 +179,47 @@ static void draw_3d_volumetric_sphere(uint32_t *fb, float *zbuf, int w, int h,
     }
 }
 
+// -----------------------------------------------------------------------------
+// 3D Volumetric Cylinder Mesh Rasterizer (Pixar USDA Prim)
+// -----------------------------------------------------------------------------
+static void draw_3d_volumetric_cylinder(uint32_t *fb, float *zbuf, int w, int h,
+                                        float cx, float cy, float cz, float radius, float length,
+                                        float rot_x, float rot_y, float cam_z,
+                                        uint32_t base_color, float lx, float ly, float lz) {
+    int segs = 16;
+    int p0_x = 0, p0_y = 0, p1_x = 0, p1_y = 0, first_x0 = 0, first_y0 = 0, first_x1 = 0, first_y1 = 0;
+    float p0_z = 0, p1_z = 0, first_z0 = 0, first_z1 = 0;
+
+    for (int s = 0; s < segs; s++) {
+        float theta = ((float)s / (float)segs) * 2.0f * (float)M_PI;
+        float x0 = cx + radius * cosf(theta);
+        float y0 = cy - length * 0.5f;
+        float z0 = cz + radius * sinf(theta);
+
+        float x1 = cx + radius * cosf(theta);
+        float y1 = cy + length * 0.5f;
+        float z1 = cz + radius * sinf(theta);
+
+        int sx0 = 0, sy0 = 0, sx1 = 0, sy1 = 0;
+        float d0 = 0, d1 = 0;
+        project_3d_point(x0, y0, z0, rot_x, rot_y, cam_z, w, h, &sx0, &sy0, &d0);
+        project_3d_point(x1, y1, z1, rot_x, rot_y, cam_z, w, h, &sx1, &sy1, &d1);
+
+        if (s == 0) {
+            first_x0 = sx0; first_y0 = sy0; first_z0 = d0;
+            first_x1 = sx1; first_y1 = sy1; first_z1 = d1;
+        } else {
+            draw_3d_volumetric_wire(fb, zbuf, w, h, p0_x, p0_y, p0_z, sx0, sy0, d0, base_color, 2.0f, lx, ly, lz);
+            draw_3d_volumetric_wire(fb, zbuf, w, h, p1_x, p1_y, p1_z, sx1, sy1, d1, base_color, 2.0f, lx, ly, lz);
+        }
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx0, sy0, d0, sx1, sy1, d1, base_color, 2.0f, lx, ly, lz);
+
+        p0_x = sx0; p0_y = sy0; p0_z = d0;
+        p1_x = sx1; p1_y = sy1; p1_z = d1;
+    }
+    draw_3d_volumetric_wire(fb, zbuf, w, h, p0_x, p0_y, p0_z, first_x0, first_y0, first_z0, base_color, 2.0f, lx, ly, lz);
+    draw_3d_volumetric_wire(fb, zbuf, w, h, p1_x, p1_y, p1_z, first_x1, first_y1, first_z1, base_color, 2.0f, lx, ly, lz);
+}
 
 // -----------------------------------------------------------------------------
 // 3D Volumetric Sewn Heart Mesh (Pixar USDA Prim from teddy_sewnheart.usda)
@@ -200,7 +241,6 @@ static void draw_3d_volumetric_sewn_heart(uint32_t *fb, float *zbuf, int w, int 
             float u = (float)s / (float)segs;
             float t_ang = u * 2.0f * (float)M_PI;
 
-            // Parametric 3D Heart Surface Equation
             float hx = 16.0f * powf(sinf(t_ang), 3.0f) * sinf(v_ang);
             float hy = -(13.0f * cosf(t_ang) - 5.0f * cosf(2.0f * t_ang) - 2.0f * cosf(3.0f * t_ang) - cosf(4.0f * t_ang)) * sinf(v_ang);
             float hz = 8.0f * cosf(v_ang);
@@ -224,40 +264,38 @@ static void draw_3d_volumetric_sewn_heart(uint32_t *fb, float *zbuf, int w, int 
 }
 
 // -----------------------------------------------------------------------------
-// 3D Vaesen Character Wireframe Renderer with Complete 3D USDA Teddy Bear & Heart
+// 3D Vaesen Character Wireframe Renderer with Full USDA Prims
 // -----------------------------------------------------------------------------
 static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, int scene, float t, float cam_yaw, float cam_pitch, float lx, float ly, float lz) {
-    int sx[16] = {0}, sy[16] = {0};
-    float depth[16] = {0};
+    // -------------------------------------------------------------------------
+    // SCENE 1: 3D USDA Auncient Tomte (Sphere Head + Conical Cloak + 3D Lantern)
+    // -------------------------------------------------------------------------
 
     if (scene == 1) {
         float b_y = sinf(t * 2.0f) * 15.0f;
-        float pts[7][3] = {
-            { 0.0f, -120.0f + b_y, 0.0f },
-            { 0.0f, -40.0f + b_y, 0.0f },
-            { 0.0f, 60.0f + b_y, 0.0f },
-            { -50.0f, -30.0f + b_y, 20.0f },
-            { 60.0f, -10.0f + b_y, 40.0f },
-            { 60.0f, 30.0f + b_y, 40.0f },
-            { 0.0f, 150.0f + b_y, 0.0f }
-        };
+        float b_rot_y = cam_yaw + 0.35f;
+        float b_rot_x = cam_pitch;
+        float b_cam_z = 800.0f;
 
-        for (int i = 0; i < 7; i++) {
-            project_3d_point(pts[i][0] + 350.0f, pts[i][1], pts[i][2] + 450.0f, cam_pitch, cam_yaw, 800.0f, w, h, &sx[i], &sy[i], &depth[i]);
-        }
+        uint32_t cloak_col = 0xFFC5A059;
+        uint32_t beard_col = 0xFFE0E0E0;
 
-        uint32_t col = 0xFFC5A059;
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[1], sy[1], depth[1], col, 4.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[2], sy[2], depth[2], col, 4.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[3], sy[3], depth[3], col, 3.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[4], sy[4], depth[4], sx[5], sy[5], depth[5], 0xFFFFD700, 5.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[6], sy[6], depth[6], col, 4.0f, lx, ly, lz);
+        // 3D Head & Beard Spheres (USDA Prims)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 350.0f, -80.0f + b_y, 450.0f, 32.0f, b_rot_x, b_rot_y, b_cam_z, cloak_col, lx, ly, lz);
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 350.0f, -50.0f + b_y, 420.0f, 22.0f, b_rot_x, b_rot_y, b_cam_z, beard_col, lx, ly, lz);
 
-        int l_cx = sx[5], l_cy = sy[5];
+        // 3D Torso / Cloak Cylinder (USDA Prim)
+        draw_3d_volumetric_cylinder(fb, zbuf, w, h, 350.0f, 30.0f + b_y, 450.0f, 40.0f, 120.0f, b_rot_x, b_rot_y, b_cam_z, cloak_col, lx, ly, lz);
+
+        // 3D Lantern Cylinder (USDA Prim)
+        draw_3d_volumetric_cylinder(fb, zbuf, w, h, 420.0f, 20.0f + b_y, 400.0f, 14.0f, 32.0f, b_rot_x, b_rot_y, b_cam_z, 0xFFFFD700, lx, ly, lz);
+
+        int l_sx = 0, l_sy = 0; float l_d = 0;
+        project_3d_point(420.0f, 20.0f + b_y, 400.0f, b_rot_x, b_rot_y, b_cam_z, w, h, &l_sx, &l_sy, &l_d);
+
         for (int gy = -45; gy <= 45; gy++) {
             for (int gx = -45; gx <= 45; gx++) {
-                int gpx = l_cx + gx, gpy = l_cy + gy;
+                int gpx = l_sx + gx, gpy = l_sy + gy;
                 if (gpx >= 0 && gpx < w && gpy >= 0 && gpy < h) {
                     float dist = sqrtf((float)(gx*gx + gy*gy));
                     if (dist < 45.0f) {
@@ -271,34 +309,34 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
                 }
             }
         }
-    } else if (scene == 2) {
-        float f_arm = sinf(t * 12.0f) * 25.0f;
-        float pts[6][3] = {
-            { 0.0f, -100.0f, 0.0f },
-            { 0.0f, -30.0f, 0.0f },
-            { -45.0f, -20.0f, 30.0f },
-            { 40.0f + f_arm, -10.0f, 40.0f },
-            { -30.0f, 100.0f, 0.0f },
-            { 30.0f, 100.0f, 0.0f }
-        };
+    }
+    // -------------------------------------------------------------------------
+    // SCENE 2: 3D USDA Nacken (Water Fiddler Avatar with 3D Violin Body & Bow)
+    // -------------------------------------------------------------------------
+    else if (scene == 2) {
+        float b_rot_y = cam_yaw - 0.35f;
+        float b_rot_x = cam_pitch;
+        float b_cam_z = 800.0f;
 
-        for (int i = 0; i < 6; i++) {
-            project_3d_point(pts[i][0] - 350.0f, pts[i][1], pts[i][2] + 450.0f, cam_pitch, cam_yaw, 800.0f, w, h, &sx[i], &sy[i], &depth[i]);
-        }
+        uint32_t body_col = 0xFF00FF88;
+        uint32_t violin_col = 0xFFCD853F; // Amber Wood Violin
 
-        uint32_t col = 0xFF00FF88;
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[1], sy[1], depth[1], col, 4.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[2], sy[2], depth[2], col, 4.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[3], sy[3], depth[3], 0xFF00FFFF, 3.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[5], sy[5], depth[5], col, 3.0f, lx, ly, lz);
+        // 3D Head & Torso Spheres (USDA Prims)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, -350.0f, -80.0f, 450.0f, 30.0f, b_rot_x, b_rot_y, b_cam_z, body_col, lx, ly, lz);
+        draw_3d_volumetric_cylinder(fb, zbuf, w, h, -350.0f, 20.0f, 450.0f, 28.0f, 100.0f, b_rot_x, b_rot_y, b_cam_z, body_col, lx, ly, lz);
 
-        int v_cx = sx[3], v_cy = sy[3];
+        // 3D Violin Body (USDA Prim)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, -390.0f, -30.0f, 410.0f, 18.0f, b_rot_x, b_rot_y, b_cam_z, violin_col, lx, ly, lz);
+        draw_3d_volumetric_cylinder(fb, zbuf, w, h, -390.0f, -55.0f, 410.0f, 4.0f, 35.0f, b_rot_x, b_rot_y, b_cam_z, 0xFF101010, lx, ly, lz);
+
+        int v_sx = 0, v_sy = 0; float v_d = 0;
+        project_3d_point(-390.0f, -30.0f, 410.0f, b_rot_x, b_rot_y, b_cam_z, w, h, &v_sx, &v_sy, &v_d);
+
         for (int a = 1; a <= 4; a++) {
             float arc_r = (float)a * 22.0f + sinf(t * 20.0f) * 6.0f;
             for (float th = -0.7f; th <= 0.7f; th += 0.04f) {
-                int ax = v_cx + (int)(cosf(th) * arc_r);
-                int ay = v_cy + (int)(sinf(th) * arc_r);
+                int ax = v_sx + (int)(cosf(th) * arc_r);
+                int ay = v_sy + (int)(sinf(th) * arc_r);
                 if (ax >= 0 && ax < w && ay >= 0 && ay < h) {
                     fb[ay * w + ax] = 0xFF00FFFF;
                 }
@@ -314,31 +352,21 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
         float b_rot_x = cam_pitch + 0.10f;
         float b_cam_z = 700.0f;
 
-        uint32_t fur_col = 0xFFFFD700; // Golden Fur
-        uint32_t muzzle_col = 0xFFFFF8DC; // Muzzle Felt
-        uint32_t nose_col = 0xFF221100; // Dark Nose
+        uint32_t fur_col = 0xFFFFD700;
+        uint32_t muzzle_col = 0xFFFFF8DC;
+        uint32_t nose_col = 0xFF221100;
 
-        // 1. 3D Volumetric Head Sphere (radius 48)
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, -50.0f + bob, 400.0f, 48.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
-
-        // 2. 3D Volumetric Left & Right Ears (radius 20)
         draw_3d_volumetric_sphere(fb, zbuf, w, h, -45.0f, -95.0f + bob, 410.0f, 20.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 45.0f, -95.0f + bob, 410.0f, 20.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
-
-        // 3. 3D Volumetric Muzzle & Nose (radius 18)
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, -40.0f + bob, 360.0f, 18.0f, b_rot_x, b_rot_y, b_cam_z, muzzle_col, lx, ly, lz);
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, -46.0f + bob, 345.0f, 6.0f, b_rot_x, b_rot_y, b_cam_z, nose_col, lx, ly, lz);
-
-        // 4. 3D Volumetric Torso Sphere (radius 65)
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, 45.0f + bob, 400.0f, 65.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
-
-        // 5. 3D Volumetric Arms & Legs Spheres/Cylinders
         draw_3d_volumetric_sphere(fb, zbuf, w, h, -65.0f, 25.0f + bob, 380.0f, 24.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 65.0f, 25.0f + bob, 380.0f, 24.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
         draw_3d_volumetric_sphere(fb, zbuf, w, h, -35.0f, 115.0f + bob, 390.0f, 26.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
         draw_3d_volumetric_sphere(fb, zbuf, w, h, 35.0f, 115.0f + bob, 390.0f, 26.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
 
-        // 6. Complete 3D Volumetric Sewn Heart Prim Mesh (Pulsing Bio-Rhythm on Chest)
         float h_pulse = 1.0f + 0.20f * sinf(t * 16.0f);
         draw_3d_volumetric_sewn_heart(fb, zbuf, w, h, 0.0f, 25.0f + bob, 335.0f, 1.35f * h_pulse, b_rot_x, b_rot_y, b_cam_z, lx, ly, lz);
     }
@@ -567,7 +595,7 @@ static inline void apply_super8_film_grain(uint32_t *fb, int w, int h, float t) 
 }
 
 // -----------------------------------------------------------------------------
-// Full 3D Volumetric Scene Frame Renderer with 3D USDA Teddy Bear & Heart
+// Full 3D Volumetric Scene Frame Renderer with 7-Scene USDA Asset Prims
 // -----------------------------------------------------------------------------
 void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
@@ -592,7 +620,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float lx = 0.577f, ly = -0.577f, lz = 0.577f;
 
     // -------------------------------------------------------------------------
-    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D Obsidian Silk Torus & Tomte
+    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D USDA Obsidian Silk Torus & Tomte
     // -------------------------------------------------------------------------
     if (t < 15.0f) {
         ctx->scene_index = 1;
@@ -639,7 +667,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 1: 3D OBSIDIAN SILK & AUNCIENT TOMTE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D Gyroscope & Nacken
+    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D USDA Gyroscope & Nacken
     // -------------------------------------------------------------------------
     else if (t < 25.0f) {
         ctx->scene_index = 2;
@@ -681,7 +709,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 1: 3D GYROSCOPE & NACKEN EMERGENCE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D Volumetric Double-Helix DNA Lattice
+    // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D USDA Volumetric Double-Helix DNA Lattice
     // -------------------------------------------------------------------------
     else if (t < 38.0f) {
         ctx->scene_index = 3;
@@ -710,21 +738,16 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             uint32_t gold_col = (b % 2 == 0) ? 0xFFFFD700 : 0xFFECC460;
             draw_3d_volumetric_wire(fb, zbuf, w, h, sx1, sy1, d1, sx2, sy2, d2, gold_col, 4.0f, lx, ly, lz);
 
-            if (sx1 >= 3 && sx1 < w - 3 && sy1 >= 3 && sy1 < h - 3) {
-                fb[sy1 * w + sx1] = 0xFFFFFFFF;
-                fb[(sy1+1) * w + sx1] = 0xFFFFF8DC;
-            }
-            if (sx2 >= 3 && sx2 < w - 3 && sy2 >= 3 && sy2 < h - 3) {
-                fb[sy2 * w + sx2] = 0xFFFFFFFF;
-                fb[(sy2+1) * w + sx2] = 0xFFFFF8DC;
-            }
+            // USDA 3D Nucleotide Base Node Spheres (Radius 6px)
+            draw_3d_volumetric_sphere(fb, zbuf, w, h, x1_3d, y1_3d, z3d, 6.0f, cam_pitch, cam_yaw, 800.0f, 0xFFFFFFFF, lx, ly, lz);
+            draw_3d_volumetric_sphere(fb, zbuf, w, h, x2_3d, y2_3d, z3d, 6.0f, cam_pitch, cam_yaw, 800.0f, 0xFFFFF8DC, lx, ly, lz);
         }
 
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "DAMASK", 0xFFFFEA00, 0xFFFFAB00, 0xFF4E342E, t * 3.0f);
         draw_text(fb, w, h, (int)cx - 220, 260, "VERSE 2: 3D DOUBLE-HELIX DNA LATTICE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D Volumetric Trefoil Knot Manifold
+    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D USDA Volumetric Trefoil Knot Manifold
     // -------------------------------------------------------------------------
     else if (t < 50.0f) {
         ctx->scene_index = 4;
@@ -769,7 +792,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         draw_text(fb, w, h, (int)cx - 220, 260, "CHORUS 2: 3D DUAL-TREFOIL KNOT MANIFOLD", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D Geodesic Singularity Icosahedron
+    // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D USDA Geodesic Singularity Icosahedron
     // -------------------------------------------------------------------------
     else if (t < 62.0f) {
         ctx->scene_index = 5;
@@ -792,6 +815,9 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             float y3d = ico_verts[v][1] * (r_scale / phi_gold);
             float z3d = ico_verts[v][2] * (r_scale / phi_gold);
             project_3d_point(x3d, y3d, z3d, t * 1.5f, t * 2.0f, 800.0f, w, h, &ico_sx[v], &ico_sy[v], &ico_d[v]);
+
+            // 3D USDA Vertex Spheres at Icosahedron Vertices
+            draw_3d_volumetric_sphere(fb, zbuf, w, h, x3d, y3d, z3d, 8.0f, t * 1.5f, t * 2.0f, 800.0f, 0xFFFF3300, lx, ly, lz);
         }
 
         for (int i = 0; i < 12; i++) {
@@ -803,7 +829,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
                     uint32_t spoke_col = ((i + j) % 2 == 0) ? 0xFFFF3300 : 0xFFFF9900;
                     draw_3d_volumetric_wire(fb, zbuf, w, h, ico_sx[i], ico_sy[i], ico_d[i], ico_sx[j], ico_sy[j], ico_d[j], spoke_col, 4.5f, lx, ly, lz);
                 }
-
             }
         }
 
@@ -867,14 +892,13 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
-        // Render full 3D USDA Volumetric Mesh Teddy Bear & 3D Sewn Heart
         draw_3d_vaesen_character(fb, zbuf, w, h, 6, t, cam_yaw, cam_pitch, lx, ly, lz);
 
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 200, 180, "CRESCENDO", 0xFFFFFFFF, 0xFFFF00FF, 0xFF4A148C, t * 5.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 3: 3D VOLUMETRIC BLAST & TEDDY BEAR", 0xFF00FFFF, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 7: OUTRO (80:00 - 90:00) | 3D Volumetric Fibonacci Spiral
+    // SCENE 7: OUTRO (80:00 - 90:00) | 3D USDA Volumetric Fibonacci Dew Spiral
     // -------------------------------------------------------------------------
     else {
         ctx->scene_index = 7;
@@ -902,8 +926,9 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             if (sp > 0) {
                 draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, sx, sy, depth, 0xFF689B77, 3.0f, lx, ly, lz);
             }
+            // 3D USDA Crystalline Dew Sphere Prims (Radius 4px)
             if (sp % 4 == 0 && (1.0f - outro_t) > 0.1f) {
-                if (sx >= 0 && sx < w && sy >= 0 && sy < h) fb[sy * w + sx] = 0xFFFFFFFF;
+                draw_3d_volumetric_sphere(fb, zbuf, w, h, x3d, y3d, z3d, 4.0f, cam_pitch, cam_yaw, 800.0f, 0xFFFFFFFF, lx, ly, lz);
             }
             prev_x = sx; prev_y = sy; prev_z = depth;
         }
