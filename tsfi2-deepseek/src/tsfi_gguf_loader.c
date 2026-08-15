@@ -738,16 +738,24 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
         for (uint32_t j = 0; j < vocab_size; j++) {
             if (vocab_table[j]) {
                 const char *v_str = vocab_table[j];
-                if (strncmp(v_str, "\xc4\xa0", 2) == 0) v_str += 2;
                 size_t v_len = strlen(v_str);
-                if (v_len > 0 && v_len > best_match_len) {
-                    if (strncmp(formatted_prompt + p_idx, v_str, v_len) == 0) {
-                        best_match_len = v_len;
-                        best_token_match = j;
+                if (v_len > 0 && v_len > best_match_len && strncmp(formatted_prompt + p_idx, v_str, v_len) == 0) {
+                    best_match_len = v_len;
+                    best_token_match = j;
+                } else if (strncmp(v_str, "\xc4\xa0", 2) == 0) {
+                    // Space-prefixed subword matching
+                    const char *sub_str = v_str + 2;
+                    size_t sub_len = strlen(sub_str);
+                    if (sub_len > 0 && formatted_prompt[p_idx] == ' ' && strncmp(formatted_prompt + p_idx + 1, sub_str, sub_len) == 0) {
+                        if (sub_len + 1 > best_match_len) {
+                            best_match_len = sub_len + 1;
+                            best_token_match = j;
+                        }
                     }
                 }
             }
         }
+
 
         if (best_match_len == 0) {
             prompt_tokens[num_prompt_tokens++] = (uint32_t)(unsigned char)formatted_prompt[p_idx];
@@ -1135,7 +1143,8 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
 
                 if (clean_ascii) {
                     float telpa_b = tsfi_telpa_evaluate_candidate_bonus(v_idx, &telpa_state);
-                    float score = dot + telpa_b;
+                    // Use genuine scaled dot product without artificial inflation
+                    float score = dot + telpa_b * 0.01f;
 
                     // ACM CSUR (2025) Multi-Scale Dynamic Repetition Penalty Decay via COBOL Strategy
                     if (ring_domain_count > 0) {
@@ -1146,16 +1155,10 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                             if (ring_domain_buf[r_i] == v_idx) {
                                 float distance = (float)(ring_domain_count - r_i);
                                 float decay = 1.0f / (1.0f + 0.15f * distance);
-                                score -= (1.35f * 25.0f * decay);
+                                score -= (1.35f * decay);
                             }
                         }
                     }
-
-                    // ACM TIST (2026) Pushdown Automata Grammar Filter Check via COBOL Strategy
-                    TSFiStrategyVM gram_vm;
-                    TSFiStrategyReceipt gram_receipt;
-                    tsfi_strategy_load_and_run("grammar_pushdown.strategy", (uint32_t)strlen(v_tok), 16, 0, 0, &gram_vm, &gram_receipt);
-                    score += 8.00f;
 
                     rb_root = tsfi_rb_tree_insert(rb_root, v_idx + 1, score);
                     if (score > max_val) {
@@ -1163,6 +1166,7 @@ bool tsfi_zorse_eval_gguf_pure_c(const char *filepath, const char *prompt, char 
                         best_vocab_idx = (int)v_idx;
                     }
                 }
+
             }
         }
 
