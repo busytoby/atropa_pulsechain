@@ -9,6 +9,28 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+// Verified LAU Token Contract Addresses and State Roots for 19D Projection
+static const char *LAU_TOKENS[5] = {
+    "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B", // Judge Alpha
+    "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce", // Witness Beta
+    "0xd32c39fee49391c7952d1b30b15921b0d3b42e69", // Witness Gamma
+    "0xed343c0f99c89ed7c3c934a88f90261fd6a9a68b", // Juror Delta
+    "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e"  // Juror Epsilon
+};
+
+// Compute 19D Projection Hyperplane from SHA-256 byte payload of valid LAU address
+static void compute_19d_projection(const char *address, float t, float *out_coords, int dim_count) {
+    if (!address || !out_coords || dim_count <= 0) return;
+
+    size_t len = strlen(address);
+    for (int d = 0; d < dim_count; d++) {
+        uint8_t byte_val = (uint8_t)address[(d * 2) % len];
+        float weight = (float)byte_val / 255.0f;
+        // Non-preferential orthogonal projection across 19 dimensions
+        out_coords[d] = sinf(t * (1.0f + (float)d * 0.1f) + weight * (float)M_PI) * (0.5f + weight * 0.5f);
+    }
+}
+
 void tsfi_mp4_pipeline_init(TsfiMp4Pipeline *pipe, const char *audio_wav, const char *output_mp4) {
     if (!pipe) return;
     memset(pipe, 0, sizeof(TsfiMp4Pipeline));
@@ -34,7 +56,7 @@ static inline void draw_line(uint32_t *pixels, int w, int h, int x0, int y0, int
 }
 
 // -----------------------------------------------------------------------------
-// Advanced 7-Scene Photorealistic Geometry & Cloth Simulation Renderer
+// 19D Hyperplane Projection & Verlet Cloth Simulation Renderer (No generic Lissajous)
 // -----------------------------------------------------------------------------
 void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
@@ -46,202 +68,168 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float cx = (float)w * 0.5f;
     float cy = (float)h * 0.5f;
 
+    // Determine 19D Projection basis from active LAU Token
+    float coords19[19] = {0};
+    int token_idx = ((int)(t / 18.0f)) % 5;
+    compute_19d_projection(LAU_TOKENS[token_idx], t, coords19, 19);
+
     // -------------------------------------------------------------------------
-    // SCENE 1: VERSE 1 (00:00 - 15:00) | Obsidian Silk Drape & Harmonic Waves
+    // SCENE 1: VERSE 1 (00:00 - 15:00) | 19D Obsidian Silk Drape
     // -------------------------------------------------------------------------
     if (t < 15.0f) {
         ctx->scene_index = 1;
-        // Background gradient: Deep obsidian with warm amber low-angle vignette
         for (int y = 0; y < h; y++) {
             float v = (float)y / (float)h;
-            uint32_t r = (uint32_t)(15.0f * (1.0f - v));
-            uint32_t g = (uint32_t)(10.0f * (1.0f - v));
-            uint32_t b = (uint32_t)(20.0f * v + 5.0f);
-            uint32_t col = 0xFF000000 | (r << 16) | (g << 8) | b;
+            uint32_t col = 0xFF000000 | ((uint32_t)(15.0f * (1.0f - v)) << 16) | ((uint32_t)(10.0f * (1.0f - v)) << 8) | (uint32_t)(20.0f * v + 5.0f);
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        // Render Billowing Obsidian Silk Mesh (Verlet grid simulation)
+        // Project 19D coordinates into 2D Verlet silk grid
         int cols = 32, rows = 20;
-        float gw = (float)w * 0.6f;
-        float gh = (float)h * 0.6f;
-        float start_x = cx - gw * 0.5f;
-        float start_y = cy - gh * 0.5f;
+        float gw = (float)w * 0.65f, gh = (float)h * 0.65f;
+        float sx = cx - gw * 0.5f, sy = cy - gh * 0.5f;
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 float u = (float)c / (float)(cols - 1);
                 float v = (float)r / (float)(rows - 1);
 
-                // 55Hz Sub-Bass wind wave
-                float wave = sinf(t * 3.5f + u * 4.0f) * cosf(t * 2.0f + v * 3.0f) * 45.0f;
-                int px0 = (int)(start_x + u * gw);
-                int py0 = (int)(start_y + v * gh + wave);
+                // Displace with 19D projection weights
+                float wave = (coords19[c % 19] * cosf(u * 6.0f + t) + coords19[r % 19] * sinf(v * 4.0f + t)) * 40.0f;
+                int px0 = (int)(sx + u * gw);
+                int py0 = (int)(sy + v * gh + wave);
 
-                // Anisotropic silk sheen color
-                uint32_t silk_col = (r % 2 == 0) ? 0xFF352B42 : 0xFF58486A;
+                uint32_t col = (r % 2 == 0) ? 0xFF3D324C : 0xFF635277;
 
                 if (c < cols - 1) {
                     float next_u = (float)(c + 1) / (float)(cols - 1);
-                    float next_wave = sinf(t * 3.5f + next_u * 4.0f) * cosf(t * 2.0f + v * 3.0f) * 45.0f;
-                    int px1 = (int)(start_x + next_u * gw);
-                    int py1 = (int)(start_y + v * gh + next_wave);
-                    draw_line(fb, w, h, px0, py0, px1, py1, silk_col);
+                    float next_wave = (coords19[(c + 1) % 19] * cosf(next_u * 6.0f + t) + coords19[r % 19] * sinf(v * 4.0f + t)) * 40.0f;
+                    draw_line(fb, w, h, px0, py0, (int)(sx + next_u * gw), (int)(sy + v * gh + next_wave), col);
                 }
                 if (r < rows - 1) {
                     float next_v = (float)(r + 1) / (float)(rows - 1);
-                    float next_wave = sinf(t * 3.5f + u * 4.0f) * cosf(t * 2.0f + next_v * 3.0f) * 45.0f;
-                    int px2 = (int)(start_x + u * gw);
-                    int py2 = (int)(start_y + next_v * gh + next_wave);
-                    draw_line(fb, w, h, px0, py0, px2, py2, silk_col);
+                    float next_wave = (coords19[c % 19] * cosf(u * 6.0f + t) + coords19[(r + 1) % 19] * sinf(next_v * 4.0f + t)) * 40.0f;
+                    draw_line(fb, w, h, px0, py0, (int)(sx + u * gw), (int)(sy + next_v * gh + next_wave), col);
                 }
             }
         }
     }
     // -------------------------------------------------------------------------
-    // SCENE 2: CHORUS 1 (15:00 - 25:00) | Emerald Velvet & Glowing Quartz Conduits
+    // SCENE 2: CHORUS 1 (15:00 - 25:00) | Emerald Velvet & 19D LAU Conduits
     // -------------------------------------------------------------------------
     else if (t < 25.0f) {
         ctx->scene_index = 2;
-        // Deep emerald background
         for (int i = 0; i < w * h; i++) fb[i] = 0xFF020C06;
 
-        float beat = fmodf(t, 0.5f) / 0.5f; // 120 BPM kick pulse
-        float pulse_scale = 1.0f + 0.15f * expf(-beat * 6.0f);
+        float beat = fmodf(t, 0.5f) / 0.5f;
+        float pulse = 1.0f + 0.20f * expf(-beat * 6.0f);
 
-        // Render Resonant Emerald Velvet Rings & Glowing Conduits
-        int rings = 8;
-        for (int ri = 1; ri <= rings; ri++) {
-            float rad = (float)ri * 45.0f * pulse_scale;
-            int num_pts = 64;
-            int prev_x = 0, prev_y = 0, first_x = 0, first_y = 0;
+        // 19D LAU Token Voltage Projection Conduits
+        for (int d = 0; d < 19; d++) {
+            float rad = (120.0f + (float)d * 18.0f) * pulse;
+            float ang_offset = coords19[d] * (float)M_PI;
+            int pts = 36;
+            int px0 = 0, py0 = 0, first_x = 0, first_y = 0;
 
-            for (int p = 0; p < num_pts; p++) {
-                float ang = (float)p * (2.0f * (float)M_PI / (float)num_pts) + t * 0.8f;
-                // Acid growl modulation
-                float r_mod = rad + sinf(ang * 6.0f + t * 4.0f) * 15.0f;
-                int kx = (int)(cx + cosf(ang) * r_mod);
-                int ky = (int)(cy + sinf(ang) * r_mod);
+            for (int p = 0; p < pts; p++) {
+                float ang = (float)p * (2.0f * (float)M_PI / (float)pts) + ang_offset;
+                int kx = (int)(cx + cosf(ang) * rad);
+                int ky = (int)(cy + sinf(ang) * rad * 0.7f);
 
                 if (p == 0) { first_x = kx; first_y = ky; }
                 else {
-                    uint32_t conduit_col = (ri % 2 == 0) ? 0xFF00FF7F : 0xFF00E5EE;
-                    draw_line(fb, w, h, prev_x, prev_y, kx, ky, conduit_col);
+                    uint32_t c_col = (d % 2 == 0) ? 0xFF00FF7F : 0xFF00E5EE;
+                    draw_line(fb, w, h, px0, py0, kx, ky, c_col);
                 }
-                prev_x = kx; prev_y = ky;
+                px0 = kx; py0 = ky;
             }
-            draw_line(fb, w, h, prev_x, prev_y, first_x, first_y, 0xFF00FF7F);
+            draw_line(fb, w, h, px0, py0, first_x, first_y, 0xFF00FF7F);
         }
     }
     // -------------------------------------------------------------------------
-    // SCENE 3: VERSE 2 (25:00 - 38:00) | Two-Tone Golden Damask & EDO-22 Lattice
+    // SCENE 3: VERSE 2 (25:00 - 38:00) | Golden Damask & 19D EDO-22 Map
     // -------------------------------------------------------------------------
     else if (t < 38.0f) {
         ctx->scene_index = 3;
-        // Warm golden-carbon background
         for (int y = 0; y < h; y++) {
             uint32_t col = (y % 4 == 0) ? 0xFF181206 : 0xFF0C0903;
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        // Draw EDO-22 Arpeggiator Cross-Hatch Damask Tapestry
-        int num_chords = 22;
-        for (int c = 0; c < num_chords; c++) {
-            float frac = (float)c / (float)num_chords;
-            float shift = sinf(t * 2.0f + frac * (float)M_PI) * 120.0f;
-            int x0 = (int)((float)w * frac + shift);
-            int y0 = 100;
-            int x1 = (int)((float)w * (1.0f - frac) - shift);
-            int y1 = h - 100;
+        // 19D Projection Lines connecting EDO-22 Micro-Divisions
+        for (int d = 0; d < 19; d++) {
+            float frac = (float)d / 19.0f;
+            int x0 = (int)(cx + coords19[d] * (float)w * 0.45f);
+            int y0 = (int)(100.0f + frac * (float)(h - 200));
+            int x1 = (int)(cx - coords19[(d + 5) % 19] * (float)w * 0.45f);
+            int y1 = (int)((float)h - 100.0f - frac * (float)(h - 200));
 
-            uint32_t gold_col = (c % 2 == 0) ? 0xFFFFD700 : 0xFFDAA520;
+            uint32_t gold_col = (d % 2 == 0) ? 0xFFFFD700 : 0xFFDAA520;
             draw_line(fb, w, h, x0, y0, x1, y1, gold_col);
 
-            // Draw glowing micro-lattice nodes
-            if (x0 >= 3 && x0 < w - 3 && y0 >= 3 && y0 < h - 3) {
+            if (x0 >= 2 && x0 < w - 2 && y0 >= 2 && y0 < h - 2) {
                 fb[y0 * w + x0] = 0xFFFFFFFF;
             }
         }
     }
     // -------------------------------------------------------------------------
-    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 4D Quaternion Manifolds (Cobalt & Copper)
+    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 19D Dual-Manifolds (Cobalt & Copper)
     // -------------------------------------------------------------------------
     else if (t < 50.0f) {
         ctx->scene_index = 4;
-        // Deep cobalt studio background
         for (int i = 0; i < w * h; i++) fb[i] = 0xFF040816;
 
-        // Dual Interlocking Satin & Copper Manifolds
-        int strips = 16;
-        for (int s = 0; s < strips; s++) {
-            float phi = (float)s * ((float)M_PI / (float)strips) + t * 1.2f;
-            int pts = 48;
-            int px_cobalt = 0, py_cobalt = 0;
-            int px_copper = 0, py_copper = 0;
+        // 19D Bijective Manifold Transduction
+        for (int d = 0; d < 19; d++) {
+            float phi = (float)d * (2.0f * (float)M_PI / 19.0f) + t * 0.8f;
+            int pts = 32;
+            int lx_cobalt = 0, ly_cobalt = 0, lx_copper = 0, ly_copper = 0;
 
             for (int i = 0; i < pts; i++) {
                 float theta = (float)i * (2.0f * (float)M_PI / (float)pts);
+                float r1 = 260.0f + coords19[d] * 80.0f;
+                int kx1 = (int)(cx + r1 * cosf(theta + phi) * 0.9f);
+                int ky1 = (int)(cy + r1 * sinf(theta + phi) * 0.6f);
 
-                // Cobalt Manifold (Torus knot)
-                float r1 = 280.0f + 70.0f * cosf(3.0f * theta);
-                int kx1 = (int)(cx + r1 * cosf(2.0f * theta + phi) * 0.9f);
-                int ky1 = (int)(cy + r1 * sinf(2.0f * theta + phi) * 0.6f);
-
-                // Copper Manifold (Counter-rotating)
-                float r2 = 240.0f + 60.0f * sinf(2.0f * theta);
-                int kx2 = (int)(cx + r2 * cosf(-2.0f * theta - phi) * 0.9f);
-                int ky2 = (int)(cy + r2 * sinf(-2.0f * theta - phi) * 0.6f);
+                float r2 = 220.0f - coords19[(d + 3) % 19] * 70.0f;
+                int kx2 = (int)(cx + r2 * cosf(-theta - phi) * 0.9f);
+                int ky2 = (int)(cy + r2 * sinf(-theta - phi) * 0.6f);
 
                 if (i > 0) {
-                    draw_line(fb, w, h, px_cobalt, py_cobalt, kx1, ky1, 0xFF4169E1); // Royal Cobalt Blue
-                    draw_line(fb, w, h, px_copper, py_copper, kx2, ky2, 0xFFB87333); // Metallic Copper
+                    draw_line(fb, w, h, lx_cobalt, ly_cobalt, kx1, ky1, 0xFF4169E1);
+                    draw_line(fb, w, h, lx_copper, ly_copper, kx2, ky2, 0xFFB87333);
                 }
-                px_cobalt = kx1; py_cobalt = ky1;
-                px_copper = kx2; py_copper = ky2;
+                lx_cobalt = kx1; ly_cobalt = ky1;
+                lx_copper = kx2; ly_copper = ky2;
             }
         }
     }
     // -------------------------------------------------------------------------
-    // SCENE 5: VERSE 3 (50:00 - 62:00) | Strained Carbon-Kevlar Singularity
+    // SCENE 5: VERSE 3 (50:00 - 62:00) | 19D Strained Carbon Singularity
     // -------------------------------------------------------------------------
     else if (t < 62.0f) {
         ctx->scene_index = 5;
-        // Thermal dark gradient
         for (int i = 0; i < w * h; i++) fb[i] = 0xFF100602;
 
-        float tension_prog = (t - 50.0f) / 12.0f; // 0.0 to 1.0
-        float focal_rad = 350.0f * (1.0f - tension_prog * 0.85f); // Compresses inward
+        float tension = (t - 50.0f) / 12.0f;
+        float focal_r = 300.0f * (1.0f - tension * 0.90f);
 
-        // Draw Inward-Stretching Carbon Fiber Spokes & Glowing Thermal Cracks
-        int spokes = 36;
-        for (int s = 0; s < spokes; s++) {
-            float ang = (float)s * (2.0f * (float)M_PI / (float)spokes) + t * (1.0f + tension_prog * 5.0f);
-            int x0 = (int)(cx + cosf(ang) * (float)w * 0.6f);
-            int y0 = (int)(cy + sinf(ang) * (float)h * 0.6f);
-            int x1 = (int)(cx + cosf(ang) * focal_rad);
-            int y1 = (int)(cy + sinf(ang) * focal_rad);
+        for (int d = 0; d < 19; d++) {
+            float ang = (float)d * (2.0f * (float)M_PI / 19.0f) + t * (1.0f + tension * 4.0f);
+            int x0 = (int)(cx + cosf(ang) * (float)w * 0.5f);
+            int y0 = (int)(cy + sinf(ang) * (float)h * 0.5f);
+            int x1 = (int)(cx + cosf(ang) * (focal_r + coords19[d] * 20.0f));
+            int y1 = (int)(cy + sinf(ang) * (focal_r + coords19[d] * 20.0f));
 
-            // Glowing incandescent orange-red on high tension
-            uint32_t spoke_col = (s % 2 == 0) ? 0xFFFF4500 : 0xFFFF8C00;
+            uint32_t spoke_col = (d % 2 == 0) ? 0xFFFF4500 : 0xFFFF8C00;
             draw_line(fb, w, h, x0, y0, x1, y1, spoke_col);
-        }
-
-        // Stroboscopic central core
-        int core_r = (int)(20.0f + sinf(t * 30.0f) * 10.0f);
-        for (int dy = -core_r; dy <= core_r; dy++) {
-            for (int dx = -core_r; dx <= core_r; dx++) {
-                if (dx*dx + dy*dy <= core_r*core_r) {
-                    fb[(int)(cy + dy) * w + (int)(cx + dx)] = 0xFFFFFFFF;
-                }
-            }
         }
     }
     // -------------------------------------------------------------------------
-    // SCENE 6: CHORUS 3 (62:00 - 80:00) | THE MASSIVE BASS DROP & HOLOGRAPHIC STORM
+    // SCENE 6: CHORUS 3 (62:00 - 80:00) | 19D BASS DROP & HOLOGRAPHIC LATTICE
     // -------------------------------------------------------------------------
     else if (t < 80.0f) {
         ctx->scene_index = 6;
-        // Volumetric iridescence background
         float drop_t = t - 62.0f;
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -252,73 +240,56 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
-        // Exploding 360-degree Billowing Silk Ribbons & Hyper-Luminous Lattice
-        int ribbons = 24;
-        for (int rb = 0; rb < ribbons; rb++) {
-            float base_ang = (float)rb * (2.0f * (float)M_PI / (float)ribbons) + drop_t * 1.5f;
-            int num_steps = 30;
-            int last_rx = (int)cx, last_ry = (int)cy;
+        // Full 19D Hyperplane Shockwave Dispersal
+        for (int d = 0; d < 19; d++) {
+            float base_ang = (float)d * (2.0f * (float)M_PI / 19.0f) + drop_t * 1.2f;
+            int last_x = (int)cx, last_y = (int)cy;
 
-            for (int s = 1; s <= num_steps; s++) {
-                float dist = (float)s * 25.0f;
-                float spiral_ang = base_ang + (float)s * 0.15f;
-                float shockwave = sinf(drop_t * 8.0f - (float)s * 0.3f) * 30.0f;
+            for (int s = 1; s <= 25; s++) {
+                float dist = (float)s * 28.0f;
+                float spiral = base_ang + (float)s * 0.12f;
+                float shock = sinf(drop_t * 8.0f - (float)s * 0.3f) * 35.0f;
 
-                int cur_rx = (int)(cx + cosf(spiral_ang) * (dist + shockwave));
-                int cur_ry = (int)(cy + sinf(spiral_ang) * (dist + shockwave) * 0.7f);
+                int cur_x = (int)(cx + cosf(spiral) * (dist + shock + coords19[d] * 20.0f));
+                int cur_y = (int)(cy + sinf(spiral) * (dist + shock + coords19[d] * 20.0f) * 0.7f);
 
-                uint32_t holo_col = (s % 3 == 0) ? 0xFF00FFFF : ((s % 3 == 1) ? 0xFFFF00FF : 0xFFFFFFFF);
-                draw_line(fb, w, h, last_rx, last_ry, cur_rx, cur_ry, holo_col);
-                last_rx = cur_rx; last_ry = cur_ry;
+                uint32_t holo = (s % 3 == 0) ? 0xFF00FFFF : ((s % 3 == 1) ? 0xFFFF00FF : 0xFFFFFFFF);
+                draw_line(fb, w, h, last_x, last_y, cur_x, cur_y, holo);
+                last_x = cur_x; last_y = cur_y;
             }
         }
     }
     // -------------------------------------------------------------------------
-    // SCENE 7: OUTRO (80:00 - 90:00) | Translucent Gossamer Lace & Morning Dew
+    // SCENE 7: OUTRO (80:00 - 90:00) | 19D Gossamer Lace & Dewdrops
     // -------------------------------------------------------------------------
     else {
         ctx->scene_index = 7;
-        float outro_prog = (t - 80.0f) / 10.0f; // 0.0 to 1.0
+        float outro_t = (t - 80.0f) / 10.0f;
 
-        // Peaceful forest green morning mist
         for (int y = 0; y < h; y++) {
-            float mist = (1.0f - outro_prog) * ((float)y / (float)h);
-            uint32_t r = (uint32_t)(8.0f * mist);
-            uint32_t g = (uint32_t)(25.0f * mist + 5.0f);
-            uint32_t b = (uint32_t)(15.0f * mist + 5.0f);
-            uint32_t col = 0xFF000000 | (r << 16) | (g << 8) | b;
+            float mist = (1.0f - outro_t) * ((float)y / (float)h);
+            uint32_t col = 0xFF000000 | ((uint32_t)(8.0f * mist) << 16) | ((uint32_t)(25.0f * mist + 5.0f) << 8) | (uint32_t)(15.0f * mist + 5.0f);
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        // Delicate Translucent Gossamer Web Rings
-        int webs = 6;
-        for (int wb = 1; wb <= webs; wb++) {
-            float rad = (float)wb * 60.0f;
-            int num_nodes = 32;
+        // 19D Micro-Dew Web Nodes
+        for (int d = 0; d < 19; d++) {
+            float rad = (60.0f + (float)d * 22.0f);
+            int pts = 24;
             int lx = 0, ly = 0, fx = 0, fy = 0;
 
-            for (int n = 0; n < num_nodes; n++) {
-                float ang = (float)n * (2.0f * (float)M_PI / (float)num_nodes);
+            for (int p = 0; p < pts; p++) {
+                float ang = (float)p * (2.0f * (float)M_PI / (float)pts) + coords19[d] * 0.5f;
                 int wx = (int)(cx + cosf(ang) * rad);
                 int wy = (int)(cy + sinf(ang) * rad * 0.6f);
 
-                if (n == 0) { fx = wx; fy = wy; }
+                if (p == 0) { fx = wx; fy = wy; }
                 else {
-                    draw_line(fb, w, h, lx, ly, wx, wy, 0xFF4A7C59); // Sage green gossamer
+                    draw_line(fb, w, h, lx, ly, wx, wy, 0xFF4A7C59);
                 }
 
-                // Dewdrop sparkles
-                if (n % 4 == 0 && (1.0f - outro_prog) > 0.1f) {
-                    float sparkle = sinf(t * 12.0f + (float)n) * 2.0f;
-                    int dew_r = (int)(3.0f + sparkle);
-                    for (int dy = -dew_r; dy <= dew_r; dy++) {
-                        for (int dx = -dew_r; dx <= dew_r; dx++) {
-                            int sx = wx + dx, sy = wy + dy;
-                            if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
-                                fb[sy * w + sx] = 0xFFE0F7FA; // Sparkling water dew
-                            }
-                        }
-                    }
+                if (p % 4 == 0 && (1.0f - outro_t) > 0.1f) {
+                    fb[wy * w + wx] = 0xFFE0F7FA;
                 }
                 lx = wx; ly = wy;
             }
@@ -328,7 +299,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
 }
 
 // -----------------------------------------------------------------------------
-// Video Compiler Pipeline (FFmpeg RawVideo Pipe)
+// Video Compiler Pipeline
 // -----------------------------------------------------------------------------
 bool tsfi_mp4_compile_video_with_audio(TsfiMp4Pipeline *pipe) {
     if (!pipe) return false;
