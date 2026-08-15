@@ -18,7 +18,6 @@ static const char *LAU_TOKENS[5] = {
     "0x3e10ed242ecb3951151e7a07e0a8f43d4f150c0e"
 };
 
-// 19D Projection Hyperplane from SHA-256 byte payload of valid LAU address
 static void compute_19d_projection(const char *address, float t, float *out_coords, int dim_count) {
     if (!address || !out_coords || dim_count <= 0) return;
 
@@ -36,29 +35,6 @@ void tsfi_mp4_pipeline_init(TsfiMp4Pipeline *pipe, const char *audio_wav, const 
     pipe->total_frames = MP4_TOTAL_FRAMES;
     if (audio_wav) strncpy(pipe->audio_wav_path, audio_wav, sizeof(pipe->audio_wav_path) - 1);
     if (output_mp4) strncpy(pipe->output_mp4_path, output_mp4, sizeof(pipe->output_mp4_path) - 1);
-}
-
-static inline void draw_line_thick(uint32_t *pixels, int w, int h, int x0, int y0, int x1, int y1, uint32_t color, int thickness) {
-    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-    int err = dx + dy, e2;
-
-    while (1) {
-        for (int ty = -thickness; ty <= thickness; ty++) {
-            int py = y0 + ty;
-            if (py < 0 || py >= h) continue;
-            for (int tx = -thickness; tx <= thickness; tx++) {
-                int px = x0 + tx;
-                if (px >= 0 && px < w) {
-                    pixels[py * w + px] = color;
-                }
-            }
-        }
-        if (x0 == x1 && y0 == y1) break;
-        e2 = 2 * err;
-        if (e2 >= dy) { err += dy; x0 += sx; }
-        if (e2 <= dx) { err += dx; y0 += sy; }
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -85,9 +61,90 @@ static inline void project_3d_point(float x, float y, float z,
 }
 
 // -----------------------------------------------------------------------------
+// 3D Cylindrical Volumetric Wire with Normal Shading & Z-Buffering
+// -----------------------------------------------------------------------------
+static void draw_3d_volumetric_wire(uint32_t *pixels, float *zbuf, int w, int h,
+                                    int x0, int y0, float z0,
+                                    int x1, int y1, float z1,
+                                    uint32_t base_color, float radius_3d,
+                                    float lx, float ly, float lz) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
+
+    float total_dist = sqrtf((float)(dx * dx + dy * dy));
+    if (total_dist < 1.0f) total_dist = 1.0f;
+
+    // Segment 2D Tangent and Normal
+    float seg_dx = (float)(x1 - x0) / total_dist;
+    float seg_dy = (float)(y1 - y0) / total_dist;
+    float seg_nx = -seg_dy;
+    float seg_ny = seg_dx;
+
+    int cur_x = x0, cur_y = y0;
+
+    while (1) {
+        float step_d = sqrtf((float)((cur_x - x0)*(cur_x - x0) + (cur_y - y0)*(cur_y - y0)));
+        float frac = step_d / total_dist;
+        if (frac > 1.0f) frac = 1.0f;
+        float cur_z = z0 * (1.0f - frac) + z1 * frac;
+
+        // Dynamic perspective radius scaling
+        int rad_px = (int)((radius_3d * 900.0f) / cur_z);
+        if (rad_px < 1) rad_px = 1;
+        if (rad_px > 16) rad_px = 16;
+
+        for (int r = -rad_px; r <= rad_px; r++) {
+            int px = cur_x + (int)(seg_nx * (float)r);
+            int py = cur_y + (int)(seg_ny * (float)r);
+
+            if (px < 0 || px >= w || py < 0 || py >= h) continue;
+
+            int p_idx = py * w + px;
+            if (cur_z < zbuf[p_idx]) {
+                zbuf[p_idx] = cur_z;
+
+                // Cylindrical Cross-Section Normal
+                float cross_ratio = (float)r / (float)rad_px;
+                float nz_norm = sqrtf(fmaxf(0.0f, 1.0f - cross_ratio * cross_ratio));
+                float nx_norm = seg_nx * cross_ratio;
+                float ny_norm = seg_ny * cross_ratio;
+
+                // Diffuse Lighting (N · L)
+                float n_dot_l = nx_norm * lx + ny_norm * ly + nz_norm * lz;
+                if (n_dot_l < 0.12f) n_dot_l = 0.12f; // Ambient Floor
+
+                // Blinn-Phong Specular (N · H)
+                float hx = lx, hy = ly, hz = lz + 1.0f;
+                float inv_h = 1.0f / sqrtf(hx*hx + hy*hy + hz*hz);
+                hx *= inv_h; hy *= inv_h; hz *= inv_h;
+                float n_dot_h = fmaxf(0.0f, nx_norm * hx + ny_norm * hy + nz_norm * hz);
+                float spec = powf(n_dot_h, 32.0f) * 0.70f;
+
+                uint8_t a = (uint8_t)((base_color >> 24) & 0xFF);
+                float r_val = ((base_color >> 16) & 0xFF) * n_dot_l + spec * 255.0f;
+                float g_val = ((base_color >> 8) & 0xFF) * n_dot_l + spec * 255.0f;
+                float b_val = (base_color & 0xFF) * n_dot_l + spec * 255.0f;
+
+                if (r_val > 255.0f) r_val = 255.0f;
+                if (g_val > 255.0f) g_val = 255.0f;
+                if (b_val > 255.0f) b_val = 255.0f;
+
+                pixels[p_idx] = (a << 24) | ((uint8_t)r_val << 16) | ((uint8_t)g_val << 8) | (uint8_t)b_val;
+            }
+        }
+
+        if (cur_x == x1 && cur_y == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; cur_x += sx; }
+        if (e2 <= dx) { err += dx; cur_y += sy; }
+    }
+}
+
+// -----------------------------------------------------------------------------
 // 3D Vaesen Character Wireframe Renderer
 // -----------------------------------------------------------------------------
-static void draw_3d_vaesen_character(uint32_t *fb, int w, int h, int scene, float t, float cam_yaw, float cam_pitch) {
+static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, int scene, float t, float cam_yaw, float cam_pitch, float lx, float ly, float lz) {
     int sx[16] = {0}, sy[16] = {0};
     float depth[16] = {0};
 
@@ -107,14 +164,13 @@ static void draw_3d_vaesen_character(uint32_t *fb, int w, int h, int scene, floa
             project_3d_point(pts[i][0] + 350.0f, pts[i][1], pts[i][2] + 450.0f, cam_pitch, cam_yaw, 800.0f, w, h, &sx[i], &sy[i], &depth[i]);
         }
 
-
         uint32_t col = 0xFFC5A059;
-        draw_line_thick(fb, w, h, sx[0], sy[0], sx[1], sy[1], col, 2);
-        draw_line_thick(fb, w, h, sx[1], sy[1], sx[2], sy[2], col, 2);
-        draw_line_thick(fb, w, h, sx[1], sy[1], sx[3], sy[3], col, 1);
-        draw_line_thick(fb, w, h, sx[1], sy[1], sx[4], sy[4], col, 1);
-        draw_line_thick(fb, w, h, sx[4], sy[4], sx[5], sy[5], 0xFFFFD700, 2);
-        draw_line_thick(fb, w, h, sx[2], sy[2], sx[6], sy[6], col, 2);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[1], sy[1], depth[1], col, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[2], sy[2], depth[2], col, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[3], sy[3], depth[3], col, 3.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[4], sy[4], depth[4], sx[5], sy[5], depth[5], 0xFFFFD700, 5.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[6], sy[6], depth[6], col, 4.0f, lx, ly, lz);
     } else if (scene == 2) {
         float f_arm = sinf(t * 12.0f) * 25.0f;
         float pts[6][3] = {
@@ -131,11 +187,11 @@ static void draw_3d_vaesen_character(uint32_t *fb, int w, int h, int scene, floa
         }
 
         uint32_t col = 0xFF00FF88;
-        draw_line_thick(fb, w, h, sx[0], sy[0], sx[1], sy[1], col, 2);
-        draw_line_thick(fb, w, h, sx[1], sy[1], sx[2], sy[2], col, 2);
-        draw_line_thick(fb, w, h, sx[2], sy[2], sx[3], sy[3], 0xFF00FFFF, 2);
-        draw_line_thick(fb, w, h, sx[1], sy[1], sx[4], sy[4], col, 1);
-        draw_line_thick(fb, w, h, sx[1], sy[1], sx[5], sy[5], col, 1);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[1], sy[1], depth[1], col, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[2], sy[2], depth[2], col, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[3], sy[3], depth[3], 0xFF00FFFF, 3.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[5], sy[5], depth[5], col, 3.0f, lx, ly, lz);
     } else if (scene == 6) {
         float bob = sinf(t * 8.0f) * 20.0f;
         float pts[8][3] = {
@@ -154,13 +210,13 @@ static void draw_3d_vaesen_character(uint32_t *fb, int w, int h, int scene, floa
         }
 
         uint32_t bear_col = 0xFFFFD700;
-        draw_line_thick(fb, w, h, sx[0], sy[0], sx[1], sy[1], bear_col, 2);
-        draw_line_thick(fb, w, h, sx[0], sy[0], sx[2], sy[2], bear_col, 2);
-        draw_line_thick(fb, w, h, sx[0], sy[0], sx[3], sy[3], bear_col, 3);
-        draw_line_thick(fb, w, h, sx[3], sy[3], sx[4], sy[4], bear_col, 2);
-        draw_line_thick(fb, w, h, sx[3], sy[3], sx[5], sy[5], bear_col, 2);
-        draw_line_thick(fb, w, h, sx[3], sy[3], sx[6], sy[6], bear_col, 2);
-        draw_line_thick(fb, w, h, sx[3], sy[3], sx[7], sy[7], bear_col, 2);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[1], sy[1], depth[1], bear_col, 5.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[2], sy[2], depth[2], bear_col, 5.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[3], sy[3], depth[3], bear_col, 6.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[4], sy[4], depth[4], bear_col, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[5], sy[5], depth[5], bear_col, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[6], sy[6], depth[6], bear_col, 5.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[7], sy[7], depth[7], bear_col, 5.0f, lx, ly, lz);
     }
 }
 
@@ -261,7 +317,7 @@ static void draw_text(uint32_t *fb, int w, int h, int x, int y, const char *str,
 }
 
 // -----------------------------------------------------------------------------
-// Enhanced Multi-Layer Demoscene 3D ANSI Bubble Text with Rainbow Gradients
+// Demoscene 3D ANSI Bubble Text Font
 // -----------------------------------------------------------------------------
 static void draw_demoscene_bubble_text(uint32_t *fb, int w, int h, int x, int y, const char *str,
                                        uint32_t col_top, uint32_t col_bot, uint32_t shadow_col, float bob_phase) {
@@ -276,19 +332,15 @@ static void draw_demoscene_bubble_text(uint32_t *fb, int w, int h, int x, int y,
 
         char s[2] = { ch, '\0' };
 
-        // 1. Deep 3D Isometric Extrusion Cast Shadows
         for (int ext = 6; ext >= 2; ext -= 2) {
             draw_text(fb, w, h, char_x + ext, char_y + ext, s, shadow_col, 5);
         }
 
-        // 2. Crisp Black Inking Border
         draw_text(fb, w, h, char_x + 1, char_y + 1, s, 0xFF101010, 5);
         draw_text(fb, w, h, char_x - 1, char_y - 1, s, 0xFF101010, 5);
 
-        // 3. Multi-Stop Vertical Gradient Body (Upper Highlight -> Lower Rich Base)
         draw_text_gradient(fb, w, h, char_x, char_y, s, col_top, col_bot, 5);
 
-        // 4. Photorealistic Top-Left Specular Glint
         draw_text(fb, w, h, char_x + 1, char_y + 1, s, 0xFFFFFFFF, 1);
         draw_text(fb, w, h, char_x + 2, char_y + 2, s, 0xFFFFFFFF, 1);
     }
@@ -302,12 +354,23 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
     int box_w = 540, box_h = 125;
     uint32_t hud_cyan = 0xFF00FFCC;
 
-    draw_line_thick(fb, w, h, box_x, box_y, box_x + box_w, box_y, hud_cyan, 1);
-    draw_line_thick(fb, w, h, box_x + box_w, box_y, box_x + box_w, box_y + box_h, hud_cyan, 1);
-    draw_line_thick(fb, w, h, box_x + box_w, box_y + box_h, box_x, box_y + box_h, hud_cyan, 1);
-    draw_line_thick(fb, w, h, box_x, box_y + box_h, box_x, box_y, hud_cyan, 1);
+    for (int by = 0; by < box_h; by++) {
+        int py = box_y + by;
+        if (py >= 0 && py < h) {
+            for (int bx = 0; bx < box_w; bx++) {
+                int px = box_x + bx;
+                if (px >= 0 && px < w) {
+                    uint32_t bg = fb[py * w + px];
+                    uint8_t r = (uint8_t)(((bg >> 16) & 0xFF) * 0.4f);
+                    uint8_t g = (uint8_t)(((bg >> 8) & 0xFF) * 0.4f);
+                    uint8_t b = (uint8_t)((bg & 0xFF) * 0.4f);
+                    fb[py * w + px] = 0xFF000000 | (r << 16) | (g << 8) | b;
+                }
+            }
+        }
+    }
 
-    draw_text(fb, w, h, box_x + 15, box_y + 12, "CHANCERY DOCKET #7000 [ZMM R15=0]", 0xFF00FFCC, 2);
+    draw_text(fb, w, h, box_x + 15, box_y + 12, "CHANCERY DOCKET #7000 [ZMM R15=0]", hud_cyan, 2);
     char buf1[64];
     snprintf(buf1, sizeof(buf1), "TIME: %05.2fS | SCENE %d/7 | FPS 60", t, scene);
     draw_text(fb, w, h, box_x + 15, box_y + 35, buf1, 0xFFFFFFFF, 2);
@@ -316,8 +379,13 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
     int score_len = (int)((t / 90.0f) * 440.0f);
     if (score_len > 440) score_len = 440;
 
-    draw_line_thick(fb, w, h, box_x + 15, bar_y, box_x + 15 + score_len, bar_y, 0xFF00FF7F, 3);
-    draw_line_thick(fb, w, h, box_x + 15, bar_y + 15, box_x + 15 + 440, bar_y + 15, 0xFF333333, 1);
+    for (int bx = 0; bx < score_len; bx++) {
+        int px = box_x + 15 + bx;
+        if (px < w) {
+            fb[bar_y * w + px] = 0xFF00FF7F;
+            fb[(bar_y+1) * w + px] = 0xFF00FF7F;
+        }
+    }
 
     char buf2[64];
     snprintf(buf2, sizeof(buf2), "VAESEN EMOTION: [VIGILANCE 0.95] | R0: %3.0fHZ", (scene == 6) ? 20.0f : (scene == 1 ? 55.0f : 110.0f));
@@ -325,14 +393,6 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
 
     // Bottom-Left 2-3 Tree AST Merkle Graph Overlay
     int tree_x = 60, tree_y = h - 140;
-    draw_line_thick(fb, w, h, tree_x + 60, tree_y, tree_x + 60, tree_y + 10, 0xFFFFD700, 2);
-    draw_line_thick(fb, w, h, tree_x + 60, tree_y + 10, tree_x + 20, tree_y + 45, 0xFF00E5FF, 1);
-    draw_line_thick(fb, w, h, tree_x + 60, tree_y + 10, tree_x + 100, tree_y + 45, 0xFF00E5FF, 1);
-    draw_line_thick(fb, w, h, tree_x + 20, tree_y + 45, tree_x, tree_y + 80, 0xFF76EE00, 1);
-    draw_line_thick(fb, w, h, tree_x + 20, tree_y + 45, tree_x + 40, tree_y + 80, 0xFF76EE00, 1);
-    draw_line_thick(fb, w, h, tree_x + 100, tree_y + 45, tree_x + 80, tree_y + 80, 0xFF76EE00, 1);
-    draw_line_thick(fb, w, h, tree_x + 100, tree_y + 45, tree_x + 120, tree_y + 80, 0xFF76EE00, 1);
-
     draw_text(fb, w, h, tree_x + 35, tree_y - 20, "2-3 MERKLE AST", 0xFFFFD700, 1);
     draw_text(fb, w, h, tree_x + 45, tree_y + 12, "ROOT", 0xFFFFFFFF, 1);
 
@@ -341,35 +401,52 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
     draw_text(fb, w, h, rx, ry - 25, "MERKLE PROOF: 0X0D4E0757DE528828", 0xFF00FFCC, 2);
     for (int b = 0; b < 16; b++) {
         uint32_t bit_col = ((merkle_proof >> (b * 4)) & 0x1) ? 0xFF00FFCC : 0xFF444444;
-        draw_line_thick(fb, w, h, rx + b * 24, ry, rx + b * 24, ry + 18, bit_col, 1);
+        for (int ly = 0; ly < 18; ly++) {
+            int py = ry + ly;
+            int px = rx + b * 24;
+            if (px < w && py < h) fb[py * w + px] = bit_col;
+        }
     }
 }
 
 // -----------------------------------------------------------------------------
-// Super8 Film Grain
+// Dark Super8 Optical Emulsion & Vignetting
 // -----------------------------------------------------------------------------
 static inline void apply_super8_film_grain(uint32_t *fb, int w, int h, float t) {
     (void)t;
-    int grain_samples = w * h / 20;
+    float max_dist = sqrtf((float)(w*w + h*h)) * 0.5f;
+    float cx = (float)w * 0.5f, cy = (float)h * 0.5f;
+
+    // Dark Super 8 Cinema Vignette & Grain
+    int grain_samples = w * h / 12;
     for (int i = 0; i < grain_samples; i++) {
         int idx = rand() % (w * h);
+        int px = idx % w;
+        int py = idx / w;
+
+        float dist = sqrtf((float)((px - cx)*(px - cx) + (py - cy)*(py - cy)));
+        float vig = 1.0f - (dist / max_dist) * 0.45f;
+        if (vig < 0.55f) vig = 0.55f;
+
         uint32_t c = fb[idx];
-        int noise = (rand() % 24) - 12;
-        int r = (int)((c >> 16) & 0xFF) + noise;
-        int g = (int)((c >> 8) & 0xFF) + noise;
-        int b = (int)(c & 0xFF) + noise;
+        int noise = (rand() % 32) - 16;
+        int r = (int)(((c >> 16) & 0xFF) * vig) + noise;
+        int g = (int)(((c >> 8) & 0xFF) * vig) + noise;
+        int b = (int)((c & 0xFF) * vig) + noise;
+
         if (r < 0) { r = 0; }
         if (r > 255) { r = 255; }
         if (g < 0) { g = 0; }
         if (g > 255) { g = 255; }
         if (b < 0) { b = 0; }
         if (b > 255) { b = 255; }
+
         fb[idx] = 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 }
 
 // -----------------------------------------------------------------------------
-// Full 3D Volumetric Scene Frame Renderer with Enhanced ANSI Bubble Text
+// Full 3D Volumetric Scene Frame Renderer with 3D DNA Wires & Super8 Lighting
 // -----------------------------------------------------------------------------
 void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
@@ -379,8 +456,10 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     int h = MP4_HEIGHT;
     uint32_t *fb = ctx->framebuffer;
     float cx = (float)w * 0.5f;
-    float cy = (float)h * 0.5f;
-    (void)cy;
+
+    float *zbuf = (float *)malloc(w * h * sizeof(float));
+    if (!zbuf) return;
+    for (int i = 0; i < w * h; i++) zbuf[i] = 100000.0f;
 
     float coords19[19] = {0};
     int token_idx = ((int)(t / 18.0f)) % 5;
@@ -389,22 +468,26 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float cam_yaw = t * 0.4f;
     float cam_pitch = sinf(t * 0.2f) * 0.15f;
 
+    // Dark Super 8 Key Light Vector
+    float lx = 0.577f, ly = -0.577f, lz = 0.577f;
+
     // -------------------------------------------------------------------------
-    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D Obsidian Silk & Demoscene Banner
+    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D Obsidian Silk Torus & Tomte
     // -------------------------------------------------------------------------
     if (t < 15.0f) {
         ctx->scene_index = 1;
         for (int y = 0; y < h; y++) {
             float v = (float)y / (float)h;
-            uint32_t col = 0xFF000000 | ((uint32_t)(25.0f * (1.0f - v)) << 16) | ((uint32_t)(16.0f * (1.0f - v)) << 8) | (uint32_t)(32.0f * v + 8.0f);
+            uint32_t col = 0xFF000000 | ((uint32_t)(15.0f * (1.0f - v)) << 16) | ((uint32_t)(10.0f * (1.0f - v)) << 8) | (uint32_t)(20.0f * v + 5.0f);
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        int rings = 24, segs = 36;
+        int rings = 20, segs = 32;
         for (int ri = 0; ri < rings; ri++) {
             float u = (float)ri / (float)rings;
             float phi = u * 2.0f * (float)M_PI;
             int px0 = 0, py0 = 0, first_x = 0, first_y = 0;
+            float pz0 = 0, first_z = 0;
 
             for (int s = 0; s < segs; s++) {
                 float v = (float)s / (float)segs;
@@ -420,28 +503,27 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
                 int sx = 0, sy = 0; float depth = 0;
                 project_3d_point(x3d - 150.0f, y3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx, &sy, &depth);
 
-                if (s == 0) { first_x = sx; first_y = sy; }
+                if (s == 0) { first_x = sx; first_y = sy; first_z = depth; }
                 else {
                     uint32_t silk_col = (ri % 2 == 0) ? 0xFF5D4A73 : 0xFF7E6998;
-                    draw_line_thick(fb, w, h, px0, py0, sx, sy, silk_col, 0);
+                    draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, sx, sy, depth, silk_col, 3.5f, lx, ly, lz);
                 }
-                px0 = sx; py0 = sy;
+                px0 = sx; py0 = sy; pz0 = depth;
             }
-            draw_line_thick(fb, w, h, px0, py0, first_x, first_y, 0xFF5D4A73, 0);
+            draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, first_x, first_y, first_z, 0xFF5D4A73, 3.5f, lx, ly, lz);
         }
 
-        draw_3d_vaesen_character(fb, w, h, 1, t, cam_yaw, cam_pitch);
+        draw_3d_vaesen_character(fb, zbuf, w, h, 1, t, cam_yaw, cam_pitch, lx, ly, lz);
 
-        // Enhanced Demoscene Bubble Title: BIONIKA (Cyan Glow -> Deep Emerald)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "BIONIKA", 0xFF00FFFF, 0xFF00A876, 0xFF003822, t * 3.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 1: 3D OBSIDIAN SILK & AUNCIENT TOMTE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D Gyroscope & Demoscene Banner
+    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D Gyroscope & Nacken
     // -------------------------------------------------------------------------
     else if (t < 25.0f) {
         ctx->scene_index = 2;
-        for (int i = 0; i < w * h; i++) fb[i] = 0xFF02140A;
+        for (int i = 0; i < w * h; i++) fb[i] = 0xFF010A05;
 
         float beat = fmodf(t, 0.5f) / 0.5f;
         float pulse = 1.0f + 0.28f * expf(-beat * 8.0f);
@@ -450,8 +532,9 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             float rad = (80.0f + (float)d * 22.0f) * pulse;
             float ring_pitch = (float)d * 0.25f + t * 0.8f;
             float ring_yaw = (float)d * 0.35f + t * 0.6f;
-            int pts = 36;
+            int pts = 32;
             int px0 = 0, py0 = 0, first_x = 0, first_y = 0;
+            float pz0 = 0, first_z = 0;
 
             for (int p = 0; p < pts; p++) {
                 float ang = (float)p * (2.0f * (float)M_PI / (float)pts);
@@ -462,33 +545,32 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
                 int sx = 0, sy = 0; float depth = 0;
                 project_3d_point(x3d + 150.0f, y3d, z3d, ring_pitch, ring_yaw, 800.0f, w, h, &sx, &sy, &depth);
 
-                if (p == 0) { first_x = sx; first_y = sy; }
+                if (p == 0) { first_x = sx; first_y = sy; first_z = depth; }
                 else {
                     uint32_t c_col = (d % 2 == 0) ? 0xFF00FFAA : 0xFF00F5FF;
-                    draw_line_thick(fb, w, h, px0, py0, sx, sy, c_col, 0);
+                    draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, sx, sy, depth, c_col, 3.0f, lx, ly, lz);
                 }
-                px0 = sx; py0 = sy;
+                px0 = sx; py0 = sy; pz0 = depth;
             }
-            draw_line_thick(fb, w, h, px0, py0, first_x, first_y, 0xFF00FFAA, 0);
+            draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, first_x, first_y, first_z, 0xFF00FFAA, 3.0f, lx, ly, lz);
         }
 
-        draw_3d_vaesen_character(fb, w, h, 2, t, cam_yaw, cam_pitch);
+        draw_3d_vaesen_character(fb, zbuf, w, h, 2, t, cam_yaw, cam_pitch, lx, ly, lz);
 
-        // Enhanced Demoscene Bubble Title: DISPATCH (Lime -> Dark Forest)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 190, 180, "DISPATCH", 0xFF76FF03, 0xFF00C853, 0xFF003815, t * 3.5f);
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 1: 3D GYROSCOPE & NACKEN EMERGENCE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D DNA Lattice & Demoscene Banner
+    // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D Volumetric Double-Helix DNA Lattice
     // -------------------------------------------------------------------------
     else if (t < 38.0f) {
         ctx->scene_index = 3;
         for (int y = 0; y < h; y++) {
-            uint32_t col = (y % 4 == 0) ? 0xFF2A1E0A : 0xFF140E05;
+            uint32_t col = (y % 4 == 0) ? 0xFF181005 : 0xFF0A0702;
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        int base_pairs = 44;
+        int base_pairs = 36;
         for (int b = 0; b < base_pairs; b++) {
             float frac = (float)b / (float)base_pairs;
             float z3d = -350.0f + frac * 700.0f;
@@ -506,26 +588,24 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             project_3d_point(x2_3d, y2_3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx2, &sy2, &d2);
 
             uint32_t gold_col = (b % 2 == 0) ? 0xFFFFD700 : 0xFFECC460;
-            draw_line_thick(fb, w, h, sx1, sy1, sx2, sy2, gold_col, 1);
-
-            if (sx1 >= 2 && sx1 < w - 2 && sy1 >= 2 && sy1 < h - 2) fb[sy1 * w + sx1] = 0xFFFFFFFF;
-            if (sx2 >= 2 && sx2 < w - 2 && sy2 >= 2 && sy2 < h - 2) fb[sy2 * w + sx2] = 0xFFFFFFFF;
+            draw_3d_volumetric_wire(fb, zbuf, w, h, sx1, sy1, d1, sx2, sy2, d2, gold_col, 4.0f, lx, ly, lz);
         }
 
-        // Enhanced Demoscene Bubble Title: DAMASK (Shimmering Gold -> Bronze)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "DAMASK", 0xFFFFEA00, 0xFFFFAB00, 0xFF4E342E, t * 3.0f);
         draw_text(fb, w, h, (int)cx - 220, 260, "VERSE 2: 3D DOUBLE-HELIX DNA LATTICE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D Trefoil Manifold & Demoscene Banner
+    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D Volumetric Trefoil Knot Manifold
     // -------------------------------------------------------------------------
     else if (t < 50.0f) {
         ctx->scene_index = 4;
-        for (int i = 0; i < w * h; i++) fb[i] = 0xFF060D24;
+        for (int i = 0; i < w * h; i++) fb[i] = 0xFF030712;
 
-        int pts = 120;
+        int pts = 90;
         int px1_prev = 0, py1_prev = 0, px2_prev = 0, py2_prev = 0;
+        float pz1_prev = 0, pz2_prev = 0;
         int first_x1 = 0, first_y1 = 0, first_x2 = 0, first_y2 = 0;
+        float first_z1 = 0, first_z2 = 0;
 
         for (int i = 0; i < pts; i++) {
             float theta = (float)i * (2.0f * (float)M_PI / (float)pts);
@@ -544,28 +624,27 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             project_3d_point(x2_3d, y2_3d, z2_3d, cam_pitch + t * 0.5f, cam_yaw + t * 0.8f, 800.0f, w, h, &sx2, &sy2, &d2);
 
             if (i == 0) {
-                first_x1 = sx1; first_y1 = sy1;
-                first_x2 = sx2; first_y2 = sy2;
+                first_x1 = sx1; first_y1 = sy1; first_z1 = d1;
+                first_x2 = sx2; first_y2 = sy2; first_z2 = d2;
             } else {
-                draw_line_thick(fb, w, h, px1_prev, py1_prev, sx1, sy1, 0xFF5C85FF, 1);
-                draw_line_thick(fb, w, h, px2_prev, py2_prev, sx2, sy2, 0xFFE08B3E, 1);
+                draw_3d_volumetric_wire(fb, zbuf, w, h, px1_prev, py1_prev, pz1_prev, sx1, sy1, d1, 0xFF5C85FF, 4.0f, lx, ly, lz);
+                draw_3d_volumetric_wire(fb, zbuf, w, h, px2_prev, py2_prev, pz2_prev, sx2, sy2, d2, 0xFFE08B3E, 4.0f, lx, ly, lz);
             }
-            px1_prev = sx1; py1_prev = sy1;
-            px2_prev = sx2; py2_prev = sy2;
+            px1_prev = sx1; py1_prev = sy1; pz1_prev = d1;
+            px2_prev = sx2; py2_prev = sy2; pz2_prev = d2;
         }
-        draw_line_thick(fb, w, h, px1_prev, py1_prev, first_x1, first_y1, 0xFF5C85FF, 1);
-        draw_line_thick(fb, w, h, px2_prev, py2_prev, first_x2, first_y2, 0xFFE08B3E, 1);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, px1_prev, py1_prev, pz1_prev, first_x1, first_y1, first_z1, 0xFF5C85FF, 4.0f, lx, ly, lz);
+        draw_3d_volumetric_wire(fb, zbuf, w, h, px2_prev, py2_prev, pz2_prev, first_x2, first_y2, first_z2, 0xFFE08B3E, 4.0f, lx, ly, lz);
 
-        // Enhanced Demoscene Bubble Title: MANIFOLD (Electric Cobalt -> Deep Ultramarine)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 190, 180, "MANIFOLD", 0xFF448AFF, 0xFF2979FF, 0xFF0D47A1, t * 3.5f);
         draw_text(fb, w, h, (int)cx - 220, 260, "CHORUS 2: 3D DUAL-TREFOIL KNOT MANIFOLD", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D Singularity Collapse & Demoscene Banner
+    // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D Geodesic Singularity Icosahedron
     // -------------------------------------------------------------------------
     else if (t < 62.0f) {
         ctx->scene_index = 5;
-        for (int i = 0; i < w * h; i++) fb[i] = 0xFF180803;
+        for (int i = 0; i < w * h; i++) fb[i] = 0xFF0E0402;
 
         float tension = (t - 50.0f) / 12.0f;
         float r_scale = 320.0f * (1.0f - tension * 0.88f);
@@ -578,12 +657,12 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         };
 
         int ico_sx[12] = {0}, ico_sy[12] = {0};
+        float ico_d[12] = {0};
         for (int v = 0; v < 12; v++) {
             float x3d = ico_verts[v][0] * (r_scale / phi_gold);
             float y3d = ico_verts[v][1] * (r_scale / phi_gold);
             float z3d = ico_verts[v][2] * (r_scale / phi_gold);
-            float depth = 0;
-            project_3d_point(x3d, y3d, z3d, t * 1.5f, t * 2.0f, 800.0f, w, h, &ico_sx[v], &ico_sy[v], &depth);
+            project_3d_point(x3d, y3d, z3d, t * 1.5f, t * 2.0f, 800.0f, w, h, &ico_sx[v], &ico_sy[v], &ico_d[v]);
         }
 
         for (int i = 0; i < 12; i++) {
@@ -593,12 +672,11 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
                 float dz = ico_verts[i][2] - ico_verts[j][2];
                 if (fabsf(dx*dx + dy*dy + dz*dz - 4.0f) < 0.1f) {
                     uint32_t spoke_col = ((i + j) % 2 == 0) ? 0xFFFF3300 : 0xFFFF9900;
-                    draw_line_thick(fb, w, h, ico_sx[i], ico_sy[i], ico_sx[j], ico_sy[j], spoke_col, 1);
+                    draw_3d_volumetric_wire(fb, zbuf, w, h, ico_sx[i], ico_sy[i], ico_d[i], ico_sx[j], ico_sy[j], ico_d[j], spoke_col, 4.5f, lx, ly, lz);
                 }
             }
         }
 
-        // Enhanced Demoscene Bubble Title: TENSION (Fiery Crimson -> Burnt Amber)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "TENSION", 0xFFFF5252, 0xFFFF1744, 0xFF880E4F, t * 4.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 3: 3D GEODESIC SINGULARITY COLLAPSE", 0xFFE0E0E0, 2);
     }
@@ -610,43 +688,43 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         float drop_t = t - 62.0f;
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                uint32_t r = (uint32_t)(30.0f + 25.0f * sinf(drop_t * 2.0f + (float)x * 0.01f));
-                uint32_t g = (uint32_t)(22.0f + 22.0f * cosf(drop_t * 2.5f + (float)y * 0.01f));
-                uint32_t b = (uint32_t)(48.0f + 30.0f * sinf(drop_t * 3.0f));
+                uint32_t r = (uint32_t)(20.0f + 15.0f * sinf(drop_t * 2.0f + (float)x * 0.01f));
+                uint32_t g = (uint32_t)(14.0f + 14.0f * cosf(drop_t * 2.5f + (float)y * 0.01f));
+                uint32_t b = (uint32_t)(32.0f + 20.0f * sinf(drop_t * 3.0f));
                 fb[y * w + x] = 0xFF000000 | (r << 16) | (g << 8) | b;
             }
         }
 
-        int ribbons = 32;
+        int ribbons = 24;
         for (int rb = 0; rb < ribbons; rb++) {
             float ang = (float)rb * (2.0f * (float)M_PI / (float)ribbons);
             int prev_x = 0, prev_y = 0;
+            float prev_z = 0;
 
-            for (int s = 1; s <= 20; s++) {
-                float dist = (float)s * 35.0f + sinf(drop_t * 8.0f) * 20.0f;
+            for (int s = 1; s <= 16; s++) {
+                float dist = (float)s * 40.0f + sinf(drop_t * 8.0f) * 20.0f;
                 float x3d = cosf(ang) * dist;
                 float y3d = sinf(ang) * dist * 0.7f;
-                float z3d = -200.0f + (float)s * 30.0f;
+                float z3d = -200.0f + (float)s * 35.0f;
 
                 int sx = 0, sy = 0; float depth = 0;
                 project_3d_point(x3d, y3d, z3d, cam_pitch + drop_t * 0.8f, cam_yaw + drop_t * 1.2f, 750.0f, w, h, &sx, &sy, &depth);
 
                 if (s > 1) {
                     uint32_t holo = (s % 3 == 0) ? 0xFF00FFFF : ((s % 3 == 1) ? 0xFFFF00FF : 0xFFFFFFFF);
-                    draw_line_thick(fb, w, h, prev_x, prev_y, sx, sy, holo, 1);
+                    draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, sx, sy, depth, holo, 3.5f, lx, ly, lz);
                 }
-                prev_x = sx; prev_y = sy;
+                prev_x = sx; prev_y = sy; prev_z = depth;
             }
         }
 
-        draw_3d_vaesen_character(fb, w, h, 6, t, cam_yaw, cam_pitch);
+        draw_3d_vaesen_character(fb, zbuf, w, h, 6, t, cam_yaw, cam_pitch, lx, ly, lz);
 
-        // Enhanced Demoscene Bubble Title: CRESCENDO (Holographic White -> Neon Magenta)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 200, 180, "CRESCENDO", 0xFFFFFFFF, 0xFFFF00FF, 0xFF4A148C, t * 5.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 3: 3D VOLUMETRIC BLAST & TEDDY BEAR", 0xFF00FFFF, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 7: OUTRO (80:00 - 90:00) | 3D Fibonacci Spiral & Demoscene Banner
+    // SCENE 7: OUTRO (80:00 - 90:00) | 3D Volumetric Fibonacci Spiral
     // -------------------------------------------------------------------------
     else {
         ctx->scene_index = 7;
@@ -654,12 +732,13 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
 
         for (int y = 0; y < h; y++) {
             float mist = (1.0f - outro_t) * ((float)y / (float)h);
-            uint32_t col = 0xFF000000 | ((uint32_t)(12.0f * mist) << 16) | ((uint32_t)(35.0f * mist + 8.0f) << 8) | (uint32_t)(22.0f * mist + 8.0f);
+            uint32_t col = 0xFF000000 | ((uint32_t)(8.0f * mist) << 16) | ((uint32_t)(22.0f * mist + 4.0f) << 8) | (uint32_t)(14.0f * mist + 4.0f);
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        int spiral_pts = 80;
+        int spiral_pts = 64;
         int prev_x = 0, prev_y = 0;
+        float prev_z = 0;
         for (int sp = 0; sp < spiral_pts; sp++) {
             float theta = (float)sp * 0.25f + t * 0.5f;
             float r = (float)sp * 4.5f * (1.0f - outro_t * 0.5f);
@@ -671,21 +750,19 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             project_3d_point(x3d, y3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx, &sy, &depth);
 
             if (sp > 0) {
-                draw_line_thick(fb, w, h, prev_x, prev_y, sx, sy, 0xFF689B77, 0);
+                draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, sx, sy, depth, 0xFF689B77, 3.0f, lx, ly, lz);
             }
-            if (sp % 6 == 0 && (1.0f - outro_t) > 0.1f) {
-                if (sx >= 0 && sx < w && sy >= 0 && sy < h) fb[sy * w + sx] = 0xFFE0F7FA;
-            }
-            prev_x = sx; prev_y = sy;
+            prev_x = sx; prev_y = sy; prev_z = depth;
         }
 
-        // Enhanced Demoscene Bubble Title: SETTLED (Emerald Mint -> Sage Green)
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "SETTLED", 0xFF69F0AE, 0xFF00BFA5, 0xFF004D40, t * 2.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "OUTRO: 3D FIBONACCI SEAL & CHANCERY PROOF", 0xFFE0E0E0, 2);
     }
 
     apply_super8_film_grain(fb, w, h, t);
     draw_ast_merkle_proving_hud(fb, w, h, ctx->scene_index, t, 0x0d4e0757de528828ULL);
+
+    free(zbuf);
 }
 
 // -----------------------------------------------------------------------------
