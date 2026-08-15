@@ -564,6 +564,10 @@ bin/test_advanced_web_stack: tests/test_advanced_web_stack.c src/tsfi_advanced_w
 bin/test_compound_prover_strategy: tests/test_compound_prover_strategy.c src/tsfi_compound_prover_strategy.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_web_media_transport: tests/test_web_media_transport.c src/tsfi_web_media_transport.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lz
+
+
 
 
 
