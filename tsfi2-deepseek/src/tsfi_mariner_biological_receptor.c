@@ -1,0 +1,121 @@
+#define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
+
+#include "tsfi_mariner_biological_receptor.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+#ifndef M_E
+#define M_E 2.71828182845904523536
+#endif
+
+void tsfi_mariner_bio_init(MarinerBiologicalState *state) {
+    if (!state) return;
+    memset(state, 0, sizeof(MarinerBiologicalState));
+}
+
+bool tsfi_mariner_bio_ingest_sequence(
+    MarinerBiologicalState *state,
+    uint32_t sequence_id,
+    const char *sequence_str
+) {
+    if (!state || !sequence_str) return false;
+
+    size_t len = strlen(sequence_str);
+    if (len == 0 || len >= MARINER_MAX_SEQUENCE_LEN) return false;
+
+    state->sequence_id = sequence_id;
+    strncpy(state->sequence_payload, sequence_str, MARINER_MAX_SEQUENCE_LEN - 1);
+    state->sequence_payload[MARINER_MAX_SEQUENCE_LEN - 1] = '\0';
+    state->sequence_length = len;
+
+    // Compute FNV-1a DNA signature hash over sequence payload
+    uint64_t hash = 14695981039346656037ULL;
+    for (size_t i = 0; i < len; i++) {
+        hash ^= (uint8_t)sequence_str[i];
+        hash *= 1099511628211ULL;
+    }
+    state->fnv1a_dna_hash = hash;
+    state->motzkin_phase_channel = hash % MARINER_MOTZKIN_FIELD;
+    state->is_receptor_bound = false;
+
+    return true;
+}
+
+bool tsfi_mariner_bio_transduce_receptors(
+    MarinerBiologicalState *state,
+    uint32_t k_exponent
+) {
+    if (!state || state->sequence_length == 0) return false;
+
+    double two_to_k = (double)(1ULL << k_exponent);
+    double alpha = log(2.0) / log(M_E);          // ln(2) / ln(e)
+    double beta = 1.0 - (1.0 / two_to_k);        // 1 - 1/2^k
+
+    uint64_t x_prev = 0ULL;
+    uint64_t x_curr = state->fnv1a_dna_hash % MARINER_MOTZKIN_FIELD;
+
+    uint32_t target_nodes = (uint32_t)state->sequence_length;
+    if (target_nodes > MARINER_MAX_RECEPTOR_NODES) {
+        target_nodes = MARINER_MAX_RECEPTOR_NODES;
+    }
+
+    state->node_count = 0;
+
+    for (uint32_t i = 0; i < target_nodes; i++) {
+        // Execute non-preferential 3-term recurrence step
+        double next_val = alpha * (double)x_curr + beta * (double)x_prev;
+        uint64_t x_next = (uint64_t)fmod(next_val, (double)MARINER_MOTZKIN_FIELD);
+
+        x_prev = x_curr;
+        x_curr = x_next;
+
+        // Map discrete recurrence value to 3D Lissajous receptor coordinates
+        double theta = (2.0 * M_PI * (double)(x_curr % 1000000ULL)) / 1000000.0;
+        double phi = (M_PI * (double)((x_curr / 1000000ULL) % 1000000ULL)) / 1000000.0;
+        double radius = 10.0 + (double)(x_curr % 50ULL) * 0.1;
+
+        MarinerReceptorNode *node = &state->nodes[state->node_count++];
+        node->x = (float)(radius * sin(phi) * cos(theta));
+        node->y = (float)(radius * sin(phi) * sin(theta));
+        node->z = (float)(radius * cos(phi));
+        int64_t charge_raw = (int64_t)(x_curr % 200ULL) - 100;
+        node->charge_potential = (float)charge_raw / 100.0f;
+        node->residue_code = (uint32_t)state->sequence_payload[i];
+        node->sequence_index = i;
+
+    }
+
+    state->total_transduction_cycles += target_nodes;
+    state->is_receptor_bound = (state->node_count > 0);
+
+    return true;
+}
+
+bool tsfi_mariner_bio_verify_binding(
+    const MarinerBiologicalState *state,
+    uint64_t *out_binding_proof
+) {
+    if (!state || !state->is_receptor_bound || state->node_count == 0) return false;
+
+    uint64_t proof = 0x811C9DC5ULL;
+    for (uint32_t i = 0; i < state->node_count; i++) {
+        const MarinerReceptorNode *node = &state->nodes[i];
+        uint32_t node_hash = (uint32_t)(fabsf(node->x) * 100.0f) ^
+                             ((uint32_t)(fabsf(node->y) * 100.0f) << 8) ^
+                             ((uint32_t)(fabsf(node->z) * 100.0f) << 16) ^
+                             (node->residue_code << 24);
+        proof = (proof ^ node_hash) * 0x01000193ULL;
+    }
+
+    if (out_binding_proof) {
+        *out_binding_proof = proof;
+    }
+
+    return (proof != 0);
+}

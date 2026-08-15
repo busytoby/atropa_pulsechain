@@ -510,6 +510,9 @@ bin/test_zorse_vdso_hogan_units: tests/test_zorse_vdso_hogan_units.c src/tsfi_ch
 bin/test_motzkin_recurrence_handshake: tests/test_motzkin_recurrence_handshake.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_mariner_biological_receptor: tests/test_mariner_biological_receptor.c src/tsfi_mariner_biological_receptor.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
