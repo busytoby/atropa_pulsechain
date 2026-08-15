@@ -10,7 +10,8 @@
 #endif
 
 // -----------------------------------------------------------------------------
-// Pure C Score Parser & Sequencer
+// Pure C Score Parser for assets/bionika/bionika_90s_symphony.bio
+// Format: [TIME_SEC] TRACK NOTE/EFFECT FREQ_HZ GAIN [DURATION_SEC] ...
 // -----------------------------------------------------------------------------
 bool tsfi_bio_load_score(TsfiBioScore *score, const char *filepath) {
     if (!score || !filepath) return false;
@@ -23,33 +24,35 @@ bool tsfi_bio_load_score(TsfiBioScore *score, const char *filepath) {
     while (fgets(line, sizeof(line), f) && score->event_count < 128) {
         if (line[0] == '#' || line[0] == '[' || line[0] == '\n' || line[0] == '\r') continue;
 
-        float t_sec = 0.0f, gain = 0.5f, dur = 1.0f;
-        char trk_str[32] = {0}, note_str[32] = {0}, freq_str[64] = {0};
+        float time_sec = 0.0f;
+        char track_str[32] = {0};
+        char note_str[32] = {0};
+        char freq_str[32] = {0};
+        float gain = 0.0f;
+        float dur = 1.0f;
 
-        if (sscanf(line, "%f %s %s %s %f %f", &t_sec, trk_str, note_str, freq_str, &gain, &dur) >= 4) {
-            TsfiBioEvent *ev = &score->events[score->event_count++];
-            ev->time_sec = t_sec;
-            ev->gain = gain;
-            ev->duration_sec = dur > 0.0f ? dur : 1.0f;
+        int parsed = sscanf(line, "%f %31s %31s %31s %f %f",
+                            &time_sec, track_str, note_str, freq_str, &gain, &dur);
 
-            if (strstr(trk_str, "TRACK_1")) ev->track_idx = 1;
-            else if (strstr(trk_str, "TRACK_2")) ev->track_idx = 2;
-            else if (strstr(trk_str, "TRACK_3")) ev->track_idx = 3;
-            else if (strstr(trk_str, "TRACK_4")) ev->track_idx = 4;
-            else if (strstr(trk_str, "TRACK_5")) ev->track_idx = 5;
-            else if (strstr(trk_str, "TRACK_6")) ev->track_idx = 6;
-            else if (strstr(trk_str, "TRACK_7")) ev->track_idx = 7;
-            else ev->track_idx = 1;
+        if (parsed >= 5) {
+            int track_idx = 0;
+            if (sscanf(track_str, "TRACK_%d", &track_idx) != 1) continue;
 
-            char *arrow = strstr(freq_str, "->");
-            if (arrow) {
-                *arrow = '\0';
-                ev->start_freq = strtof(freq_str, NULL);
-                ev->end_freq = strtof(arrow + 2, NULL);
+            float start_freq = 0.0f, end_freq = 0.0f;
+            if (strstr(freq_str, "->")) {
+                sscanf(freq_str, "%f->%f", &start_freq, &end_freq);
             } else {
-                ev->start_freq = strtof(freq_str, NULL);
-                ev->end_freq = ev->start_freq;
+                start_freq = (float)atof(freq_str);
+                end_freq = start_freq;
             }
+
+            TsfiBioEvent *ev = &score->events[score->event_count++];
+            ev->time_sec = time_sec;
+            ev->track_idx = track_idx;
+            ev->start_freq = start_freq;
+            ev->end_freq = end_freq;
+            ev->gain = gain;
+            ev->duration_sec = dur;
         }
     }
 
@@ -58,7 +61,7 @@ bool tsfi_bio_load_score(TsfiBioScore *score, const char *filepath) {
 }
 
 // -----------------------------------------------------------------------------
-// Continuous Multi-Track Synth Engine (All 7 Instruments Fully Rendered)
+// Enhanced Drum & Bass Heavy Bionika Synthesizer Engine
 // -----------------------------------------------------------------------------
 size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, size_t total_frames) {
     (void)score;
@@ -68,54 +71,52 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
     if (!mix_buf) return 0;
 
     float dt = 1.0f / (float)BIONIKA_SAMPLE_RATE;
-    float total_sec = (float)total_frames / (float)BIONIKA_SAMPLE_RATE;
 
-    // Track phases
+    // Track Phase Accumulators
     float p_bass = 0.0f;
     float p_growl = 0.0f;
     float p_lead = 0.0f;
     float p_kick = 0.0f;
     float p_bird = 0.0f;
 
-    // Progression loop at 120 BPM (0.5s per beat, 2.0s per measure)
     for (size_t i = 0; i < total_frames; i++) {
         float t = (float)i * dt;
-        if (t >= total_sec) break;
-
         float sample = 0.0f;
 
         // ---------------------------------------------------------------------
-        // 1. SUB-BASS (Track 1): Continuous driving bass throughout 0s - 80s
+        // 1. DRUM & BASS: SUB-BASS (Track 1) - Boosted Fundamental & Warm Drive
         // ---------------------------------------------------------------------
         if (t < 80.0f) {
             float bass_freq = 55.0f; // A1
-            if (t >= 15.0f && t < 25.0f) bass_freq = (fmodf(t, 4.0f) < 2.0f) ? 55.0f : 43.6f; // A1 -> F1
-            else if (t >= 25.0f && t < 38.0f) bass_freq = (fmodf(t, 2.0f) < 1.0f) ? 65.4f : 55.0f; // C2 -> A1
-            else if (t >= 38.0f && t < 50.0f) bass_freq = (fmodf(t, 4.0f) < 2.0f) ? 43.6f : 36.7f; // F1 -> D1
-            else if (t >= 50.0f && t < 62.0f) bass_freq = 55.0f + (t - 50.0f) * 2.0f; // Rising tension
+            if (t >= 15.0f && t < 25.0f) bass_freq = (fmodf(t, 4.0f) < 2.0f) ? 55.0f : 43.6f;
+            else if (t >= 25.0f && t < 38.0f) bass_freq = (fmodf(t, 2.0f) < 1.0f) ? 65.4f : 55.0f;
+            else if (t >= 38.0f && t < 50.0f) bass_freq = (fmodf(t, 4.0f) < 2.0f) ? 43.6f : 36.7f;
+            else if (t >= 50.0f && t < 62.0f) bass_freq = 55.0f + (t - 50.0f) * 2.5f;
             else if (t >= 62.0f && t < 80.0f) {
                 // MASSIVE BASS DROP (62s - 80s)
                 float drop_prog = (t - 62.0f) / 18.0f;
-                bass_freq = 80.0f * (1.0f - drop_prog * 0.75f); // 80Hz -> 20Hz
+                bass_freq = 90.0f * (1.0f - drop_prog * 0.78f); // 90Hz -> 20Hz
             }
 
-            float bass_gain = (t >= 62.0f) ? 0.70f : 0.40f;
-            float bass_val = sinf(2.0f * (float)M_PI * p_bass) + 0.3f * sinf(4.0f * (float)M_PI * p_bass);
-            sample += bass_val * bass_gain;
+            // Punchy bass harmonic saturation
+            float bass_gain = (t >= 62.0f) ? 1.10f : 0.85f;
+            float raw_bass = sinf(2.0f * (float)M_PI * p_bass) + 0.5f * sinf(4.0f * (float)M_PI * p_bass) + 0.25f * sinf(6.0f * (float)M_PI * p_bass);
+            float sat_bass = tanhf(raw_bass * 1.4f); // Warm tube overdrive
+            sample += sat_bass * bass_gain;
 
             p_bass += bass_freq * dt;
             if (p_bass >= 1.0f) p_bass -= 1.0f;
         }
 
         // ---------------------------------------------------------------------
-        // 2. SUB-GROWL ACID SAW (Track 2): Modulated with 3.8Hz LFO (15s - 80s)
+        // 2. SUB-GROWL ACID SAW (Track 2): 3.8Hz LFO Heavy Resonance
         // ---------------------------------------------------------------------
         if (t >= 15.0f && t < 80.0f) {
             float growl_lfo = 0.5f + 0.5f * sinf(2.0f * (float)M_PI * 3.8f * t);
-            float growl_freq = (t >= 62.0f) ? 65.4f : 110.0f;
+            float growl_freq = (t >= 62.0f) ? 55.0f : 110.0f;
             float saw = 2.0f * (p_growl - floorf(p_growl + 0.5f));
             float growl_val = saw * growl_lfo;
-            float growl_gain = (t >= 62.0f) ? 0.55f : 0.35f;
+            float growl_gain = (t >= 62.0f) ? 0.75f : 0.55f;
             sample += growl_val * growl_gain;
 
             p_growl += growl_freq * dt;
@@ -126,7 +127,6 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         // 3. LEAD ARPEGGIATOR (Track 3): Dual detuned square (14s - 80s)
         // ---------------------------------------------------------------------
         if (t >= 14.0f && t < 80.0f) {
-            // 16th note arpeggio scale: C4, Eb4, G4, Bb4, C5, Eb5, G5
             const float arp_notes[7] = { 261.63f, 311.13f, 392.00f, 466.16f, 523.25f, 622.25f, 783.99f };
             int step = (int)(t * 8.0f) % 7;
             float lead_freq = arp_notes[step];
@@ -134,7 +134,7 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
             float sq1 = (sinf(2.0f * (float)M_PI * p_lead) >= 0.0f) ? 1.0f : -1.0f;
             float sq2 = (sinf(2.0f * (float)M_PI * (p_lead * 1.01f)) >= 0.0f) ? 1.0f : -1.0f;
             float lead_val = (sq1 + sq2) * 0.5f;
-            float lead_gain = (t >= 62.0f) ? 0.40f : 0.25f;
+            float lead_gain = (t >= 62.0f) ? 0.35f : 0.22f;
             sample += lead_val * lead_gain;
 
             p_lead += lead_freq * dt;
@@ -142,16 +142,17 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         }
 
         // ---------------------------------------------------------------------
-        // 4. KICK DRUM (Track 4): 4-on-the-floor beat (15s - 80s)
+        // 4. DRUM & BASS: PUNCHY KICK DRUM (Track 4): 120 BPM High-Impact Transients
         // ---------------------------------------------------------------------
         if (t >= 15.0f && t < 80.0f) {
-            float beat_pos = fmodf(t, 0.5f); // Every 0.5s = 120 BPM beat
-            if (beat_pos < 0.25f) {
-                float k_prog = beat_pos / 0.25f;
-                float k_freq = 160.0f * expf(-k_prog * 6.0f) + 30.0f;
-                float k_env = expf(-k_prog * 8.0f);
+            float beat_pos = fmodf(t, 0.5f);
+            if (beat_pos < 0.28f) {
+                float k_prog = beat_pos / 0.28f;
+                float k_freq = 180.0f * expf(-k_prog * 7.0f) + 32.0f;
+                float k_env = expf(-k_prog * 7.5f);
                 float kick_val = sinf(2.0f * (float)M_PI * p_kick) * k_env;
-                sample += kick_val * 0.65f;
+                float sat_kick = tanhf(kick_val * 1.8f);
+                sample += sat_kick * 1.15f;
 
                 p_kick += k_freq * dt;
                 if (p_kick >= 1.0f) p_kick -= 1.0f;
@@ -161,23 +162,24 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         }
 
         // ---------------------------------------------------------------------
-        // 5. SNARE / CLAP (Track 5): Beats 2 and 4 (15s - 80s)
+        // 5. DRUM & BASS: HARD SNARE / CLAP (Track 5): Heavy 200Hz Snap + Noise
         // ---------------------------------------------------------------------
         if (t >= 15.0f && t < 80.0f) {
-            float measure_pos = fmodf(t, 2.0f); // 2-second measure
-            bool is_snare = (measure_pos >= 0.5f && measure_pos < 0.75f) || (measure_pos >= 1.5f && measure_pos < 1.75f);
+            float measure_pos = fmodf(t, 2.0f);
+            bool is_snare = (measure_pos >= 0.5f && measure_pos < 0.80f) || (measure_pos >= 1.5f && measure_pos < 1.80f);
             if (t >= 50.0f && t < 62.0f) {
-                // Snare roll crescendo in Verse 3
                 float roll_pos = fmodf(t, 0.125f);
-                if (roll_pos < 0.08f) {
+                if (roll_pos < 0.09f) {
                     float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f);
-                    sample += noise * 0.35f * ((t - 50.0f) / 12.0f);
+                    float roll_env = expf(-roll_pos * 25.0f);
+                    sample += noise * roll_env * 0.70f * ((t - 50.0f) / 12.0f);
                 }
             } else if (is_snare) {
                 float s_pos = (measure_pos >= 1.5f) ? (measure_pos - 1.5f) : (measure_pos - 0.5f);
-                float s_env = expf(-s_pos * 12.0f);
+                float s_env = expf(-s_pos * 14.0f);
                 float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f);
-                sample += noise * s_env * 0.40f;
+                float snap = sinf(2.0f * (float)M_PI * 220.0f * s_pos) * expf(-s_pos * 30.0f);
+                sample += (noise * 0.65f + snap * 0.45f) * s_env * 0.80f;
             }
         }
 
@@ -185,11 +187,11 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         // 6. HI-HAT (Track 6): 16th note pattern (12s - 80s)
         // ---------------------------------------------------------------------
         if (t >= 12.0f && t < 80.0f) {
-            float hh_pos = fmodf(t, 0.125f); // 16th note
-            if (hh_pos < 0.04f) {
-                float hh_env = expf(-hh_pos * 35.0f);
+            float hh_pos = fmodf(t, 0.125f);
+            if (hh_pos < 0.05f) {
+                float hh_env = expf(-hh_pos * 40.0f);
                 float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f);
-                sample += noise * hh_env * 0.20f;
+                sample += noise * hh_env * 0.28f;
             }
         }
 
@@ -197,16 +199,14 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         // 7. BIRD SONG OUTRO (Track 7): Quiet nature chirps (80s - 90s)
         // ---------------------------------------------------------------------
         if (t >= 80.0f && t <= 90.0f) {
-            float outro_t = t - 80.0f; // 0.0s to 10.0s
-            // Multi-frequency chirp cycles
+            float outro_t = t - 80.0f;
             float chirp_cycle = fmodf(outro_t, 1.8f);
             if (chirp_cycle < 0.7f) {
                 float chirp_prog = chirp_cycle / 0.7f;
-                // High frequency bird pitch sweep (2.8 kHz -> 4.8 kHz) with 14Hz vibrato
                 float b_freq = 2800.0f + 2000.0f * sinf((float)M_PI * chirp_prog) + 300.0f * sinf(2.0f * (float)M_PI * 14.0f * chirp_prog);
                 float b_env = sinf((float)M_PI * chirp_prog) * expf(-outro_t * 0.15f);
                 float bird_val = sinf(2.0f * (float)M_PI * p_bird) * b_env;
-                sample += bird_val * 0.28f;
+                sample += bird_val * 0.32f;
 
                 p_bird += b_freq * dt;
                 if (p_bird >= 1.0f) p_bird -= 1.0f;
@@ -216,9 +216,9 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         mix_buf[i] = sample;
     }
 
-    // Master Limiter & Normalize into Signed 16-bit PCM
+    // Soft-clipping Master Limiter & Normalize into Signed 16-bit PCM
     for (size_t i = 0; i < total_frames; i++) {
-        float val = mix_buf[i];
+        float val = tanhf(mix_buf[i] * 0.85f);
         if (val > 1.0f) val = 1.0f;
         if (val < -1.0f) val = -1.0f;
         out_pcm[i] = (int16_t)(val * 32767.0f);
@@ -245,13 +245,12 @@ bool tsfi_bio_export_wav(const char *filepath, const int16_t *pcm_data, size_t t
     uint32_t byte_rate = sample_rate * channels * (bits_per_sample / 8);
     uint16_t block_align = channels * (bits_per_sample / 8);
 
-    // Write RIFF/WAVE Header
     fwrite("RIFF", 1, 4, f);
     fwrite(&chunk_size, 4, 1, f);
     fwrite("WAVEfmt ", 1, 8, f);
 
     uint32_t subchunk1_size = 16;
-    uint16_t audio_format = 1; // PCM
+    uint16_t audio_format = 1;
     fwrite(&subchunk1_size, 4, 1, f);
     fwrite(&audio_format, 2, 1, f);
     fwrite(&channels, 2, 1, f);
