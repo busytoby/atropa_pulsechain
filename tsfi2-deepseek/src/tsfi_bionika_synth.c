@@ -10,8 +10,7 @@
 #endif
 
 // -----------------------------------------------------------------------------
-// Pure C Score Parser for assets/bionika/bionika_90s_symphony.bio
-// Format: [TIME_SEC] TRACK NOTE/EFFECT FREQ_HZ GAIN [DURATION_SEC] ...
+// Pure C Score Parser
 // -----------------------------------------------------------------------------
 bool tsfi_bio_load_score(TsfiBioScore *score, const char *filepath) {
     if (!score || !filepath) return false;
@@ -61,7 +60,7 @@ bool tsfi_bio_load_score(TsfiBioScore *score, const char *filepath) {
 }
 
 // -----------------------------------------------------------------------------
-// Enhanced Drum & Bass Heavy Bionika Synthesizer Engine
+// Musical, Harmonically Separated Drum & Bass Synthesizer Engine
 // -----------------------------------------------------------------------------
 size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, size_t total_frames) {
     (void)score;
@@ -79,62 +78,80 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
     float p_kick = 0.0f;
     float p_bird = 0.0f;
 
+    // Low-pass filter state for growl separation
+    float growl_lpf = 0.0f;
+
     for (size_t i = 0; i < total_frames; i++) {
         float t = (float)i * dt;
         float sample = 0.0f;
 
         // ---------------------------------------------------------------------
-        // 1. DRUM & BASS: SUB-BASS (Track 1) - Boosted Fundamental & Warm Drive
+        // 1. MELODIC LOW BASS (Track 1): Clean Deep Sub-Bass Progression (A1-F1-C2-D1)
         // ---------------------------------------------------------------------
         if (t < 80.0f) {
-            float bass_freq = 55.0f; // A1
-            if (t >= 15.0f && t < 25.0f) bass_freq = (fmodf(t, 4.0f) < 2.0f) ? 55.0f : 43.6f;
-            else if (t >= 25.0f && t < 38.0f) bass_freq = (fmodf(t, 2.0f) < 1.0f) ? 65.4f : 55.0f;
-            else if (t >= 38.0f && t < 50.0f) bass_freq = (fmodf(t, 4.0f) < 2.0f) ? 43.6f : 36.7f;
-            else if (t >= 50.0f && t < 62.0f) bass_freq = 55.0f + (t - 50.0f) * 2.5f;
-            else if (t >= 62.0f && t < 80.0f) {
-                // MASSIVE BASS DROP (62s - 80s)
+            // Melodic 8-bar chord progression
+            float bass_notes[8] = { 55.00f, 55.00f, 43.65f, 43.65f, 65.41f, 65.41f, 36.71f, 49.00f }; // A1, A1, F1, F1, C2, C2, D1, G1
+            int bar_idx = (int)(t / 2.0f) % 8;
+            float bass_freq = bass_notes[bar_idx];
+
+            if (t >= 50.0f && t < 62.0f) {
+                // Rising melodic tension
+                bass_freq = 55.00f + (t - 50.0f) * 2.0f;
+            } else if (t >= 62.0f && t < 80.0f) {
+                // Smooth melodic deep glide
                 float drop_prog = (t - 62.0f) / 18.0f;
-                bass_freq = 90.0f * (1.0f - drop_prog * 0.78f); // 90Hz -> 20Hz
+                bass_freq = 73.42f * (1.0f - drop_prog * 0.55f); // D2 -> 33Hz Low C
             }
 
-            // Punchy bass harmonic saturation
-            float bass_gain = (t >= 62.0f) ? 1.10f : 0.85f;
-            float raw_bass = sinf(2.0f * (float)M_PI * p_bass) + 0.5f * sinf(4.0f * (float)M_PI * p_bass) + 0.25f * sinf(6.0f * (float)M_PI * p_bass);
-            float sat_bass = tanhf(raw_bass * 1.4f); // Warm tube overdrive
-            sample += sat_bass * bass_gain;
+            // Pure fundamental + warm 2nd harmonic (melodic, undistorted sub)
+            float sub_sine = sinf(2.0f * (float)M_PI * p_bass);
+            float sub_warm = 0.22f * sinf(4.0f * (float)M_PI * p_bass);
+            float bass_val = (sub_sine + sub_warm) * 0.75f;
+
+            sample += bass_val;
 
             p_bass += bass_freq * dt;
             if (p_bass >= 1.0f) p_bass -= 1.0f;
         }
 
         // ---------------------------------------------------------------------
-        // 2. SUB-GROWL ACID SAW (Track 2): 3.8Hz LFO Heavy Resonance
+        // 2. SEPARATED MID-RANGE ACID GROWL (Track 2): Bandpassed (400Hz - 2500Hz)
         // ---------------------------------------------------------------------
         if (t >= 15.0f && t < 80.0f) {
             float growl_lfo = 0.5f + 0.5f * sinf(2.0f * (float)M_PI * 3.8f * t);
-            float growl_freq = (t >= 62.0f) ? 55.0f : 110.0f;
+            // Higher octave base (E2 = 82.4Hz or A2 = 110Hz) to separate completely from sub-bass
+            float growl_freq = (t >= 62.0f) ? 110.0f : 130.81f; // A2 or C3
             float saw = 2.0f * (p_growl - floorf(p_growl + 0.5f));
-            float growl_val = saw * growl_lfo;
-            float growl_gain = (t >= 62.0f) ? 0.75f : 0.55f;
-            sample += growl_val * growl_gain;
+
+            // 1-pole Low-Pass Filter sweep
+            float cutoff_hz = 600.0f + 1600.0f * growl_lfo;
+            float alpha = (2.0f * (float)M_PI * cutoff_hz * dt) / (2.0f * (float)M_PI * cutoff_hz * dt + 1.0f);
+            growl_lpf += alpha * (saw - growl_lpf);
+
+            // High-pass filter subtraction to eliminate bass mud below 200Hz
+            float growl_highpass = saw - growl_lpf * 0.3f;
+            float growl_gain = (t >= 62.0f) ? 0.38f : 0.28f;
+
+            sample += growl_highpass * growl_gain;
 
             p_growl += growl_freq * dt;
             if (p_growl >= 1.0f) p_growl -= 1.0f;
         }
 
         // ---------------------------------------------------------------------
-        // 3. LEAD ARPEGGIATOR (Track 3): Dual detuned square (14s - 80s)
+        // 3. CRYSTALLINE LEAD ARPEGGIATOR (Track 3): High Melodic Chords
         // ---------------------------------------------------------------------
         if (t >= 14.0f && t < 80.0f) {
+            // Melodic Pentatonic Arp: C4, Eb4, G4, Bb4, C5, Eb5, G5
             const float arp_notes[7] = { 261.63f, 311.13f, 392.00f, 466.16f, 523.25f, 622.25f, 783.99f };
             int step = (int)(t * 8.0f) % 7;
             float lead_freq = arp_notes[step];
 
-            float sq1 = (sinf(2.0f * (float)M_PI * p_lead) >= 0.0f) ? 1.0f : -1.0f;
-            float sq2 = (sinf(2.0f * (float)M_PI * (p_lead * 1.01f)) >= 0.0f) ? 1.0f : -1.0f;
+            float sq1 = (sinf(2.0f * (float)M_PI * p_lead) >= 0.0f) ? 0.7f : -0.7f;
+            float sq2 = (sinf(2.0f * (float)M_PI * (p_lead * 1.008f)) >= 0.0f) ? 0.7f : -0.7f;
             float lead_val = (sq1 + sq2) * 0.5f;
-            float lead_gain = (t >= 62.0f) ? 0.35f : 0.22f;
+            float lead_gain = (t >= 62.0f) ? 0.26f : 0.18f;
+
             sample += lead_val * lead_gain;
 
             p_lead += lead_freq * dt;
@@ -142,17 +159,20 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         }
 
         // ---------------------------------------------------------------------
-        // 4. DRUM & BASS: PUNCHY KICK DRUM (Track 4): 120 BPM High-Impact Transients
+        // 4. CRISP, PUNCHY KICK DRUM (Track 4): Isolated Click & Deep Thud
         // ---------------------------------------------------------------------
         if (t >= 15.0f && t < 80.0f) {
             float beat_pos = fmodf(t, 0.5f);
-            if (beat_pos < 0.28f) {
-                float k_prog = beat_pos / 0.28f;
-                float k_freq = 180.0f * expf(-k_prog * 7.0f) + 32.0f;
-                float k_env = expf(-k_prog * 7.5f);
+            if (beat_pos < 0.22f) {
+                float k_prog = beat_pos / 0.22f;
+                // Fast pitch drop: 220Hz click -> 45Hz solid body
+                float k_freq = 220.0f * expf(-k_prog * 12.0f) + 45.0f;
+                float k_env = expf(-k_prog * 8.5f);
                 float kick_val = sinf(2.0f * (float)M_PI * p_kick) * k_env;
-                float sat_kick = tanhf(kick_val * 1.8f);
-                sample += sat_kick * 1.15f;
+                // Clean transient click
+                float click = (beat_pos < 0.008f) ? (1.0f - beat_pos / 0.008f) * 0.35f : 0.0f;
+
+                sample += (kick_val * 0.85f + click);
 
                 p_kick += k_freq * dt;
                 if (p_kick >= 1.0f) p_kick -= 1.0f;
@@ -162,41 +182,42 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         }
 
         // ---------------------------------------------------------------------
-        // 5. DRUM & BASS: HARD SNARE / CLAP (Track 5): Heavy 200Hz Snap + Noise
+        // 5. SNAPPY, ARTICULATE SNARE (Track 5): 220Hz Tone + High-Frequency Snap
         // ---------------------------------------------------------------------
         if (t >= 15.0f && t < 80.0f) {
             float measure_pos = fmodf(t, 2.0f);
-            bool is_snare = (measure_pos >= 0.5f && measure_pos < 0.80f) || (measure_pos >= 1.5f && measure_pos < 1.80f);
+            bool is_snare = (measure_pos >= 0.5f && measure_pos < 0.72f) || (measure_pos >= 1.5f && measure_pos < 1.72f);
             if (t >= 50.0f && t < 62.0f) {
                 float roll_pos = fmodf(t, 0.125f);
-                if (roll_pos < 0.09f) {
+                if (roll_pos < 0.08f) {
                     float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f);
-                    float roll_env = expf(-roll_pos * 25.0f);
-                    sample += noise * roll_env * 0.70f * ((t - 50.0f) / 12.0f);
+                    float roll_env = expf(-roll_pos * 30.0f);
+                    sample += noise * roll_env * 0.45f * ((t - 50.0f) / 12.0f);
                 }
             } else if (is_snare) {
                 float s_pos = (measure_pos >= 1.5f) ? (measure_pos - 1.5f) : (measure_pos - 0.5f);
-                float s_env = expf(-s_pos * 14.0f);
-                float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f);
-                float snap = sinf(2.0f * (float)M_PI * 220.0f * s_pos) * expf(-s_pos * 30.0f);
-                sample += (noise * 0.65f + snap * 0.45f) * s_env * 0.80f;
+                float s_env = expf(-s_pos * 18.0f);
+                float tone = sinf(2.0f * (float)M_PI * 220.0f * s_pos) * expf(-s_pos * 25.0f);
+                float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f) * 0.7f;
+
+                sample += (tone * 0.5f + noise) * s_env * 0.65f;
             }
         }
 
         // ---------------------------------------------------------------------
-        // 6. HI-HAT (Track 6): 16th note pattern (12s - 80s)
+        // 6. CRISP HI-HAT (Track 6): Clean Metallic 9kHz Click
         // ---------------------------------------------------------------------
         if (t >= 12.0f && t < 80.0f) {
             float hh_pos = fmodf(t, 0.125f);
-            if (hh_pos < 0.05f) {
-                float hh_env = expf(-hh_pos * 40.0f);
+            if (hh_pos < 0.035f) {
+                float hh_env = expf(-hh_pos * 55.0f);
                 float noise = (((float)(rand() % 2000) / 1000.0f) - 1.0f);
-                sample += noise * hh_env * 0.28f;
+                sample += noise * hh_env * 0.22f;
             }
         }
 
         // ---------------------------------------------------------------------
-        // 7. BIRD SONG OUTRO (Track 7): Quiet nature chirps (80s - 90s)
+        // 7. BIRD SONG OUTRO (Track 7): Sweet Serene Chirps (80s - 90s)
         // ---------------------------------------------------------------------
         if (t >= 80.0f && t <= 90.0f) {
             float outro_t = t - 80.0f;
@@ -206,7 +227,7 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
                 float b_freq = 2800.0f + 2000.0f * sinf((float)M_PI * chirp_prog) + 300.0f * sinf(2.0f * (float)M_PI * 14.0f * chirp_prog);
                 float b_env = sinf((float)M_PI * chirp_prog) * expf(-outro_t * 0.15f);
                 float bird_val = sinf(2.0f * (float)M_PI * p_bird) * b_env;
-                sample += bird_val * 0.32f;
+                sample += bird_val * 0.35f;
 
                 p_bird += b_freq * dt;
                 if (p_bird >= 1.0f) p_bird -= 1.0f;
@@ -216,9 +237,9 @@ size_t tsfi_bio_synthesize_pcm16(const TsfiBioScore *score, int16_t *out_pcm, si
         mix_buf[i] = sample;
     }
 
-    // Soft-clipping Master Limiter & Normalize into Signed 16-bit PCM
+    // Transparent Master Limiter
     for (size_t i = 0; i < total_frames; i++) {
-        float val = tanhf(mix_buf[i] * 0.85f);
+        float val = tanhf(mix_buf[i] * 0.80f);
         if (val > 1.0f) val = 1.0f;
         if (val < -1.0f) val = -1.0f;
         out_pcm[i] = (int16_t)(val * 32767.0f);
