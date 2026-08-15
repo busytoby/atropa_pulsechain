@@ -558,6 +558,10 @@ bin/test_web_extensions: tests/test_web_extensions.c src/tsfi_web_extensions.c s
 bin/test_web_security_storage: tests/test_web_security_storage.c src/tsfi_web_security_storage.c src/tsfi_http_client.c src/tsfi_layout.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_advanced_web_stack: tests/test_advanced_web_stack.c src/tsfi_advanced_web_stack.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 
