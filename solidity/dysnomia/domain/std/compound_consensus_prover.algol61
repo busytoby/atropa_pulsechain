@@ -1,0 +1,38 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Compound Multi-Tier Prover Consensus;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally verifies composite defect bitmask across 7 interlocking tiers;
+
+  integer procedure verify_compound_multi_tier_consensus(
+    active_tiers_mask,
+    passed_tiers_mask,
+    defect_mask,
+    executed_pass_count
+  );
+  value active_tiers_mask, passed_tiers_mask, defect_mask, executed_pass_count;
+  integer active_tiers_mask, passed_tiers_mask, defect_mask, executed_pass_count;
+  begin
+    comment Classification:
+            0 = AUTHENTIC_COMPOUND_STATE (100% active tiers satisfied, defect mask = 0)
+            1 = COMPOUND_DEFECT_DETECTED (One or more prover tiers unsatisfied)
+            2 = PASS_OVERFLOW_REJECT (Max passes exceeded without consensus);
+
+    if executed_pass_count > 16 then
+      verify_compound_multi_tier_consensus := 2
+    else if defect_mask != 0 or passed_tiers_mask != active_tiers_mask then
+      verify_compound_multi_tier_consensus := 1
+    else
+      verify_compound_multi_tier_consensus := 0
+  end;
+
+  comment Unit Evaluation Harness;
+  integer ruling;
+  ruling := verify_compound_multi_tier_consensus(127, 127, 0, 2);
+
+  if ruling = 0 then
+    outstring(1, "RULING: AUTHENTIC_COMPOUND_STATE (Compound Prover Consensus Established)\n")
+  else if ruling = 1 then
+    outstring(1, "RULING: COMPOUND_DEFECT_DETECTED (Compound Defects Unresolved)\n")
+  else
+    outstring(1, "RULING: PASS_OVERFLOW_REJECT (Max Iterations Exceeded)\n")
+end
