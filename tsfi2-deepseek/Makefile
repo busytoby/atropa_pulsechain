@@ -579,6 +579,10 @@ bin/test_wasm_crypto_font_events: tests/test_wasm_crypto_font_events.c src/tsfi_
 bin/test_svg_xpath_tex_worker: tests/test_svg_xpath_tex_worker.c src/tsfi_svg_xpath_tex_worker.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+bin/test_tls13_media_rdf_dnd: tests/test_tls13_media_rdf_dnd.c src/tsfi_tls13_media_rdf_dnd.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 
