@@ -9,7 +9,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Verified LAU Token Contract Addresses (Judge Alpha, Witness Beta, Witness Gamma, Juror Delta, Juror Epsilon)
+// Verified LAU Token Contract Addresses
 static const char *LAU_TOKENS[5] = {
     "0xAD4e198623A5E2723e19E4D4a6ECF72B1D19FE4B",
     "0xD07B9f3DF4E9634EbAa0CBF079816925b2C474Ce",
@@ -68,11 +68,9 @@ static inline void project_3d_point(float x, float y, float z,
                                     float rot_x, float rot_y, float cam_z,
                                     int w, int h,
                                     int *out_sx, int *out_sy, float *out_depth) {
-    // Yaw rotation (Y-axis)
     float rx1 = x * cosf(rot_y) - z * sinf(rot_y);
     float rz1 = x * sinf(rot_y) + z * cosf(rot_y);
 
-    // Pitch rotation (X-axis)
     float ry2 = y * cosf(rot_x) - rz1 * sinf(rot_x);
     float rz2 = y * sinf(rot_x) + rz1 * cosf(rot_x) + cam_z;
 
@@ -93,81 +91,69 @@ static void draw_3d_vaesen_character(uint32_t *fb, int w, int h, int scene, floa
     int sx[16] = {0}, sy[16] = {0};
     float depth[16] = {0};
 
-    // -------------------------------------------------------------------------
-    // SCENE 1: The Auncient Tomte (Guardian with Lantern)
-    // -------------------------------------------------------------------------
     if (scene == 1) {
         float b_y = sinf(t * 2.0f) * 15.0f;
-        // Head, Body, Shoulders, Hands, Lantern
         float pts[7][3] = {
-            { 0.0f, -120.0f + b_y, 0.0f }, // 0: Head
-            { 0.0f, -40.0f + b_y, 0.0f },  // 1: Neck/Chest
-            { 0.0f, 60.0f + b_y, 0.0f },   // 2: Pelvis
-            { -50.0f, -30.0f + b_y, 20.0f },// 3: Left Hand
-            { 60.0f, -10.0f + b_y, 40.0f }, // 4: Right Hand (Holding Lantern)
-            { 60.0f, 30.0f + b_y, 40.0f },  // 5: Lantern Base
-            { 0.0f, 150.0f + b_y, 0.0f }    // 6: Cloak Hem
+            { 0.0f, -120.0f + b_y, 0.0f },
+            { 0.0f, -40.0f + b_y, 0.0f },
+            { 0.0f, 60.0f + b_y, 0.0f },
+            { -50.0f, -30.0f + b_y, 20.0f },
+            { 60.0f, -10.0f + b_y, 40.0f },
+            { 60.0f, 30.0f + b_y, 40.0f },
+            { 0.0f, 150.0f + b_y, 0.0f }
         };
 
         for (int i = 0; i < 7; i++) {
             project_3d_point(pts[i][0] + 350.0f, pts[i][1], pts[i][2] + 450.0f, cam_pitch, cam_yaw, 800.0f, w, h, &sx[i], &sy[i], &depth[i]);
         }
 
-        uint32_t col = 0xFFC5A059; // Vaesen Gold
+
+        uint32_t col = 0xFFC5A059;
         draw_line_thick(fb, w, h, sx[0], sy[0], sx[1], sy[1], col, 2);
         draw_line_thick(fb, w, h, sx[1], sy[1], sx[2], sy[2], col, 2);
         draw_line_thick(fb, w, h, sx[1], sy[1], sx[3], sy[3], col, 1);
         draw_line_thick(fb, w, h, sx[1], sy[1], sx[4], sy[4], col, 1);
-        draw_line_thick(fb, w, h, sx[4], sy[4], sx[5], sy[5], 0xFFFFD700, 2); // Glowing lantern chain
+        draw_line_thick(fb, w, h, sx[4], sy[4], sx[5], sy[5], 0xFFFFD700, 2);
         draw_line_thick(fb, w, h, sx[2], sy[2], sx[6], sy[6], col, 2);
-    }
-    // -------------------------------------------------------------------------
-    // SCENE 2: Nacken (The Water Fiddler)
-    // -------------------------------------------------------------------------
-    else if (scene == 2) {
+    } else if (scene == 2) {
         float f_arm = sinf(t * 12.0f) * 25.0f;
         float pts[6][3] = {
-            { 0.0f, -100.0f, 0.0f },          // 0: Head
-            { 0.0f, -30.0f, 0.0f },           // 1: Chest
-            { -45.0f, -20.0f, 30.0f },        // 2: Violin Rest
-            { 40.0f + f_arm, -10.0f, 40.0f }, // 3: Bow Arm
-            { -30.0f, 100.0f, 0.0f },         // 4: Tail/Water Base
-            { 30.0f, 100.0f, 0.0f }           // 5: Tail/Water Base
+            { 0.0f, -100.0f, 0.0f },
+            { 0.0f, -30.0f, 0.0f },
+            { -45.0f, -20.0f, 30.0f },
+            { 40.0f + f_arm, -10.0f, 40.0f },
+            { -30.0f, 100.0f, 0.0f },
+            { 30.0f, 100.0f, 0.0f }
         };
 
         for (int i = 0; i < 6; i++) {
             project_3d_point(pts[i][0] - 350.0f, pts[i][1], pts[i][2] + 450.0f, cam_pitch, cam_yaw, 800.0f, w, h, &sx[i], &sy[i], &depth[i]);
         }
 
-        uint32_t col = 0xFF00FF88; // Emerald Glow
+        uint32_t col = 0xFF00FF88;
         draw_line_thick(fb, w, h, sx[0], sy[0], sx[1], sy[1], col, 2);
         draw_line_thick(fb, w, h, sx[1], sy[1], sx[2], sy[2], col, 2);
-        draw_line_thick(fb, w, h, sx[2], sy[2], sx[3], sy[3], 0xFF00FFFF, 2); // Violin bow
+        draw_line_thick(fb, w, h, sx[2], sy[2], sx[3], sy[3], 0xFF00FFFF, 2);
         draw_line_thick(fb, w, h, sx[1], sy[1], sx[4], sy[4], col, 1);
         draw_line_thick(fb, w, h, sx[1], sy[1], sx[5], sy[5], col, 1);
-    }
-    // -------------------------------------------------------------------------
-    // SCENE 6: The Newborn Teddy Bear Avatar (Hogan Bank & SSA Participant)
-    // -------------------------------------------------------------------------
-    else if (scene == 6) {
+    } else if (scene == 6) {
         float bob = sinf(t * 8.0f) * 20.0f;
-        // Head, Left Ear, Right Ear, Body, Left Arm, Right Arm, Left Leg, Right Leg
         float pts[8][3] = {
-            { 0.0f, -80.0f + bob, 0.0f },     // 0: Head Center
-            { -35.0f, -120.0f + bob, 10.0f }, // 1: Left Ear
-            { 35.0f, -120.0f + bob, 10.0f },  // 2: Right Ear
-            { 0.0f, 0.0f + bob, 0.0f },       // 3: Torso
-            { -60.0f, -20.0f + bob, 30.0f },  // 4: Left Arm Raised
-            { 60.0f, -20.0f + bob, 30.0f },   // 5: Right Arm Raised
-            { -30.0f, 80.0f + bob, 10.0f },   // 6: Left Leg
-            { 30.0f, 80.0f + bob, 10.0f }     // 7: Right Leg
+            { 0.0f, -80.0f + bob, 0.0f },
+            { -35.0f, -120.0f + bob, 10.0f },
+            { 35.0f, -120.0f + bob, 10.0f },
+            { 0.0f, 0.0f + bob, 0.0f },
+            { -60.0f, -20.0f + bob, 30.0f },
+            { 60.0f, -20.0f + bob, 30.0f },
+            { -30.0f, 80.0f + bob, 10.0f },
+            { 30.0f, 80.0f + bob, 10.0f }
         };
 
         for (int i = 0; i < 8; i++) {
             project_3d_point(pts[i][0], pts[i][1], pts[i][2] + 400.0f, cam_pitch, cam_yaw, 700.0f, w, h, &sx[i], &sy[i], &depth[i]);
         }
 
-        uint32_t bear_col = 0xFFFFD700; // Golden Bear Glow
+        uint32_t bear_col = 0xFFFFD700;
         draw_line_thick(fb, w, h, sx[0], sy[0], sx[1], sy[1], bear_col, 2);
         draw_line_thick(fb, w, h, sx[0], sy[0], sx[2], sy[2], bear_col, 2);
         draw_line_thick(fb, w, h, sx[0], sy[0], sx[3], sy[3], bear_col, 3);
@@ -235,7 +221,7 @@ static const uint8_t FONT_5X7[128][5] = {
     ['|'] = {0x00, 0x00, 0x77, 0x00, 0x00}
 };
 
-static void draw_text(uint32_t *fb, int w, int h, int x, int y, const char *str, uint32_t color, int scale) {
+static void draw_text_gradient(uint32_t *fb, int w, int h, int x, int y, const char *str, uint32_t col_top, uint32_t col_bot, int scale) {
     if (!str || !fb) return;
     int cur_x = x;
 
@@ -246,13 +232,19 @@ static void draw_text(uint32_t *fb, int w, int h, int x, int y, const char *str,
                 uint8_t line = FONT_5X7[(int)ch][col];
                 for (int row = 0; row < 7; row++) {
                     if ((line >> row) & 1) {
+                        float v = (float)row / 6.0f;
+                        uint8_t r = (uint8_t)(((col_top >> 16) & 0xFF) * (1.0f - v) + ((col_bot >> 16) & 0xFF) * v);
+                        uint8_t g = (uint8_t)(((col_top >> 8) & 0xFF) * (1.0f - v) + ((col_bot >> 8) & 0xFF) * v);
+                        uint8_t b = (uint8_t)((col_top & 0xFF) * (1.0f - v) + (col_bot & 0xFF) * v);
+                        uint32_t pix_col = 0xFF000000 | (r << 16) | (g << 8) | b;
+
                         for (int dy = 0; dy < scale; dy++) {
                             int py = y + row * scale + dy;
                             if (py < 0 || py >= h) continue;
                             for (int dx = 0; dx < scale; dx++) {
                                 int px = cur_x + col * scale + dx;
                                 if (px >= 0 && px < w) {
-                                    fb[py * w + px] = color;
+                                    fb[py * w + px] = pix_col;
                                 }
                             }
                         }
@@ -264,24 +256,41 @@ static void draw_text(uint32_t *fb, int w, int h, int x, int y, const char *str,
     }
 }
 
+static void draw_text(uint32_t *fb, int w, int h, int x, int y, const char *str, uint32_t color, int scale) {
+    draw_text_gradient(fb, w, h, x, y, str, color, color, scale);
+}
+
 // -----------------------------------------------------------------------------
-// Demoscene 3D ANSI Bubble Text Font
+// Enhanced Multi-Layer Demoscene 3D ANSI Bubble Text with Rainbow Gradients
 // -----------------------------------------------------------------------------
-static void draw_demoscene_bubble_text(uint32_t *fb, int w, int h, int x, int y, const char *str, uint32_t fill_color, uint32_t shadow_color, float bob_phase) {
+static void draw_demoscene_bubble_text(uint32_t *fb, int w, int h, int x, int y, const char *str,
+                                       uint32_t col_top, uint32_t col_bot, uint32_t shadow_col, float bob_phase) {
     if (!str || !fb) return;
     int len = (int)strlen(str);
 
     for (int i = 0; i < len; i++) {
         char ch = str[i];
-        float bob = sinf(bob_phase + (float)i * 0.45f) * 14.0f;
-        int char_x = x + i * 42;
+        float bob = sinf(bob_phase + (float)i * 0.45f) * 16.0f;
+        int char_x = x + i * 44;
         int char_y = y + (int)bob;
 
         char s[2] = { ch, '\0' };
-        draw_text(fb, w, h, char_x + 4, char_y + 4, s, shadow_color, 5);
-        draw_text(fb, w, h, char_x + 2, char_y + 2, s, 0xFF222222, 5);
-        draw_text(fb, w, h, char_x, char_y, s, fill_color, 5);
+
+        // 1. Deep 3D Isometric Extrusion Cast Shadows
+        for (int ext = 6; ext >= 2; ext -= 2) {
+            draw_text(fb, w, h, char_x + ext, char_y + ext, s, shadow_col, 5);
+        }
+
+        // 2. Crisp Black Inking Border
+        draw_text(fb, w, h, char_x + 1, char_y + 1, s, 0xFF101010, 5);
+        draw_text(fb, w, h, char_x - 1, char_y - 1, s, 0xFF101010, 5);
+
+        // 3. Multi-Stop Vertical Gradient Body (Upper Highlight -> Lower Rich Base)
+        draw_text_gradient(fb, w, h, char_x, char_y, s, col_top, col_bot, 5);
+
+        // 4. Photorealistic Top-Left Specular Glint
         draw_text(fb, w, h, char_x + 1, char_y + 1, s, 0xFFFFFFFF, 1);
+        draw_text(fb, w, h, char_x + 2, char_y + 2, s, 0xFFFFFFFF, 1);
     }
 }
 
@@ -360,7 +369,7 @@ static inline void apply_super8_film_grain(uint32_t *fb, int w, int h, float t) 
 }
 
 // -----------------------------------------------------------------------------
-// Full 3D Volumetric Scene Frame Renderer with 3D DNA Meshes & Vaesen Entities
+// Full 3D Volumetric Scene Frame Renderer with Enhanced ANSI Bubble Text
 // -----------------------------------------------------------------------------
 void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
@@ -373,7 +382,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float cy = (float)h * 0.5f;
     (void)cy;
 
-
     float coords19[19] = {0};
     int token_idx = ((int)(t / 18.0f)) % 5;
     compute_19d_projection(LAU_TOKENS[token_idx], t, coords19, 19);
@@ -382,7 +390,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float cam_pitch = sinf(t * 0.2f) * 0.15f;
 
     // -------------------------------------------------------------------------
-    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D Rotating Obsidian Silk Torus & Tomte
+    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D Obsidian Silk & Demoscene Banner
     // -------------------------------------------------------------------------
     if (t < 15.0f) {
         ctx->scene_index = 1;
@@ -392,7 +400,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        // Render 3D Rotating Hyperbolic Silk Torus
         int rings = 24, segs = 36;
         for (int ri = 0; ri < rings; ri++) {
             float u = (float)ri / (float)rings;
@@ -423,14 +430,14 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             draw_line_thick(fb, w, h, px0, py0, first_x, first_y, 0xFF5D4A73, 0);
         }
 
-        // Draw 3D Vaesen Character: The Auncient Tomte
         draw_3d_vaesen_character(fb, w, h, 1, t, cam_yaw, cam_pitch);
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "BIONIKA", 0xFF00FFCC, 0xFF005544, t * 3.0f);
+        // Enhanced Demoscene Bubble Title: BIONIKA (Cyan Glow -> Deep Emerald)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "BIONIKA", 0xFF00FFFF, 0xFF00A876, 0xFF003822, t * 3.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 1: 3D OBSIDIAN SILK & AUNCIENT TOMTE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D Gyroscopic Polyhedral Spheres & Nacken
+    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D Gyroscope & Demoscene Banner
     // -------------------------------------------------------------------------
     else if (t < 25.0f) {
         ctx->scene_index = 2;
@@ -439,7 +446,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         float beat = fmodf(t, 0.5f) / 0.5f;
         float pulse = 1.0f + 0.28f * expf(-beat * 8.0f);
 
-        // 19 Concentric 3D Gyroscopic Rings in True Perspective
         for (int d = 0; d < 19; d++) {
             float rad = (80.0f + (float)d * 22.0f) * pulse;
             float ring_pitch = (float)d * 0.25f + t * 0.8f;
@@ -466,14 +472,14 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             draw_line_thick(fb, w, h, px0, py0, first_x, first_y, 0xFF00FFAA, 0);
         }
 
-        // Draw 3D Vaesen Character: Nacken (Water Fiddler)
         draw_3d_vaesen_character(fb, w, h, 2, t, cam_yaw, cam_pitch);
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 180, 180, "DISPATCH", 0xFF00FF7F, 0xFF004422, t * 3.5f);
+        // Enhanced Demoscene Bubble Title: DISPATCH (Lime -> Dark Forest)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 190, 180, "DISPATCH", 0xFF76FF03, 0xFF00C853, 0xFF003815, t * 3.5f);
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 1: 3D GYROSCOPE & NACKEN EMERGENCE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D Double-Helix DNA Lattice
+    // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D DNA Lattice & Demoscene Banner
     // -------------------------------------------------------------------------
     else if (t < 38.0f) {
         ctx->scene_index = 3;
@@ -482,7 +488,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        // Render 3D Double-Helix DNA Lattice with EDO-22 Cross-Link Base Pairs
         int base_pairs = 44;
         for (int b = 0; b < base_pairs; b++) {
             float frac = (float)b / (float)base_pairs;
@@ -500,20 +505,19 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             project_3d_point(x1_3d, y1_3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx1, &sy1, &d1);
             project_3d_point(x2_3d, y2_3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx2, &sy2, &d2);
 
-            // Draw base-pair rung
             uint32_t gold_col = (b % 2 == 0) ? 0xFFFFD700 : 0xFFECC460;
             draw_line_thick(fb, w, h, sx1, sy1, sx2, sy2, gold_col, 1);
 
-            // Shimmering base node
             if (sx1 >= 2 && sx1 < w - 2 && sy1 >= 2 && sy1 < h - 2) fb[sy1 * w + sx1] = 0xFFFFFFFF;
             if (sx2 >= 2 && sx2 < w - 2 && sy2 >= 2 && sy2 < h - 2) fb[sy2 * w + sx2] = 0xFFFFFFFF;
         }
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 150, 180, "DAMASK", 0xFFFFD700, 0xFF665500, t * 3.0f);
+        // Enhanced Demoscene Bubble Title: DAMASK (Shimmering Gold -> Bronze)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "DAMASK", 0xFFFFEA00, 0xFFFFAB00, 0xFF4E342E, t * 3.0f);
         draw_text(fb, w, h, (int)cx - 220, 260, "VERSE 2: 3D DOUBLE-HELIX DNA LATTICE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D Interlocking Trefoil Manifold
+    // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D Trefoil Manifold & Demoscene Banner
     // -------------------------------------------------------------------------
     else if (t < 50.0f) {
         ctx->scene_index = 4;
@@ -526,7 +530,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         for (int i = 0; i < pts; i++) {
             float theta = (float)i * (2.0f * (float)M_PI / (float)pts);
 
-            // 3D Trefoil Knot Formula
             float r = 180.0f + 60.0f * cosf(3.0f * theta);
             float x1_3d = r * cosf(2.0f * theta);
             float y1_3d = r * sinf(2.0f * theta);
@@ -553,11 +556,12 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         draw_line_thick(fb, w, h, px1_prev, py1_prev, first_x1, first_y1, 0xFF5C85FF, 1);
         draw_line_thick(fb, w, h, px2_prev, py2_prev, first_x2, first_y2, 0xFFE08B3E, 1);
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 180, 180, "MANIFOLD", 0xFF5C85FF, 0xFF112266, t * 3.5f);
+        // Enhanced Demoscene Bubble Title: MANIFOLD (Electric Cobalt -> Deep Ultramarine)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 190, 180, "MANIFOLD", 0xFF448AFF, 0xFF2979FF, 0xFF0D47A1, t * 3.5f);
         draw_text(fb, w, h, (int)cx - 220, 260, "CHORUS 2: 3D DUAL-TREFOIL KNOT MANIFOLD", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D Geodesic Singularity Icosahedron
+    // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D Singularity Collapse & Demoscene Banner
     // -------------------------------------------------------------------------
     else if (t < 62.0f) {
         ctx->scene_index = 5;
@@ -566,7 +570,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         float tension = (t - 50.0f) / 12.0f;
         float r_scale = 320.0f * (1.0f - tension * 0.88f);
 
-        // 3D Strained Icosahedron Vertices
         float phi_gold = (1.0f + sqrtf(5.0f)) * 0.5f;
         float ico_verts[12][3] = {
             { -1.0f,  phi_gold, 0.0f }, {  1.0f,  phi_gold, 0.0f }, { -1.0f, -phi_gold, 0.0f }, {  1.0f, -phi_gold, 0.0f },
@@ -583,7 +586,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             project_3d_point(x3d, y3d, z3d, t * 1.5f, t * 2.0f, 800.0f, w, h, &ico_sx[v], &ico_sy[v], &depth);
         }
 
-        // Connect icosahedron edges in 3D
         for (int i = 0; i < 12; i++) {
             for (int j = i + 1; j < 12; j++) {
                 float dx = ico_verts[i][0] - ico_verts[j][0];
@@ -596,7 +598,8 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "TENSION", 0xFFFF3300, 0xFF661100, t * 4.0f);
+        // Enhanced Demoscene Bubble Title: TENSION (Fiery Crimson -> Burnt Amber)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "TENSION", 0xFFFF5252, 0xFFFF1744, 0xFF880E4F, t * 4.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 3: 3D GEODESIC SINGULARITY COLLAPSE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
@@ -614,7 +617,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
-        // 3D Exploding Holographic Particle Ribbons in True Perspective
         int ribbons = 32;
         for (int rb = 0; rb < ribbons; rb++) {
             float ang = (float)rb * (2.0f * (float)M_PI / (float)ribbons);
@@ -637,14 +639,14 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
-        // Draw 3D Transfigured Newborn Teddy Bear Avatar
         draw_3d_vaesen_character(fb, w, h, 6, t, cam_yaw, cam_pitch);
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 180, 180, "CRESCENDO", 0xFFFFFFFF, 0xFF550055, t * 5.0f);
+        // Enhanced Demoscene Bubble Title: CRESCENDO (Holographic White -> Neon Magenta)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 200, 180, "CRESCENDO", 0xFFFFFFFF, 0xFFFF00FF, 0xFF4A148C, t * 5.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 3: 3D VOLUMETRIC BLAST & TEDDY BEAR", 0xFF00FFFF, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 7: OUTRO (80:00 - 90:00) | 3D Golden-Ratio Fibonacci Spiral
+    // SCENE 7: OUTRO (80:00 - 90:00) | 3D Fibonacci Spiral & Demoscene Banner
     // -------------------------------------------------------------------------
     else {
         ctx->scene_index = 7;
@@ -656,7 +658,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        // Render 3D Golden-Ratio Fibonacci Spiral in True Perspective
         int spiral_pts = 80;
         int prev_x = 0, prev_y = 0;
         for (int sp = 0; sp < spiral_pts; sp++) {
@@ -678,7 +679,8 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             prev_x = sx; prev_y = sy;
         }
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "SETTLED", 0xFF00FF7F, 0xFF004422, t * 2.0f);
+        // Enhanced Demoscene Bubble Title: SETTLED (Emerald Mint -> Sage Green)
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "SETTLED", 0xFF69F0AE, 0xFF00BFA5, 0xFF004D40, t * 2.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "OUTRO: 3D FIBONACCI SEAL & CHANCERY PROOF", 0xFFE0E0E0, 2);
     }
 
