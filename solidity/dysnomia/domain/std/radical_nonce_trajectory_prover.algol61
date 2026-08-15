@@ -1,5 +1,5 @@
 begin
-  comment Standard Algol60/61 Domain Prover: Forward and Back Phase Trajectories of Radical Root Nonces;
+  comment Standard Algol60/61 Domain Prover: Forward and Back Phase Trajectories of Radical Root Nonces for k=3;
   comment Location: solidity/dysnomia/domain/std;
   comment Asserts Bijective Recovery: u = (S_pi - S_sigma)/2, v = (S_pi + S_sigma)/2 over Radical Root Series Integrals;
 
@@ -14,9 +14,9 @@ begin
   integer initial_nonce, k_exponent, trajectory_window_m, alice_phase_offset, bob_phase_offset;
   begin
     comment Classification Ruling:
-            0 = QUALIFIED_ORBITAL_HANDSHAKE (Forward & Back Phase Trajectories Verified)
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Forward & Back Phase Trajectories Verified for k=3)
             1 = INVALID_INITIAL_NONCE (Non-positive starting nonce)
-            2 = INVALID_EXPONENT_RANGE (k must be 5)
+            2 = INVALID_EXPONENT_RANGE (k must be 3)
             3 = SYMMETRIC_PRODUCT_QUOTIENT_PARITY_ERROR (Sum/Diff parity failure)
             4 = BIJECTIVE_PHASE_RECOVERY_MISMATCH (Recovered secrets do not match inputs);
 
@@ -30,11 +30,11 @@ begin
 
     motzkin_prime := 953467954;
     ln2_over_lne_fixed_scaled := 693;
-    pow2_k := 32; comment 2^5 = 32;
+    pow2_k := 8; comment 2^3 = 8;
 
     if initial_nonce <= 0 then
       verify_radical_nonce_phase_trajectories := 1
-    else if k_exponent != 5 then
+    else if k_exponent != 3 then
       verify_radical_nonce_phase_trajectories := 2
     else
       begin
@@ -45,7 +45,7 @@ begin
         u_forward_integral := 0;
         v_back_integral := 0;
 
-        comment Accumulate in-order radical root trajectory integrals;
+        comment Accumulate in-order radical root trajectory integrals (k=3);
         for step := 1 step 1 until trajectory_window_m do
           begin
             n_next := ((ln2_over_lne_fixed_scaled * n_curr) / 1000) + (((pow2_k - 1) * n_prev) / pow2_k) + 1;
@@ -62,8 +62,10 @@ begin
 
         comment Compute Symmetric Product (S_pi) and Symmetric Quotient (S_sigma);
         symm_prod_spi := u_forward_integral + v_back_integral;
-        symm_quot_ssigma := v_back_integral - u_forward_integral;
-        if symm_quot_ssigma < 0 then symm_quot_ssigma := -symm_quot_ssigma;
+        if v_back_integral >= u_forward_integral then
+          symm_quot_ssigma := v_back_integral - u_forward_integral
+        else
+          symm_quot_ssigma := u_forward_integral - v_back_integral;
 
         comment Check Parity Invariant: (S_pi + S_sigma) and (S_pi - S_sigma) must be even integers;
         if ((symm_prod_spi + symm_quot_ssigma) - (((symm_prod_spi + symm_quot_ssigma) / 2) * 2)) != 0 then
@@ -73,8 +75,16 @@ begin
           end;
 
         comment Bijective Secret Recovery (§ 214, § 215);
-        recovered_v := (symm_prod_spi + symm_quot_ssigma) / 2;
-        recovered_u := (symm_prod_spi - symm_quot_ssigma) / 2;
+        if v_back_integral >= u_forward_integral then
+          begin
+            recovered_v := (symm_prod_spi + symm_quot_ssigma) / 2;
+            recovered_u := (symm_prod_spi - symm_quot_ssigma) / 2;
+          end
+        else
+          begin
+            recovered_u := (symm_prod_spi + symm_quot_ssigma) / 2;
+            recovered_v := (symm_prod_spi - symm_quot_ssigma) / 2;
+          end;
 
         if recovered_u = u_forward_integral and recovered_v = v_back_integral then
           verify_radical_nonce_phase_trajectories := 0
@@ -85,7 +95,7 @@ begin
       end
   end;
 
-  comment Domain Input Telemetry: 10-step trajectory evaluation;
+  comment Domain Input Telemetry: 10-step trajectory evaluation for k=3;
   integer target_nonce;
   integer k_param;
   integer window_steps;
@@ -93,7 +103,7 @@ begin
   integer traj_ruling;
 
   target_nonce := 100000;
-  k_param      := 5;
+  k_param      := 3;
   window_steps := 10;
   alice_off    := 17;
   bob_off      := 23;
@@ -107,7 +117,7 @@ begin
   );
 
   if traj_ruling = 0 then
-    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (Radical Nonce Forward & Back Phase Trajectories Verified)\n")
+    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (k=3 Radical Nonce Forward & Back Phase Trajectories Verified)\n")
   else
     outstring(1, "RULING: UNRESOLVED_CONTINUANCE (Chancery Retained)\n")
 end

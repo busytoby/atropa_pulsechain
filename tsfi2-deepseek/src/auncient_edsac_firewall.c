@@ -1588,7 +1588,7 @@ bool auncient_edsac_radical_nonce_trajectory_prover(
 
     const uint64_t motzkin_prime = 953467954ULL;
     const uint64_t ln2_scaled = 693ULL;
-    const uint64_t pow2_k = 32ULL; // k = 5
+    const uint64_t pow2_k = 8ULL; // k = 3 -> 2^3 = 8
 
     uint64_t n_prev = (uint64_t)initial_nonce % motzkin_prime;
     uint64_t n_curr = ((ln2_scaled * n_prev) / 1000ULL) + (((pow2_k - 1ULL) * n_prev) / pow2_k) + 1ULL;
