@@ -9,40 +9,44 @@
 #include <assert.h>
 #include "../inc/tsfi_chancery_docket.h"
 
-// Evaluates C code syntax balance (delimiters) purely via formal state analysis
-static bool check_syntax_balance(const char *code, int *out_paren_depth, int *out_brace_depth) {
+// Evaluates C code syntax balance and count purely via formal state analysis
+static bool check_syntax_balance(const char *code, int *out_paren_depth, int *out_brace_depth, int *out_delim_count) {
     if (!code) return false;
 
     int paren = 0;
     int brace = 0;
+    int count = 0;
     for (size_t i = 0; code[i] != '\0'; i++) {
-        if (code[i] == '(') paren++;
-        else if (code[i] == ')') paren--;
-        else if (code[i] == '{') brace++;
-        else if (code[i] == '}') brace--;
+        if (code[i] == '(') { paren++; count++; }
+        else if (code[i] == ')') { paren--; count++; }
+        else if (code[i] == '{') { brace++; count++; }
+        else if (code[i] == '}') { brace--; count++; }
 
         if (paren < 0 || brace < 0) {
             if (out_paren_depth) *out_paren_depth = paren;
             if (out_brace_depth) *out_brace_depth = brace;
+            if (out_delim_count) *out_delim_count = count;
             return false;
         }
     }
 
     if (out_paren_depth) *out_paren_depth = paren;
     if (out_brace_depth) *out_brace_depth = brace;
-    return (paren == 0 && brace == 0);
+    if (out_delim_count) *out_delim_count = count;
+    return (paren == 0 && brace == 0 && count >= 2);
 }
 
 // Prover evaluator matching llm_code_diffusion_prover.algol61
 static int prove_code_spec_conformance(
     int paren_depth_balance,
     int brace_depth_balance,
+    int total_delim_count,
     int spec_semantic_weight,
     int motzkin_natural_ruling,
     int confidence_threshold
 ) {
-    if (paren_depth_balance != 0 || brace_depth_balance != 0) {
-        return 1; // UNBALANCED_SYNTAX_REJECT
+    if (total_delim_count < 2 || paren_depth_balance != 0 || brace_depth_balance != 0) {
+        return 1; // UNBALANCED_SYNTAX_REJECT (Missing delimiters or imbalance)
     }
     if (motzkin_natural_ruling != 0) {
         return 2; // UNNATURAL_TRIAD_REJECT
@@ -53,6 +57,7 @@ static int prove_code_spec_conformance(
         return 3; // DEFICIENT_SPEC_CONGRUENCE
     }
 }
+
 
 int main(void) {
     printf("====================================================================\n");
@@ -76,11 +81,11 @@ int main(void) {
     // TEST 1: Valid Code Sample Gating (Syntax Balanced & Natural Triad)
     // -------------------------------------------------------------------------
     printf("1. Proving Compliant Code Sample (Syntax & Spec Gating)...\n");
-    int p_depth = 0, b_depth = 0;
-    bool balanced = check_syntax_balance(valid_code_sample, &p_depth, &b_depth);
-    assert(balanced && p_depth == 0 && b_depth == 0);
+    int p_depth = 0, b_depth = 0, d_count = 0;
+    bool balanced = check_syntax_balance(valid_code_sample, &p_depth, &b_depth, &d_count);
+    assert(balanced && p_depth == 0 && b_depth == 0 && d_count >= 2);
 
-    int ruling_valid = prove_code_spec_conformance(p_depth, b_depth, 950, 0, 700);
+    int ruling_valid = prove_code_spec_conformance(p_depth, b_depth, d_count, 950, 0, 700);
     assert(ruling_valid == 0);
     printf("   ✓ Result: AUTHENTIC_CODE_STREAM (ruling = %d)\n", ruling_valid);
 
@@ -88,19 +93,32 @@ int main(void) {
     // TEST 2: Broken Delimiter Syntax Reject
     // -------------------------------------------------------------------------
     printf("\n2. Proving Syntax Delimiter Rejection...\n");
-    int p_broken = 0, b_broken = 0;
-    bool broken_ok = check_syntax_balance(broken_syntax_sample, &p_broken, &b_broken);
+    int p_broken = 0, b_broken = 0, d_broken = 0;
+    bool broken_ok = check_syntax_balance(broken_syntax_sample, &p_broken, &b_broken, &d_broken);
     assert(!broken_ok || p_broken != 0);
 
-    int ruling_syntax_err = prove_code_spec_conformance(p_broken, b_broken, 950, 0, 700);
+    int ruling_syntax_err = prove_code_spec_conformance(p_broken, b_broken, d_broken, 950, 0, 700);
     assert(ruling_syntax_err == 1);
     printf("   ✓ Result: UNBALANCED_SYNTAX_REJECT (ruling = %d)\n", ruling_syntax_err);
+
+    // -------------------------------------------------------------------------
+    // TEST 2.5: Zero-Delimiter Stream Reject (The raw gibberish stream failure case)
+    // -------------------------------------------------------------------------
+    printf("\n2.5 Proving Zero-Delimiter Stream Rejection (Raw Token Gibberish)...\n");
+    const char *gibberish_stream = "easy flo didn include abase unch separ System '] ula index exam";
+    int p_gib = 0, b_gib = 0, d_gib = 0;
+    check_syntax_balance(gibberish_stream, &p_gib, &b_gib, &d_gib);
+    assert(d_gib == 0);
+
+    int ruling_gib = prove_code_spec_conformance(p_gib, b_gib, d_gib, 950, 0, 700);
+    assert(ruling_gib == 1);
+    printf("   ✓ Result: UNBALANCED_SYNTAX_REJECT on zero-delimiter stream (ruling = %d)\n", ruling_gib);
 
     // -------------------------------------------------------------------------
     // TEST 3: Unnatural Recurrence Stream Reject
     // -------------------------------------------------------------------------
     printf("\n3. Proving Motzkin Recurrence Stream Fracture Reject...\n");
-    int ruling_unnatural = prove_code_spec_conformance(0, 0, 950, 1, 700);
+    int ruling_unnatural = prove_code_spec_conformance(0, 0, 4, 950, 1, 700);
     assert(ruling_unnatural == 2);
     printf("   ✓ Result: UNNATURAL_TRIAD_REJECT (ruling = %d)\n", ruling_unnatural);
 
@@ -108,9 +126,10 @@ int main(void) {
     // TEST 4: Deficient Specification Semantic Weight Reject
     // -------------------------------------------------------------------------
     printf("\n4. Proving Deficient Semantic Weight Reject (Weight=500 < Threshold=700)...\n");
-    int ruling_deficient = prove_code_spec_conformance(0, 0, 500, 0, 700);
+    int ruling_deficient = prove_code_spec_conformance(0, 0, 4, 500, 0, 700);
     assert(ruling_deficient == 3);
     printf("   ✓ Result: DEFICIENT_SPEC_CONGRUENCE (ruling = %d)\n", ruling_deficient);
+
 
     // -------------------------------------------------------------------------
     // TEST 5: Filing Resolutions onto Chancery Docket
