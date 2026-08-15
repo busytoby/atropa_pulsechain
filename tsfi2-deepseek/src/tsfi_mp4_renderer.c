@@ -75,7 +75,6 @@ static void draw_3d_volumetric_wire(uint32_t *pixels, float *zbuf, int w, int h,
     float total_dist = sqrtf((float)(dx * dx + dy * dy));
     if (total_dist < 1.0f) total_dist = 1.0f;
 
-    // Segment 2D Tangent and Normal
     float seg_dx = (float)(x1 - x0) / total_dist;
     float seg_dy = (float)(y1 - y0) / total_dist;
     float seg_nx = -seg_dy;
@@ -89,7 +88,6 @@ static void draw_3d_volumetric_wire(uint32_t *pixels, float *zbuf, int w, int h,
         if (frac > 1.0f) frac = 1.0f;
         float cur_z = z0 * (1.0f - frac) + z1 * frac;
 
-        // Dynamic perspective radius scaling
         int rad_px = (int)((radius_3d * 900.0f) / cur_z);
         if (rad_px < 1) rad_px = 1;
         if (rad_px > 16) rad_px = 16;
@@ -104,17 +102,14 @@ static void draw_3d_volumetric_wire(uint32_t *pixels, float *zbuf, int w, int h,
             if (cur_z < zbuf[p_idx]) {
                 zbuf[p_idx] = cur_z;
 
-                // Cylindrical Cross-Section Normal
                 float cross_ratio = (float)r / (float)rad_px;
                 float nz_norm = sqrtf(fmaxf(0.0f, 1.0f - cross_ratio * cross_ratio));
                 float nx_norm = seg_nx * cross_ratio;
                 float ny_norm = seg_ny * cross_ratio;
 
-                // Diffuse Lighting (N · L)
                 float n_dot_l = nx_norm * lx + ny_norm * ly + nz_norm * lz;
-                if (n_dot_l < 0.12f) n_dot_l = 0.12f; // Ambient Floor
+                if (n_dot_l < 0.12f) n_dot_l = 0.12f;
 
-                // Blinn-Phong Specular (N · H)
                 float hx = lx, hy = ly, hz = lz + 1.0f;
                 float inv_h = 1.0f / sqrtf(hx*hx + hy*hy + hz*hz);
                 hx *= inv_h; hy *= inv_h; hz *= inv_h;
@@ -142,7 +137,7 @@ static void draw_3d_volumetric_wire(uint32_t *pixels, float *zbuf, int w, int h,
 }
 
 // -----------------------------------------------------------------------------
-// 3D Vaesen Character Wireframe Renderer
+// 3D Vaesen Character Wireframe Renderer with Moondreams Enhancements
 // -----------------------------------------------------------------------------
 static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, int scene, float t, float cam_yaw, float cam_pitch, float lx, float ly, float lz) {
     int sx[16] = {0}, sy[16] = {0};
@@ -171,6 +166,25 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[4], sy[4], depth[4], sx[5], sy[5], depth[5], 0xFFFFD700, 5.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[6], sy[6], depth[6], col, 4.0f, lx, ly, lz);
+
+        // Moondreams Lantern Atmospheric Radial Glow & Dust Motes
+        int l_cx = sx[5], l_cy = sy[5];
+        for (int gy = -40; gy <= 40; gy++) {
+            for (int gx = -40; gx <= 40; gx++) {
+                int gpx = l_cx + gx, gpy = l_cy + gy;
+                if (gpx >= 0 && gpx < w && gpy >= 0 && gpy < h) {
+                    float dist = sqrtf((float)(gx*gx + gy*gy));
+                    if (dist < 40.0f) {
+                        float glow = (1.0f - dist / 40.0f) * 0.35f;
+                        uint32_t cur = fb[gpy * w + gpx];
+                        uint8_t r = (uint8_t)fminf(255.0f, ((cur >> 16) & 0xFF) + 255.0f * glow);
+                        uint8_t g = (uint8_t)fminf(255.0f, ((cur >> 8) & 0xFF) + 215.0f * glow);
+                        uint8_t b = (uint8_t)fminf(255.0f, (cur & 0xFF) + 80.0f * glow);
+                        fb[gpy * w + gpx] = 0xFF000000 | (r << 16) | (g << 8) | b;
+                    }
+                }
+            }
+        }
     } else if (scene == 2) {
         float f_arm = sinf(t * 12.0f) * 25.0f;
         float pts[6][3] = {
@@ -192,6 +206,19 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[3], sy[3], depth[3], 0xFF00FFFF, 3.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[5], sy[5], depth[5], col, 3.0f, lx, ly, lz);
+
+        // Moondreams EDO-22 Harmonic Resonance Arcs from Violin Bow
+        int v_cx = sx[3], v_cy = sy[3];
+        for (int a = 1; a <= 3; a++) {
+            float arc_r = (float)a * 25.0f + sinf(t * 20.0f) * 6.0f;
+            for (float th = -0.6f; th <= 0.6f; th += 0.05f) {
+                int ax = v_cx + (int)(cosf(th) * arc_r);
+                int ay = v_cy + (int)(sinf(th) * arc_r);
+                if (ax >= 0 && ax < w && ay >= 0 && ay < h) {
+                    fb[ay * w + ax] = 0xFF00FFFF;
+                }
+            }
+        }
     } else if (scene == 6) {
         float bob = sinf(t * 8.0f) * 20.0f;
         float pts[8][3] = {
@@ -217,6 +244,20 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[5], sy[5], depth[5], bear_col, 4.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[6], sy[6], depth[6], bear_col, 5.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[7], sy[7], depth[7], bear_col, 5.0f, lx, ly, lz);
+
+        // Moondreams Sewn Red Heart Badge Prim on Chest
+        int h_cx = sx[3], h_cy = sy[3];
+        for (int hy = -12; hy <= 12; hy++) {
+            for (int hx = -12; hx <= 12; hx++) {
+                int hpx = h_cx + hx, hpy = h_cy + hy;
+                if (hpx >= 0 && hpx < w && hpy >= 0 && hpy < h) {
+                    float hd = sqrtf((float)(hx*hx + hy*hy));
+                    if (hd < 12.0f) {
+                        fb[hpy * w + hpx] = 0xFFFF0033; // Vibrant Sewn Red Heart
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -391,12 +432,10 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
     snprintf(buf2, sizeof(buf2), "VAESEN EMOTION: [VIGILANCE 0.95] | R0: %3.0fHZ", (scene == 6) ? 20.0f : (scene == 1 ? 55.0f : 110.0f));
     draw_text(fb, w, h, box_x + 15, box_y + 85, buf2, 0xFFFFD700, 2);
 
-    // Bottom-Left 2-3 Tree AST Merkle Graph Overlay
     int tree_x = 60, tree_y = h - 140;
     draw_text(fb, w, h, tree_x + 35, tree_y - 20, "2-3 MERKLE AST", 0xFFFFD700, 1);
     draw_text(fb, w, h, tree_x + 45, tree_y + 12, "ROOT", 0xFFFFFFFF, 1);
 
-    // Bottom-Right 64-Bit Merkle Root Visualizer
     int rx = w - 440, ry = h - 60;
     draw_text(fb, w, h, rx, ry - 25, "MERKLE PROOF: 0X0D4E0757DE528828", 0xFF00FFCC, 2);
     for (int b = 0; b < 16; b++) {
@@ -417,7 +456,6 @@ static inline void apply_super8_film_grain(uint32_t *fb, int w, int h, float t) 
     float max_dist = sqrtf((float)(w*w + h*h)) * 0.5f;
     float cx = (float)w * 0.5f, cy = (float)h * 0.5f;
 
-    // Dark Super 8 Cinema Vignette & Grain
     int grain_samples = w * h / 12;
     for (int i = 0; i < grain_samples; i++) {
         int idx = rand() % (w * h);
@@ -446,7 +484,7 @@ static inline void apply_super8_film_grain(uint32_t *fb, int w, int h, float t) 
 }
 
 // -----------------------------------------------------------------------------
-// Full 3D Volumetric Scene Frame Renderer with 3D DNA Wires & Super8 Lighting
+// Full 3D Volumetric Scene Frame Renderer with Moondreams Enhancements
 // -----------------------------------------------------------------------------
 void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
@@ -468,7 +506,6 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float cam_yaw = t * 0.4f;
     float cam_pitch = sinf(t * 0.2f) * 0.15f;
 
-    // Dark Super 8 Key Light Vector
     float lx = 0.577f, ly = -0.577f, lz = 0.577f;
 
     // -------------------------------------------------------------------------
@@ -589,6 +626,16 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
 
             uint32_t gold_col = (b % 2 == 0) ? 0xFFFFD700 : 0xFFECC460;
             draw_3d_volumetric_wire(fb, zbuf, w, h, sx1, sy1, d1, sx2, sy2, d2, gold_col, 4.0f, lx, ly, lz);
+
+            // Moondreams Gold Specular Bloom on Nucleotide Nodes
+            if (sx1 >= 3 && sx1 < w - 3 && sy1 >= 3 && sy1 < h - 3) {
+                fb[sy1 * w + sx1] = 0xFFFFFFFF;
+                fb[(sy1+1) * w + sx1] = 0xFFFFF8DC;
+            }
+            if (sx2 >= 3 && sx2 < w - 3 && sy2 >= 3 && sy2 < h - 3) {
+                fb[sy2 * w + sx2] = 0xFFFFFFFF;
+                fb[(sy2+1) * w + sx2] = 0xFFFFF8DC;
+            }
         }
 
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 160, 180, "DAMASK", 0xFFFFEA00, 0xFFFFAB00, 0xFF4E342E, t * 3.0f);
@@ -677,6 +724,26 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
+        // Moondreams Blackbody Thermal Flare at Central Singularity
+        int core_r = (int)(16.0f + tension * 28.0f);
+        int mid_x = (int)cx, mid_y = (int)((float)h * 0.5f);
+        for (int dy = -core_r; dy <= core_r; dy++) {
+            for (int dx = -core_r; dx <= core_r; dx++) {
+                int px = mid_x + dx, py = mid_y + dy;
+                if (px >= 0 && px < w && py >= 0 && py < h) {
+                    float dist = sqrtf((float)(dx*dx + dy*dy));
+                    if (dist < (float)core_r) {
+                        float flare = (1.0f - dist / (float)core_r);
+                        uint32_t cur = fb[py * w + px];
+                        uint8_t r = (uint8_t)fminf(255.0f, ((cur >> 16) & 0xFF) + 255.0f * flare);
+                        uint8_t g = (uint8_t)fminf(255.0f, ((cur >> 8) & 0xFF) + 200.0f * flare * tension);
+                        uint8_t b = (uint8_t)fminf(255.0f, (cur & 0xFF) + 120.0f * flare * tension);
+                        fb[py * w + px] = 0xFF000000 | (r << 16) | (g << 8) | b;
+                    }
+                }
+            }
+        }
+
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "TENSION", 0xFFFF5252, 0xFFFF1744, 0xFF880E4F, t * 4.0f);
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 3: 3D GEODESIC SINGULARITY COLLAPSE", 0xFFE0E0E0, 2);
     }
@@ -751,6 +818,10 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
 
             if (sp > 0) {
                 draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, sx, sy, depth, 0xFF689B77, 3.0f, lx, ly, lz);
+            }
+            // Moondreams Dew Caustic Lensing Highlights
+            if (sp % 4 == 0 && (1.0f - outro_t) > 0.1f) {
+                if (sx >= 0 && sx < w && sy >= 0 && sy < h) fb[sy * w + sx] = 0xFFFFFFFF;
             }
             prev_x = sx; prev_y = sy; prev_z = depth;
         }
