@@ -1161,8 +1161,10 @@ $(BIN_DIR):
 tests/node_interop.o: tests/node_interop.cpp tests/node_interop.h
 	$(CXX) $(CXXFLAGS) -I/usr/include/node -c -o $@ $<
 
-tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_layout.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+tests/rooted_frame_presenter: tests/rooted_frame_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_layout.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -I/usr/include/node -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) -lnode /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
+
+
 
 tests/rooted_vulkan_presenter: tests/rooted_vulkan_presenter.c tests/rooted_wayland_events.c tests/libmozilla_interop.c tests/node_interop.o $(OBJ_DIR)/tsfi_media_decode.o src/tsfi_layout.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -I/usr/include/node -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) -lnode /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
