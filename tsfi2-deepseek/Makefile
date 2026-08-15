@@ -570,6 +570,10 @@ bin/test_web_media_transport: tests/test_web_media_transport.c src/tsfi_web_medi
 bin/test_webgl_audio_js_doh: tests/test_webgl_audio_js_doh.c src/tsfi_webgl_audio_js_doh.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+bin/test_webrtc_sw_idb_flexgrid: tests/test_webrtc_sw_idb_flexgrid.c src/tsfi_webrtc_sw_idb_flexgrid.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 
