@@ -1,0 +1,94 @@
+# ATROPA BIONIKA SOUNDTRACK SCORE (.bio)
+# Structure: 90 Seconds, 3 Verses, 3 Choruses, Heavy Crescendo, Bass Drop, Bird Song Outro
+# Format: [TIME_SEC] TRACK NOTE/EFFECT FREQ_HZ GAIN [DURATION_SEC] [EXTRA_PARAMS]
+
+[HEADER]
+TITLE=Bionika 90-Second Formal Proof Symphony
+TEMPO_BPM=120
+SAMPLE_RATE=44100
+CHANNELS=2
+TRACKS=7
+TRACK_1=SubBass (55Hz Sine)
+TRACK_2=Growl (Modulated Acid Sawtooth)
+TRACK_3=Lead (Dual Detuned Square)
+TRACK_4=Kick (Pitch-Swept Exponential Drop)
+TRACK_5=Snare (Bandpassed Noise Burst)
+TRACK_6=HiHat (High-Frequency Click)
+TRACK_7=BirdSong (Frequency Chirps & Harmonic Whistles)
+
+[TIMELINE]
+# ----------------------------------------------------------------------
+# 00:00 - 00:15 | VERSE 1: Ambient Initiation & Sub-Bass Pulse
+# ----------------------------------------------------------------------
+00.00 TRACK_1 NOTE_A1 55.0 0.40 4.00
+04.00 TRACK_1 NOTE_C2 65.4 0.45 4.00
+08.00 TRACK_1 NOTE_D2 73.4 0.50 4.00
+12.00 TRACK_6 CLICK   8000.0 0.20 0.05 PATTERN=8TH_NOTES
+14.00 TRACK_3 LEAD_C4 261.6 0.30 1.50
+
+# ----------------------------------------------------------------------
+# 00:15 - 00:25 | CHORUS 1: Growl Introduction & Driving Beat
+# ----------------------------------------------------------------------
+15.00 TRACK_4 KICK    150.0->30.0 0.80 0.25 BEAT=4_ON_FLOOR
+15.00 TRACK_5 SNARE   1200.0 0.60 0.20 BEAT=BACKBEAT_2_4
+15.00 TRACK_2 GROWL   110.0 0.70 2.00 LFO_RATE=2.0HZ CUTOFF_SWEEP=500->2500
+17.00 TRACK_2 GROWL   98.0  0.75 2.00 LFO_RATE=4.0HZ CUTOFF_SWEEP=600->3000
+19.00 TRACK_3 LEAD_E4 329.6 0.60 1.00 DETUNE=+2HZ
+21.00 TRACK_3 LEAD_G4 392.0 0.65 1.00 DETUNE=+2HZ
+23.00 TRACK_1 NOTE_F1 43.6  0.60 2.00
+
+# ----------------------------------------------------------------------
+# 00:25 - 00:38 | VERSE 2: Syncopated Evolution & Bass Modulation
+# ----------------------------------------------------------------------
+25.00 TRACK_1 NOTE_A1 55.0  0.55 3.00
+28.00 TRACK_2 GROWL   130.8 0.50 2.00 LFO_RATE=1.5HZ
+30.00 TRACK_6 HIHAT   9000.0 0.35 0.04 PATTERN=16TH_NOTES
+32.00 TRACK_4 KICK    150.0->30.0 0.75 0.25 BEAT=4_ON_FLOOR
+34.00 TRACK_5 SNARE   1200.0 0.60 0.20 BEAT=BACKBEAT_2_4
+36.00 TRACK_3 LEAD_A4 440.0 0.50 2.00 ARPEGGIATOR=ON
+
+# ----------------------------------------------------------------------
+# 00:38 - 00:50 | CHORUS 2: Widened Harmonics & Acid Lead Rise
+# ----------------------------------------------------------------------
+38.00 TRACK_4 KICK    160.0->28.0 0.85 0.25 BEAT=4_ON_FLOOR
+38.00 TRACK_2 GROWL   82.4  0.80 2.00 LFO_RATE=4.0HZ CUTOFF_SWEEP=400->4000
+40.00 TRACK_2 GROWL   73.4  0.85 2.00 LFO_RATE=8.0HZ CUTOFF_SWEEP=400->4500
+42.00 TRACK_3 LEAD_F4 349.2 0.70 1.00 DETUNE=+3HZ
+44.00 TRACK_3 LEAD_A4 440.0 0.75 1.00 DETUNE=+3HZ
+46.00 TRACK_3 LEAD_C5 523.2 0.80 2.00 DETUNE=+3HZ
+48.00 TRACK_1 NOTE_D1 36.7  0.70 2.00
+
+# ----------------------------------------------------------------------
+# 00:50 - 00:62 | VERSE 3: Tension Riser & Pre-Crescendo Snare Roll
+# ----------------------------------------------------------------------
+50.00 TRACK_1 NOTE_A1 55.0  0.60 4.00
+54.00 TRACK_6 HIHAT   10000.0 0.40 0.03 PATTERN=32ND_ROLL
+56.00 TRACK_5 SNARE   1500.0  0.70 0.15 SNARE_ROLL=CRESCENDO
+58.00 TRACK_2 GROWL   110.0->220.0 0.80 4.00 PITCH_BEND=UP
+60.00 TRACK_5 SNARE   1500.0  0.90 0.10 SNARE_ROLL=MAX_SPEED
+
+# ----------------------------------------------------------------------
+# 00:62 - 00:80 | CHORUS 3: MAX CRESCENDO & MASSIVE BASS DROP
+# ----------------------------------------------------------------------
+62.00 TRACK_1 SUB_DROP 80.0->20.0 1.00 4.00 HEAVY_BASS_DROP=ACTIVE
+62.00 TRACK_4 KICK     180.0->25.0 1.00 0.30 DISTORTION=1.5
+62.00 TRACK_2 GROWL    55.0  0.95 4.00 LFO_RATE=16.0HZ CUTOFF=MAX
+66.00 TRACK_3 LEAD_E5  659.2 0.90 2.00 CHORUS_WIDTH=100%
+68.00 TRACK_3 LEAD_G5  784.0 0.95 2.00 CHORUS_WIDTH=100%
+70.00 TRACK_1 SUB_BASS 43.6  0.95 4.00 RESONANCE=0.9
+72.00 TRACK_2 GROWL    65.4  0.90 4.00 MOD_DEPTH=1.0
+76.00 TRACK_4 KICK     180.0->25.0 0.90 0.25 FINAL_BEATS
+78.00 TRACK_5 SNARE    1200.0 0.80 0.20 REVERB_TAIL=2.0S
+80.00 ALL_DRUMS CUTOFF ZERO 0.00
+
+# ----------------------------------------------------------------------
+# 00:80 - 00:90 | OUTRO: Quiet Bird Songs & Harmonic Nature Resolving
+# ----------------------------------------------------------------------
+80.00 TRACK_7 BIRD_CHIRP1 2400.0->3600.0 0.25 0.35 MOD_SPEED=12.0HZ
+81.50 TRACK_7 BIRD_WARBLE 3100.0->2800.0 0.20 0.60 VIBRATO=8.0HZ
+83.00 TRACK_7 BIRD_CHIRP2 4200.0->5000.0 0.30 0.25 TRILL=FAST
+84.50 TRACK_7 BIRD_CALL   2600.0->3200.0 0.22 0.80 RESONANT_ECHO=0.4
+86.00 TRACK_7 BIRD_DUET1  3500.0->4400.0 0.18 0.45 PAN=LEFT_70%
+87.20 TRACK_7 BIRD_DUET2  3800.0->4800.0 0.18 0.50 PAN=RIGHT_70%
+88.50 TRACK_7 BIRD_FINALE 2900.0->3400.0 0.12 1.20 FADE_OUT=EXPONENTIAL
+90.00 END_SCORE

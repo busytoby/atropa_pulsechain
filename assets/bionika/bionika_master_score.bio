@@ -1,0 +1,68 @@
+{
+  "name": "Bionika 90s Symphony - Master 7-Track Arrangement",
+  "author": "Atropa Dysnomia Core",
+  "tempo": 120.0,
+  "swing": 0.16,
+  "duration_seconds": 90.0,
+  "features": [
+    "LAU LUT Localized Voltage Transduction",
+    "Slow Jams R&B Sub-Growl Resonant Filtering",
+    "Eye-of-the-Tiger Driving Syncopated Rhythmic Punch",
+    "3-Verse 3-Chorus Crescendo Structure",
+    "Exponential Sub-Bass Drop",
+    "Quiet Harmonic Bird Song Outro"
+  ],
+  "instruments": {
+    "track_1_sub_bass": {
+      "type": "sine",
+      "fundamental_hz": 55.0,
+      "sub_octave_enabled": true,
+      "low_pass_cutoff_hz": 120.0
+    },
+    "track_2_sub_growl": {
+      "type": "acid_sawtooth",
+      "lfo_waveform": "triangle",
+      "modulation_rate_hz": 3.8,
+      "filter_sweep_hz": [400, 4500],
+      "resonance_q": 0.85
+    },
+    "track_3_lead_arp": {
+      "type": "dual_detuned_square",
+      "detune_hz": 2.0,
+      "arpeggiator_scale": ["C4", "Eb4", "G4", "Bb4", "C5", "Eb5", "G5"],
+      "chorus_depth": 0.75
+    },
+    "track_4_kick_drum": {
+      "type": "pitch_swept_sine",
+      "pitch_envelope": [180.0, 25.0],
+      "decay_time_sec": 0.28,
+      "drive_saturation": 1.4
+    },
+    "track_5_snare_rim": {
+      "type": "bandpassed_noise_clap",
+      "center_freq_hz": 1350.0,
+      "reverb_decay_sec": 1.2
+    },
+    "track_6_closed_open_hh": {
+      "type": "high_pass_noise_click",
+      "high_pass_cutoff_hz": 8500.0,
+      "swing_decay_sec": 0.04
+    },
+    "track_7_bird_nature_outro": {
+      "type": "fm_chirp_whistle",
+      "carrier_freq_range": [2400.0, 5200.0],
+      "modulator_freq_hz": 14.0,
+      "vibrato_depth": 0.25,
+      "stereo_pan": "ping_pong"
+    }
+  },
+  "arrangement": [
+    { "section": "verse_1",    "start_sec": 0.0,  "end_sec": 15.0, "description": "Atmospheric Sub-Bass & 8th note hats" },
+    { "section": "chorus_1",   "start_sec": 15.0, "end_sec": 25.0, "description": "4-on-the-floor kick with 3.8Hz acid growl" },
+    { "section": "verse_2",    "start_sec": 25.0, "end_sec": 38.0, "description": "Syncopated R&B bass slides and 16th hats" },
+    { "section": "chorus_2",   "start_sec": 38.0, "end_sec": 50.0, "description": "C-minor arpeggio filter sweep and wide lead" },
+    { "section": "verse_3",    "start_sec": 50.0, "end_sec": 62.0, "description": "Crescendo riser, snare roll acceleration, pitch bend" },
+    { "section": "chorus_3",   "start_sec": 62.0, "end_sec": 80.0, "description": "MASSIVE SUB-BASS DROP, max growl distortion, full energy" },
+    { "section": "bird_outro", "start_sec": 80.0, "end_sec": 90.0, "description": "Harmonic bird chirps, high-pass nature winds, soft fade" }
+  ]
+}
