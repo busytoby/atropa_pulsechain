@@ -513,6 +513,9 @@ bin/test_motzkin_recurrence_handshake: tests/test_motzkin_recurrence_handshake.c
 bin/test_mariner_biological_receptor: tests/test_mariner_biological_receptor.c src/tsfi_mariner_biological_receptor.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_mariner_bio_cloth_bridge: tests/test_mariner_bio_cloth_bridge.c src/tsfi_mariner_biological_receptor.c src/auncient_cloth_material_bridge.c src/cloth_simulator.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

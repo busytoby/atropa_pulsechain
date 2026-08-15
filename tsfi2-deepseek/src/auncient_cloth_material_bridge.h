@@ -30,8 +30,16 @@ void auncient_bridge_usd_to_ssa(const TSFiUsdShade *usd_shade, char *ssn_out, ch
 // Maps a singular entity name (e.g. TeddyBearSkelCharacter) to a deterministic Social Security number and Area Lot creation site
 void auncient_bridge_entity_to_ssa(const char *entity_name, char *ssn_out, char *site_out, int max_len);
 
+// Project Mariner Phase 2: Transduces biological receptor charges to modulate cloth deformation
+void auncient_bridge_bio_receptor_to_cloth(
+    const void *receptor_state,
+    ClothVertex *vertices,
+    int vertex_count
+);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif // AUNCIENT_CLOTH_MATERIAL_BRIDGE_H
+

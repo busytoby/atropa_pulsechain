@@ -114,3 +114,36 @@ void auncient_bridge_entity_to_ssa(const char *entity_name, char *ssn_out, char 
     // Resolve historical creation location via the SSA site resolver
     tsfi_mf_ssa_resolve_issuance_site(ssn_out, site_out, max_len);
 }
+
+#include "tsfi_mariner_biological_receptor.h"
+
+void auncient_bridge_bio_receptor_to_cloth(
+    const void *receptor_state_ptr,
+    ClothVertex *vertices,
+    int vertex_count
+) {
+    if (!receptor_state_ptr || !vertices || vertex_count <= 0) return;
+
+    const MarinerBiologicalState *bio_state = (const MarinerBiologicalState *)receptor_state_ptr;
+    if (!bio_state->is_receptor_bound || bio_state->node_count == 0) return;
+
+    for (int i = 0; i < vertex_count; i++) {
+        uint32_t node_idx = (uint32_t)i % bio_state->node_count;
+        const MarinerReceptorNode *node = &bio_state->nodes[node_idx];
+
+        // Modulate vertex displacement using biological receptor 3D coordinates
+        vertices[i].x += node->x * 0.01f;
+        vertices[i].y += node->y * 0.01f;
+        vertices[i].z += node->z * 0.01f;
+
+        // Modulate color channel according to amino residue charge potential
+        if (node->charge_potential > 0.0f) {
+            uint8_t r = (uint8_t)(node->charge_potential * 155.0f + 100.0f);
+            vertices[i].color = 0xFF000000 | (r << 16) | 0x22AA; // Positive charge tint
+        } else {
+            uint8_t b = (uint8_t)(fabsf(node->charge_potential) * 155.0f + 100.0f);
+            vertices[i].color = 0xFF000000 | 0xAA2200 | b;        // Negative charge tint
+        }
+    }
+}
+
