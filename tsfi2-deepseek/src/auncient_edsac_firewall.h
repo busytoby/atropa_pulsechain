@@ -621,6 +621,25 @@ bool auncient_tomie_circuit_precision_rigging_prover(
     AuncientTomieCircuitPrecisionMetrics *metrics_out
 );
 
+// EDSAC Initial Orders 1 & AUTODIN Nonce Verification Gate Context
+typedef struct {
+    uint32_t cycle_index_n;
+    uint32_t current_nonce;
+    uint32_t previous_nonce;
+    uint32_t autodin_receipt;
+    uint32_t auth_secret;
+    uint32_t auth_chi;
+    uint32_t prohibited_opcodes;
+} AuncientInitialOrders1GateContext;
+
+// Formal EDSAC Initial Orders 1 gate evaluation function
+bool auncient_initial_orders_1_verify_autodin_prerequisite(
+    const AuncientInitialOrders1GateContext *ctx,
+    const uint32_t *instructions,
+    size_t count,
+    uint32_t *ruling_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

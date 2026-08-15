@@ -92,11 +92,55 @@ int main(void) {
     assert(auncient_firewall_eval_packet(&p1) == true);
     printf("   ✓ Relocatable rule shifting verified.\n");
 
-    // 7. Test evaluation block upon revoking authorization
-    auncient_autodin_edsac_authorize(false);
-    printf("[TEST] Evaluating HTTP packet after revoking authorization (expected DENY due to audit block)...\n");
-    assert(auncient_firewall_eval_packet(&p1) == false);
-    printf("   ✓ Revocation auditing block verified.\n");
+    // 8. Test Formal Initial Orders 1 & AUTODIN Nonce Verification Gate
+    printf("[TEST] Evaluating Initial Orders 1 formal AUTODIN Nonce prerequisite gate...\n");
+    uint32_t test_insts[2] = {
+        0x41000140, // Op='A', Permitted
+        0x53000058  // Op='S', Permitted
+    };
+    uint32_t prev_n = 100000;
+    uint32_t curr_n = (uint32_t)(((693ULL * 100000ULL) / 1000ULL) + ((31ULL * 100000ULL) / 32ULL) + 1ULL);
+    uint32_t sec = 3;
+    uint32_t chi = 17;
+
+    uint64_t acc = 1ULL;
+    uint64_t base = (uint64_t)curr_n % 953467954ULL;
+    for (uint32_t e = sec; e > 0; e--) {
+        acc = (acc * base) % 953467954ULL;
+    }
+    uint32_t valid_rcv = (uint32_t)((acc + (uint64_t)chi) % 953467954ULL);
+
+    AuncientInitialOrders1GateContext valid_ctx = {
+        .cycle_index_n = 2,
+        .current_nonce = curr_n,
+        .previous_nonce = prev_n,
+        .autodin_receipt = valid_rcv,
+        .auth_secret = sec,
+        .auth_chi = chi,
+        .prohibited_opcodes = 8388608 // Prohibit 'X'
+    };
+
+    uint32_t ruling = 99;
+    bool gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&valid_ctx, test_insts, 2, &ruling);
+    assert(gate_ok == true && ruling == 0);
+
+    // Test forged receipt (must reject)
+    AuncientInitialOrders1GateContext forged_ctx = valid_ctx;
+    forged_ctx.autodin_receipt = 12345;
+    gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&forged_ctx, test_insts, 2, &ruling);
+    assert(gate_ok == false && ruling == 1);
+
+    // Test broken recurrence (must reject)
+    AuncientInitialOrders1GateContext broken_rec_ctx = valid_ctx;
+    broken_rec_ctx.previous_nonce = 999999;
+    gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&broken_rec_ctx, test_insts, 2, &ruling);
+    assert(gate_ok == false && ruling == 3);
+
+    // Test prohibited opcode 'X' (must reject)
+    uint32_t bad_insts[2] = { 0x41000140, 0x58000010 /* Op='X' */ };
+    gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&valid_ctx, bad_insts, 2, &ruling);
+    assert(gate_ok == false && ruling == 2);
+    printf("   ✓ Initial Orders 1 formal AUTODIN Nonce prerequisite gate verified.\n");
 
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");

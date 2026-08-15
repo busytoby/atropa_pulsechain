@@ -1515,3 +1515,62 @@ bool auncient_analyzer_validate_cics_citizen(uint32_t writer_id) {
     }
     return true;
 }
+
+/* Formal EDSAC Initial Orders 1 & AUTODIN Nonce Verification Gate Implementation */
+bool auncient_initial_orders_1_verify_autodin_prerequisite(
+    const AuncientInitialOrders1GateContext *ctx,
+    const uint32_t *instructions,
+    size_t count,
+    uint32_t *ruling_out
+) {
+    if (!ctx || !instructions || count == 0) {
+        if (ruling_out) *ruling_out = 1; // Default reject
+        return false;
+    }
+
+    const uint64_t motzkin_prime = 953467954ULL;
+    const uint64_t ln2_scaled = 693ULL;
+    const uint64_t pow2_k = 32ULL; // k = 5
+
+    // Stage 1: Verify Logarithmic Nonce Recurrence for n > 1
+    if (ctx->cycle_index_n > 1) {
+        uint64_t expected_nonce = ((ln2_scaled * (uint64_t)ctx->previous_nonce) / 1000ULL) +
+                                  (((pow2_k - 1ULL) * (uint64_t)ctx->previous_nonce) / pow2_k) + 1ULL;
+        expected_nonce %= motzkin_prime;
+        if ((uint64_t)ctx->current_nonce != expected_nonce) {
+            if (ruling_out) *ruling_out = 3; // Temporal recurrence violation
+            return false; // Halt loader
+        }
+    }
+
+    // Stage 2: Verify AUTODIN Validation Receipt: (Nonce^Secret + Chi) mod MotzkinPrime
+    uint64_t acc = 1ULL;
+    uint64_t base = (uint64_t)ctx->current_nonce % motzkin_prime;
+    for (uint32_t e = ctx->auth_secret; e > 0; e--) {
+        acc = (acc * base) % motzkin_prime;
+    }
+    uint64_t expected_receipt = (acc + (uint64_t)ctx->auth_chi) % motzkin_prime;
+    if ((uint64_t)ctx->autodin_receipt != expected_receipt) {
+        if (ruling_out) *ruling_out = 1; // Unvalidated / Forged AUTODIN Receipt
+        return false; // Refuse to load into memory
+    }
+
+    // Stage 3: Audit Initial Orders 1 Opcodes against prohibited bitmask
+    for (size_t i = 0; i < count; i++) {
+        char op = (char)((instructions[i] >> 24) & 0xFF);
+        if (op >= 'A' && op <= 'Z') {
+            uint32_t shift = (uint32_t)(op - 'A');
+            if ((ctx->prohibited_opcodes >> shift) & 1) {
+                if (ruling_out) *ruling_out = 2; // Prohibited opcode
+                return false;
+            }
+        } else {
+            if (ruling_out) *ruling_out = 2;
+            return false;
+        }
+    }
+
+    if (ruling_out) *ruling_out = 0; // QUALIFIED_ORBITAL_HANDSHAKE
+    return true; // Authorize promotion to Initial Orders 2
+}
+
