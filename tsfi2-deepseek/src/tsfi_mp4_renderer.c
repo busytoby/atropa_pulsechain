@@ -38,7 +38,7 @@ void tsfi_mp4_pipeline_init(TsfiMp4Pipeline *pipe, const char *audio_wav, const 
 }
 
 // -----------------------------------------------------------------------------
-// 3D Perspective Projection Function with Depth-of-Field Focal Plane
+// 3D Perspective Projection Function
 // -----------------------------------------------------------------------------
 static inline void project_3d_point(float x, float y, float z,
                                     float rot_x, float rot_y, float cam_z,
@@ -137,7 +137,94 @@ static void draw_3d_volumetric_wire(uint32_t *pixels, float *zbuf, int w, int h,
 }
 
 // -----------------------------------------------------------------------------
-// 3D Vaesen Character Wireframe Renderer with Zorse/Moondreams Enhancements
+// 3D Volumetric Sphere Mesh Rasterizer (Pixar USDA Prim)
+// -----------------------------------------------------------------------------
+static void draw_3d_volumetric_sphere(uint32_t *fb, float *zbuf, int w, int h,
+                                      float cx, float cy, float cz, float radius,
+                                      float rot_x, float rot_y, float cam_z,
+                                      uint32_t base_color, float lx, float ly, float lz) {
+    int rings = 12, segs = 16;
+    for (int r = 0; r < rings; r++) {
+        float phi1 = ((float)r / (float)rings) * (float)M_PI;
+        float phi2 = ((float)(r + 1) / (float)rings) * (float)M_PI;
+        int p0_x = 0, p0_y = 0, first_x0 = 0, first_y0 = 0;
+        float p0_z = 0, first_z0 = 0;
+
+        for (int s = 0; s < segs; s++) {
+            float theta = ((float)s / (float)segs) * 2.0f * (float)M_PI;
+
+            float x1 = cx + radius * sinf(phi1) * cosf(theta);
+            float y1 = cy + radius * cosf(phi1);
+            float z1 = cz + radius * sinf(phi1) * sinf(theta);
+
+            float x2 = cx + radius * sinf(phi2) * cosf(theta);
+            float y2 = cy + radius * cosf(phi2);
+            float z2 = cz + radius * sinf(phi2) * sinf(theta);
+
+            int sx1 = 0, sy1 = 0, sx2 = 0, sy2 = 0;
+            float d1 = 0, d2 = 0;
+            project_3d_point(x1, y1, z1, rot_x, rot_y, cam_z, w, h, &sx1, &sy1, &d1);
+            project_3d_point(x2, y2, z2, rot_x, rot_y, cam_z, w, h, &sx2, &sy2, &d2);
+
+            if (s == 0) {
+                first_x0 = sx1; first_y0 = sy1; first_z0 = d1;
+            } else {
+                draw_3d_volumetric_wire(fb, zbuf, w, h, p0_x, p0_y, p0_z, sx1, sy1, d1, base_color, 2.0f, lx, ly, lz);
+            }
+            draw_3d_volumetric_wire(fb, zbuf, w, h, sx1, sy1, d1, sx2, sy2, d2, base_color, 2.0f, lx, ly, lz);
+
+            p0_x = sx1; p0_y = sy1; p0_z = d1;
+        }
+        draw_3d_volumetric_wire(fb, zbuf, w, h, p0_x, p0_y, p0_z, first_x0, first_y0, first_z0, base_color, 2.0f, lx, ly, lz);
+    }
+}
+
+
+// -----------------------------------------------------------------------------
+// 3D Volumetric Sewn Heart Mesh (Pixar USDA Prim from teddy_sewnheart.usda)
+// -----------------------------------------------------------------------------
+static void draw_3d_volumetric_sewn_heart(uint32_t *fb, float *zbuf, int w, int h,
+                                          float cx, float cy, float cz, float scale,
+                                          float rot_x, float rot_y, float cam_z,
+                                          float lx, float ly, float lz) {
+    int rings = 10, segs = 18;
+    uint32_t heart_col = 0xFFFF0033;
+
+    for (int r = 0; r < rings; r++) {
+        float v = (float)r / (float)rings;
+        float v_ang = v * (float)M_PI;
+        int prev_x = 0, prev_y = 0, first_x = 0, first_y = 0;
+        float prev_z = 0, first_z = 0;
+
+        for (int s = 0; s < segs; s++) {
+            float u = (float)s / (float)segs;
+            float t_ang = u * 2.0f * (float)M_PI;
+
+            // Parametric 3D Heart Surface Equation
+            float hx = 16.0f * powf(sinf(t_ang), 3.0f) * sinf(v_ang);
+            float hy = -(13.0f * cosf(t_ang) - 5.0f * cosf(2.0f * t_ang) - 2.0f * cosf(3.0f * t_ang) - cosf(4.0f * t_ang)) * sinf(v_ang);
+            float hz = 8.0f * cosf(v_ang);
+
+            float x3d = cx + hx * scale;
+            float y3d = cy + hy * scale;
+            float z3d = cz + hz * scale;
+
+            int sx = 0, sy = 0; float depth = 0;
+            project_3d_point(x3d, y3d, z3d, rot_x, rot_y, cam_z, w, h, &sx, &sy, &depth);
+
+            if (s == 0) {
+                first_x = sx; first_y = sy; first_z = depth;
+            } else {
+                draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, sx, sy, depth, heart_col, 2.5f, lx, ly, lz);
+            }
+            prev_x = sx; prev_y = sy; prev_z = depth;
+        }
+        draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, first_x, first_y, first_z, heart_col, 2.5f, lx, ly, lz);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 3D Vaesen Character Wireframe Renderer with Complete 3D USDA Teddy Bear & Heart
 // -----------------------------------------------------------------------------
 static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, int scene, float t, float cam_yaw, float cam_pitch, float lx, float ly, float lz) {
     int sx[16] = {0}, sy[16] = {0};
@@ -167,7 +254,6 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[4], sy[4], depth[4], sx[5], sy[5], depth[5], 0xFFFFD700, 5.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[2], sy[2], depth[2], sx[6], sy[6], depth[6], col, 4.0f, lx, ly, lz);
 
-        // Volumetric Light Shaft & Dust Motes from Lantern
         int l_cx = sx[5], l_cy = sy[5];
         for (int gy = -45; gy <= 45; gy++) {
             for (int gx = -45; gx <= 45; gx++) {
@@ -207,7 +293,6 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[4], sy[4], depth[4], col, 3.0f, lx, ly, lz);
         draw_3d_volumetric_wire(fb, zbuf, w, h, sx[1], sy[1], depth[1], sx[5], sy[5], depth[5], col, 3.0f, lx, ly, lz);
 
-        // EDO-22 Harmonic Resonance Arcs from Violin Bow
         int v_cx = sx[3], v_cy = sy[3];
         for (int a = 1; a <= 4; a++) {
             float arc_r = (float)a * 22.0f + sinf(t * 20.0f) * 6.0f;
@@ -219,47 +304,43 @@ static void draw_3d_vaesen_character(uint32_t *fb, float *zbuf, int w, int h, in
                 }
             }
         }
-    } else if (scene == 6) {
+    }
+    // -------------------------------------------------------------------------
+    // SCENE 6: Full 3D Volumetric USDA Teddy Bear Prim Mesh + 3D Sewn Heart
+    // -------------------------------------------------------------------------
+    else if (scene == 6) {
         float bob = sinf(t * 8.0f) * 20.0f;
-        float pts[8][3] = {
-            { 0.0f, -80.0f + bob, 0.0f },
-            { -35.0f, -120.0f + bob, 10.0f },
-            { 35.0f, -120.0f + bob, 10.0f },
-            { 0.0f, 0.0f + bob, 0.0f },
-            { -60.0f, -20.0f + bob, 30.0f },
-            { 60.0f, -20.0f + bob, 30.0f },
-            { -30.0f, 80.0f + bob, 10.0f },
-            { 30.0f, 80.0f + bob, 10.0f }
-        };
+        float b_rot_y = cam_yaw + sinf(t * 4.0f) * 0.35f;
+        float b_rot_x = cam_pitch + 0.10f;
+        float b_cam_z = 700.0f;
 
-        for (int i = 0; i < 8; i++) {
-            project_3d_point(pts[i][0], pts[i][1], pts[i][2] + 400.0f, cam_pitch, cam_yaw, 700.0f, w, h, &sx[i], &sy[i], &depth[i]);
-        }
+        uint32_t fur_col = 0xFFFFD700; // Golden Fur
+        uint32_t muzzle_col = 0xFFFFF8DC; // Muzzle Felt
+        uint32_t nose_col = 0xFF221100; // Dark Nose
 
-        uint32_t bear_col = 0xFFFFD700;
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[1], sy[1], depth[1], bear_col, 5.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[2], sy[2], depth[2], bear_col, 5.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[0], sy[0], depth[0], sx[3], sy[3], depth[3], bear_col, 6.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[4], sy[4], depth[4], bear_col, 4.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[5], sy[5], depth[5], bear_col, 4.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[6], sy[6], depth[6], bear_col, 5.0f, lx, ly, lz);
-        draw_3d_volumetric_wire(fb, zbuf, w, h, sx[3], sy[3], depth[3], sx[7], sy[7], depth[7], bear_col, 5.0f, lx, ly, lz);
+        // 1. 3D Volumetric Head Sphere (radius 48)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, -50.0f + bob, 400.0f, 48.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
 
-        // Sewn Red Heart Badge with Pulsing SSS Halo
-        int h_cx = sx[3], h_cy = sy[3];
-        float h_pulse = 1.0f + 0.25f * sinf(t * 16.0f);
-        int heart_rad = (int)(12.0f * h_pulse);
-        for (int hy = -heart_rad; hy <= heart_rad; hy++) {
-            for (int hx = -heart_rad; hx <= heart_rad; hx++) {
-                int hpx = h_cx + hx, hpy = h_cy + hy;
-                if (hpx >= 0 && hpx < w && hpy >= 0 && hpy < h) {
-                    float hd = sqrtf((float)(hx*hx + hy*hy));
-                    if (hd < (float)heart_rad) {
-                        fb[hpy * w + hpx] = 0xFFFF0033;
-                    }
-                }
-            }
-        }
+        // 2. 3D Volumetric Left & Right Ears (radius 20)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, -45.0f, -95.0f + bob, 410.0f, 20.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 45.0f, -95.0f + bob, 410.0f, 20.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+
+        // 3. 3D Volumetric Muzzle & Nose (radius 18)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, -40.0f + bob, 360.0f, 18.0f, b_rot_x, b_rot_y, b_cam_z, muzzle_col, lx, ly, lz);
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, -46.0f + bob, 345.0f, 6.0f, b_rot_x, b_rot_y, b_cam_z, nose_col, lx, ly, lz);
+
+        // 4. 3D Volumetric Torso Sphere (radius 65)
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 0.0f, 45.0f + bob, 400.0f, 65.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+
+        // 5. 3D Volumetric Arms & Legs Spheres/Cylinders
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, -65.0f, 25.0f + bob, 380.0f, 24.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 65.0f, 25.0f + bob, 380.0f, 24.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, -35.0f, 115.0f + bob, 390.0f, 26.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+        draw_3d_volumetric_sphere(fb, zbuf, w, h, 35.0f, 115.0f + bob, 390.0f, 26.0f, b_rot_x, b_rot_y, b_cam_z, fur_col, lx, ly, lz);
+
+        // 6. Complete 3D Volumetric Sewn Heart Prim Mesh (Pulsing Bio-Rhythm on Chest)
+        float h_pulse = 1.0f + 0.20f * sinf(t * 16.0f);
+        draw_3d_volumetric_sewn_heart(fb, zbuf, w, h, 0.0f, 25.0f + bob, 335.0f, 1.35f * h_pulse, b_rot_x, b_rot_y, b_cam_z, lx, ly, lz);
     }
 }
 
@@ -486,7 +567,7 @@ static inline void apply_super8_film_grain(uint32_t *fb, int w, int h, float t) 
 }
 
 // -----------------------------------------------------------------------------
-// Full 3D Volumetric Scene Frame Renderer with Zorse/Moondreams Enhancements
+// Full 3D Volumetric Scene Frame Renderer with 3D USDA Teddy Bear & Heart
 // -----------------------------------------------------------------------------
 void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
@@ -722,6 +803,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
                     uint32_t spoke_col = ((i + j) % 2 == 0) ? 0xFFFF3300 : 0xFFFF9900;
                     draw_3d_volumetric_wire(fb, zbuf, w, h, ico_sx[i], ico_sy[i], ico_d[i], ico_sx[j], ico_sy[j], ico_d[j], spoke_col, 4.5f, lx, ly, lz);
                 }
+
             }
         }
 
@@ -748,7 +830,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 3: 3D GEODESIC SINGULARITY COLLAPSE", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 6: CHORUS 3 (62:00 - 80:00) | 3D VOLUMETRIC BLAST & TEDDY BEAR
+    // SCENE 6: CHORUS 3 (62:00 - 80:00) | 3D VOLUMETRIC BLAST & 3D USDA TEDDY BEAR
     // -------------------------------------------------------------------------
     else if (t < 80.0f) {
         ctx->scene_index = 6;
@@ -785,6 +867,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
             }
         }
 
+        // Render full 3D USDA Volumetric Mesh Teddy Bear & 3D Sewn Heart
         draw_3d_vaesen_character(fb, zbuf, w, h, 6, t, cam_yaw, cam_pitch, lx, ly, lz);
 
         draw_demoscene_bubble_text(fb, w, h, (int)cx - 200, 180, "CRESCENDO", 0xFFFFFFFF, 0xFFFF00FF, 0xFF4A148C, t * 5.0f);
