@@ -588,6 +588,10 @@ bin/test_compositor_cascade_search_url: tests/test_compositor_cascade_search_url
 bin/test_bionika_synth: tests/test_bionika_synth.c src/tsfi_bionika_synth.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
 
+bin/test_mp4_renderer: tests/test_mp4_renderer.c src/tsfi_mp4_renderer.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lm
+
+
 
 
 
