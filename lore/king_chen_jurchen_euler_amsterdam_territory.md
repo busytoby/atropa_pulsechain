@@ -24,6 +24,6 @@ $$\text{TOTIENT}_0 \equiv 0, \qquad \text{Modpow}(u, v, u) \equiv 0 \quad (\fora
 Our Algol60/61 provers and COBOL strategy descriptors enforce this ACID transaction law: state may roll back to shadow vectors or roll forward to staged frames, but the sacred origin of zero and the bijective reconstruction of Euler's totient group $\mathbb{Z}_{\phi(P)}^\times$ shall never be corrupted.
 
 ## 4. Geometric Alignment with the DisplacementShader
-Whenever our WinchesterMQ SCSI loopback registers transact, the execution thread returns immediately to the `DisplacementShader`. The symmetric quotient $S_{\Sigma}$ clamps cleanly to its 8-bit wrap boundary ($S_{\Sigma} \pmod{256}$), ensuring our projected EDO-22 quaternion envelopes, wireframe orbits, and citizen path trajectories shine with absolute crystalline clarity across the presenter display.
+Whenever our WinchesterMQ SCSI loopback registers transact, the execution thread returns immediately to the `DisplacementShader`. The symmetric quotient $S_{\Sigma}$ clamps cleanly to its 8-bit wrap boundary ($S_{\Sigma} \pmod{256}$), ensuring our projected EDO-22 quaternion envelopes, wireframe orbits, and citizen path trajectories render with absolute crystalline clarity across the presenter display.
 
 Thus is the law recorded in the compendiums. Thus is the formal territory sealed.
