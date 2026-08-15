@@ -546,6 +546,10 @@ bin/test_llm_code_diffusion_prover: tests/test_llm_code_diffusion_prover.c src/t
 bin/test_prover_strategy_pivot: tests/test_prover_strategy_pivot.c src/tsfi_prover_strategy_pivot.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_tang_lut_nn_prover: tests/test_tang_lut_nn_prover.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 

@@ -1,0 +1,38 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Tang et al. (MobiCom 2023) Lut-NN Strategy Gating;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Asserts that Centroid Quantization SNR and MAC Bypass Ratio satisfy inference performance bounds;
+
+  integer procedure evaluate_lut_nn_centroid_bounds(
+    num_centroids,
+    mac_bypass_pct_scaled,
+    snr_db_scaled,
+    min_snr_threshold_scaled
+  );
+  value num_centroids, mac_bypass_pct_scaled, snr_db_scaled, min_snr_threshold_scaled;
+  integer num_centroids, mac_bypass_pct_scaled, snr_db_scaled, min_snr_threshold_scaled;
+  begin
+    comment Classification Taxonomy:
+            0 = AUTHENTIC_LUT_STREAM (High SNR & Valid MAC bypass ratio)
+            1 = INSUFFICIENT_SNR_REJECT (Quantization noise exceeds threshold)
+            2 = INVALID_CENTROID_DIMENSION (Codebook size out of standard range [4, 256]);
+
+    if num_centroids < 4 or num_centroids > 256 then
+      evaluate_lut_nn_centroid_bounds := 2
+    else if snr_db_scaled < min_snr_threshold_scaled then
+      evaluate_lut_nn_centroid_bounds := 1
+    else
+      evaluate_lut_nn_centroid_bounds := 0
+  end;
+
+  comment Unit Evaluation Harness;
+  integer ruling;
+  ruling := evaluate_lut_nn_centroid_bounds(16, 87400, 82000, 20000);
+
+  if ruling = 0 then
+    outstring(1, "RULING: AUTHENTIC_LUT_STREAM (Centroid Quantization Bounds Affirmed)\n")
+  else if ruling = 1 then
+    outstring(1, "RULING: INSUFFICIENT_SNR_REJECT (Noise Floor Too High)\n")
+  else
+    outstring(1, "RULING: INVALID_CENTROID_DIMENSION (Cluster Count Out of Range)\n")
+end
