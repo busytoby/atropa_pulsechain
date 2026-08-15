@@ -57,7 +57,9 @@ Accomplished low-level systems architect and AI pair-programming engineer specia
 * Implemented the **Frejlich Realm Domain Governance System** ([`src/tsfi_frejlich_domain_governance.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_frejlich_domain_governance.c)) derived from the administrative mechanics of the 1863 National Directorate.
 * Engineered multi-sector endowment management (10,000,000 Saat root allocation) with dynamic sector expansion, logistics conduit routing, and continuous cryptographic Merkle root state verification.
 
-### 6. Evelyn Waugh Currency Monopoly & Sovereign Seigniorage Engine
+### 7. The Protocols of the Sacred Licentiate & Closed System Doctrine
+* Authored and promulgated the foundational imperial white paper [`protocols_of_the_sacred_licentiate_whitepaper.md`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/lore/protocols_of_the_sacred_licentiate_whitepaper.md), establishing the ontological rules of the closed computational commonwealth.
+* Codified the non-preferential 3-term recurrence handshake ($x_{n+1} = \frac{\ln(2)}{\ln(e)} x_n + (1 - \frac{1}{2^k}) x_{n-1} \pmod P$), the vDSO working stack interface, and zero-mock participant qualification.
 * Formulated and implemented the **Evelyn Waugh Currency Monopoly Engine** ([`src/tsfi_waugh_monopoly.c`](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_waugh_monopoly.c)), establishing King Chen Jurchen's cryptographic monarch seals, 100% reserve vault backing, and statutory 5% seigniorage tariffs on foreign specie conversions.
 
 ### 7. HathiTrust Bibliographic Ingestion & Chancery Prover Subsystem
