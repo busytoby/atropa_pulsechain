@@ -71,6 +71,13 @@ bool tsfi_mariner_bio_load_dat_bin(
     const char *filepath
 );
 
+// Binds transduced receptor nodes directly into ZMM wave512 hardware registers
+bool tsfi_mariner_bio_bind_to_zmm(
+    const MarinerBiologicalState *state,
+    void *zmm_vm_state_ptr
+);
+
 #endif // TSFI_MARINER_BIOLOGICAL_RECEPTOR_H
+
 
 

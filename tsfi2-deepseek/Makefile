@@ -525,6 +525,9 @@ bin/test_mariner_phase2_unified_proof: tests/test_mariner_phase2_unified_proof.c
 bin/test_mariner_bio_persistence: tests/test_mariner_bio_persistence.c src/tsfi_mariner_biological_receptor.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_mariner_bio_zmm_binding: tests/test_mariner_bio_zmm_binding.c src/tsfi_mariner_biological_receptor.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 bin/test_wave512_asm: tests/test_wave512_asm.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

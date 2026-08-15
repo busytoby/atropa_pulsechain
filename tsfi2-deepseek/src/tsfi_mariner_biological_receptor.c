@@ -193,4 +193,35 @@ bool tsfi_mariner_bio_load_dat_bin(
     return (read_bytes == 1);
 }
 
+#include "tsfi_zmm_vm.h"
+
+bool tsfi_mariner_bio_bind_to_zmm(
+    const MarinerBiologicalState *state,
+    void *zmm_vm_state_ptr
+) {
+    if (!state || !zmm_vm_state_ptr || !state->is_receptor_bound || state->node_count == 0) {
+        return false;
+    }
+
+    TsfiZmmVmState *vm = (TsfiZmmVmState *)zmm_vm_state_ptr;
+
+    // Direct packing of receptor coordinates into ZMM 512-bit registers (zmm0..zmm15)
+    // Each wave512 register contains 8 x 16-float lanes (128 floats per wave512 struct)
+    // We map x, y, z, charge tuples directly into the SIMD registers
+    for (uint32_t reg_idx = 0; reg_idx < TSFI_ZMM_REG_COUNT; reg_idx++) {
+        float *float_lanes = (float *)&vm->registers[reg_idx];
+        for (int lane = 0; lane < 128; lane += 4) {
+            uint32_t node_idx = (reg_idx * 32 + (lane / 4)) % state->node_count;
+            const MarinerReceptorNode *node = &state->nodes[node_idx];
+            float_lanes[lane + 0] = node->x;
+            float_lanes[lane + 1] = node->y;
+            float_lanes[lane + 2] = node->z;
+            float_lanes[lane + 3] = node->charge_potential;
+        }
+    }
+
+    return true;
+}
+
+
 
