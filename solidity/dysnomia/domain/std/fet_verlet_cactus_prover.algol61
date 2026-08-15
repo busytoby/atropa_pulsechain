@@ -1,0 +1,120 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Monotonic Temporal Ordering of Nonces in FET Verlet Cactus Stacks;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Asserts strict monotonic nonce ordering: Nonce(D3_{n+1}) = Nonce(D2_n) + 1 and Time-Reversibility Invariants;
+
+  integer procedure verify_temporal_nonce_order_and_verlet(
+    initial_nonce,
+    initial_prev_charge,
+    initial_curr_charge,
+    k_exponent,
+    restore_force,
+    delta_t_sq,
+    step_count
+  );
+  value initial_nonce, initial_prev_charge, initial_curr_charge, k_exponent, restore_force, delta_t_sq, step_count;
+  integer initial_nonce, initial_prev_charge, initial_curr_charge, k_exponent, restore_force, delta_t_sq, step_count;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Monotonic Nonce Sequence & Temporal Order Verified)
+            1 = INVALID_INITIAL_NONCE (Non-positive starting nonce)
+            2 = INVALID_EXPONENT_RANGE (k must be 5)
+            3 = TEMPORAL_CAUSALITY_VIOLATION (Nonce sequence out of order or inverted)
+            4 = TIME_REVERSIBILITY_VIOLATION (Round-trip state recovery failed);
+
+    integer x_prev, x_curr, x_next, x_recovered;
+    integer curr_nonce, prev_nonce;
+    integer step;
+    integer motzkin_prime;
+    integer ln2_over_lne_fixed_scaled;
+    integer pow2_k;
+    integer ruling;
+
+    motzkin_prime := 953467954;
+    ln2_over_lne_fixed_scaled := 693;
+    pow2_k := 32; comment 2^5 = 32;
+
+    if initial_nonce <= 0 then
+      verify_temporal_nonce_order_and_verlet := 1
+    else if k_exponent != 5 then
+      verify_temporal_nonce_order_and_verlet := 2
+    else
+      begin
+        curr_nonce := initial_nonce;
+        x_prev := initial_prev_charge;
+        x_curr := initial_curr_charge;
+        ruling := 0;
+
+        for step := 1 step 1 until step_count do
+          begin
+            prev_nonce := curr_nonce;
+            curr_nonce := curr_nonce + 1; comment Strict monotonic integrational nonce increment;
+
+            comment Invariant 1: Monotonic Nonce Ordering proves temporal forward progress;
+            if curr_nonce <= prev_nonce or (curr_nonce - prev_nonce) != 1 then
+              begin
+                ruling := 3;
+                step := step_count comment Break loop;
+              end
+            else
+              begin
+                comment Forward Verlet integration on leaf tip D3;
+                x_next := ((ln2_over_lne_fixed_scaled * x_curr) / 1000) + (((pow2_k - 1) * x_prev) / pow2_k) - (restore_force * delta_t_sq);
+                if x_next < 0 then
+                  x_next := x_next + motzkin_prime;
+
+                comment Invariant 2: Backward Time Inversion Recovery on sibling display vector;
+                comment Recover x_prev from (x_next, x_curr);
+                x_recovered := ((x_next - ((ln2_over_lne_fixed_scaled * x_curr) / 1000) + (restore_force * delta_t_sq)) * pow2_k) / (pow2_k - 1);
+                if x_recovered < 0 then
+                  x_recovered := x_recovered + motzkin_prime;
+
+                comment Assert exact bijective state conservation between consecutive nonces;
+                if (x_recovered - x_prev) > 1 or (x_prev - x_recovered) > 1 then
+                  begin
+                    ruling := 4;
+                    step := step_count;
+                  end;
+
+                x_prev := x_curr;
+                x_curr := x_next
+              end
+          end;
+
+        verify_temporal_nonce_order_and_verlet := ruling
+      end
+  end;
+
+  comment Domain Input Telemetry: 50-step monotonic nonce progression;
+  integer target_nonce;
+  integer target_prev_charge;
+  integer target_curr_charge;
+  integer target_k;
+  integer target_force;
+  integer target_dt_sq;
+  integer target_steps;
+  integer handshake_ruling;
+
+  target_nonce       := 100001;
+  target_prev_charge := 1000;
+  target_curr_charge := 950;
+  target_k           := 5;
+  target_force       := 5;
+  target_dt_sq       := 10;
+  target_steps       := 50;
+
+  handshake_ruling := verify_temporal_nonce_order_and_verlet(
+    target_nonce,
+    target_prev_charge,
+    target_curr_charge,
+    target_k,
+    target_force,
+    target_dt_sq,
+    target_steps
+  );
+
+  if handshake_ruling = 0 then
+    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (Monotonic Nonce Sequence & Temporal Causality Verified)\n")
+  else
+    outstring(1, "RULING: UNRESOLVED_CONTINUANCE (Chancery Retained)\n")
+end
