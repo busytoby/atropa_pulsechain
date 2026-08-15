@@ -1,0 +1,59 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Natural vs Unnatural Motzkin Recurrence Filtration;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Asserts that the triplet (x_{n-1}, x_n, x_{n+1}) strictly satisfies the non-preferential 3-term recurrence;
+
+  integer procedure verify_motzkin_natural_step(
+    x_prev,
+    x_curr,
+    x_next,
+    k_exp
+  );
+  value x_prev, x_curr, x_next, k_exp;
+  integer x_prev, x_curr, x_next, k_exp;
+  begin
+    comment Classification Taxonomy:
+            0 = NATURAL_MOTZKIN_STREAM (Strict 3-term recurrence verified)
+            1 = UNNATURAL_ORDER_DEVIATION (Value mismatch or out-of-order arrival)
+            2 = MODULAR_FIELD_COLLAPSE (Field boundary violation);
+
+    integer motzkin_prime;
+    integer alpha_scaled;
+    integer beta_scaled;
+    integer two_to_k;
+    integer predicted_next;
+
+    motzkin_prime := 953467954114363;
+    two_to_k      := 2 ** k_exp;
+
+    comment Fixed-point scaled operators (Scale: 1000000);
+    alpha_scaled  := 693147;  comment ln(2)/ln(e) * 10^6;
+    beta_scaled   := 1000000 - (1000000 // two_to_k);
+
+    if x_prev < 0 or x_curr < 0 or x_next < 0 or
+       x_prev >= motzkin_prime or x_curr >= motzkin_prime or x_next >= motzkin_prime then
+      verify_motzkin_natural_step := 2
+    else
+      begin
+        predicted_next := ((alpha_scaled * x_curr + beta_scaled * x_prev) // 1000000) - 
+                          (((alpha_scaled * x_curr + beta_scaled * x_prev) // 1000000) // motzkin_prime) * motzkin_prime;
+
+        comment Allow delta margin of 1 due to fixed-point rounding;
+        if predicted_next = x_next or (predicted_next - x_next = 1) or (x_next - predicted_next = 1) then
+          verify_motzkin_natural_step := 0
+        else
+          verify_motzkin_natural_step := 1
+      end
+  end;
+
+  comment Unit Evaluation Harness;
+  integer ruling;
+  ruling := verify_motzkin_natural_step(0, 1199659537, 831540893, 8);
+
+  if ruling = 0 then
+    outstring(1, "RULING: NATURAL_MOTZKIN_STREAM (Triad Order & Value Affirmed)\n")
+  else if ruling = 1 then
+    outstring(1, "RULING: UNNATURAL_ORDER_DEVIATION (Continuance Rejected)\n")
+  else
+    outstring(1, "RULING: MODULAR_FIELD_COLLAPSE (Field Corrupted)\n")
+end
