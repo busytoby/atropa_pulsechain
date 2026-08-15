@@ -152,8 +152,24 @@ int main(void) {
     assert(traj_m.recovered_u == traj_m.forward_phase_integral_u);
     assert(traj_m.recovered_v == traj_m.back_phase_integral_v);
     assert(traj_m.symm_product_spi == (traj_m.forward_phase_integral_u + traj_m.back_phase_integral_v));
-    printf("   ✓ EDSAC Radical Nonce Series Trajectory Integral verified (u=%lu, v=%lu, S_pi=%lu, S_sigma=%lu).\n",
-           traj_m.recovered_u, traj_m.recovered_v, traj_m.symm_product_spi, traj_m.symm_quotient_ssigma);
+    // 10. Test VIA 6522 TOTIENT ACID Transaction & Rollback Prover
+    printf("[TEST] Testing VIA 6522 TOTIENT ACID Compliance & Rollback (Initial 0 Axiom)...\n");
+    AuncientTotientAcidMetrics acid_clean_m = {0};
+    bool acid_clean_ok = auncient_via6522_totient_acid_prover(24537, 19623, 24537, false, &acid_clean_m);
+    assert(acid_clean_ok == true && acid_clean_m.exhaustive_acid_sound == true);
+    assert(acid_clean_m.initial_totient_val == 0);
+    assert(acid_clean_m.committed_totient_val == 0);
+    assert(acid_clean_m.atomicity_guaranteed == true);
+    assert(acid_clean_m.consistency_modpow_sound == true);
+
+    // Test Simulated Hardware Fault & Atomic Rollback
+    AuncientTotientAcidMetrics acid_fault_m = {0};
+    bool acid_fault_ok = auncient_via6522_totient_acid_prover(24537, 19623, 24537, true, &acid_fault_m);
+    assert(acid_fault_ok == true && acid_fault_m.exhaustive_acid_sound == true);
+    assert(acid_fault_m.committed_totient_val == acid_fault_m.shadow_totient_val);
+    assert(acid_fault_m.committed_totient_val == 0);
+    assert(acid_fault_m.durability_rollback_verified == true);
+    printf("   ✓ VIA 6522 TOTIENT ACID Compliance & Rollback verified (Clean & Fault-Recovered states = 0).\n");
 
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");

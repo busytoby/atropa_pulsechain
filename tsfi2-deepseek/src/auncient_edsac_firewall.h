@@ -661,6 +661,28 @@ bool auncient_edsac_radical_nonce_trajectory_prover(
     AuncientRadicalTrajectoryMetrics *metrics_out
 );
 
+// VIA 6522 TOTIENT ACID Transaction Prover Metrics
+typedef struct {
+    uint64_t initial_totient_val;
+    uint64_t staged_totient_val;
+    uint64_t committed_totient_val;
+    uint64_t shadow_totient_val;
+    bool atomicity_guaranteed;
+    bool consistency_modpow_sound;
+    bool isolation_frame_protected;
+    bool durability_rollback_verified;
+    bool exhaustive_acid_sound;
+} AuncientTotientAcidMetrics;
+
+// Formal VIA 6522 TOTIENT ACID Transaction & Rollback Prover
+bool auncient_via6522_totient_acid_prover(
+    uint64_t base_u,
+    uint64_t exp_v,
+    uint64_t mod_u,
+    bool simulate_hardware_fault,
+    AuncientTotientAcidMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H
