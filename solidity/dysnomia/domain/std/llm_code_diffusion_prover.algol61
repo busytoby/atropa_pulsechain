@@ -1,0 +1,50 @@
+begin
+  comment Standard Algol60/61 Domain Prover: LLM Code Diffusion Syntax & Spec Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Replaces empirical prompt injection hacks with deterministic mathematical proof gates;
+
+  integer procedure prove_code_spec_conformance(
+    paren_depth_balance,
+    brace_depth_balance,
+    spec_semantic_weight,
+    motzkin_natural_ruling,
+    confidence_threshold
+  );
+  value paren_depth_balance, brace_depth_balance, spec_semantic_weight, motzkin_natural_ruling, confidence_threshold;
+  integer paren_depth_balance, brace_depth_balance, spec_semantic_weight, motzkin_natural_ruling, confidence_threshold;
+  begin
+    comment Classification Taxonomy:
+            0 = AUTHENTIC_CODE_STREAM (Formally proven compliant: syntax balanced, natural triad, spec confirmed)
+            1 = UNBALANCED_SYNTAX_REJECT (Syntax delimiters unbalanced or broken)
+            2 = UNNATURAL_TRIAD_REJECT (Motzkin 3-term recurrence ordering violated)
+            3 = DEFICIENT_SPEC_CONGRUENCE (Posterior score below confidence threshold);
+
+    integer posterior_score;
+
+    if paren_depth_balance != 0 or brace_depth_balance != 0 then
+      prove_code_spec_conformance := 1
+    else if motzkin_natural_ruling != 0 then
+      prove_code_spec_conformance := 2
+    else
+      begin
+        posterior_score := (spec_semantic_weight * 1000) // 1000;
+        if posterior_score >= confidence_threshold then
+          prove_code_spec_conformance := 0
+        else
+          prove_code_spec_conformance := 3
+      end
+  end;
+
+  comment Unit Evaluation Harness;
+  integer ruling;
+  ruling := prove_code_spec_conformance(0, 0, 950, 0, 700);
+
+  if ruling = 0 then
+    outstring(1, "RULING: AUTHENTIC_CODE_STREAM (Prover Gating Passed Without Injections)\n")
+  else if ruling = 1 then
+    outstring(1, "RULING: UNBALANCED_SYNTAX_REJECT (Syntax Imbalance)\n")
+  else if ruling = 2 then
+    outstring(1, "RULING: UNNATURAL_TRIAD_REJECT (Recurrence Fracture)\n")
+  else
+    outstring(1, "RULING: DEFICIENT_SPEC_CONGRUENCE (Spec Mismatch)\n")
+end

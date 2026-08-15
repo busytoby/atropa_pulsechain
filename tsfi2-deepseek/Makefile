@@ -540,6 +540,10 @@ bin/test_weighted_bayesian_filtration: tests/test_weighted_bayesian_filtration.c
 bin/test_motzkin_natural_filtration: tests/test_motzkin_natural_filtration.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_llm_code_diffusion_prover: tests/test_llm_code_diffusion_prover.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 
