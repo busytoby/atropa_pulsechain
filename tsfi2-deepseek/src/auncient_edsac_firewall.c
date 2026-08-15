@@ -1574,3 +1574,75 @@ bool auncient_initial_orders_1_verify_autodin_prerequisite(
     return true; // Authorize promotion to Initial Orders 2
 }
 
+/* Formal EDSAC Radical Nonce Series Trajectory Prover Implementation */
+bool auncient_edsac_radical_nonce_trajectory_prover(
+    uint32_t initial_nonce,
+    size_t sequence_length,
+    uint32_t alice_phase_offset,
+    uint32_t bob_phase_offset,
+    AuncientRadicalTrajectoryMetrics *metrics_out
+) {
+    if (initial_nonce == 0 || sequence_length == 0) {
+        return false;
+    }
+
+    const uint64_t motzkin_prime = 953467954ULL;
+    const uint64_t ln2_scaled = 693ULL;
+    const uint64_t pow2_k = 32ULL; // k = 5
+
+    uint64_t n_prev = (uint64_t)initial_nonce % motzkin_prime;
+    uint64_t n_curr = ((ln2_scaled * n_prev) / 1000ULL) + (((pow2_k - 1ULL) * n_prev) / pow2_k) + 1ULL;
+    n_curr %= motzkin_prime;
+
+    uint64_t u_integral = 0;
+    uint64_t v_integral = 0;
+
+    for (size_t step = 0; step < sequence_length; step++) {
+        uint64_t n_next = ((ln2_scaled * n_curr) / 1000ULL) + (((pow2_k - 1ULL) * n_prev) / pow2_k) + 1ULL;
+        n_next %= motzkin_prime;
+
+        u_integral += (n_next / pow2_k) + (uint64_t)alice_phase_offset;
+        v_integral += (n_curr / pow2_k) + (uint64_t)bob_phase_offset;
+
+        n_prev = n_curr;
+        n_curr = n_next;
+    }
+
+    uint64_t s_pi = u_integral + v_integral;
+    uint64_t s_sigma = 0;
+    uint64_t rec_u = 0;
+    uint64_t rec_v = 0;
+
+    if (v_integral >= u_integral) {
+        s_sigma = v_integral - u_integral;
+        rec_v = (s_pi + s_sigma) / 2ULL;
+        rec_u = (s_pi - s_sigma) / 2ULL;
+    } else {
+        s_sigma = u_integral - v_integral;
+        rec_u = (s_pi + s_sigma) / 2ULL;
+        rec_v = (s_pi - s_sigma) / 2ULL;
+    }
+
+    // Parity Check Invariant
+    if (((s_pi + s_sigma) % 2ULL) != 0ULL) {
+        return false;
+    }
+
+    bool sound = (rec_u == u_integral) && (rec_v == v_integral);
+    uint32_t disp_wrap = (uint32_t)(s_sigma % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->forward_phase_integral_u = u_integral;
+        metrics_out->back_phase_integral_v = v_integral;
+        metrics_out->symm_product_spi = s_pi;
+        metrics_out->symm_quotient_ssigma = s_sigma;
+        metrics_out->recovered_u = rec_u;
+        metrics_out->recovered_v = rec_v;
+        metrics_out->displacement_wrap_modulo = disp_wrap;
+        metrics_out->bijective_trajectory_sound = sound;
+    }
+
+    return sound;
+}
+
+

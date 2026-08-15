@@ -640,6 +640,27 @@ bool auncient_initial_orders_1_verify_autodin_prerequisite(
     uint32_t *ruling_out
 );
 
+// Radical Nonce Series Trajectory Integral Prover Metrics
+typedef struct {
+    uint64_t forward_phase_integral_u;
+    uint64_t back_phase_integral_v;
+    uint64_t symm_product_spi;
+    uint64_t symm_quotient_ssigma;
+    uint64_t recovered_u;
+    uint64_t recovered_v;
+    uint32_t displacement_wrap_modulo;
+    bool bijective_trajectory_sound;
+} AuncientRadicalTrajectoryMetrics;
+
+// Formal EDSAC Radical Nonce Series Trajectory Prover
+bool auncient_edsac_radical_nonce_trajectory_prover(
+    uint32_t initial_nonce,
+    size_t sequence_length,
+    uint32_t alice_phase_offset,
+    uint32_t bob_phase_offset,
+    AuncientRadicalTrajectoryMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

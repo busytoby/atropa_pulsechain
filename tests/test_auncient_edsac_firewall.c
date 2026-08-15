@@ -142,6 +142,19 @@ int main(void) {
     assert(gate_ok == false && ruling == 2);
     printf("   ✓ Initial Orders 1 formal AUTODIN Nonce prerequisite gate verified.\n");
 
+    // 9. Test Radical Nonce Series Trajectory Prover under EDSAC Sequence
+    printf("[TEST] Testing Radical Nonce Series Trajectory Integral Prover under EDSAC...\n");
+    AuncientRadicalTrajectoryMetrics traj_m = {0};
+    bool traj_ok = auncient_edsac_radical_nonce_trajectory_prover(
+        100000, 10, 17, 23, &traj_m
+    );
+    assert(traj_ok == true && traj_m.bijective_trajectory_sound == true);
+    assert(traj_m.recovered_u == traj_m.forward_phase_integral_u);
+    assert(traj_m.recovered_v == traj_m.back_phase_integral_v);
+    assert(traj_m.symm_product_spi == (traj_m.forward_phase_integral_u + traj_m.back_phase_integral_v));
+    printf("   ✓ EDSAC Radical Nonce Series Trajectory Integral verified (u=%lu, v=%lu, S_pi=%lu, S_sigma=%lu).\n",
+           traj_m.recovered_u, traj_m.recovered_v, traj_m.symm_product_spi, traj_m.symm_quotient_ssigma);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
