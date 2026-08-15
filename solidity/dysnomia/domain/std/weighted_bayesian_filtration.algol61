@@ -1,0 +1,62 @@
+begin
+  comment Standard Algol60/61 Domain Prover: Weighted Bayesian Filtration;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Classifies evidence-based assertions into formal Chancery rulings;
+
+  integer procedure evaluate_bayesian_filtration(
+    prior_scaled,
+    evidence_weight,
+    likelihood_scaled,
+    threshold_scaled
+  );
+  value prior_scaled, evidence_weight, likelihood_scaled, threshold_scaled;
+  integer prior_scaled, evidence_weight, likelihood_scaled, threshold_scaled;
+  begin
+    comment Classification Taxonomy:
+            0 = AUTHENTIC_STREAM (Posterior exceeds threshold)
+            1 = UNAUTHORIZED_BLOCK (Posterior below threshold)
+            2 = INVALID_INPUT_BOUNDS (Weights or probabilities out of range [0, 1000])
+            3 = CONTRADICTION (Degenerate zero-evidence denominator);
+
+    integer num;
+    integer den;
+    integer posterior;
+    integer weighted_prior;
+
+    if prior_scaled < 0 or prior_scaled > 1000 or
+       likelihood_scaled < 0 or likelihood_scaled > 1000 or
+       evidence_weight < 0 or evidence_weight > 1000 or
+       threshold_scaled < 0 or threshold_scaled > 1000 then
+      evaluate_bayesian_filtration := 2
+    else
+      begin
+        weighted_prior := (prior_scaled * evidence_weight) // 1000;
+        num := weighted_prior * likelihood_scaled;
+        den := num + (1000 - weighted_prior) * (1000 - likelihood_scaled);
+
+        if den = 0 then
+          evaluate_bayesian_filtration := 3
+        else
+          begin
+            posterior := (num * 1000) // den;
+            if posterior >= threshold_scaled then
+              evaluate_bayesian_filtration := 0
+            else
+              evaluate_bayesian_filtration := 1
+          end
+      end
+  end;
+
+  comment Unit Evaluation Harness;
+  integer ruling;
+  ruling := evaluate_bayesian_filtration(700, 900, 850, 600);
+
+  if ruling = 0 then
+    outstring(1, "RULING: AUTHENTIC_STREAM (Bayesian Posterior Affirmed)\n")
+  else if ruling = 1 then
+    outstring(1, "RULING: UNAUTHORIZED_BLOCK (Posterior Deficient)\n")
+  else if ruling = 2 then
+    outstring(1, "RULING: INVALID_INPUT_BOUNDS (Range Violation)\n")
+  else
+    outstring(1, "RULING: CONTRADICTION (Degenerate Distribution)\n")
+end
