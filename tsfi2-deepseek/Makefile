@@ -552,6 +552,10 @@ bin/test_tang_lut_nn_prover: tests/test_tang_lut_nn_prover.c src/tsfi_mariner_fa
 bin/test_http_client: tests/test_http_client.c src/tsfi_http_client.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+bin/test_web_extensions: tests/test_web_extensions.c src/tsfi_web_extensions.c src/tsfi_http_client.c src/tsfi_mariner_fabric_dispatch.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+
 
 
 
