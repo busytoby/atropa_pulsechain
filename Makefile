@@ -138,6 +138,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-cpm-master-fleet-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_master_fleet.c -o tests/test_cpm_master_fleet
+	./tests/test_cpm_master_fleet
+	@rm -f tests/test_cpm_master_fleet
+
 test-ankh-coaxial-mesh:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_coaxial_mesh.c -o tests/test_ankh_coaxial_mesh
 	./tests/test_ankh_coaxial_mesh hello.bin tune_channel.bin teddy_endow.bin
