@@ -218,6 +218,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-hardware-gating:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_hardware_gating.c -o tests/test_ankh_hardware_gating
+	./tests/test_ankh_hardware_gating
+	@rm -f tests/test_ankh_hardware_gating
+
 test-ankh-kermit-transduction:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_kermit_transduction.c -o tests/test_ankh_kermit_transduction
 	./tests/test_ankh_kermit_transduction
