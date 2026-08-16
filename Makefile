@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-ankh-turing-compiler:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_turing_compiler.c -o tests/test_ankh_turing_compiler
+	./tests/test_ankh_turing_compiler
+	@rm -f tests/test_ankh_turing_compiler
+
 test-ankh-universal-boundary-det:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_universal_boundary_det.c -o tests/test_ankh_universal_boundary_det
 	./tests/test_ankh_universal_boundary_det
