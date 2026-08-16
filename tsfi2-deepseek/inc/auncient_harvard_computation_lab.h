@@ -287,4 +287,27 @@ bool auncient_harvard_zuo_plugboard_prover(
     AuncientHarvardZuoPlugboardMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t z_real_q16;
+    int64_t h0_q16;
+    int64_t h1_q16;
+    int64_t h2_q16;
+    int64_t h3_q16;
+    int64_t g_gate_q16;
+    int64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool stability_bound_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_hankel_sound;
+} AuncientHarvardZuoHankelMetrics;
+
+bool auncient_harvard_zuo_hankel_prover(
+    int64_t z_real_q16,
+    bool simulate_branch_singularity_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoHankelMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

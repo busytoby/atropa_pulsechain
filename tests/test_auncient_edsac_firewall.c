@@ -620,11 +620,34 @@ int main(void) {
     printf("   ✓ Harvard Zuo Plugboard Permutation verified (Sum_24_Ch=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_plug_m.sum_permuted_channels, fault_plug_m.committed_output, clean_plug_m.displacement_wrap_mod);
 
+    // 35. Test Harvard Zuo Modified Airy-Hankel 3-Term Recurrence Prover
+    printf("[TEST] Testing Harvard Zuo Modified Airy-Hankel Recurrence (h1/h2 Stability & Singularity Latch)...\n");
+    AuncientHarvardZuoHankelMetrics clean_hankel_m = {0};
+    bool ok_hankel_clean = auncient_harvard_zuo_hankel_prover(
+        65536 /* z = 1.0 in Q16 */, false /* clean */, 3 /* k=3 */, &clean_hankel_m
+    );
+    assert(ok_hankel_clean == true && clean_hankel_m.overall_hankel_sound == true);
+    assert(clean_hankel_m.stability_bound_sound == true);
+    assert(clean_hankel_m.gating_clamp_sound == true);
+    assert(clean_hankel_m.shadow_isolation_sound == true);
+    assert(clean_hankel_m.h3_q16 >= -131072LL && clean_hankel_m.h3_q16 <= 131072LL);
+
+    AuncientHarvardZuoHankelMetrics fault_hankel_m = {0};
+    bool ok_hankel_fault = auncient_harvard_zuo_hankel_prover(
+        65536 /* z = 1.0 in Q16 */, true /* simulate singularity fault */, 3 /* k=3 */, &fault_hankel_m
+    );
+    assert(ok_hankel_fault == true && fault_hankel_m.overall_hankel_sound == true);
+    assert(fault_hankel_m.rollback_sound == true);
+    assert(fault_hankel_m.committed_output == 65536LL);
+    printf("   ✓ Harvard Zuo Hankel Recurrence verified (h3_Q16=%ld, G_gate=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
+           clean_hankel_m.h3_q16, clean_hankel_m.g_gate_q16, fault_hankel_m.committed_output, clean_hankel_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
