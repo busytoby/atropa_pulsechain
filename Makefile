@@ -253,6 +253,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-llm-tool-dispatch:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_llm_tool_dispatch.c -o tests/test_ankh_llm_tool_dispatch
+	./tests/test_ankh_llm_tool_dispatch
+	@rm -f tests/test_ankh_llm_tool_dispatch
+
 test-ankh-fleet18-orchestration:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_fleet18_orchestration.c -o tests/test_ankh_fleet18_orchestration
 	./tests/test_ankh_fleet18_orchestration
