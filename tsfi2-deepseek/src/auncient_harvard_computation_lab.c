@@ -259,3 +259,63 @@ bool auncient_harvard_computation_lab_prover(
 
     return overall;
 }
+
+/* Formal Harvard H-Bridge Coupled Legendre Recurrence Prover Implementation */
+bool auncient_harvard_legendre_recurrence_prover(
+    int64_t input_x_q16,
+    uint32_t max_degree_n,
+    uint32_t k_param,
+    AuncientHarvardLegendreMetrics *metrics_out
+) {
+    int64_t one_q16 = 65536LL;
+    int64_t abs_x = (input_x_q16 < 0) ? -input_x_q16 : input_x_q16;
+
+    if (k_param != 3 || abs_x > one_q16 || max_degree_n == 0 || max_degree_n > 7) {
+        return false;
+    }
+
+    // Step 1: H-Bridge SwiGLU Gating
+    int64_t g_wmq = 875LL + ((125LL * one_q16) / (one_q16 + ((abs_x * 100LL) / 1000LL)));
+    bool gating_ok = (g_wmq >= 875LL && g_wmq <= 1000LL);
+
+    int64_t gated_x = (input_x_q16 * g_wmq) / 1000LL;
+
+    // Step 2: Legendre 3-Term Recurrence: P_0 = 1.0, P_1 = gated_x
+    int64_t p_table[8] = {0};
+    p_table[0] = one_q16;
+    p_table[1] = gated_x;
+
+    bool uniform_bound_ok = true;
+
+    for (uint32_t n = 1; n < max_degree_n; ++n) {
+        int64_t term_a = ((2LL * (int64_t)n + 1LL) * ((gated_x * p_table[n]) / one_q16));
+        int64_t term_b = ((int64_t)n * p_table[n - 1]);
+        int64_t p_next = (term_a - term_b) / ((int64_t)n + 1LL);
+
+        if (p_next > (one_q16 + 512LL) || p_next < (-(one_q16 + 512LL))) {
+            uniform_bound_ok = false;
+        }
+        p_table[n + 1] = p_next;
+    }
+
+    int64_t final_poly = p_table[max_degree_n];
+    uint32_t disp_wrap = (uint32_t)(((final_poly % 256) + 256) % 256);
+    bool overall_sound = gating_ok && uniform_bound_ok;
+
+    if (metrics_out) {
+        metrics_out->input_x_q16 = input_x_q16;
+        metrics_out->gated_x_q16 = gated_x;
+        metrics_out->g_wmq_factor = g_wmq;
+        for (int i = 0; i < 8; ++i) {
+            metrics_out->p_degree[i] = p_table[i];
+        }
+        metrics_out->max_degree_n = max_degree_n;
+        metrics_out->gating_sound = gating_ok;
+        metrics_out->uniform_bound_sound = uniform_bound_ok;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->overall_legendre_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+

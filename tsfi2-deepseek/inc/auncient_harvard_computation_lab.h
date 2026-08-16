@@ -83,4 +83,23 @@ bool auncient_harvard_computation_lab_prover(
     AuncientHarvardLabMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t input_x_q16;
+    int64_t gated_x_q16;
+    int64_t g_wmq_factor;
+    int64_t p_degree[8];
+    uint32_t max_degree_n;
+    bool gating_sound;
+    bool uniform_bound_sound;
+    uint32_t displacement_wrap_mod;
+    bool overall_legendre_sound;
+} AuncientHarvardLegendreMetrics;
+
+bool auncient_harvard_legendre_recurrence_prover(
+    int64_t input_x_q16,
+    uint32_t max_degree_n,
+    uint32_t k_param,
+    AuncientHarvardLegendreMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

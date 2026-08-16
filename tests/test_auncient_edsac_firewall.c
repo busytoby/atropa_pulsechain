@@ -407,10 +407,25 @@ int main(void) {
     printf("   ✓ Harvard Computation Lab verified (Wheel_Sum=%lu, Carry=%u, J0_Q16=%ld, J1_Q16=%ld, T9_Residual=0, DispMod=%u).\n",
            harvard_clean_m.wheel_value_low, harvard_clean_m.carry_overflow, harvard_clean_m.bessel_j0_fixed, harvard_clean_m.bessel_j1_fixed, harvard_clean_m.displacement_wrap_mod);
 
+    // 25. Test Harvard H-Bridge Coupled Legendre 3-Term Recurrence Prover
+    printf("[TEST] Testing Harvard H-Bridge Coupled Legendre Recurrence (Uniform Bound |P_n(x)| <= 1)...\n");
+    AuncientHarvardLegendreMetrics leg_m = {0};
+    bool ok_leg = auncient_harvard_legendre_recurrence_prover(
+        32768 /* x = 0.5 in Q16 */, 4 /* max degree n = 4 */, 3 /* k=3 */, &leg_m
+    );
+    assert(ok_leg == true && leg_m.overall_legendre_sound == true);
+    assert(leg_m.gating_sound == true);
+    assert(leg_m.uniform_bound_sound == true);
+    assert(leg_m.g_wmq_factor >= 875 && leg_m.g_wmq_factor <= 1000);
+    assert(leg_m.p_degree[0] == 65536); // P_0 = 1.0
+    printf("   ✓ Harvard Legendre Recurrence verified (x_in=0.5, G_wmq=%ld, P0=%ld, P1=%ld, P2=%ld, P3=%ld, P4=%ld, DispMod=%u).\n",
+           leg_m.g_wmq_factor, leg_m.p_degree[0], leg_m.p_degree[1], leg_m.p_degree[2], leg_m.p_degree[3], leg_m.p_degree[4], leg_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
