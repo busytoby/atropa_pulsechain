@@ -138,6 +138,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-collective-symbiosis:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_collective_symbiosis.c -o tests/test_ankh_collective_symbiosis
+	./tests/test_ankh_collective_symbiosis
+	@rm -f tests/test_ankh_collective_symbiosis
+
 test-ankh-toolset-self-evolution:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_toolset_self_evolution.c -o tests/test_ankh_toolset_self_evolution
 	./tests/test_ankh_toolset_self_evolution
