@@ -258,6 +258,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-grand-unified-omniverse:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_grand_unified_omniverse.c -o tests/test_ankh_grand_unified_omniverse
+	./tests/test_ankh_grand_unified_omniverse
+	@rm -f tests/test_ankh_grand_unified_omniverse
+
 test-ankh-nsa-quadtree-domain:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_nsa_quadtree_domain.c -o tests/test_ankh_nsa_quadtree_domain
 	./tests/test_ankh_nsa_quadtree_domain
