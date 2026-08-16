@@ -22,7 +22,7 @@ Let $(\mathcal{M}, d_{\mathcal{M}})$ be a complete metric state space over the m
 $$d_{\mathcal{M}}(T(x), T(y)) \le \gamma^* \cdot d_{\mathcal{M}}(x, y)$$
 
 In the Auncient Dysnomia VM, this metric ratio is grounded in the non-preferential SwiGLU conduction envelope:
-$$\gamma^* = \inf_{G_{\text{gate}} \in [875 \dots 1000]} \left\{ \frac{G_{\text{gate}}}{1000} \right\} = \frac{875}{1000} = \frac{7}{8} = 0.8750000$$
+$$\gamma^* = \inf_{G_{\text{gate}} \in [875 \dots 1000]} \left( \frac{G_{\text{gate}}}{1000} \right) = \frac{875}{1000} = \frac{7}{8} = 0.8750000$$
 
 This rigorous formulation guarantees:
 1. **Unconditional Uniform Continuity**: The gradient of state displacement is strictly bounded by $\gamma^*$, preventing explosive numeric divergence.
