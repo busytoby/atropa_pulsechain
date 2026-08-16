@@ -104,6 +104,12 @@ All standards contained herein are certified clean-room compliant with:
 
 ---
 
+| [AUNCIENT-STD-0008](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_accumulatory_instance_standard.md) | **Non-Preferential ACCUMULATORY INSTANCE Standard** | Harvard Mark I/II Modernization, 4-Quadrant Relay Braking, Continuous Integration |
+| [AUNCIENT-STD-0009](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_vaesen_personality_standard.md) | **Symplectic Multi-Agent Personality & Behavioral Commutation Standard** | Vaesen $(q, p)$ Leapfrog Registers, $N$-Body Empathy, EDO-22 Mood, GGUF Storage, Teddy Genesis, 4-Quadrant Action |
+| [AUNCIENT-STD-0010](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_multi_instance_stability_standard.md) | **Multi-Instance Composite Lyapunov Stability & Swarm Grounding Standard** | ReBAR Co-State Invariance, SCSI IPC Loopback, FET Discharge Physics, Swarm Totient Zero Grounding |
+
+---
+
 ### [AUNCIENT-STD-0008-ACCUMULATORY-INSTANCE](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_accumulatory_instance_standard.md)
 * **Title**: *Auncient Dysnomia VM & Harvard Computation Laboratory Architecture Modernization Standard*
 * **Core Claims**:
