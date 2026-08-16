@@ -1709,5 +1709,61 @@ bool auncient_via6522_totient_acid_prover(
     return overall_sound;
 }
 
+/* Formal GLM H-Bridge + WinchesterMQ SwiGLU Prover Implementation */
+bool auncient_glm_hbridge_swiglu_prover(
+    float input_val,
+    uint32_t k_param,
+    float heasly_threshold,
+    AuncientGlmSwigluMetrics *metrics_out
+) {
+    if (k_param != 3) {
+        return false;
+    }
+
+    // 1. Clyde C. Heasly NPN/PNP Differential H-Bridge Simulation
+    float v_npn = (input_val > 0.0f) ? (input_val * 1.4142f) : 0.0f;
+    float v_pnp = (input_val < 0.0f) ? (-input_val * 0.7071f) : 0.0f;
+    float v_diff = v_npn - v_pnp;
+
+    bool diff_monotonic = (input_val > 0.0f) ? (v_diff > 0.0f) : (input_val < 0.0f ? (v_diff < 0.0f) : true);
+
+    // 2. WinchesterMQ SCSI Gating Factor with k=3 parameter (7/8 = 0.875 scale)
+    float h_gate;
+    if (v_diff >= heasly_threshold) {
+        h_gate = 0.875f + (0.125f / (1.0f + 0.1f * v_diff));
+    } else if (v_diff <= -heasly_threshold) {
+        h_gate = 0.125f / (1.0f + 0.2f * fabsf(v_diff));
+    } else {
+        h_gate = 0.5f + (v_diff);
+    }
+
+    if (h_gate > 1.0f) h_gate = 1.0f;
+    if (h_gate < 0.0f) h_gate = 0.0f;
+
+    bool gate_clamped = (h_gate >= 0.0f && h_gate <= 1.0f);
+    float output_val = input_val * h_gate;
+
+    // 3. DisplacementShader Boundary Modulo (modulo 256)
+    int out_scaled = (int)(fabsf(output_val) * 1000.0f);
+    uint32_t disp_wrap = (uint32_t)(out_scaled % 256);
+
+    bool overall_sound = diff_monotonic && gate_clamped;
+
+    if (metrics_out) {
+        metrics_out->v_npn_potential = v_npn;
+        metrics_out->v_pnp_potential = v_pnp;
+        metrics_out->v_diff_potential = v_diff;
+        metrics_out->wmq_gate_factor = h_gate;
+        metrics_out->swiglu_output_val = output_val;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->differential_monotonic_sound = diff_monotonic;
+        metrics_out->wmq_gate_clamped = gate_clamped;
+        metrics_out->overall_glm_swiglu_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 

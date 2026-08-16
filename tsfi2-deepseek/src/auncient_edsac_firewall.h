@@ -683,6 +683,27 @@ bool auncient_via6522_totient_acid_prover(
     AuncientTotientAcidMetrics *metrics_out
 );
 
+// GLM H-Bridge SwiGLU Prover Metrics
+typedef struct {
+    float v_npn_potential;
+    float v_pnp_potential;
+    float v_diff_potential;
+    float wmq_gate_factor;
+    float swiglu_output_val;
+    uint32_t displacement_wrap_mod;
+    bool differential_monotonic_sound;
+    bool wmq_gate_clamped;
+    bool overall_glm_swiglu_sound;
+} AuncientGlmSwigluMetrics;
+
+// Formal GLM H-Bridge + WinchesterMQ SwiGLU Prover
+bool auncient_glm_hbridge_swiglu_prover(
+    float input_val,
+    uint32_t k_param,
+    float heasly_threshold,
+    AuncientGlmSwigluMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

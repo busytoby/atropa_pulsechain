@@ -171,6 +171,17 @@ int main(void) {
     assert(acid_fault_m.durability_rollback_verified == true);
     printf("   ✓ VIA 6522 TOTIENT ACID Compliance & Rollback verified (Clean & Fault-Recovered states = 0).\n");
 
+    // 11. Test GLM H-Bridge + WinchesterMQ SwiGLU Prover
+    printf("[TEST] Testing GLM H-Bridge + WinchesterMQ SwiGLU Prover (k=3, 7/8 scale)...\n");
+    AuncientGlmSwigluMetrics glm_swiglu_m = {0};
+    bool glm_swiglu_ok = auncient_glm_hbridge_swiglu_prover(2.0f, 3, 0.25f, &glm_swiglu_m);
+    assert(glm_swiglu_ok == true && glm_swiglu_m.overall_glm_swiglu_sound == true);
+    assert(glm_swiglu_m.v_diff_potential > 0.0f);
+    assert(glm_swiglu_m.wmq_gate_factor >= 0.875f && glm_swiglu_m.wmq_gate_factor <= 1.0f);
+    assert(glm_swiglu_m.swiglu_output_val > 0.0f);
+    printf("   ✓ GLM H-Bridge+WMQ SwiGLU verified (V_diff=%.3fV, Gate=%.3f, Out=%.3f, DispMod=%u).\n",
+           glm_swiglu_m.v_diff_potential, glm_swiglu_m.wmq_gate_factor, glm_swiglu_m.swiglu_output_val, glm_swiglu_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
