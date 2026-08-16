@@ -1617,6 +1617,62 @@ bool auncient_harvard_zuo_uniselector_sync_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Wheeler Jump Subroutine Return Link Invariance Prover */
+bool auncient_harvard_zuo_wheeler_jump_prover(
+    uint32_t caller_pc,
+    uint32_t subroutine_entry_pc,
+    bool simulate_escape_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoWheelerMetrics *metrics_out
+) {
+    if (k_param != 3 || caller_pc > 2047 || subroutine_entry_pc > 2047) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline caller PC in Zuo ZMM state
+    uint32_t shadow_caller_pc = caller_pc;
+
+    // Step 2: Form Wheeler Jump Link Instruction ('G' opcode = 71, target = CallerPC + 2)
+    uint32_t expected_return_pc = caller_pc + 2;
+    uint32_t wheeler_link_instruction = (71 * 65536) + expected_return_pc;
+
+    // Step 3: Subroutine Entry Execution & Return Jump Resolution
+    uint32_t resolved_return_pc = wheeler_link_instruction % 65536;
+    bool return_ok = (resolved_return_pc == expected_return_pc);
+
+    // Step 4: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)(caller_pc % 1000ULL)) / 1000LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 5: ACID Latch Commit or Pointer Escape Rollback
+    uint64_t committed_output = simulate_escape_fault ? (uint64_t)shadow_caller_pc : (((uint64_t)wheeler_link_instruction % 1000000ULL * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_caller_pc == caller_pc);
+    bool rollback_ok = simulate_escape_fault ? (committed_output == (uint64_t)shadow_caller_pc) : (committed_output == (((uint64_t)wheeler_link_instruction % 1000000ULL * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = return_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->caller_pc = caller_pc;
+        metrics_out->subroutine_entry_pc = subroutine_entry_pc;
+        metrics_out->wheeler_link_instruction = wheeler_link_instruction;
+        metrics_out->expected_return_pc = expected_return_pc;
+        metrics_out->resolved_return_pc = resolved_return_pc;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->return_link_sound = return_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_wheeler_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

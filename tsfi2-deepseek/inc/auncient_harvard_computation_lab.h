@@ -598,4 +598,28 @@ bool auncient_harvard_zuo_uniselector_sync_prover(
     AuncientHarvardZuoUniselectorMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t caller_pc;
+    uint32_t subroutine_entry_pc;
+    uint32_t wheeler_link_instruction;
+    uint32_t expected_return_pc;
+    uint32_t resolved_return_pc;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool return_link_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_wheeler_sound;
+} AuncientHarvardZuoWheelerMetrics;
+
+bool auncient_harvard_zuo_wheeler_jump_prover(
+    uint32_t caller_pc,
+    uint32_t subroutine_entry_pc,
+    bool simulate_escape_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoWheelerMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

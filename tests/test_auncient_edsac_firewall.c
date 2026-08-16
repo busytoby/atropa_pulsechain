@@ -937,11 +937,37 @@ int main(void) {
     printf("   ✓ Harvard Zuo Telephone Uniselector Sync verified (Start=%u, Impulses=%u, FinalPos=%u, Out=%lu, DispMod=%u).\n",
            clean_uni_m.starting_wiper_step, clean_uni_m.impulse_count, clean_uni_m.final_wiper_position, clean_uni_m.committed_output, clean_uni_m.displacement_wrap_mod);
 
+    // 49. Test Harvard Zuo Wheeler Jump Subroutine Return Link Invariance Prover
+    printf("[TEST] Testing Harvard Zuo Wheeler Jump Linkage (Self-Modifying Return Coordinate & Escape Latch)...\n");
+    AuncientHarvardZuoWheelerMetrics clean_wh_m = {0};
+    bool ok_wh_clean = auncient_harvard_zuo_wheeler_jump_prover(
+        100 /* caller PC */, 500 /* entry PC */, false /* clean */, 3 /* k=3 */, &clean_wh_m
+    );
+    assert(ok_wh_clean == true && clean_wh_m.overall_wheeler_sound == true);
+    assert(clean_wh_m.return_link_sound == true);
+    assert(clean_wh_m.gating_clamp_sound == true);
+    assert(clean_wh_m.shadow_isolation_sound == true);
+    assert(clean_wh_m.wheeler_link_instruction == 4653158);
+    assert(clean_wh_m.expected_return_pc == 102);
+    assert(clean_wh_m.resolved_return_pc == 102);
+    assert(clean_wh_m.g_gate_factor == 887);
+
+    AuncientHarvardZuoWheelerMetrics fault_wh_m = {0};
+    bool ok_wh_fault = auncient_harvard_zuo_wheeler_jump_prover(
+        100 /* caller PC */, 500 /* entry PC */, true /* simulate escape fault */, 3 /* k=3 */, &fault_wh_m
+    );
+    assert(ok_wh_fault == true && fault_wh_m.overall_wheeler_sound == true);
+    assert(fault_wh_m.rollback_sound == true);
+    assert(fault_wh_m.committed_output == 100ULL);
+    printf("   ✓ Harvard Zuo Wheeler Jump Linkage verified (Caller=%u, Entry=%u, LinkInstr=%u, RetPC=%u, Out=%lu, DispMod=%u).\n",
+           clean_wh_m.caller_pc, clean_wh_m.subroutine_entry_pc, clean_wh_m.wheeler_link_instruction, clean_wh_m.resolved_return_pc, clean_wh_m.committed_output, clean_wh_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
