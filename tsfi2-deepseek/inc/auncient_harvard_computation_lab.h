@@ -529,4 +529,27 @@ bool auncient_harvard_zuo_dual_cam_matrix_prover(
     AuncientHarvardZuoCamMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t bootstrap_word_count;
+    uint32_t recirculation_cycles;
+    uint64_t initial_checksum;
+    uint64_t recirc_checksum;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool delay_recirculation_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_bootstrap_sound;
+} AuncientHarvardZuoOrders1Metrics;
+
+bool auncient_harvard_zuo_orders1_bootstrap_prover(
+    uint32_t bootstrap_word_count,
+    uint32_t recirculation_cycles,
+    bool simulate_dispersion_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoOrders1Metrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

@@ -866,11 +866,36 @@ int main(void) {
     printf("   ✓ Harvard Zuo Dual Cam Matrix verified (t=%u, p=%u, Diff=%u, Out=%lu, DispMod=%u).\n",
            clean_cam_m.t_cam_phase, clean_cam_m.p_cam_phase, clean_cam_m.phase_difference, clean_cam_m.committed_output, clean_cam_m.displacement_wrap_mod);
 
+    // 46. Test Harvard Zuo Initial Orders 1 Bootstrap Readiness Prover
+    printf("[TEST] Testing Harvard Zuo Initial Orders 1 Bootstrap (31-Word Delay-Line Recirculation & Dispersion Latch)...\n");
+    AuncientHarvardZuoOrders1Metrics clean_boot_m = {0};
+    bool ok_boot_clean = auncient_harvard_zuo_orders1_bootstrap_prover(
+        31 /* words */, 50 /* cycles */, false /* clean */, 3 /* k=3 */, &clean_boot_m
+    );
+    assert(ok_boot_clean == true && clean_boot_m.overall_bootstrap_sound == true);
+    assert(clean_boot_m.delay_recirculation_sound == true);
+    assert(clean_boot_m.gating_clamp_sound == true);
+    assert(clean_boot_m.shadow_isolation_sound == true);
+    assert(clean_boot_m.initial_checksum == 21628080ULL);
+    assert(clean_boot_m.recirc_checksum == 21628080ULL);
+    assert(clean_boot_m.g_gate_factor == 1000);
+
+    AuncientHarvardZuoOrders1Metrics fault_boot_m = {0};
+    bool ok_boot_fault = auncient_harvard_zuo_orders1_bootstrap_prover(
+        31 /* words */, 50 /* cycles */, true /* simulate dispersion fault */, 3 /* k=3 */, &fault_boot_m
+    );
+    assert(ok_boot_fault == true && fault_boot_m.overall_bootstrap_sound == true);
+    assert(fault_boot_m.rollback_sound == true);
+    assert(fault_boot_m.committed_output == 31ULL);
+    printf("   ✓ Harvard Zuo Initial Orders 1 Bootstrap verified (Words=%u, Cycles=%u, Checksum=%lu, Out=%lu, DispMod=%u).\n",
+           clean_boot_m.bootstrap_word_count, clean_boot_m.recirculation_cycles, clean_boot_m.initial_checksum, clean_boot_m.committed_output, clean_boot_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
