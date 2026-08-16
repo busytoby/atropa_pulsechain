@@ -227,6 +227,18 @@ make test-zorse-yellow-box-cics-io1
 
 ---
 
+## Lore Series & Canonical Volumes
+
+The foundational philosophical, mathematical, and historical treatises of the Dysnomia VM, Auncient Wavelet lore, and mainframe strategy architecture are published in the canonical four-volume work:
+
+* **Dysnomia Lore (Volumes I – IV)**: [Available on Amazon (ASIN: B0HBLT2RGY)](https://www.amazon.com/dp/B0HBLT2RGY)
+  - **Volume I**: *Foundations of the Auncient VM & Zero Genesis*
+  - **Volume II**: *Eulerian Nonce Trajectories & Radical Inversion*
+  - **Volume III**: *Harvard 1946 Mainframe & Mechanical Commutators*
+  - **Volume IV**: *The Yellow Box PBX, Zorse & Continuous State-Space Engines*
+
+---
+
 ## Architectural & Project Constraints
 
 SYSTEM0 development strictly complies with repository rules:
