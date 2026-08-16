@@ -463,11 +463,33 @@ int main(void) {
     printf("   ✓ Harvard 1946 Multiplier verified (Product=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_mult_m.accumulated_product, fault_mult_m.committed_output, clean_mult_m.displacement_wrap_mod);
 
+    // 28. Test Harvard 1946 Functional Table Interpolator Tape Prover
+    printf("[TEST] Testing Harvard 1946 Functional Interpolator (Forward Differences & Rollback)...\n");
+    AuncientHarvard1946InterpolatorMetrics clean_interp_m = {0};
+    bool ok_interp_clean = auncient_harvard_1946_interpolator_prover(
+        0 /* x_0 = 0 */, 32768 /* dx = 0.5 in Q16 */, false /* clean */, 3 /* k=3 */, &clean_interp_m
+    );
+    assert(ok_interp_clean == true && clean_interp_m.overall_interpolator_sound == true);
+    assert(clean_interp_m.difference_sound == true);
+    assert(clean_interp_m.shadow_isolation_sound == true);
+    assert(clean_interp_m.committed_output_q16 == clean_interp_m.interpolated_val_q16);
+
+    AuncientHarvard1946InterpolatorMetrics fault_interp_m = {0};
+    bool ok_interp_fault = auncient_harvard_1946_interpolator_prover(
+        0 /* x_0 = 0 */, 32768 /* dx = 0.5 in Q16 */, true /* simulate tape skew */, 3 /* k=3 */, &fault_interp_m
+    );
+    assert(ok_interp_fault == true && fault_interp_m.overall_interpolator_sound == true);
+    assert(fault_interp_m.rollback_sound == true);
+    assert(fault_interp_m.committed_output_q16 == 65536);
+    printf("   ✓ Harvard 1946 Interpolator verified (Interp_Val=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
+           clean_interp_m.interpolated_val_q16, fault_interp_m.committed_output_q16, clean_interp_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

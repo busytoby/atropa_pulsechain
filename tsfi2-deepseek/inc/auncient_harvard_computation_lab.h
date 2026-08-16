@@ -142,4 +142,24 @@ bool auncient_harvard_1946_multiplier_prover(
     AuncientHarvard1946MultiplierMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t base_x_q16;
+    int64_t sub_interval_dx_q16;
+    int64_t interpolated_val_q16;
+    int64_t committed_output_q16;
+    uint32_t displacement_wrap_mod;
+    bool difference_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_interpolator_sound;
+} AuncientHarvard1946InterpolatorMetrics;
+
+bool auncient_harvard_1946_interpolator_prover(
+    int64_t base_x_q16,
+    int64_t sub_interval_dx_q16,
+    bool simulate_tape_skew_fault,
+    uint32_t k_param,
+    AuncientHarvard1946InterpolatorMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

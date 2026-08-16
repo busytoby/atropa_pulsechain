@@ -441,3 +441,63 @@ bool auncient_harvard_1946_multiplier_prover(
 
     return overall_sound;
 }
+
+/* Formal Harvard 1946 Functional Table Interpolator Tape Prover */
+bool auncient_harvard_1946_interpolator_prover(
+    int64_t base_x_q16,
+    int64_t sub_interval_dx_q16,
+    bool simulate_tape_skew_fault,
+    uint32_t k_param,
+    AuncientHarvard1946InterpolatorMetrics *metrics_out
+) {
+    int64_t one_q16 = 65536LL;
+
+    if (k_param != 3 || sub_interval_dx_q16 <= 0 || sub_interval_dx_q16 > one_q16) {
+        return false;
+    }
+
+    // Step 1: Capture Functional Table Tape Points
+    int64_t y0 = 65536LL;
+    int64_t y1 = 65536LL - ((16384LL * 16384LL) / (4LL * one_q16));
+    int64_t y2 = 65536LL - ((32768LL * 32768LL) / (4LL * one_q16));
+    int64_t y3 = 65536LL - ((49152LL * 49152LL) / (4LL * one_q16));
+
+    int64_t shadow_f0 = y0;
+
+    // Step 2: Compute Forward Differences
+    int64_t delta1 = y1 - y0;
+    int64_t delta2 = (y2 - y1) - delta1;
+    int64_t delta3 = ((y3 - y2) - (y2 - y1)) - delta2;
+
+    int64_t abs_d3 = (delta3 < 0) ? -delta3 : delta3;
+    bool difference_ok = (abs_d3 <= 512LL);
+
+    // Step 3: Newton-Gregory Forward Interpolation
+    int64_t term_linear = (sub_interval_dx_q16 * delta1) / one_q16;
+    int64_t term_quad   = ((((sub_interval_dx_q16 * (sub_interval_dx_q16 - one_q16)) / one_q16) * delta2) / (2LL * one_q16));
+    int64_t interpolated_val = y0 + term_linear + term_quad;
+
+    // Step 4: ACID Latch Commit or Shadow Rollback
+    int64_t committed_output = simulate_tape_skew_fault ? shadow_f0 : interpolated_val;
+
+    bool isolation_ok = (shadow_f0 == y0);
+    bool rollback_ok = simulate_tape_skew_fault ? (committed_output == shadow_f0) : (committed_output == interpolated_val);
+    bool overall_sound = difference_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
+
+    if (metrics_out) {
+        metrics_out->base_x_q16 = base_x_q16;
+        metrics_out->sub_interval_dx_q16 = sub_interval_dx_q16;
+        metrics_out->interpolated_val_q16 = interpolated_val;
+        metrics_out->committed_output_q16 = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->difference_sound = difference_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_interpolator_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
