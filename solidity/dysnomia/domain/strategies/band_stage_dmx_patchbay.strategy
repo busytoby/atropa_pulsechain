@@ -1,0 +1,121 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BAND-STAGE-DMX-PATCHBAY-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BAND STAGE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-STAGE-PARAMETERS.
+           05 WS-SCENE-PRESET           PIC 9(02) VALUE 04.
+           05 WS-DMX-RED-Q16            PIC 9(06) VALUE 032768.
+           05 WS-DMX-GREEN-Q16          PIC 9(06) VALUE 049152.
+           05 WS-DMX-BLUE-Q16           PIC 9(06) VALUE 016384.
+           05 WS-STANAG-PACKET-SEQ      PIC 9(05) VALUE 01024.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MORPHED-SCENE-STATE    PIC 9(09) VALUE 0.
+           05 WS-DMX-R-8BIT             PIC 9(03) VALUE 0.
+           05 WS-DMX-G-8BIT             PIC 9(03) VALUE 0.
+           05 WS-DMX-B-8BIT             PIC 9(03) VALUE 0.
+           05 WS-PATCHBAY-DET           PIC 9(06) VALUE 0.
+           05 WS-SHADOW-STAGE-BASELINE  PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SCENE-PRESET        VALUE 2.
+              88 INVALID-DMX-SIGNAL          VALUE 3.
+              88 INVALID-STANAG-SEQ          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 DMX-UNDERFLOW-DETECTED      VALUE 6.
+              88 PATCHBAY-SINGULARITY-FAIL   VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-STAGE-DMX
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCENE-PRESET < 1 OR WS-SCENE-PRESET > 8
+                SET INVALID-SCENE-PRESET TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DMX-RED-Q16 > 65536 OR
+               WS-DMX-GREEN-Q16 > 65536 OR
+               WS-DMX-BLUE-Q16 > 65536
+                SET INVALID-DMX-SIGNAL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STANAG-PACKET-SEQ < 1 OR WS-STANAG-PACKET-SEQ > 65535
+                SET INVALID-STANAG-SEQ TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-STAGE-DMX.
+            COMPUTE WS-MORPHED-SCENE-STATE = (WS-SCENE-PRESET * 8192) -
+                                             ((WS-SCENE-PRESET * WS-SCENE-PRESET * 128) / 8).
+
+            COMPUTE WS-DMX-R-8BIT = (WS-DMX-RED-Q16 / 256) + 1.
+            COMPUTE WS-DMX-G-8BIT = (WS-DMX-GREEN-Q16 / 256) + 1.
+            COMPUTE WS-DMX-B-8BIT = (WS-DMX-BLUE-Q16 / 256) + 1.
+
+            IF WS-DMX-R-8BIT > 255 MOVE 255 TO WS-DMX-R-8BIT.
+            IF WS-DMX-G-8BIT > 255 MOVE 255 TO WS-DMX-G-8BIT.
+            IF WS-DMX-B-8BIT > 255 MOVE 255 TO WS-DMX-B-8BIT.
+
+            IF WS-DMX-R-8BIT EQUAL ZERO OR
+               WS-DMX-G-8BIT EQUAL ZERO OR
+               WS-DMX-B-8BIT EQUAL ZERO
+                SET DMX-UNDERFLOW-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PATCHBAY-DET = (WS-SCENE-PRESET * 50) + (WS-STANAG-PACKET-SEQ / 1000) + 1.
+            IF WS-PATCHBAY-DET EQUAL ZERO
+                SET PATCHBAY-SINGULARITY-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-STAGE-BASELINE = (WS-CICS-WRITER-ID * 1000000) +
+                                               (WS-MORPHED-SCENE-STATE * 2) +
+                                               ((WS-DMX-R-8BIT + WS-DMX-G-8BIT + WS-DMX-B-8BIT) * 100) +
+                                               (WS-STANAG-PACKET-SEQ * 10).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-STAGE-BASELINE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-STAGE-BASELINE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

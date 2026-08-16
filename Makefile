@@ -48,6 +48,11 @@ test-wmq-stanag-agent-jam:
 	./tests/test_wmq_stanag_agent_jam
 	@rm -f tests/test_wmq_stanag_agent_jam
 
+test-band-stage-dmx-patchbay:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_band_stage_dmx_patchbay.c -o tests/test_band_stage_dmx_patchbay
+	./tests/test_band_stage_dmx_patchbay
+	@rm -f tests/test_band_stage_dmx_patchbay
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
