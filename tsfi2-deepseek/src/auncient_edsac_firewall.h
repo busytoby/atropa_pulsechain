@@ -704,6 +704,26 @@ bool auncient_glm_hbridge_swiglu_prover(
     AuncientGlmSwigluMetrics *metrics_out
 );
 
+// GLM 2D-RoPE Quantel Paintbox Prover Metrics
+typedef struct {
+    float u_rotated;
+    float v_rotated;
+    float u_recovered;
+    float v_recovered;
+    uint32_t displacement_wrap_mod;
+    bool orthogonal_norm_preserved;
+    bool inverse_reconstruction_sound;
+    bool overall_2drope_sound;
+} AuncientGlm2dRoPEMetrics;
+
+// Formal GLM 2D-RoPE Orthogonal Transform & Inverse Prover
+bool auncient_glm_2d_rope_prover(
+    float u_coord,
+    float v_coord,
+    float angle_rad,
+    AuncientGlm2dRoPEMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

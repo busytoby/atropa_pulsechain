@@ -1764,6 +1764,50 @@ bool auncient_glm_hbridge_swiglu_prover(
     return overall_sound;
 }
 
+/* Formal GLM 2D-RoPE Orthogonal Transform & Inverse Prover Implementation */
+bool auncient_glm_2d_rope_prover(
+    float u_coord,
+    float v_coord,
+    float angle_rad,
+    AuncientGlm2dRoPEMetrics *metrics_out
+) {
+    float cos_th = cosf(angle_rad);
+    float sin_th = sinf(angle_rad);
+
+    // Forward 2D Rotary Embedding Rotation: [q_rot] = R · [q_orig]
+    float u_rot = u_coord * cos_th - v_coord * sin_th;
+    float v_rot = u_coord * sin_th + v_coord * cos_th;
+
+    // Vector Norm Conservation Check (Orthogonality)
+    float orig_norm_sq = u_coord * u_coord + v_coord * v_coord;
+    float rot_norm_sq  = u_rot * u_rot + v_rot * v_rot;
+    bool norm_preserved = fabsf(rot_norm_sq - orig_norm_sq) < 0.05f;
+
+    // Inverse 2D-RoPE Orthogonal Reconstruction: [q_rec] = R^T · [q_rot]
+    float u_rec = u_rot * cos_th + v_rot * sin_th;
+    float v_rec = -u_rot * sin_th + v_rot * cos_th;
+
+    bool rec_sound = (fabsf(u_rec - u_coord) < 0.01f) && (fabsf(v_rec - v_coord) < 0.01f);
+    int u_scaled = (int)(fabsf(u_rot) * 1000.0f);
+    uint32_t disp_wrap = (uint32_t)(u_scaled % 256);
+
+    bool overall_sound = norm_preserved && rec_sound;
+
+    if (metrics_out) {
+        metrics_out->u_rotated = u_rot;
+        metrics_out->v_rotated = v_rot;
+        metrics_out->u_recovered = u_rec;
+        metrics_out->v_recovered = v_rec;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->orthogonal_norm_preserved = norm_preserved;
+        metrics_out->inverse_reconstruction_sound = rec_sound;
+        metrics_out->overall_2drope_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

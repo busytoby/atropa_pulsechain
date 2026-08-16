@@ -182,6 +182,16 @@ int main(void) {
     printf("   ✓ GLM H-Bridge+WMQ SwiGLU verified (V_diff=%.3fV, Gate=%.3f, Out=%.3f, DispMod=%u).\n",
            glm_swiglu_m.v_diff_potential, glm_swiglu_m.wmq_gate_factor, glm_swiglu_m.swiglu_output_val, glm_swiglu_m.displacement_wrap_mod);
 
+    // 12. Test GLM 2D-RoPE Quantel Paintbox Transform & Inverse Prover
+    printf("[TEST] Testing GLM 2D-RoPE Quantel Paintbox Transform & Inverse Prover...\n");
+    AuncientGlm2dRoPEMetrics glm_rope_m = {0};
+    bool glm_rope_ok = auncient_glm_2d_rope_prover(1331.0f, 991.0f, 0.523598775f /* 30 deg */, &glm_rope_m);
+    assert(glm_rope_ok == true && glm_rope_m.overall_2drope_sound == true);
+    assert(glm_rope_m.orthogonal_norm_preserved == true);
+    assert(glm_rope_m.inverse_reconstruction_sound == true);
+    printf("   ✓ GLM 2D-RoPE verified (Rot=[%.2f, %.2f], Rec=[%.2f, %.2f], DispMod=%u).\n",
+           glm_rope_m.u_rotated, glm_rope_m.v_rotated, glm_rope_m.u_recovered, glm_rope_m.v_recovered, glm_rope_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
