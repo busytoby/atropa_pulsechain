@@ -1,5 +1,5 @@
 # STANDARD SPECIFICATION: MAXIMUM THEORETICAL LYAPUNOV STABILITY
-## *Auncient Dysnomia VM & ANKH LLM Multi-Subsystem Lipschitz Contraction & Zero-Entropy Stability Standard*
+## *Auncient Dysnomia VM & ANKH LLM Multi-Subsystem Non-Expansive Metric Contraction & Zero-Entropy Stability Standard*
 
 **Standard Identifier**: `AUNCIENT-STD-0001-MAX-LYAPUNOV`  
 **Classification**: Continuous-Time Neuro-Symbolic Mainframe Stability Standard  
@@ -11,18 +11,34 @@
 ## 1. ABSTRACT & SCOPE
 This standard defines the mathematical axioms, discrete contraction bounds, and multi-subsystem benchmarking specifications for **Maximum Theoretical Lyapunov Stability** across the Auncient Dysnomia Virtual Machine, ANKH Large Language Model (LLM), and WinchesterMQ virtual hardware.
 
-It establishes that across all five physical and symbolic subsystem domains—WinchesterMQ SCSI virtual hardware, Dynamic Smart Contract ABI dispatchers, Cryptographic Totient accumulator valves, Continuous Fourier ALU 2D wave envelopes, and Strowger 24-Trunk PBX switchboards—the total Lyapunov energy function $V_{\text{total}}(t)$ contracts monotonically at the optimal Lipschitz ceiling $\gamma^* = \frac{7}{8} = 0.8750000$ without empirical Child-Langmuir space-charge distortions or entropy leakage.
+It establishes that across all five physical and symbolic subsystem domains—WinchesterMQ SCSI virtual hardware, Dynamic Smart Contract ABI dispatchers, Cryptographic Totient accumulator valves, Continuous Fourier ALU 2D wave envelopes, and Strowger 24-Trunk PBX switchboards—the total Lyapunov energy function $V_{\text{total}}(t)$ contracts monotonically under the optimal non-expansive metric contraction constant $\gamma^* = \frac{7}{8} = 0.8750000$ without empirical Child-Langmuir space-charge distortions or entropy leakage.
 
 ---
 
-## 2. CLAIMS & MATHEMATICAL SPECIFICATION
+## 2. FORMAL DEFINITION OF METRIC CONTRACTION & CONTINUITY BOUNDS
+
+### Definition: Bounded Metric Ratio Contraction (BMRC)
+Let $(\mathcal{M}, d_{\mathcal{M}})$ be a complete metric state space over the modular field $\mathbb{F}_{\text{MotzkinPrime}}^N$. A state transition map $T: \mathcal{M} \to \mathcal{M}$ is defined as a **Bounded Metric Ratio Contraction (BMRC)** if there exists a real constant $\gamma^* \in (0, 1)$ such that for all state pairs $x, y \in \mathcal{M}$:
+$$d_{\mathcal{M}}(T(x), T(y)) \le \gamma^* \cdot d_{\mathcal{M}}(x, y)$$
+
+In the Auncient Dysnomia VM, this metric ratio is grounded in the non-preferential SwiGLU conduction envelope:
+$$\gamma^* = \inf_{G_{\text{gate}} \in [875 \dots 1000]} \left\{ \frac{G_{\text{gate}}}{1000} \right\} = \frac{875}{1000} = \frac{7}{8} = 0.8750000$$
+
+This rigorous formulation guarantees:
+1. **Unconditional Uniform Continuity**: The gradient of state displacement is strictly bounded by $\gamma^*$, preventing explosive numeric divergence.
+2. **Fixed-Point Convergence (Banach Contraction Invariance)**: There exists a unique, stationary invariant state $x^* \in \mathcal{M}$ such that $\lim_{k \to \infty} T^k(x_0) = x^*$.
+3. **No Space-Charge Distortion**: The continuity modulus is purely linear ($L = \gamma^*$), strictly obeying Project Rule 12 against empirical space-charge-limited power laws.
+
+---
+
+## 3. CLAIMS & MATHEMATICAL SPECIFICATION
 
 ### Claim 1: Axiom of Global Composite Energy Partition
 The state of the composite mainframe is characterized by the scalar Lyapunov energy function:
 $$V_{\text{total}}(t) = V_{\text{WMQ}}(t) + V_{\text{ABI}}(t) + V_{\text{TOTIENT}}(t) + V_{\text{ALU}}(t) + V_{\text{PBX}}(t)$$
 where each subsystem energy $V_i(t) = \frac{1}{2} \|x_i(t) - x_i^*\|^2 \ge 0$ represents the squared Euclidean distance to its invariant fixed point.
 
-### Claim 2: The Optimal Lipschitz Contraction Ceiling
+### Claim 2: The Optimal BMRC Contraction Ceiling
 Under execution of any machine cycle, sequence loop, or reasoning step, the state transition operator $T: \mathcal{H} \to \mathcal{H}$ satisfies the strict contraction inequality:
 $$V_{\text{total}}(t + 1) \le \gamma^* \cdot V_{\text{total}}(t), \qquad \gamma^* = \frac{7}{8} = 0.8750000$$
 * **Maximality Invariant**: $\gamma^*$ represents the absolute infimum contraction rate achievable under linear SwiGLU gating ($G_{\text{gate}} \in [875 \dots 1000]$) without violating simulated FET monotonic thermodynamic dissipation.
@@ -52,7 +68,7 @@ The isolated ZMM ReBAR shadow baseline is restored instantaneously without state
 
 ---
 
-## 3. FORMAL CERTIFICATION & VERIFICATION CITATIONS
+## 4. FORMAL CERTIFICATION & VERIFICATION CITATIONS
 This standard is formally verified across clean-room Algol61, COBOL, and C11 test batteries:
 * **Algol61 Domain Prover**: `solidity/dysnomia/domain/std/ankh_maximum_lyapunov_stability_prover.algol61`
 * **COBOL Strategy Division**: `solidity/dysnomia/domain/strategies/ankh_maximum_lyapunov_stability.strategy`

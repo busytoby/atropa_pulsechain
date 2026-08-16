@@ -3,7 +3,7 @@ begin
   comment Location: solidity/dysnomia/domain/std;
   comment Formally proves:;
   comment 1. Global Multi-Subsystem Lyapunov Energy Contraction: Evaluates total composite energy V_total = V_WMQ + V_ABI + V_TOTIENT + V_ALU + V_PBX, asserting monotonic global contraction V_total(t+1) <= gamma_optimal * V_total(t),;
-  comment 2. Maximum Theoretical Contraction Ceiling: Asserts gamma_optimal = 875/1000 (7/8 Lipschitz clamp infimum) as the absolute mathematical limit of convergence without thermodynamic dissipation,;
+  comment 2. Bounded Metric Ratio Contraction (BMRC) Ceiling: Asserts gamma_optimal = 875/1000 (7/8 non-expansive metric bound infimum) as the absolute mathematical limit of convergence without thermodynamic dissipation,;
   comment 3. Non-Preferential Linear Flux Integration: delta_A = S_t without Child-Langmuir space charge distortions (Rule 12),;
   comment 4. Cross-Domain Zero Drift: Asserts zero register bounce in WMQ, zero address ambiguity in ABI, zero flux leak in TOTIENT, and zero positional phase shear in Fourier ALU,;
   comment 5. Zero-Flux Shadow Isolation & Instant Rollback: Any subsystem perturbation or unverified citizen attempt restores global shadow baseline with zero charge loss.;
@@ -26,7 +26,7 @@ begin
             1 = INVALID_K_EXPONENT (k must be 3)
             2 = INVALID_SUBSYSTEM_ENERGY (subsystem energies must be > 0)
             3 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
-            4 = GLOBAL_CONTRACTION_FAIL (contracted total energy exceeds optimal Lipschitz ceiling)
+            4 = GLOBAL_CONTRACTION_FAIL (contracted total energy exceeds optimal metric contraction bound)
             5 = SUBSYSTEM_DISPERSION_DETECTED (subsystem component diverged from monotonic decay)
             6 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault)
             7 = CASCADE_ROLLBACK_FAIL (Committed state diverged from expected shadow baseline);
@@ -65,7 +65,7 @@ begin
 
     v_total_initial := v_wmq_initial + v_abi_initial + v_totient_initial + v_alu_initial + v_pbx_initial;
 
-    comment Step 1: Execute Maximum Optimal Lipschitz Contraction (Gamma = 875/1000);
+    comment Step 1: Execute Maximum Optimal Metric Contraction (Gamma = 875/1000);
     v_wmq_contracted := (v_wmq_initial * 875) / 1000;
     v_abi_contracted := (v_abi_initial * 875) / 1000;
     v_totient_contracted := (v_totient_initial * 875) / 1000;
