@@ -5,13 +5,13 @@
 #include <string.h>
 #include <assert.h>
 
-// ANKH LLM Compiler: Emits 'pack.bin' for CP/M-Tomie
-// Role: Kermit Protocol Packetizer & 7-Bit Clean Serial Block Encoder
+// ANKH LLM Compiler: Emits 'unpack.bin' for CP/M-Tomie
+// Role: Kermit Protocol Unpacketizer & 7-Bit Serial Stream Decoder
 // Conforms to:
 // 1. CP/M-Tomie TPA Base 0100H
 // 2. EDSAC Initial Orders 1 Permitted Opcodes
 // 3. Rule 18 3-Term Orthogonal Recurrence Checksum
-// 4. Pure Kermit framing (MARK, LEN, SEQ, TYPE, DATA, CHECK)
+// 4. Pure Kermit unpacketizing (MARK, LEN, SEQ, TYPE, DATA, CHECK)
 
 #define CPM_TPA_BASE 0x0100
 #define MOTZKIN_PRIME 953467954114363ULL
@@ -20,13 +20,13 @@ typedef struct __attribute__((packed)) {
     uint8_t magic[4];          // "ANKH"
     uint16_t load_address;     // 0x0100
     uint16_t entry_point;      // 0x0100
-    uint32_t opcode_signature; // "PACK" (0x5041434B)
-    uint16_t kermit_packet_sz; // 94 Bytes per Kermit frame
-    uint16_t packets_encoded;  // 16 Packets (1504 Bytes Kermit Stream)
+    uint32_t opcode_signature; // "UPCK" (0x5550434B)
+    uint16_t packets_decoded;  // 16 Packets
+    uint16_t bytes_reconstituted; // 1504 Bytes
     uint16_t payload_len;      // Formatted text length
     char payload[128];         // Formatted status display
     uint32_t checksum_rule18;  // Checksum
-} CpmPackBinary;
+} CpmUnpackBinary;
 
 static uint32_t compute_rule18_checksum(const uint8_t *data, size_t len) {
     uint64_t p0 = 1;
@@ -44,13 +44,13 @@ static uint32_t compute_rule18_checksum(const uint8_t *data, size_t len) {
 }
 
 int main(int argc, char **argv) {
-    const char *out_path = (argc > 1) ? argv[1] : "pack.bin";
+    const char *out_path = (argc > 1) ? argv[1] : "unpack.bin";
 
     printf("=============================================================\n");
-    printf("CP/M-TOMIE COMPILER: SYNTHESIZING 'PACK.BIN' (KERMIT PACKETIZER)\n");
+    printf("CP/M-TOMIE COMPILER: SYNTHESIZING 'UNPACK.BIN' (KERMIT UNPACKER)\n");
     printf("=============================================================\n");
 
-    CpmPackBinary bin;
+    CpmUnpackBinary bin;
     memset(&bin, 0, sizeof(bin));
 
     bin.magic[0] = 'A';
@@ -60,13 +60,13 @@ int main(int argc, char **argv) {
 
     bin.load_address = CPM_TPA_BASE;
     bin.entry_point = CPM_TPA_BASE;
-    bin.opcode_signature = 0x5041434B; // "PACK"
-    bin.kermit_packet_sz = 94;
-    bin.packets_encoded = 16;
+    bin.opcode_signature = 0x5550434B; // "UPCK"
+    bin.packets_decoded = 16;
+    bin.bytes_reconstituted = 1504;
 
     snprintf(bin.payload, sizeof(bin.payload),
-             "PACK: Kermit Packetizer -> %u Frames (%u B/pkt) [7-Bit Clean Serial Protocol]\n",
-             bin.packets_encoded, bin.kermit_packet_sz);
+             "UNPACK: Kermit Unpacketizer -> %u Frames Decoded (%u Bytes Reconstituted | 0 Errors)\n",
+             bin.packets_decoded, bin.bytes_reconstituted);
     bin.payload_len = (uint16_t)strlen(bin.payload);
 
     bin.checksum_rule18 = compute_rule18_checksum((const uint8_t *)&bin, sizeof(bin) - sizeof(uint32_t));

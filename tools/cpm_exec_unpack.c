@@ -6,20 +6,20 @@
 #include <assert.h>
 #include <unistd.h>
 
-// CP/M-Tomie Executor for 'pack.bin' (Kermit Protocol Packetizer)
+// CP/M-Tomie Executor for 'unpack.bin' (Kermit Protocol Unpacketizer)
 #define CPM_TPA_BASE 0x0100
 
 typedef struct __attribute__((packed)) {
     uint8_t magic[4];          // "ANKH"
     uint16_t load_address;     // 0x0100
     uint16_t entry_point;      // 0x0100
-    uint32_t opcode_signature; // "PACK"
-    uint16_t kermit_packet_sz; // Packet size
-    uint16_t packets_encoded;  // Packets
+    uint32_t opcode_signature; // "UPCK"
+    uint16_t packets_decoded;  // Packets
+    uint16_t bytes_reconstituted; // Bytes
     uint16_t payload_len;      // Text length
     char payload[128];         // Status string
     uint32_t checksum_rule18;  // Checksum
-} CpmPackBinary;
+} CpmUnpackBinary;
 
 static uint32_t compute_rule18_checksum(const uint8_t *data, size_t len) {
     uint64_t p0 = 1;
@@ -37,7 +37,7 @@ static uint32_t compute_rule18_checksum(const uint8_t *data, size_t len) {
 }
 
 int main(int argc, char **argv) {
-    const char *bin_path = (argc > 1) ? argv[1] : "pack.bin";
+    const char *bin_path = (argc > 1) ? argv[1] : "unpack.bin";
 
     FILE *fp = fopen(bin_path, "rb");
     if (!fp) {
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    CpmPackBinary header;
+    CpmUnpackBinary header;
     size_t read_bytes = fread(&header, 1, sizeof(header), fp);
     fclose(fp);
 
