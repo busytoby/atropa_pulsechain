@@ -154,3 +154,44 @@ double tsfi_displacementshader_eval_mckeeman_adaptive_quadrature(
 
     return mckeeman_quad_recursive(func, user_data, a, b, tol, fa, fb, fc, initial_area, 0);
 }
+
+double tsfi_displacementshader_eval_jubilee_overdrive(
+    const TSFiDisplacementShader *ds,
+    double raw_voltage_in,
+    double word_coupling_rail_limit,
+    double *distortion_harmonic_out
+) {
+    if (!ds || word_coupling_rail_limit <= 0.0) {
+        if (distortion_harmonic_out) *distortion_harmonic_out = 0.0;
+        return 0.0;
+    }
+
+    double v_linear = word_coupling_rail_limit;
+    double v_out = 0.0;
+    double harmonic_dispersion = 0.0;
+
+    if (raw_voltage_in > v_linear) {
+        // Positive Soft-Knee Asymmetric Compression (Tanh Saturation Overdrive)
+        double excess = (raw_voltage_in - v_linear) / v_linear;
+        v_out = v_linear + (v_linear * tanh(excess));
+        harmonic_dispersion = raw_voltage_in - v_out;
+    } else if (raw_voltage_in < -v_linear) {
+        // Negative Germanium Diode Exponential Hard Clamp
+        double under = fabs(raw_voltage_in + v_linear) / v_linear;
+        v_out = -v_linear * (1.0 - exp(-under));
+        harmonic_dispersion = fabs(raw_voltage_in - v_out);
+    } else {
+        // Clean Linear Region
+        v_out = raw_voltage_in;
+        harmonic_dispersion = 0.0;
+    }
+
+    if (distortion_harmonic_out) {
+        *distortion_harmonic_out = harmonic_dispersion;
+    }
+
+    // Scale output to WinchesterMQ vertex displacement coordinate byte boundary [0..255]
+    double wrapped_v = fmod(fabs(v_out), 256.0);
+    return ds->amplitude * (wrapped_v / 256.0);
+}
+

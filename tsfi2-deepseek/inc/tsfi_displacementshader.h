@@ -44,4 +44,12 @@ double tsfi_displacementshader_eval_mckeeman_adaptive_quadrature(
     void *user_data
 );
 
+// Evaluates Golden Jubilee analog voltage overdrive & word coupling breakup (non-accumulating pure voltage modulation)
+double tsfi_displacementshader_eval_jubilee_overdrive(
+    const TSFiDisplacementShader *ds,
+    double raw_voltage_in,
+    double word_coupling_rail_limit,
+    double *distortion_harmonic_out
+);
+
 #endif // TSFI_DISPLACEMENTSHADER_H

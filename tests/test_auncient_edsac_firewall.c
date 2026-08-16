@@ -1,6 +1,7 @@
 #include "../tsfi2-deepseek/src/auncient_edsac_firewall.h"
 #include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
 #include "../tsfi2-deepseek/inc/auncient_harvard_computation_lab.h"
+#include "../tsfi2-deepseek/inc/tsfi_displacementshader.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -961,6 +962,21 @@ int main(void) {
     assert(fault_wh_m.committed_output == 100ULL);
     printf("   ✓ Harvard Zuo Wheeler Jump Linkage verified (Caller=%u, Entry=%u, LinkInstr=%u, RetPC=%u, Out=%lu, DispMod=%u).\n",
            clean_wh_m.caller_pc, clean_wh_m.subroutine_entry_pc, clean_wh_m.wheeler_link_instruction, clean_wh_m.resolved_return_pc, clean_wh_m.committed_output, clean_wh_m.displacement_wrap_mod);
+
+    // 50. Test Golden Jubilee Analog Voltage Overdrive & Word Coupling Breakup in DisplacementShader
+    printf("[TEST] Testing Golden Jubilee Analog Voltage Overdrive (Pure Non-Accumulating Wave Breakup)...\n");
+    TSFiDisplacementShader ds_overdrive;
+    tsfi_displacementshader_init(&ds_overdrive, 1.0, 1.0);
+    double harmonic_dispersion = 0.0;
+    double clean_disp = tsfi_displacementshader_eval_jubilee_overdrive(&ds_overdrive, 50000.0, 131071.0, &harmonic_dispersion);
+    assert(harmonic_dispersion == 0.0);
+    assert(clean_disp >= 0.0);
+
+    double clipped_disp = tsfi_displacementshader_eval_jubilee_overdrive(&ds_overdrive, 250000.0, 131071.0, &harmonic_dispersion);
+    assert(harmonic_dispersion > 0.0); // Overdrive harmonic distortion present
+    assert(clipped_disp >= 0.0);
+    printf("   ✓ Golden Jubilee Analog Voltage Overdrive verified (CleanDisp=%.4f, ClippedDisp=%.4f, Harmonics=%.2f V).\n",
+           clean_disp, clipped_disp, harmonic_dispersion);
 
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
