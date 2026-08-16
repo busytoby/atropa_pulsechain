@@ -1,0 +1,123 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SAA5050-8BYTE-SAFETY-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SAA5050 SAFETY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SAA-PARAMETERS.
+           05 WS-RAW-BYTE               PIC 9(03) VALUE 065.
+           05 WS-SCANLINE-IDX           PIC 9(02) VALUE 04.
+           05 WS-COLOR-ATTR             PIC 9(01) VALUE 7.
+           05 WS-FLASH-ATTR             PIC 9(01) VALUE 0.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SANITIZED-7BIT         PIC 9(03) VALUE 0.
+           05 WS-IS-CONTROL             PIC 9(01) VALUE 0.
+           05 WS-Q16-GLYPH-ACCUM        PIC 9(09) VALUE 0.
+           05 WS-WORD0-L0-L7            PIC 9(09) VALUE 0.
+           05 WS-WORD1-L8-L9            PIC 9(09) VALUE 0.
+           05 WS-SHADOW-SAA-BASELINE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SCANLINE-INDEX      VALUE 2.
+              88 INVALID-COLOR-ATTRIBUTE     VALUE 3.
+              88 INVALID-FLASH-ATTRIBUTE     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 UNDERFLOW-DETECTED          VALUE 6.
+              88 CORRUPTED-PARITY-BYTE       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SAA5050-MATRIX
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCANLINE-IDX > 9
+                SET INVALID-SCANLINE-INDEX TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COLOR-ATTR > 7
+                SET INVALID-COLOR-ATTRIBUTE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FLASH-ATTR > 1
+                SET INVALID-FLASH-ATTRIBUTE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RAW-BYTE > 255
+                SET CORRUPTED-PARITY-BYTE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SAA5050-MATRIX.
+            COMPUTE WS-SANITIZED-7BIT = FUNCTION MOD(WS-RAW-BYTE, 128).
+
+            IF WS-SANITIZED-7BIT < 32
+                MOVE 1 TO WS-IS-CONTROL
+                COMPUTE WS-Q16-GLYPH-ACCUM = (WS-SANITIZED-7BIT * 2048) + (WS-COLOR-ATTR * 256) + 1
+            ELSE
+                MOVE 0 TO WS-IS-CONTROL
+                COMPUTE WS-Q16-GLYPH-ACCUM = ((WS-SANITIZED-7BIT * 65536) / 128) +
+                                             ((WS-SANITIZED-7BIT * WS-SANITIZED-7BIT * 512) / 16384) + 1
+            END-IF.
+
+            IF WS-Q16-GLYPH-ACCUM EQUAL ZERO
+                SET UNDERFLOW-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCANLINE-IDX < 8
+                COMPUTE WS-WORD0-L0-L7 = (WS-Q16-GLYPH-ACCUM * (WS-SCANLINE-IDX + 1)) + (WS-SANITIZED-7BIT * 8)
+                COMPUTE WS-WORD1-L8-L9 = (WS-COLOR-ATTR * 16) + (WS-FLASH-ATTR * 8) + WS-IS-CONTROL
+            ELSE
+                COMPUTE WS-WORD0-L0-L7 = WS-Q16-GLYPH-ACCUM + (WS-SANITIZED-7BIT * 8)
+                COMPUTE WS-WORD1-L8-L9 = (WS-Q16-GLYPH-ACCUM * (WS-SCANLINE-IDX - 7)) + (WS-COLOR-ATTR * 16) + (WS-FLASH-ATTR * 8)
+            END-IF.
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SAA-BASELINE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-WORD0-L0-L7 * 2) +
+                                             (WS-WORD1-L8-L9 * 100) +
+                                             (WS-SCANLINE-IDX * 10).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SAA-BASELINE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SAA-BASELINE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

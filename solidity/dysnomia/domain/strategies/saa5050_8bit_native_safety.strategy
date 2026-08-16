@@ -1,0 +1,117 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SAA5050-8BIT-NATIVE-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SAA5050 8-BIT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-8BIT-PARAMETERS.
+           05 WS-RAW-BYTE               PIC 9(03) VALUE 065.
+           05 WS-CHAR-ROW-IDX           PIC 9(02) VALUE 12.
+           05 WS-SCANLINE-IN-CHAR       PIC 9(02) VALUE 05.
+           05 WS-ACTIVE-COLOR-ATTR      PIC 9(01) VALUE 3.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SANITIZED-7BIT         PIC 9(03) VALUE 0.
+           05 WS-DOT-MATRIX-ROW-8BIT    PIC 9(03) VALUE 0.
+           05 WS-ROW-STRIDE-OFFSET      PIC 9(04) VALUE 0.
+           05 WS-PACKED-PIXEL-ATTR-BYTE PIC 9(03) VALUE 0.
+           05 WS-SHADOW-8BIT-BASELINE   PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ROW-INDEX           VALUE 2.
+              88 INVALID-SCANLINE-IN-CHAR    VALUE 3.
+              88 INVALID-COLOR-ATTR          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 UNDERFLOW-DETECTED          VALUE 6.
+              88 OVERFLOW-DETECTED           VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-8BIT-SAA5050
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CHAR-ROW-IDX > 24
+                SET INVALID-ROW-INDEX TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCANLINE-IN-CHAR > 9
+                SET INVALID-SCANLINE-IN-CHAR TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACTIVE-COLOR-ATTR > 7
+                SET INVALID-COLOR-ATTR TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-8BIT-SAA5050.
+            COMPUTE WS-SANITIZED-7BIT = FUNCTION MOD(WS-RAW-BYTE, 128).
+
+            IF WS-SANITIZED-7BIT < 32
+                COMPUTE WS-DOT-MATRIX-ROW-8BIT = (WS-SANITIZED-7BIT * 2) + 1
+            ELSE
+                COMPUTE WS-DOT-MATRIX-ROW-8BIT = (WS-SANITIZED-7BIT / 2) +
+                                                 ((WS-SANITIZED-7BIT * WS-SANITIZED-7BIT) / 512) + 1
+            END-IF.
+
+            IF WS-DOT-MATRIX-ROW-8BIT EQUAL ZERO
+                SET UNDERFLOW-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DOT-MATRIX-ROW-8BIT > 255
+                SET OVERFLOW-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PACKED-PIXEL-ATTR-BYTE = FUNCTION MOD(WS-DOT-MATRIX-ROW-8BIT, 64) +
+                                                (FUNCTION MOD(WS-ACTIVE-COLOR-ATTR, 4) * 64).
+
+            COMPUTE WS-ROW-STRIDE-OFFSET = (WS-CHAR-ROW-IDX * 8) + (WS-CHAR-ROW-IDX * 2) + WS-SCANLINE-IN-CHAR.
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-8BIT-BASELINE = (WS-CICS-WRITER-ID * 1000000) +
+                                              (WS-PACKED-PIXEL-ATTR-BYTE * 1000) +
+                                              (WS-ROW-STRIDE-OFFSET * 10) +
+                                              WS-SCANLINE-IN-CHAR.
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-8BIT-BASELINE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-8BIT-BASELINE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
