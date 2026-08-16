@@ -138,6 +138,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-bootstrap-loader:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_bootstrap_loader.c -o tests/test_ankh_bootstrap_loader
+	./tests/test_ankh_bootstrap_loader
+	@rm -f tests/test_ankh_bootstrap_loader
+
 test-cpm-master-fleet-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_master_fleet.c -o tests/test_cpm_master_fleet
 	./tests/test_cpm_master_fleet
