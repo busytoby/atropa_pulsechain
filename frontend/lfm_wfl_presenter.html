@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LFM-WFL Continuous State & Zero-Totient ACID Presenter</title>
+    <style>
+        :root {
+            --bg-base: #0a0e17;
+            --bg-surface: #111827;
+            --bg-surface-raised: #1f2937;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --border-dim: #374151;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-dim);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid var(--accent-emerald);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr 340px;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .panel h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            background: var(--bg-surface-raised);
+            border: 1px solid var(--border-dim);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-danger {
+            background: rgba(244, 63, 94, 0.2);
+            color: var(--accent-rose);
+            border: 1px solid var(--accent-rose);
+        }
+
+        .btn-danger:hover {
+            background: rgba(244, 63, 94, 0.3);
+        }
+
+        /* Oscilloscope View */
+        .canvas-container {
+            background: #05070c;
+            border: 1px solid var(--border-dim);
+            border-radius: 4px;
+            position: relative;
+            height: 380px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Metrics Display */
+        .metric-card {
+            background: var(--bg-surface-raised);
+            border-radius: 4px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+        }
+
+        .metric-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        .metric-value.emerald { color: var(--accent-emerald); }
+        .metric-value.cyan { color: var(--accent-cyan); }
+        .metric-value.amber { color: var(--accent-amber); }
+
+        /* Telemetry Table */
+        .table-container {
+            grid-column: 1 / -1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-dim);
+            font-weight: 600;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>
+        <span>LFM-WFL Continuous State & Zero-Totient ACID Presenter</span>
+    </h1>
+    <div class="status-badge" id="status-badge">QUALIFIED ORBITAL HANDSHAKE</div>
+</header>
+
+<div class="grid-layout">
+    <!-- Panel 1: WFL Controls & ACID Trigger -->
+    <div class="panel">
+        <h2>WFL Parameter Controls</h2>
+        
+        <div class="control-group">
+            <label for="initial-seed">Genesis Nonce (N0)</label>
+            <input type="number" id="initial-seed" value="100000">
+        </div>
+
+        <div class="control-group">
+            <label for="exponent-k">Exponent Parameter (k)</label>
+            <select id="exponent-k">
+                <option value="3" selected>k = 3 (pow2_k = 8, scale = 7/8)</option>
+                <option value="5">k = 5 (pow2_k = 32, scale = 31/32)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="time-slices">Continuous Time Slices (T)</label>
+            <input type="number" id="time-slices" value="15" min="1" max="50">
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" id="btn-evolve">Evolve Continuous t</button>
+            <button class="btn-danger" id="btn-fault">Inject Fault & Rollback</button>
+        </div>
+    </div>
+
+    <!-- Panel 2: Continuous Phase Orbit Viewport -->
+    <div class="panel">
+        <h2>Continuous Lissajous Trajectory Space (u(t) vs v(t))</h2>
+        <div class="canvas-container">
+            <canvas id="orbit-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Panel 3: ACID Register Status -->
+    <div class="panel">
+        <h2>ACID Register Sanctum</h2>
+        
+        <div class="metric-card">
+            <div class="metric-title">Invariant TOTIENT(t) = Modpow(u,v,u)</div>
+            <div class="metric-value emerald" id="val-totient">0</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-title">Symmetric Product S_Π(t)</div>
+            <div class="metric-value cyan" id="val-spi">10,613,928</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-title">Symmetric Quotient S_Σ(t)</div>
+            <div class="metric-value amber" id="val-ssigma">1,556,664</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-title">Displacement Modulo (S_Σ mod 256)</div>
+            <div class="metric-value" id="val-disp">152</div>
+        </div>
+    </div>
+
+    <!-- Telemetry Table -->
+    <div class="table-container">
+        <h2>Real-Time Dynamic Trajectory Ledger</h2>
+        <table id="telemetry-table">
+            <thead>
+                <tr>
+                    <th>Time Slice (t)</th>
+                    <th>Current Nonce x(t)</th>
+                    <th>Forward Integral u(t)</th>
+                    <th>Back Integral v(t)</th>
+                    <th>S_Π(t) (Product)</th>
+                    <th>S_Σ(t) (Quotient)</th>
+                    <th>TOTIENT(t)</th>
+                    <th>Parity & Recovery</th>
+                </tr>
+            </thead>
+            <tbody id="telemetry-tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const MOTZKIN_PRIME = 953467954;
+const LN2_SCALED = 693;
+const ALICE_OFFSET = 17;
+const BOB_OFFSET = 23;
+
+function computeTrajectory(seed, k, totalT) {
+    const pow2_k = Math.pow(2, k);
+    let n_prev = seed;
+    let n_curr = Math.floor((LN2_SCALED * n_prev) / 1000) + Math.floor(((pow2_k - 1) * n_prev) / pow2_k) + 1;
+    n_curr %= MOTZKIN_PRIME;
+
+    let u_t = 0;
+    let v_t = 0;
+    const records = [];
+
+    for (let t = 1; t <= totalT; t++) {
+        let n_next = Math.floor((LN2_SCALED * n_curr) / 1000) + Math.floor(((pow2_k - 1) * n_prev) / pow2_k) + 1;
+        n_next %= MOTZKIN_PRIME;
+
+        u_t += Math.floor(n_next / pow2_k) + ALICE_OFFSET;
+        v_t += Math.floor(n_curr / pow2_k) + BOB_OFFSET;
+
+        let s_pi = u_t + v_t;
+        let s_sigma = Math.abs(u_t - v_t);
+        let totient = 0; // Modpow(u, v, u) = 0
+
+        let rec_u = (u_t >= v_t) ? (s_pi + s_sigma) / 2 : (s_pi - s_sigma) / 2;
+        let rec_v = (u_t >= v_t) ? (s_pi - s_sigma) / 2 : (s_pi + s_sigma) / 2;
+        let sound = (rec_u === u_t && rec_v === v_t && (s_pi + s_sigma) % 2 === 0);
+
+        records.push({
+            t: t,
+            x: n_curr,
+            u: u_t,
+            v: v_t,
+            s_pi: s_pi,
+            s_sigma: s_sigma,
+            totient: totient,
+            sound: sound
+        });
+
+        n_prev = n_curr;
+        n_curr = n_next;
+    }
+    return records;
+}
+
+function renderUI() {
+    const seed = parseInt(document.getElementById('initial-seed').value, 10);
+    const k = parseInt(document.getElementById('exponent-k').value, 10);
+    const totalT = parseInt(document.getElementById('time-slices').value, 10);
+
+    const records = computeTrajectory(seed, k, totalT);
+    const lastRec = records[records.length - 1];
+
+    document.getElementById('val-totient').innerText = "0";
+    document.getElementById('val-spi').innerText = lastRec.s_pi.toLocaleString();
+    document.getElementById('val-ssigma').innerText = lastRec.s_sigma.toLocaleString();
+    document.getElementById('val-disp').innerText = (lastRec.s_sigma % 256).toString();
+
+    // Render Table
+    const tbody = document.getElementById('telemetry-tbody');
+    tbody.innerHTML = '';
+    records.forEach(r => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>t=${String(r.t).padStart(2, '0')}</td>
+            <td>${r.x.toLocaleString()}</td>
+            <td>${r.u.toLocaleString()}</td>
+            <td>${r.v.toLocaleString()}</td>
+            <td>${r.s_pi.toLocaleString()}</td>
+            <td>${r.s_sigma.toLocaleString()}</td>
+            <td style="color: var(--accent-emerald); font-weight: bold;">${r.totient}</td>
+            <td style="color: ${r.sound ? 'var(--accent-emerald)' : 'var(--accent-rose)'};">${r.sound ? '✓ EXACT 1:1' : '✗ FAILED'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    // Render Canvas Orbit
+    renderCanvas(records);
+}
+
+function renderCanvas(records) {
+    const canvas = document.getElementById('orbit-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Coordinate Grid
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+
+    if (records.length < 2) return;
+
+    const maxU = records[records.length - 1].u;
+    const maxV = records[records.length - 1].v;
+
+    // Draw Forward/Back Phase Trajectory Orbit
+    ctx.beginPath();
+    ctx.strokeStyle = '#06b6d4';
+    ctx.lineWidth = 2;
+
+    records.forEach((r, idx) => {
+        const px = 40 + (r.u / maxU) * (canvas.width - 80);
+        const py = (canvas.height - 40) - (r.v / maxV) * (canvas.height - 80);
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    // Draw Nodes
+    records.forEach((r) => {
+        const px = 40 + (r.u / maxU) * (canvas.width - 80);
+        const py = (canvas.height - 40) - (r.v / maxV) * (canvas.height - 80);
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+document.getElementById('btn-evolve').addEventListener('click', renderUI);
+document.getElementById('btn-fault').addEventListener('click', () => {
+    alert("Simulated Hardware Fault Injected!\nExecuting LFM ACID WAL Rollback: Restoring TOTIENT to shadow register state (0).");
+    renderUI();
+});
+
+window.addEventListener('resize', renderUI);
+window.addEventListener('load', renderUI);
+</script>
+
+</body>
+</html>
