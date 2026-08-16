@@ -1,0 +1,111 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TEDDY-BALLET-CHOREOGRAPHY-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BALLET CHOREOGRAPHY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BALLET-PARAMETERS.
+           05 WS-JOINT-ANGLE-DEG        PIC 9(03) VALUE 180.
+           05 WS-SPIN-RPM-Q16           PIC 9(06) VALUE 032768.
+           05 WS-DANCER-COUNT           PIC 9(02) VALUE 04.
+           05 WS-STAGE-COORD-X          PIC 9(04) VALUE 0500.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DAMPED-SPIN-VEL        PIC 9(06) VALUE 0.
+           05 WS-QUATERNION-SO3-NORM    PIC 9(09) VALUE 0.
+           05 WS-CHOREO-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BALLET-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-JOINT-ANGLE         VALUE 2.
+              88 INVALID-SPIN-RPM            VALUE 3.
+              88 INVALID-DANCER-COUNT        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-STAGE-COORD         VALUE 6.
+              88 KINEMATIC-UNDERFLOW-FAIL    VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BALLET-CHOREO
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-JOINT-ANGLE-DEG > 360
+                SET INVALID-JOINT-ANGLE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPIN-RPM-Q16 > 65536
+                SET INVALID-SPIN-RPM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DANCER-COUNT < 1 OR WS-DANCER-COUNT > 8
+                SET INVALID-DANCER-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STAGE-COORD-X > 1000
+                SET INVALID-STAGE-COORD TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BALLET-CHOREO.
+            COMPUTE WS-DAMPED-SPIN-VEL = (WS-SPIN-RPM-Q16 * 875) / 1000.
+            COMPUTE WS-QUATERNION-SO3-NORM = (WS-JOINT-ANGLE-DEG * 100) +
+                                             (WS-DANCER-COUNT * 512) + 1.
+
+            IF WS-QUATERNION-SO3-NORM EQUAL ZERO
+                SET KINEMATIC-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CHOREO-REBAR-LATCH = 1470169088 + (WS-DANCER-COUNT * 256) +
+                                            (WS-STAGE-COORD-X * 8) +
+                                            (WS-JOINT-ANGLE-DEG / 10).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BALLET-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-QUATERNION-SO3-NORM * 10) +
+                                            (WS-DAMPED-SPIN-VEL / 10) +
+                                            (WS-STAGE-COORD-X * 10) +
+                                            (WS-CHOREO-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BALLET-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BALLET-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

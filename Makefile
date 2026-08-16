@@ -73,6 +73,11 @@ test-larsen-voice-mood-haptics:
 	./tests/test_larsen_voice_mood_haptics
 	@rm -f tests/test_larsen_voice_mood_haptics
 
+test-teddy-ballet-choreography:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_teddy_ballet_choreography.c -o tests/test_teddy_ballet_choreography
+	./tests/test_teddy_ballet_choreography
+	@rm -f tests/test_teddy_ballet_choreography
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
