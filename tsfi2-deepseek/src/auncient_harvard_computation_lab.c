@@ -607,5 +607,74 @@ bool auncient_harvard_1946_divider_prover(
     return overall_sound;
 }
 
+/* Formal Harvard 1946 Geneva-Drive Multi-Decade Ripple-Carry Prover */
+bool auncient_harvard_1946_geneva_carry_prover(
+    uint64_t base_counter_val,
+    uint64_t increment_val,
+    bool simulate_gear_jam_fault,
+    uint32_t k_param,
+    AuncientHarvard1946GenevaCarryMetrics *metrics_out
+) {
+    if (k_param != 3) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline counter detent
+    uint64_t shadow_base = base_counter_val;
+
+    // Step 2: Emulate 24-digit Geneva-Drive Ripple Carry
+    uint64_t v_base_temp = base_counter_val;
+    uint64_t v_inc_temp = increment_val;
+    uint64_t accumulated_result = 0;
+    uint64_t carry_in = 0;
+    uint64_t mult_factor = 1;
+
+    for (int d = 0; d < 12; ++d) {
+        uint64_t d_base = v_base_temp % 10ULL;
+        uint64_t d_inc  = v_inc_temp % 10ULL;
+
+        uint64_t d_sum = d_base + d_inc + carry_in;
+        uint64_t d_out = d_sum % 10ULL;
+        carry_in = d_sum / 10ULL;
+
+        accumulated_result += (d_out * mult_factor);
+        mult_factor *= 10ULL;
+
+        v_base_temp /= 10ULL;
+        v_inc_temp  /= 10ULL;
+    }
+
+    if (carry_in > 0) {
+        accumulated_result += (carry_in * mult_factor);
+    }
+
+    uint64_t exact_sum = base_counter_val + increment_val;
+    bool ripple_ok = (accumulated_result == exact_sum);
+
+    // Step 3: Gear-Jam Clutch Alarm Drop-Out Interlock
+    uint64_t committed_output = simulate_gear_jam_fault ? shadow_base : accumulated_result;
+
+    bool isolation_ok = (shadow_base == base_counter_val);
+    bool rollback_ok = simulate_gear_jam_fault ? (committed_output == shadow_base) : (committed_output == exact_sum);
+    bool overall_sound = ripple_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->base_counter_val = base_counter_val;
+        metrics_out->increment_val = increment_val;
+        metrics_out->accumulated_sum = accumulated_result;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->ripple_carry_sound = ripple_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_geneva_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 

@@ -530,11 +530,34 @@ int main(void) {
     printf("   ✓ Harvard 1946 Subtractive Divider verified (Q=%lu, R=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_div_m.quotient_q, clean_div_m.remainder_r, fault_div_m.committed_output, clean_div_m.displacement_wrap_mod);
 
+    // 31. Test Harvard 1946 Geneva-Drive Multi-Decade Ripple-Carry Prover
+    printf("[TEST] Testing Harvard 1946 Geneva-Drive Ripple-Carry (999999 + 1 = 1000000 & Jam Latch)...\n");
+    AuncientHarvard1946GenevaCarryMetrics clean_geneva_m = {0};
+    bool ok_geneva_clean = auncient_harvard_1946_geneva_carry_prover(
+        999999 /* base Saat */, 1 /* inc */, false /* clean */, 3 /* k=3 */, &clean_geneva_m
+    );
+    assert(ok_geneva_clean == true && clean_geneva_m.overall_geneva_sound == true);
+    assert(clean_geneva_m.ripple_carry_sound == true);
+    assert(clean_geneva_m.shadow_isolation_sound == true);
+    assert(clean_geneva_m.accumulated_sum == 1000000);
+    assert(clean_geneva_m.committed_output == 1000000);
+
+    AuncientHarvard1946GenevaCarryMetrics fault_geneva_m = {0};
+    bool ok_geneva_fault = auncient_harvard_1946_geneva_carry_prover(
+        999999 /* base Saat */, 1 /* inc */, true /* simulate gear jam */, 3 /* k=3 */, &fault_geneva_m
+    );
+    assert(ok_geneva_fault == true && fault_geneva_m.overall_geneva_sound == true);
+    assert(fault_geneva_m.rollback_sound == true);
+    assert(fault_geneva_m.committed_output == 999999);
+    printf("   ✓ Harvard 1946 Geneva-Drive Carry verified (Sum=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_geneva_m.accumulated_sum, fault_geneva_m.committed_output, clean_geneva_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

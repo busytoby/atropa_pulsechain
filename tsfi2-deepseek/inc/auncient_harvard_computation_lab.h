@@ -204,4 +204,24 @@ bool auncient_harvard_1946_divider_prover(
     AuncientHarvard1946DividerMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t base_counter_val;
+    uint64_t increment_val;
+    uint64_t accumulated_sum;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool ripple_carry_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_geneva_sound;
+} AuncientHarvard1946GenevaCarryMetrics;
+
+bool auncient_harvard_1946_geneva_carry_prover(
+    uint64_t base_counter_val,
+    uint64_t increment_val,
+    bool simulate_gear_jam_fault,
+    uint32_t k_param,
+    AuncientHarvard1946GenevaCarryMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
