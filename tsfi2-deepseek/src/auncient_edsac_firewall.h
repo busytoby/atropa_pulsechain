@@ -813,6 +813,28 @@ bool auncient_glm_zorse_2d_position_prover(
     AuncientGlmZorse2DPosMetrics *metrics_out
 );
 
+// GLM FET Link Dynamics Prover Metrics
+typedef struct {
+    uint64_t initial_charge_mu;
+    uint64_t final_charge_mu;
+    uint64_t reconstructed_charge_mu;
+    uint32_t discharge_decay_rate;
+    uint32_t displacement_wrap_mod;
+    bool monotonic_dissipation_ok;
+    bool inverse_link_recovery_sound;
+    bool accumulator_redirection_sound;
+    bool overall_fet_link_sound;
+} AuncientGlmFetLinkMetrics;
+
+// Formal GLM FET Link Dynamics Prover
+bool auncient_glm_fet_link_dynamics_prover(
+    uint64_t initial_charge_mu,
+    uint32_t discharge_decay_rate,
+    uint32_t time_steps_count,
+    uint32_t k_param,
+    AuncientGlmFetLinkMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

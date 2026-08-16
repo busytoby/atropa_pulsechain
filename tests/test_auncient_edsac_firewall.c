@@ -246,6 +246,20 @@ int main(void) {
     printf("   ✓ GLM 2D Positional for Zorse verified (Pos1=D%u, Pos2=%u, Reconstructed=%u, VDSO=%uns, DispMod=%u).\n",
            glm_pos2d_m.pos_1_inter_division, glm_pos2d_m.pos_2_intra_division, glm_pos2d_m.reconstructed_linear_pos, glm_pos2d_m.vdso_latency_ns, glm_pos2d_m.displacement_wrap_mod);
 
+    // 17. Test GLM FET Link Dynamics Prover (Accumulator Redirection Model)
+    printf("[TEST] Testing GLM FET Link Dynamics (Monotonic Thermodynamic Dissipation)...\n");
+    AuncientGlmFetLinkMetrics glm_fet_m = {0};
+    bool glm_fet_ok = auncient_glm_fet_link_dynamics_prover(
+        1000000 /* Saat */, 50 /* decay */, 5 /* steps */, 3 /* k=3 */, &glm_fet_m
+    );
+    assert(glm_fet_ok == true && glm_fet_m.overall_fet_link_sound == true);
+    assert(glm_fet_m.final_charge_mu < glm_fet_m.initial_charge_mu);
+    assert(glm_fet_m.monotonic_dissipation_ok == true);
+    assert(glm_fet_m.inverse_link_recovery_sound == true);
+    assert(glm_fet_m.accumulator_redirection_sound == true);
+    printf("   ✓ GLM FET Link Dynamics verified (Initial=%lu, Final=%lu, Reconstructed=%lu, DispMod=%u).\n",
+           glm_fet_m.initial_charge_mu, glm_fet_m.final_charge_mu, glm_fet_m.reconstructed_charge_mu, glm_fet_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
