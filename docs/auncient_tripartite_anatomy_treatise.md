@@ -155,7 +155,7 @@ $$\Delta \phi_{\text{PLL}}(t+1) = \Delta \phi_{\text{PLL}}(t) - K_{\text{loop}} 
 ### 5.3. EDSAC Initial Orders 1 Opcode Prefetch Firewall
 Every acoustic switching opcode $O_i$ is audited against the prohibited opcode bitmask $\mathcal{B}_{\text{prohibited}}$:
 
-$$\text{Permitted} = \prod_{i=1}^{N} \left( 1 - \left( \frac{\mathcal{B}_{\text{prohibited}} \gg (O_i - \text{'A'})}{1} \ \& \ 1 \right) \right) \in \{0, 1\}$$
+$$\text{Permitted} = \prod_{i=1}^{N} \left( 1 - \left( \left( \mathcal{B}_{\text{prohibited}} \gg (O_i - \text{`A'}) \right) \land 1 \right) \right) \in \{0, 1\}$$
 
 If $\text{Permitted} = 0$, execution is immediately rejected and redirected to the shadow baseline.
 
