@@ -58,6 +58,16 @@ test-sdk-agent-runtime:
 	./tools/ankh_sdk_runtime hello.bin tune_channel.bin teddy_endow.bin stat.bin
 	@rm -f tools/ankh_sdk_runtime
 
+compile-hogan-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_hogan.c -o tools/cpm_compiler_hogan
+	./tools/cpm_compiler_hogan hogan.bin
+	@rm -f tools/cpm_compiler_hogan
+
+test-exec-hogan-bin: compile-hogan-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_hogan.c -o tools/cpm_exec_hogan
+	./tools/cpm_exec_hogan hogan.bin
+	@rm -f tools/cpm_exec_hogan
+
 compile-tree-bin:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_tree.c -o tools/cpm_compiler_tree
 	./tools/cpm_compiler_tree tree.bin
