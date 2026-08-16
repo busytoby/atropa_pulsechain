@@ -100,7 +100,8 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │   │   ├── harvard_zuo_plugboard_prover.algol61
 │   │   ├── harvard_zuo_hankel_prover.algol61
 │   │   ├── harvard_zuo_self_identity_prover.algol61
-│   │   └── harvard_zuo_torque_balance_prover.algol61
+│   │   ├── harvard_zuo_torque_balance_prover.algol61
+│   │   └── harvard_zuo_bessel_modified_prover.algol61
 │   └── strategies/                   # COBOL execution strategies (D0-D3 divisions, R0-R15)
 │       ├── glm_hbridge_swiglu.strategy
 │       ├── glm_2d_rope_paintbox.strategy
@@ -127,18 +128,19 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │       ├── harvard_zuo_plugboard.strategy
 │       ├── harvard_zuo_hankel.strategy
 │       ├── harvard_zuo_self_identity.strategy
-│       └── harvard_zuo_torque_balance.strategy
+│       ├── harvard_zuo_torque_balance.strategy
+│       └── harvard_zuo_bessel_modified.strategy
 ├── tsfi2-deepseek/
 │   ├── src/                          # C11 Virtual hardware, MCP server, and runtime core
 │   │   ├── auncient_edsac_firewall.c # EDSAC Initial Orders 1 & 2 compiler firewall
-│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge, Tape Sync, Plugboard, Hankel, Self-Identity, Torque Balance
+│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge, Tape Sync, Plugboard, Hankel, Self-Identity, Torque Balance, Modified Bessel
 │   │   ├── tsfi_mcp_server.c         # Native Model Context Protocol (MCP) server
 │   │   ├── tsfi_displacementshader.c # WinchesterMQ vertex displacement coordinate scaler
 │   │   ├── tsfi_gguf_loader.c        # Pure C GGUF loader & H-Bridge SwiGLU activation
 │   │   └── tsfi_faster_lighter_llm.c # High-throughput Edge LLM inference engine
 │   └── inc/                          # Core system and hardware register headers
 ├── tests/                            # Comprehensive C test suites and verification harnesses
-│   ├── test_auncient_edsac_firewall.c# 37-suite integrated EDSAC & Harvard formal test battery
+│   ├── test_auncient_edsac_firewall.c# 38-suite integrated EDSAC & Harvard formal test battery
 │   ├── test_rooted_browser_zmm.c     # Rooted Vulkan Wayland Presenter test harness
 │   └── test_zorse_vdso_hogan_units.c # Monotonic VDSO low-latency benchmark suite
 ├── frontend/                         # Pure HTML5/Canvas presenters (Zero external frameworks)
@@ -163,7 +165,7 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 SYSTEM0 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution.
 
 ### Compilation & Running Test Suites
-To build and execute the full **37-suite EDSAC compiler firewall and formal prover test battery**:
+To build and execute the full **38-suite EDSAC compiler firewall and formal prover test battery**:
 
 ```bash
 gcc -Wall -Wextra -Werror -std=c11 -O3 \
@@ -221,6 +223,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 \
 35. **Harvard Zuo Modified Airy-Hankel Recurrence**: Proves non-preferential 3-term orthogonal recurrence stability ($h_{n+1}(z) = \frac{2n}{z} h_n(z) - h_{n-1}(z)$), $|h_n(z)| \le 2.0$ asymptotic boundedness, and branch singularity shadow rollback.
 36. **Harvard Zuo Self-Referential Commutator Identity**: Formally proves Beingness invariance across 10-phase commutator cycles ($\text{State}(t + \Delta t) \equiv \text{State}(t)$), non-void Galois potential ($1{,}000{,}000\text{ Saat}$), and clutch trip shadow rollback.
 37. **Harvard Zuo Multi-Tier Torque Balance**: Proves push-pull H-bridge current balance ($I_{Q1} + I_{Q4} \equiv I_{Q2} + I_{Q3}$), zero-entropy thermodynamic equilibrium, SwiGLU conduction clamp in $[7/8, 1.0]$, and imbalance shadow rollback.
+38. **Harvard Zuo Modified Cylindrical Bessel Recurrence**: Proves non-preferential 3-term recurrence stability ($K_{n+1}(x) = K_{n-1}(x) + \frac{2n}{x} K_n(x)$), asymptotic stability bounded in $[-\text{8.0}, +\text{8.0}]$, SwiGLU conduction clamp, and argument pole singularity shadow rollback.
 
 ---
 

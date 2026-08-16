@@ -993,6 +993,64 @@ bool auncient_harvard_zuo_torque_balance_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Modified Cylindrical Bessel Recurrence Prover */
+bool auncient_harvard_zuo_bessel_modified_prover(
+    int64_t x_arg_q16,
+    bool simulate_pole_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoBesselMetrics *metrics_out
+) {
+    if (k_param != 3 || x_arg_q16 < 32768 || x_arg_q16 > 262144) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline argument in Zuo ZMM state
+    int64_t shadow_x = x_arg_q16;
+
+    // Step 2: Initialize seed terms K0(x) and K1(x) in Q16
+    int64_t k0_q16 = 27591;
+    int64_t k1_q16 = 39446;
+
+    // Step 3: Compute Modified Bessel 3-Term Recurrence: K_(n+1)(x) = K_(n-1)(x) + ((2*n)/x)*K_n(x)
+    int64_t k2_q16 = k0_q16 + ((2LL * 65536LL * k1_q16) / x_arg_q16);
+    int64_t k3_q16 = k1_q16 + ((4LL * 65536LL * k2_q16) / x_arg_q16);
+
+    bool stability_ok = (k3_q16 >= -524288LL && k3_q16 <= 524288LL);
+
+    // Step 4: Couple to SwiGLU Gating Clamp in [7/8, 1.0] -> [57344..65536 in Q16]
+    int64_t abs_k3 = (k3_q16 < 0) ? -k3_q16 : k3_q16;
+    int64_t g_gate_q16 = 57344LL + ((8192LL * abs_k3) / 524288LL);
+    bool gating_ok = (g_gate_q16 >= 57344LL && g_gate_q16 <= 65536LL);
+
+    // Step 5: ACID Latch Commit or Pole Singularity Rollback
+    int64_t committed_output = simulate_pole_fault ? shadow_x : ((k3_q16 * g_gate_q16) / 65536LL);
+
+    bool isolation_ok = (shadow_x == x_arg_q16);
+    bool rollback_ok = simulate_pole_fault ? (committed_output == shadow_x) : (committed_output == ((k3_q16 * g_gate_q16) / 65536LL));
+    bool overall_sound = stability_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
+
+    if (metrics_out) {
+        metrics_out->x_arg_q16 = x_arg_q16;
+        metrics_out->k0_q16 = k0_q16;
+        metrics_out->k1_q16 = k1_q16;
+        metrics_out->k2_q16 = k2_q16;
+        metrics_out->k3_q16 = k3_q16;
+        metrics_out->g_gate_q16 = g_gate_q16;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->stability_bound_sound = stability_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_bessel_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

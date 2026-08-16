@@ -352,4 +352,27 @@ bool auncient_harvard_zuo_torque_balance_prover(
     AuncientHarvardZuoTorqueMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t x_arg_q16;
+    int64_t k0_q16;
+    int64_t k1_q16;
+    int64_t k2_q16;
+    int64_t k3_q16;
+    int64_t g_gate_q16;
+    int64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool stability_bound_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_bessel_sound;
+} AuncientHarvardZuoBesselMetrics;
+
+bool auncient_harvard_zuo_bessel_modified_prover(
+    int64_t x_arg_q16,
+    bool simulate_pole_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoBesselMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
