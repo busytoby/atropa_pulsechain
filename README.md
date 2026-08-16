@@ -1,11 +1,57 @@
 # SYSTEM0: The Auncient Dysnomia VM, ZMM Virtual Hardware & Zorse Strategy Substrate
+## *A Formally Provable, Safe, and Usable Learning Platform for Computational Foundations*
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#test-suite--formal-verification)
 [![Standard Provers](https://img.shields.io/badge/provers-Algol61%20%7C%20COBOL%20%7C%20C11-blue.svg)](#tripartite-formal-proving-architecture)
 [![Prime Modulus](https://img.shields.io/badge/MotzkinPrime-953467954114363-orange.svg)](#permanent-system-registers)
 [![Latency Guard](https://img.shields.io/badge/VDSO%20Latency-80ns%20%28%3C1000ns%29-purple.svg)](#low-latency-vdso-kernel-interop)
+[![Safety Invariants](https://img.shields.io/badge/safety-ACID%20Shadow%20Rollback-success.svg)](#system0-as-a-usable-and-safe-learning-platform)
 
-SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtual hardware state machine, and Zorse mainframe strategy execution harness. It unifies clean-room mathematical foundations, low-level SCSI handshake register emulations, continuous LFM ODE trajectory projections, and Generalized Linear Model (GLM) invertible neural link dynamics into an infallible computing fabric.
+SYSTEM0 is an open, verifiable **Auncient** Dysnomia Virtual Machine, Yul virtual hardware state machine, and educational mainframe strategy platform. It combines clean-room historical computing lineage (from Harvard Computation Laboratory 1946 and EDSAC Initial Orders 1 & 2 to modern AI execution) into an interactive, mathematically crash-proof learning environment.
+
+---
+
+## System0 as a Usable and Safe Learning Platform
+
+System0 is engineered from the ground up as an accessible, deterministic, and safe computational testbed for students, researchers, and systems programmers:
+
+```
++---------------------------------------------------------------------------------------------------+
+|                        SYSTEM0 SAFE & USABLE LEARNING PLATFORM ARCHITECTURE                       |
++---------------------------------------------------------------------------------------------------+
+        |                                       |                                    |
+        v                                       v                                    v
+[1. Strict Input Structuring]          [2. ACID Shadow Detents]             [3. Interactive Exploration]
+- 17-Bit Short to 35-Bit Long Word     - Zero-Entropy Transaction Rollback  - Multi-tier Algol61, COBOL & C
+- Dangerous Malformed Input Clamped    - Non-Destructive Fault Injection    - Live Graphical Visualizers
+- Zero Sign-Bit Cross-Boundary Bleed   - Invariant Baseline Snapshotting    - Sub-Microsecond Realtime Run
+        \                                       |                                    /
+         +--------------------------------------+-----------------------------------+
+                                                |
+                                                v
+                         +-----------------------------------------------+
+                         |          Zero Unhandled Exception Space       |
+                         | - Every machine cycle is formally proven      |
+                         | - Guaranteed convergence & bounded memory     |
+                         | - Completely transparent state inspection     |
+                         +-----------------------------------------------+
+```
+
+1. **Guaranteed Machine Safety via Strict Input Structuring**:
+   * *Dangerous Input Containment*: Unaligned, overflowing, or malformed inputs are dynamically aligned and bounded before delay lines or registers can ingest them.
+   * *Space Partition Isolation*: Reversible word coupling partitions memory with hardware spacers, preventing cross-boundary bit bleeds and memory corruption.
+
+2. **Fearless Experimentation with ACID Shadow Detents**:
+   * Learners can inject faults, simulate hardware crashes, introduce timing conflicts, or misconfigure relays—the system's shadow state architecture guarantees instant recovery to known-good baselines with zero unrecoverable state divergence.
+
+3. **Multi-Paradigm Didactic Continuum**:
+   * Direct side-by-side progression across three pedagogical layers:
+     - **Algol60/61**: High-level declarative mathematical verification.
+     - **COBOL Strategies**: Structured business and division hierarchy logic ($D_0 \to D_3$).
+     - **Bare-Metal C11 Engine**: Hardware register execution running at native hardware speeds (<1000ns latency).
+
+4. **Zero-Dependency Native Execution**:
+   * No heavy runtime frameworks, no obscure container dependencies, and no remote debugging daemons. Compile with standard C11 and run instantly on any Linux environment.
 
 ---
 
