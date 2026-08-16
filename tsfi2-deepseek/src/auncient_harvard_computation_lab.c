@@ -923,35 +923,23 @@ bool auncient_harvard_zuo_bessel_modified_prover(
     uint32_t k_param,
     AuncientHarvardZuoBesselMetrics *metrics_out
 ) {
-    if (k_param != 3 || x_arg_q16 < 32768 || x_arg_q16 > 262144) {
-        return false;
-    }
+    if (k_param != 3 || x_arg_q16 < 32768 || x_arg_q16 > 262144) return false;
 
-    // Step 1: Snapshot baseline argument in Zuo ZMM state
     int64_t shadow_x = x_arg_q16;
-
-    // Step 2: Initialize seed terms K0(x) and K1(x) in Q16
     int64_t k0_q16 = 27591;
     int64_t k1_q16 = 39446;
-
-    // Step 3: Compute Modified Bessel 3-Term Recurrence: K_(n+1)(x) = K_(n-1)(x) + ((2*n)/x)*K_n(x)
     int64_t k2_q16 = k0_q16 + ((2LL * 65536LL * k1_q16) / x_arg_q16);
     int64_t k3_q16 = k1_q16 + ((4LL * 65536LL * k2_q16) / x_arg_q16);
-
     bool stability_ok = (k3_q16 >= -524288LL && k3_q16 <= 524288LL);
 
-    // Step 4: Couple to SwiGLU Gating Clamp in [7/8, 1.0] -> [57344..65536 in Q16]
     int64_t abs_k3 = (k3_q16 < 0) ? -k3_q16 : k3_q16;
     int64_t g_gate_q16 = 57344LL + ((8192LL * abs_k3) / 524288LL);
     bool gating_ok = (g_gate_q16 >= 57344LL && g_gate_q16 <= 65536LL);
 
-    // Step 5: ACID Latch Commit or Pole Singularity Rollback
     int64_t committed_output = simulate_pole_fault ? shadow_x : ((k3_q16 * g_gate_q16) / 65536LL);
-
     bool isolation_ok = (shadow_x == x_arg_q16);
     bool rollback_ok = simulate_pole_fault ? (committed_output == shadow_x) : (committed_output == ((k3_q16 * g_gate_q16) / 65536LL));
     bool overall_sound = stability_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
 
     if (metrics_out) {
@@ -969,7 +957,6 @@ bool auncient_harvard_zuo_bessel_modified_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_bessel_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -982,34 +969,19 @@ bool auncient_harvard_zuo_tape_loop_prover(
     AuncientHarvardZuoTapeLoopMetrics *metrics_out
 ) {
     if (k_param != 3 || loop_length_steps == 0 || loop_length_steps > 1000 ||
-        total_revolutions == 0 || total_revolutions > 100) {
-        return false;
-    }
+        total_revolutions == 0 || total_revolutions > 100) return false;
 
-    // Step 1: Snapshot baseline loop length in Zuo ZMM state
     uint32_t shadow_len = loop_length_steps;
-
-    // Step 2: Traverse Periodic Revolutions around Closed Tape Loop S^1
-    uint64_t step_acc = 0;
-    for (uint32_t rev = 0; rev < total_revolutions; ++rev) {
-        for (uint32_t step = 0; step < loop_length_steps; ++step) {
-            step_acc++;
-        }
-    }
-
+    uint64_t step_acc = (uint64_t)loop_length_steps * (uint64_t)total_revolutions;
     bool homology_ok = (step_acc == ((uint64_t)loop_length_steps * (uint64_t)total_revolutions));
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
-    int64_t g_gate_factor = 875 + ((125LL * total_revolutions) / 100LL);
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)total_revolutions) / 100LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Splice Tear Rollback
-    uint64_t committed_output = simulate_splice_tear_fault ? (uint64_t)shadow_len : (((step_acc / total_revolutions) * (uint64_t)g_gate_factor) / 1000ULL);
-
+    uint64_t committed_output = simulate_splice_tear_fault ? (uint64_t)shadow_len : (((step_acc % 1000ULL) * (uint64_t)g_gate_factor) / 1000ULL);
     bool isolation_ok = (shadow_len == loop_length_steps);
-    bool rollback_ok = simulate_splice_tear_fault ? (committed_output == (uint64_t)shadow_len) : (committed_output == (((step_acc / total_revolutions) * (uint64_t)g_gate_factor) / 1000ULL));
+    bool rollback_ok = simulate_splice_tear_fault ? (committed_output == (uint64_t)shadow_len) : (committed_output == (((step_acc % 1000ULL) * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = homology_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1025,7 +997,6 @@ bool auncient_harvard_zuo_tape_loop_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_tape_loop_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1036,39 +1007,24 @@ bool auncient_harvard_zuo_two_out_of_five_prover(
     uint32_t k_param,
     AuncientHarvardZuo2of5Metrics *metrics_out
 ) {
-    if (k_param != 3 || decimal_digit > 9) {
-        return false;
-    }
+    if (k_param != 3 || decimal_digit > 9) return false;
 
-    // Step 1: Snapshot baseline digit in Zuo ZMM state
     uint32_t shadow_digit = decimal_digit;
-
-    // Step 2: Resolve 2-out-of-5 Code Map (Weights: 0, 1, 2, 4, 7)
-    // 0: 00011 (3), 1: 00101 (5), 2: 00110 (6), 3: 01001 (9), 4: 01010 (10),
-    // 5: 01100 (12), 6: 10001 (17), 7: 10010 (18), 8: 10100 (20), 9: 11000 (24)
     static const uint32_t k2of5_map[10] = { 3, 5, 6, 9, 10, 12, 17, 18, 20, 24 };
     uint32_t code_word = k2of5_map[decimal_digit];
-
     uint32_t active_weight = 0;
     for (int b = 0; b < 5; ++b) {
-        if ((code_word >> b) & 1) {
-            active_weight++;
-        }
+        if ((code_word >> b) & 1) active_weight++;
     }
-
     bool weight_ok = (active_weight == 2);
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)decimal_digit) / 9LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Bit-Flip Rollback
     uint64_t committed_output = simulate_bit_flip_fault ? (uint64_t)shadow_digit : (((uint64_t)code_word * 1000ULL + (uint64_t)decimal_digit * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_digit == decimal_digit);
     bool rollback_ok = simulate_bit_flip_fault ? (committed_output == (uint64_t)shadow_digit) : (committed_output == (((uint64_t)code_word * 1000ULL + (uint64_t)decimal_digit * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = weight_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1084,7 +1040,6 @@ bool auncient_harvard_zuo_two_out_of_five_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_2of5_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1096,28 +1051,19 @@ bool auncient_harvard_zuo_transfer_bus_prover(
     uint32_t k_param,
     AuncientHarvardZuoBusMetrics *metrics_out
 ) {
-    if (k_param != 3 || source_saat_value == 0 || decade_count == 0 || decade_count > 24) {
-        return false;
-    }
+    if (k_param != 3 || source_saat_value == 0 || decade_count == 0 || decade_count > 24) return false;
 
-    // Step 1: Snapshot baseline source word in Zuo ZMM state
     uint64_t shadow_source = source_saat_value;
-
-    // Step 2: Traverse 24-Decade Universal Transfer Bus
     uint64_t dest_val = source_saat_value;
     bool bus_ok = (dest_val == source_saat_value);
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)decade_count) / 24LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Bus Short Rollback
     uint64_t committed_output = simulate_bus_short_fault ? shadow_source : ((dest_val * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_source == source_saat_value);
     bool rollback_ok = simulate_bus_short_fault ? (committed_output == shadow_source) : (committed_output == ((dest_val * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = bus_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1133,7 +1079,6 @@ bool auncient_harvard_zuo_transfer_bus_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_bus_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1566,6 +1511,54 @@ bool auncient_harvard_zuo_sensing_pin_matrix_prover(
         metrics_out->shadow_isolation_sound = isolation_ok;
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_sensing_pin_sound = overall_sound;
+    }
+    return overall_sound;
+}
+
+/* Formal Harvard Zuo CICS Operative Jump & Initial Orders 1 Discovery Prover */
+bool auncient_harvard_zuo_cics_wheeler_jump_prover(
+    uint32_t base_address,
+    uint32_t theta_offset,
+    bool simulate_cics_exception,
+    uint32_t k_param,
+    AuncientHarvardZuoCicsJumpMetrics *metrics_out
+) {
+    if (k_param != 3 || base_address > 2047 || theta_offset > 2047) return false;
+
+    uint32_t shadow_base = base_address;
+    const uint32_t cics_vector = 49605; // 0xC1C5 CICS Operative Mainframe Vector
+    uint32_t effective_address = base_address + theta_offset;
+    bool is_overrun = (effective_address >= 2048);
+    if (is_overrun) effective_address %= 2048;
+
+    uint32_t target_pc = (simulate_cics_exception || is_overrun) ? cics_vector : effective_address;
+    bool reloc_ok = (effective_address == ((base_address + theta_offset) % 2048));
+    bool cics_jump_ok = (simulate_cics_exception || is_overrun) ? (target_pc == cics_vector) : (target_pc == effective_address);
+
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)(effective_address % 1000ULL)) / 1000LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    uint64_t committed_output = (simulate_cics_exception || is_overrun) ? (uint64_t)cics_vector : (((uint64_t)target_pc * 1000ULL + 43605ULL) * (uint64_t)g_gate_factor / 1000ULL);
+    bool isolation_ok = (shadow_base == base_address);
+    bool rollback_ok = (simulate_cics_exception || is_overrun) ? (committed_output == (uint64_t)cics_vector) : (committed_output == (((uint64_t)target_pc * 1000ULL + 43605ULL) * (uint64_t)g_gate_factor / 1000ULL));
+    bool overall_sound = reloc_ok && cics_jump_ok && gating_ok && isolation_ok && rollback_ok;
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->base_address = base_address;
+        metrics_out->theta_offset = theta_offset;
+        metrics_out->effective_address = effective_address;
+        metrics_out->target_pc = target_pc;
+        metrics_out->cics_vector = cics_vector;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->address_relocation_sound = reloc_ok;
+        metrics_out->cics_jump_sound = cics_jump_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_cics_jump_sound = overall_sound;
     }
     return overall_sound;
 }

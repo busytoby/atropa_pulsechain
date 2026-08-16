@@ -1003,6 +1003,33 @@ int main(void) {
            clean_pin_m.input_punch_mask, clean_pin_m.pin_p0, clean_pin_m.pin_p1, clean_pin_m.pin_p2, clean_pin_m.pin_p3, clean_pin_m.pin_p4,
            clean_pin_m.g_gate_factor, clean_pin_m.committed_output, clean_pin_m.displacement_wrap_mod);
 
+    // 52. Test Harvard Zuo CICS Operative Jump & Initial Orders 1 Discovery Prover
+    printf("[TEST] Testing Harvard Zuo CICS Operative Jump & Initial Orders 1 Discovery Prover...\n");
+    AuncientHarvardZuoCicsJumpMetrics clean_cics_m = {0};
+    bool ok_cics_clean = auncient_harvard_zuo_cics_wheeler_jump_prover(
+        100 /* Base PC */, 50 /* Theta offset */, false /* clean */, 3 /* k=3 */, &clean_cics_m
+    );
+    assert(ok_cics_clean == true && clean_cics_m.overall_cics_jump_sound == true);
+    assert(clean_cics_m.address_relocation_sound == true);
+    assert(clean_cics_m.cics_jump_sound == true);
+    assert(clean_cics_m.effective_address == 150);
+    assert(clean_cics_m.target_pc == 150);
+    assert(clean_cics_m.cics_vector == 49605);
+    assert(clean_cics_m.g_gate_factor == 893);
+    assert(clean_cics_m.committed_output == 172889);
+
+    AuncientHarvardZuoCicsJumpMetrics fault_cics_m = {0};
+    bool ok_cics_fault = auncient_harvard_zuo_cics_wheeler_jump_prover(
+        100 /* Base PC */, 50 /* Theta offset */, true /* simulate CICS exception */, 3 /* k=3 */, &fault_cics_m
+    );
+    assert(ok_cics_fault == true && fault_cics_m.overall_cics_jump_sound == true);
+    assert(fault_cics_m.rollback_sound == true);
+    assert(fault_cics_m.target_pc == 49605);
+    assert(fault_cics_m.committed_output == 49605ULL);
+    printf("   ✓ Harvard Zuo CICS Initial Orders 1 Jump verified (Base=%u, Theta=%u, Effective=%u, CICS_Vector=0x%X, Out=%lu, DispMod=%u).\n",
+           clean_cics_m.base_address, clean_cics_m.theta_offset, clean_cics_m.effective_address, clean_cics_m.cics_vector,
+           clean_cics_m.committed_output, clean_cics_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

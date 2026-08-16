@@ -647,4 +647,29 @@ bool auncient_harvard_zuo_sensing_pin_matrix_prover(
     AuncientHarvardZuoSensingPinMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t base_address;
+    uint32_t theta_offset;
+    uint32_t effective_address;
+    uint32_t target_pc;
+    uint32_t cics_vector;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool address_relocation_sound;
+    bool cics_jump_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_cics_jump_sound;
+} AuncientHarvardZuoCicsJumpMetrics;
+
+bool auncient_harvard_zuo_cics_wheeler_jump_prover(
+    uint32_t base_address,
+    uint32_t theta_offset,
+    bool simulate_cics_exception,
+    uint32_t k_param,
+    AuncientHarvardZuoCicsJumpMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
