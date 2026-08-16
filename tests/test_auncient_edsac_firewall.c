@@ -281,6 +281,28 @@ int main(void) {
     printf("   ✓ Accumulator Valves upon Zero TOTIENT verified (Clean & Fault-Recovered states = 0, DispMod=%u).\n",
            clean_valve_m.displacement_wrap_mod);
 
+    // 19. Test GLM 2D Bidirectional Attention & Block-Causal Mask Prover
+    printf("[TEST] Testing GLM 2D Bidirectional Attention & Block-Causal Masking (Part-A/Part-B Isolation)...\n");
+    AuncientGlmAttnMaskMetrics attn_m1 = {0}, attn_m2 = {0}, attn_m3 = {0}, attn_m4 = {0};
+    
+    // Case 1: Part-A (0) attending backwards to Part-A (3) -> ALLOW (0)
+    bool ok_a1 = auncient_glm_bidirectional_attention_mask_prover(8, 4, 0, 3, &attn_m1);
+    assert(ok_a1 == true && attn_m1.attention_decision == 0);
+
+    // Case 2: Part-A (1) attempting to peek at Part-B target (5) -> PROHIBITED (3)
+    bool ok_a2 = auncient_glm_bidirectional_attention_mask_prover(8, 4, 1, 5, &attn_m2);
+    assert(ok_a2 == true && attn_m2.attention_decision == 3);
+
+    // Case 3: Part-B (5) attending to context in Part-A (2) -> ALLOW (0)
+    bool ok_a3 = auncient_glm_bidirectional_attention_mask_prover(8, 4, 5, 2, &attn_m3);
+    assert(ok_a3 == true && attn_m3.attention_decision == 0);
+
+    // Case 4: Part-B (5) attempting to attend forward to Part-B (6) -> PROHIBITED (3)
+    bool ok_a4 = auncient_glm_bidirectional_attention_mask_prover(8, 4, 5, 6, &attn_m4);
+    assert(ok_a4 == true && attn_m4.attention_decision == 3);
+
+    printf("   ✓ GLM 2D Bidirectional Attention verified (Part-A Bidirectional=ALLOW, Part-A Peek=DENY, Part-B Context=ALLOW, Future Causal=DENY).\n");
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

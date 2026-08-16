@@ -860,6 +860,29 @@ bool auncient_glm_totient_valve_acid_prover(
     AuncientTotientValveAcidMetrics *metrics_out
 );
 
+// GLM 2D Bidirectional Attention & Block-Causal Mask Prover Metrics
+typedef struct {
+    uint32_t total_tokens_n;
+    uint32_t part_a_prefix_len;
+    uint32_t source_token_idx;
+    uint32_t target_token_idx;
+    uint32_t attention_decision; // 0 = PERMITTED, 3 = PROHIBITED
+    uint32_t displacement_wrap_mod;
+    bool is_source_in_part_a;
+    bool is_target_in_part_a;
+    bool attention_allowed;
+    bool overall_attention_mask_sound;
+} AuncientGlmAttnMaskMetrics;
+
+// Formal GLM 2D Bidirectional Attention & Block-Causal Mask Prover
+bool auncient_glm_bidirectional_attention_mask_prover(
+    uint32_t total_tokens_n,
+    uint32_t part_a_prefix_len,
+    uint32_t source_token_idx,
+    uint32_t target_token_idx,
+    AuncientGlmAttnMaskMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

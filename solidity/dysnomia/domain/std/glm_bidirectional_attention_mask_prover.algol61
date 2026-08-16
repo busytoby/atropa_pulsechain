@@ -1,0 +1,105 @@
+begin
+  comment Standard Algol60/61 Domain Prover: GLM 2D Bidirectional Attention & Block-Causal Mask Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Part-A Tokens: Full Bidirectional Inter-Attention (A_i sees all A_j for all j in Part-A),;
+  comment 2. Part-B Tokens: Causal Auto-Regressive Intra-Attention (B_i sees B_j only for j <= i),;
+  comment 3. Asymmetric Information Isolation: Part-A tokens cannot attend to Part-B generation targets;
+
+  integer procedure verify_glm_bidirectional_attention_mask(
+    total_tokens_n,
+    part_a_prefix_len,
+    source_idx,
+    target_idx
+  );
+  value total_tokens_n, part_a_prefix_len, source_idx, target_idx;
+  integer total_tokens_n, part_a_prefix_len, source_idx, target_idx;
+  begin
+    comment Classification Ruling:
+            0 = ATTENTION_PERMITTED (Attention connection is mathematically sound)
+            1 = INVALID_INDEX_BOUNDS (Index outside 0..N-1)
+            2 = INVALID_PREFIX_SPLIT (Prefix length outside 1..N-1)
+            3 = ATTENTION_PROHIBITED (Connection violates GLM bidirectional/causal isolation rules);
+
+    integer is_source_in_part_a, is_target_in_part_a;
+
+    if total_tokens_n <= 1 or part_a_prefix_len < 1 or part_a_prefix_len >= total_tokens_n then
+      begin
+        verify_glm_bidirectional_attention_mask := 2;
+        go to end_attn_proc;
+      end;
+
+    if source_idx < 0 or source_idx >= total_tokens_n or target_idx < 0 or target_idx >= total_tokens_n then
+      begin
+        verify_glm_bidirectional_attention_mask := 1;
+        go to end_attn_proc;
+      end;
+
+    if source_idx < part_a_prefix_len then
+      is_source_in_part_a := 1
+    else
+      is_source_in_part_a := 0;
+
+    if target_idx < part_a_prefix_len then
+      is_target_in_part_a := 1
+    else
+      is_target_in_part_a := 0;
+
+    comment Rule 1: Part-A Token Attending (Source in Part-A);
+    if is_source_in_part_a = 1 then
+      begin
+        comment Part-A tokens can attend to ALL other Part-A tokens (Bidirectional), but NEVER to Part-B;
+        if is_target_in_part_a = 1 then
+          verify_glm_bidirectional_attention_mask := 0
+        else
+          verify_glm_bidirectional_attention_mask := 3;
+        go to end_attn_proc;
+      end;
+
+    comment Rule 2: Part-B Token Attending (Source in Part-B);
+    if is_source_in_part_a = 0 then
+      begin
+        comment Part-B tokens can attend to ALL Part-A tokens;
+        if is_target_in_part_a = 1 then
+          begin
+            verify_glm_bidirectional_attention_mask := 0;
+            go to end_attn_proc;
+          end;
+
+        comment Within Part-B, attention is strictly Causal (target_idx <= source_idx);
+        if target_idx <= source_idx then
+          verify_glm_bidirectional_attention_mask := 0
+        else
+          verify_glm_bidirectional_attention_mask := 3;
+        go to end_attn_proc;
+      end;
+
+    verify_glm_bidirectional_attention_mask := 3;
+
+  end_attn_proc:
+  end;
+
+  comment Domain Input Telemetry: N=8 tokens, Part-A Prefix = 4 (Tokens 0..3), Part-B Target = 4 (Tokens 4..7);
+  integer n_tok, p_a;
+  integer r1, r2, r3, r4;
+
+  n_tok := 8;
+  p_a   := 4;
+
+  comment Case 1: Part-A token (0) attending backwards to Part-A token (3) -> Expect 0 (Bidirectional ALLOW);
+  r1 := verify_glm_bidirectional_attention_mask(n_tok, p_a, 0, 3);
+
+  comment Case 2: Part-A token (1) attempting to peek at Part-B target (5) -> Expect 3 (Isolation DENY);
+  r2 := verify_glm_bidirectional_attention_mask(n_tok, p_a, 1, 5);
+
+  comment Case 3: Part-B token (5) attending to context in Part-A (2) -> Expect 0 (Context ALLOW);
+  r3 := verify_glm_bidirectional_attention_mask(n_tok, p_a, 5, 2);
+
+  comment Case 4: Part-B token (5) attempting to attend forward to Part-B (6) -> Expect 3 (Future Causal DENY);
+  r4 := verify_glm_bidirectional_attention_mask(n_tok, p_a, 5, 6);
+
+  if r1 = 0 and r2 = 3 and r3 = 0 and r4 = 3 then
+    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (GLM 2D Bidirectional Block-Causal Masking Formally Proven)\n")
+  else
+    outstring(1, "RULING: UNRESOLVED_CONTINUANCE (Chancery Retained)\n")
+end

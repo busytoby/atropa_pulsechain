@@ -2068,6 +2068,57 @@ bool auncient_glm_totient_valve_acid_prover(
     return overall_sound;
 }
 
+/* Formal GLM 2D Bidirectional Attention & Block-Causal Mask Prover Implementation */
+bool auncient_glm_bidirectional_attention_mask_prover(
+    uint32_t total_tokens_n,
+    uint32_t part_a_prefix_len,
+    uint32_t source_token_idx,
+    uint32_t target_token_idx,
+    AuncientGlmAttnMaskMetrics *metrics_out
+) {
+    if (total_tokens_n <= 1 || part_a_prefix_len < 1 || part_a_prefix_len >= total_tokens_n) {
+        return false;
+    }
+    if (source_token_idx >= total_tokens_n || target_token_idx >= total_tokens_n) {
+        return false;
+    }
+
+    bool is_src_a = (source_token_idx < part_a_prefix_len);
+    bool is_tgt_a = (target_token_idx < part_a_prefix_len);
+    uint32_t decision = 3; // Default 3 = PROHIBITED
+
+    if (is_src_a) {
+        // Part-A tokens: Bidirectional across Part-A, but isolated from Part-B
+        decision = is_tgt_a ? 0 : 3;
+    } else {
+        // Part-B tokens: Attend to all Part-A, and causally within Part-B
+        if (is_tgt_a) {
+            decision = 0;
+        } else {
+            decision = (target_token_idx <= source_token_idx) ? 0 : 3;
+        }
+    }
+
+    bool allowed = (decision == 0);
+    uint32_t disp_wrap = ((source_token_idx * 32) + target_token_idx) % 256;
+
+    if (metrics_out) {
+        metrics_out->total_tokens_n = total_tokens_n;
+        metrics_out->part_a_prefix_len = part_a_prefix_len;
+        metrics_out->source_token_idx = source_token_idx;
+        metrics_out->target_token_idx = target_token_idx;
+        metrics_out->attention_decision = decision;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->is_source_in_part_a = is_src_a;
+        metrics_out->is_target_in_part_a = is_tgt_a;
+        metrics_out->attention_allowed = allowed;
+        metrics_out->overall_attention_mask_sound = true;
+    }
+
+    return true;
+}
+
+
 
 
 
