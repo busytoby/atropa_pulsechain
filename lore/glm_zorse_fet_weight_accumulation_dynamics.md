@@ -253,5 +253,61 @@ Because secondary accumulators inherit the identical non-preferential accumulato
 * Every secondary accumulator instantiated by a COBOL strategy is **fully ACID-compliant**, maintaining its own shadow snapshot and supporting atomic rollback.
 * Algol61 provers validate that secondary accumulator synthesis satisfies mathematical continuity, scale invariance ($\text{RMSNorm}(\alpha \cdot \mathbf{x}) \equiv \text{RMSNorm}(\mathbf{x})$), and bounded displacement modulo mapping ($S_{\Sigma} \pmod{256}$) into the `DisplacementShader`.
 
+---
+
+## 9. Transitive Closure: Secondary Accumulators to Further Secondary Accumulators
+
+A fundamental algebraic law of our architecture is that **the class of Secondary Accumulators is closed under recursive synthesis**:
+
+$$\mathcal{S}_1 \xrightarrow{\text{Strategy}} \mathcal{S}_2 \xrightarrow{\text{Strategy}} \mathcal{S}_3 \xrightarrow{\text{Strategy}} \dots \implies \forall k \ge 1, \quad \mathcal{S}_k \in \mathbb{S}_{\text{Secondary}}$$
+
+```
++---------------------------------------------------------------------------------------------------+
+|                        TRANSITIVE CLOSURE OF SECONDARY ACCUMULATORS                               |
++---------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
+                              [Primary Genesis Root: μ_0, TOTIENT_0]
+                                 (Level 0: Immutable Foundation)
+                                                  |
+                                                  v
+                              [Strategy Circuit: Stage Layer 1]
+                                                  |
+                                                  v
+                              [Secondary Accumulator S_1: μ_RMS]
+                                                  |
+                                                  v
+                              [Strategy Circuit: Stage Layer 2]
+                                                  |
+                                                  v
+                              [Secondary Accumulator S_2: μ_VALVE]
+                                                  |
+                                                  v
+                              [Strategy Circuit: Stage Layer 3]
+                                                  |
+                                                  v
+                              [Secondary Accumulator S_3: μ_SVDAG]
+                                                  |
+                         +------------------------+------------------------+
+                         |                                                 |
+                         v                                                 v
+             [Any Fault at Level k]                           [Clean Transaction Commit]
+             - Cascade collapse S_k -> S_1 = 0                - Commits all levels atomically
+             - Primary Root μ_0 preserved                     - Emits 0 = QUALIFIED_ORBITAL_HANDSHAKE
+```
+
+### 1. The Monadic Flatness Invariant
+In object-oriented paradigms, cascading derivations often generate nested container types (e.g. `Accumulator<Accumulator<T>>`). In our **Auncient** Dysnomia ZMM architecture:
+* Secondary accumulators do not create infinite meta-hierarchies or nested classes.
+* **Secondary accumulators derived from secondary accumulators remain strictly Secondary Accumulators**.
+* The state mapping is a **flat, homomorphic monad**: every secondary node $S_k$ is governed by the same non-preferential continuous integral $\mu_k \in [0, \text{MotzkinPrime})$, with identical shadow snapshot mechanisms and boundary conditions.
+
+### 2. Cascaded Rollback across Recursive Depths
+The transitive property guarantees that transactional rollback scales infinitely with zero leakage:
+* If a fault occurs at depth $k$ (e.g., in $S_3$), the rollback signal cascades upward through $S_2$ and $S_1$, zeroing all intermediate secondary accumulators simultaneously:
+  $$\text{Rollback}(S_k) \implies \left(\forall j \in [1, k], \quad S_j \leftarrow 0\right) \land \left(\mu_0 \leftarrow \mu_0\right)$$
+* The primary root baseline remains completely untainted, preserving the integrity of Hogan Bank endowments ($1,000,000\text{ Saat}$) and the zero totient genesis axiom across arbitrary inference depth.
+
+
 
 
