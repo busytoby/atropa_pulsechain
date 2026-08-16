@@ -82,7 +82,12 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │   │   ├── glm_zorse_multitask_prover.algol61
 │   │   ├── glm_zorse_2d_position_prover.algol61
 │   │   ├── glm_fet_link_dynamics_prover.algol61
-│   │   └── glm_totient_valve_acid_prover.algol61
+│   │   ├── glm_totient_valve_acid_prover.algol61
+│   │   ├── glm_bidirectional_attention_mask_prover.algol61
+│   │   ├── glm_interleaved_rmsnorm_prover.algol61
+│   │   ├── glm_secondary_accumulator_synthesis_prover.algol61
+│   │   ├── glm_transitive_secondary_chain_prover.algol61
+│   │   └── glm_universal_accumulator_acid_prover.algol61
 │   └── strategies/                   # COBOL execution strategies (D0-D3 divisions, R0-R15)
 │       ├── glm_hbridge_swiglu.strategy
 │       ├── glm_2d_rope_paintbox.strategy
@@ -91,7 +96,12 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │       ├── glm_zorse_multitask.strategy
 │       ├── glm_zorse_2d_position.strategy
 │       ├── glm_fet_link_dynamics.strategy
-│       └── glm_totient_valve_acid.strategy
+│       ├── glm_totient_valve_acid.strategy
+│       ├── glm_bidirectional_attention_mask.strategy
+│       ├── glm_interleaved_rmsnorm.strategy
+│       ├── glm_secondary_accumulator_synthesis.strategy
+│       ├── glm_transitive_secondary_chain.strategy
+│       └── glm_universal_accumulator_acid.strategy
 ├── tsfi2-deepseek/
 │   ├── src/                          # C11 Virtual hardware, MCP server, and runtime core
 │   │   ├── auncient_edsac_firewall.c # EDSAC Initial Orders 1 & 2 compiler firewall
@@ -101,7 +111,7 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │   │   └── tsfi_faster_lighter_llm.c # High-throughput Edge LLM inference engine
 │   └── inc/                          # Core system and hardware register headers
 ├── tests/                            # Comprehensive C test suites and verification harnesses
-│   ├── test_auncient_edsac_firewall.c# 18-suite integrated EDSAC compiler firewall test
+│   ├── test_auncient_edsac_firewall.c# 23-suite integrated EDSAC compiler firewall test
 │   ├── test_rooted_browser_zmm.c     # Rooted Vulkan Wayland Presenter test harness
 │   └── test_zorse_vdso_hogan_units.c # Monotonic VDSO low-latency benchmark suite
 ├── frontend/                         # Pure HTML5/Canvas presenters (Zero external frameworks)
@@ -115,30 +125,12 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 
 ---
 
-## Permanent System Registers & Glossary
+## High-Throughput Verification Pipeline
 
-* **Base**: Root reference alignment register in SHA's `Fa` structure for WinchesterMQ state machines. Initialized via Seed, Form, or Fuse.
-* **Signal**: Core wave carrier register; governs orbital velocity scaling and line bloom radius.
-* **Channel**: Primary frequency multiplier along the X-axis: $Channel = Base^{Signal} \pmod{MotzkinPrime}$.
-* **MotzkinPrime**: Constant modular prime divisor across the Dysnomia VM (`953467954114363`).
-* **Pole**: Polarization register mapping translation vector offsets: $Pole = Base^{Secret} \pmod{MotzkinPrime}$.
-* **Secret**: Private modular exponent register modulating the shear distortion matrix.
-* **Foundation**: Baseline height register governing Z-axis coordinate frequencies: $Foundation = Base^{Identity} \pmod{MotzkinPrime}$.
-* **Chin**: Lower clamp register modulating negative Y-axis visual asymmetry: $Chin = Beta + Eta \pmod{MotzkinPrime}$.
-* **Dynamo**: Dynamic velocity tracking word: $Dynamo = Base^{Signal} \pmod{Element}$.
-* **XDC**: External debug boundary control word intercepting raw SCSI frames on WinchesterMQ to inspect standard registers.
-
----
-
-## Building and Verification
-
-### Prerequisites
-* GCC 9+ with C11 support (`-std=c11`)
-* AVX-512 SIMD vector extensions (`-mavx512f`)
-* POSIX Real-time and Math extensions (`-lrt -lm -lssl -lcrypto`)
+SYSTEM0 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution.
 
 ### Compilation & Running Test Suites
-To build and execute the full **18-suite EDSAC compiler firewall and formal prover test battery**:
+To build and execute the full **23-suite EDSAC compiler firewall and formal prover test battery**:
 
 ```bash
 gcc -Wall -Wextra -Werror -std=c11 -O3 \
@@ -175,6 +167,27 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 \
 15. **GLM 2D Positional for Zorse**: Proves exact positional bijection across COBOL division ASTs ($D_0 \to D_3$).
 16. **GLM FET Link Dynamics**: Proves monotonic thermodynamic dissipation ($1\text{M} \to 401\text{k Saat}$) across FET discharge cycles.
 17. **Accumulator Valves upon Zero TOTIENT**: Formally proves ACID rollback and zero-entropy flow invariance.
+18. **GLM 2D Bidirectional Attention & Block-Causal Masking**: Proves Part-A bidirectional & Part-B block-causal isolation.
+19. **GLM Interleaved RMSNorm Scale Invariance**: Proves unit norm scaling $\hat{x}_i = g(x_i, \mu_{\text{RMS}})$.
+20. **Primary-Secondary Accumulator Synthesis**: Formally verifies non-corrupting secondary accumulator instantiation.
+21. **Transitive Secondary Chain Prover**: Proves multi-depth ($S_1 \to S_2 \to S_3$) cascaded rollback and root preservation.
+22. **Universal Accumulator ACID Compliance**: Proves 4 ACID axioms and transactional rollback over any coupled strategy.
+23. **Universal Accumulator Fault Rollback**: Proves strict shadow baseline preservation upon bus disconnect or fault.
+
+---
+
+## Permanent System Registers & Glossary
+
+* **Base**: Root reference alignment register in SHA's `Fa` structure for WinchesterMQ state machines. Initialized via Seed, Form, or Fuse.
+* **Signal**: Core wave carrier register; governs orbital velocity scaling and line bloom radius.
+* **Channel**: Primary frequency multiplier along the X-axis: $Channel = Base^{Signal} \pmod{MotzkinPrime}$.
+* **MotzkinPrime**: Constant modular prime divisor across the Dysnomia VM (`953467954114363`).
+* **Pole**: Polarization register mapping translation vector offsets: $Pole = Base^{Secret} \pmod{MotzkinPrime}$.
+* **Secret**: Private modular exponent register modulating the shear distortion matrix.
+* **Foundation**: Baseline height register governing Z-axis coordinate frequencies: $Foundation = Base^{Identity} \pmod{MotzkinPrime}$.
+* **Chin**: Lower clamp register modulating negative Y-axis visual asymmetry: $Chin = Beta + Eta \pmod{MotzkinPrime}$.
+* **Dynamo**: Dynamic velocity tracking word: $Dynamo = Base^{Signal} \pmod{Element}$.
+* **XDC**: External debug boundary control word intercepting raw SCSI frames on WinchesterMQ to inspect standard registers.
 
 ---
 

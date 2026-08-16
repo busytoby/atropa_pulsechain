@@ -358,8 +358,35 @@ int main(void) {
     printf("   ✓ Transitive Secondary Chain verified (Root=1M Saat, S1_RMS=%lu, S2_Valve=0, S3_SVDAG=%lu, Multi-Depth Rollback=0, DispMod=%u).\n",
            clean_chain_m.s1_rms, clean_chain_m.s3_svdag, clean_chain_m.displacement_wrap_mod);
 
+    // 23. Test Universal Accumulator ACID Compliance & Transactional Rollback Prover
+    printf("[TEST] Testing Universal Accumulator ACID Compliance (Shadow Isolation & Rollback)...\n");
+    AuncientUniversalAccumulatorAcidMetrics clean_acid_m = {0};
+    bool ok_acid_clean = auncient_glm_universal_accumulator_acid_prover(
+        1000000 /* Saat */, 50 /* decay */, false /* clean commit */, 3 /* k=3 */, &clean_acid_m
+    );
+    assert(ok_acid_clean == true && clean_acid_m.overall_acid_sound == true);
+    assert(clean_acid_m.isolation_sound == true);
+    assert(clean_acid_m.consistency_inverse_sound == true);
+    assert(clean_acid_m.atomicity_sound == true);
+    assert(clean_acid_m.durability_sound == true);
+    assert(clean_acid_m.committed_mu == clean_acid_m.staged_mu);
+
+    AuncientUniversalAccumulatorAcidMetrics fault_acid_m = {0};
+    bool ok_acid_fault = auncient_glm_universal_accumulator_acid_prover(
+        1000000 /* Saat */, 50 /* decay */, true /* simulate fault */, 3 /* k=3 */, &fault_acid_m
+    );
+    assert(ok_acid_fault == true && fault_acid_m.overall_acid_sound == true);
+    assert(fault_acid_m.isolation_sound == true);
+    assert(fault_acid_m.atomicity_sound == true);
+    assert(fault_acid_m.durability_sound == true);
+    assert(fault_acid_m.committed_mu == fault_acid_m.shadow_mu);
+    assert(fault_acid_m.committed_mu == 1000000);
+    printf("   ✓ Universal Accumulator ACID verified (Init=1M Saat, Staged=%lu, Rec=%lu, Fault Rollback=%lu, DispMod=%u).\n",
+           clean_acid_m.staged_mu, clean_acid_m.reconstructed_mu, fault_acid_m.committed_mu, clean_acid_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+

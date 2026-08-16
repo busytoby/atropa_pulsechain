@@ -959,6 +959,30 @@ bool auncient_glm_transitive_secondary_chain_prover(
     AuncientTransitiveSecondaryMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t initial_charge_mu;
+    uint64_t shadow_mu;
+    uint64_t eta_potential;
+    uint64_t staged_mu;
+    uint64_t reconstructed_mu;
+    uint64_t committed_mu;
+    uint32_t displacement_wrap_mod;
+    bool isolation_sound;
+    bool consistency_inverse_sound;
+    bool atomicity_sound;
+    bool durability_sound;
+    bool overall_acid_sound;
+} AuncientUniversalAccumulatorAcidMetrics;
+
+// Formal Universal Accumulator ACID Prover
+bool auncient_glm_universal_accumulator_acid_prover(
+    uint64_t initial_charge_mu,
+    uint32_t discharge_decay_rate,
+    bool simulate_fault_flag,
+    uint32_t k_param,
+    AuncientUniversalAccumulatorAcidMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

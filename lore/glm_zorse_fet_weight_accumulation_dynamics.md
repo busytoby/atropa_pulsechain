@@ -308,6 +308,38 @@ The transitive property guarantees that transactional rollback scales infinitely
   $$\text{Rollback}(S_k) \implies \left(\forall j \in [1, k], \quad S_j \leftarrow 0\right) \land \left(\mu_0 \leftarrow \mu_0\right)$$
 * The primary root baseline remains completely untainted, preserving the integrity of Hogan Bank endowments ($1,000,000\text{ Saat}$) and the zero totient genesis axiom across arbitrary inference depth.
 
+---
 
+## 10. Universal Accumulator ACID Compliance & Strategy Coupling
 
+The universal accumulator model abstracts across all execution strategies, guaranteeing ACID transaction invariants over any arbitrary accumulator coupled with strategy dynamics:
 
+```
++---------------------------------------------------------------------------------------------------+
+|                        UNIVERSAL ACCUMULATOR ACID EXECUTION FLOW                                  |
++---------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
+                              [1. Isolation: Shadow Snapshot State]
+                              - shadow_mu = initial_charge_mu (1,000,000 Saat)
+                                                  |
+                                                  v
+                              [2. Consistency: Staged GLM Link g(μ)]
+                              - staged_eta = (initial_charge_mu * 875) / (1000 + decay)
+                              - Inverse Recovery Check: |g^-1(staged_eta) - initial_mu| <= 5
+                                                  |
+                                                  v
+                              [3. Atomicity & Durability: Commit or Rollback]
+                              - Clean Commit: committed_mu = staged_eta
+                              - Fault Rollback: committed_mu = shadow_mu (1,000,000 Saat)
+                                                  |
+                                                  v
+                              [4. Displacement Modulo Synchronization]
+                              - displacement_wrap_mod = committed_mu % 256
+```
+
+### Artifacts & Verification
+* **Algol61 Domain Prover**: `solidity/dysnomia/domain/std/glm_universal_accumulator_acid_prover.algol61`
+* **COBOL Strategy**: `solidity/dysnomia/domain/strategies/glm_universal_accumulator_acid.strategy`
+* **C Engine Implementation**: `tsfi2-deepseek/src/auncient_edsac_firewall.c` (`auncient_glm_universal_accumulator_acid_prover`)
+* **Test Suite Verification**: `tests/test_auncient_edsac_firewall.c` (Verified clean commit staged $\mu = 833{,}333$ and fault rollback $\mu = 1{,}000{,}000\text{ Saat}$).
