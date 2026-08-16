@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LFM-WFL Continuous State & Zero-Totient ACID Presenter</title>
+    <title>LFM-WFL Continuous State & Quantel Liquid Paintbox Presenter</title>
     <style>
         :root {
-            --bg-base: #0a0e17;
-            --bg-surface: #111827;
-            --bg-surface-raised: #1f2937;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
+            --bg-base: #06090e;
+            --bg-surface: #0f172a;
+            --bg-surface-raised: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
             --accent-emerald: #10b981;
             --accent-cyan: #06b6d4;
             --accent-amber: #f59e0b;
             --accent-rose: #f43f5e;
-            --border-dim: #374151;
+            --border-dim: #334155;
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
             --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
@@ -30,8 +30,9 @@
             background-color: var(--bg-base);
             color: var(--text-main);
             font-family: var(--font-sans);
-            padding: 24px;
-            line-height: 1.5;
+            padding: 20px;
+            line-height: 1.4;
+            user-select: none;
         }
 
         header {
@@ -39,12 +40,12 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-dim);
-            padding-bottom: 16px;
-            margin-bottom: 24px;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
         }
 
         h1 {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             letter-spacing: -0.5px;
             display: flex;
@@ -64,121 +65,134 @@
             border: 1px solid var(--accent-emerald);
         }
 
-        .grid-layout {
+        .main-workspace {
             display: grid;
-            grid-template-columns: 340px 1fr 340px;
-            gap: 20px;
+            grid-template-columns: 280px 1fr 300px;
+            gap: 16px;
         }
 
         .panel {
             background: var(--bg-surface);
             border: 1px solid var(--border-dim);
             border-radius: 6px;
-            padding: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .panel h2 {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 14px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
 
-        /* Controls */
+        /* Quantel Tool Palette */
+        .quantel-tools {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .tool-btn {
+            background: var(--bg-surface-raised);
+            border: 1px solid var(--border-dim);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        .tool-btn.active {
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
+        }
+
         .control-group {
-            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         label {
-            display: block;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
-            margin-bottom: 4px;
         }
 
-        input[type="number"], select {
+        input[type="number"], select, input[type="range"] {
             width: 100%;
             background: var(--bg-surface-raised);
             border: 1px solid var(--border-dim);
             color: var(--text-main);
-            padding: 8px;
+            padding: 6px 8px;
             border-radius: 4px;
             font-family: var(--font-mono);
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .button-group {
             display: flex;
-            gap: 8px;
-            margin-top: 16px;
+            gap: 6px;
         }
 
-        button {
+        button.action-btn {
             flex: 1;
-            padding: 10px;
+            padding: 8px;
             border-radius: 4px;
             border: none;
             cursor: pointer;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             transition: all 0.15s ease;
         }
 
-        .btn-primary {
-            background: var(--accent-cyan);
-            color: #000;
-        }
+        .btn-primary { background: var(--accent-cyan); color: #000; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); border: 1px solid var(--accent-rose); }
+        .btn-danger:hover { background: rgba(244, 63, 94, 0.3); }
 
-        .btn-primary:hover {
-            filter: brightness(1.1);
-        }
-
-        .btn-danger {
-            background: rgba(244, 63, 94, 0.2);
-            color: var(--accent-rose);
-            border: 1px solid var(--accent-rose);
-        }
-
-        .btn-danger:hover {
-            background: rgba(244, 63, 94, 0.3);
-        }
-
-        /* Oscilloscope View */
-        .canvas-container {
-            background: #05070c;
+        /* Liquid Paintbox Viewport */
+        .paintbox-container {
+            background: #020408;
             border: 1px solid var(--border-dim);
-            border-radius: 4px;
+            border-radius: 6px;
             position: relative;
-            height: 380px;
+            height: 480px;
+            cursor: crosshair;
+            overflow: hidden;
         }
 
-        canvas {
+        canvas#paint-canvas {
             width: 100%;
             height: 100%;
             display: block;
         }
 
-        /* Metrics Display */
+        /* Metric Cards */
         .metric-card {
             background: var(--bg-surface-raised);
             border-radius: 4px;
-            padding: 10px 14px;
-            margin-bottom: 10px;
+            padding: 8px 12px;
         }
 
         .metric-title {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-muted);
             text-transform: uppercase;
         }
 
         .metric-value {
             font-family: var(--font-mono);
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 700;
             margin-top: 2px;
         }
@@ -187,33 +201,33 @@
         .metric-value.cyan { color: var(--accent-cyan); }
         .metric-value.amber { color: var(--accent-amber); }
 
-        /* Telemetry Table */
+        /* Dynamic Telemetry Table */
         .table-container {
             grid-column: 1 / -1;
             background: var(--bg-surface);
             border: 1px solid var(--border-dim);
             border-radius: 6px;
-            padding: 16px;
-            margin-top: 10px;
+            padding: 14px;
+            margin-top: 8px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             font-family: var(--font-mono);
-            font-size: 12px;
+            font-size: 11px;
         }
 
         th {
             text-align: left;
-            padding: 8px 12px;
+            padding: 6px 10px;
             color: var(--text-muted);
             border-bottom: 1px solid var(--border-dim);
             font-weight: 600;
         }
 
         td {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
 
@@ -226,26 +240,38 @@
 
 <header>
     <h1>
-        <span>LFM-WFL Continuous State & Zero-Totient ACID Presenter</span>
+        <span>LFM-WFL Quantel Liquid Paintbox (Wayland Vulkan Native)</span>
     </h1>
-    <div class="status-badge" id="status-badge">QUALIFIED ORBITAL HANDSHAKE</div>
+    <div class="status-badge" id="status-badge">ROOTED WAYLAND PRESENTER</div>
 </header>
 
-<div class="grid-layout">
-    <!-- Panel 1: WFL Controls & ACID Trigger -->
+<div class="main-workspace">
+    <!-- Panel 1: Quantel Paintbox Tools & WFL Controls -->
     <div class="panel">
-        <h2>WFL Parameter Controls</h2>
-        
+        <h2>Quantel Paint Palette</h2>
+        <div class="quantel-tools">
+            <div class="tool-btn active" id="tool-brush" onclick="setTool('brush')">Airbrush</div>
+            <div class="tool-btn" id="tool-liquid" onclick="setTool('liquid')">LFM Liquid Wash</div>
+            <div class="tool-btn" id="tool-stencil" onclick="setTool('stencil')">Cactus Stencil</div>
+            <div class="tool-btn" id="tool-clear" onclick="clearCanvas()">Flush Buffer</div>
+        </div>
+
+        <div class="control-group">
+            <label for="brush-size">Stroke Flow & Viscosity</label>
+            <input type="range" id="brush-size" min="2" max="60" value="16">
+        </div>
+
+        <h2>WFL State Parameters</h2>
         <div class="control-group">
             <label for="initial-seed">Genesis Nonce (N0)</label>
             <input type="number" id="initial-seed" value="100000">
         </div>
 
         <div class="control-group">
-            <label for="exponent-k">Exponent Parameter (k)</label>
-            <select id="exponent-k">
-                <option value="3" selected>k = 3 (pow2_k = 8, scale = 7/8)</option>
-                <option value="5">k = 5 (pow2_k = 32, scale = 31/32)</option>
+            <label for="exponent-k">Exponent (k)</label>
+            <select id="exponent-k" onchange="renderUI()">
+                <option value="3" selected>k = 3 (2^3 = 8, 7/8 scale)</option>
+                <option value="5">k = 5 (2^5 = 32, 31/32 scale)</option>
             </select>
         </div>
 
@@ -255,25 +281,25 @@
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" id="btn-evolve">Evolve Continuous t</button>
-            <button class="btn-danger" id="btn-fault">Inject Fault & Rollback</button>
+            <button class="action-btn btn-primary" id="btn-evolve" onclick="renderUI()">Step WFL ODE</button>
+            <button class="action-btn btn-danger" id="btn-fault" onclick="injectFault()">WAL Rollback</button>
         </div>
     </div>
 
-    <!-- Panel 2: Continuous Phase Orbit Viewport -->
-    <div class="panel">
-        <h2>Continuous Lissajous Trajectory Space (u(t) vs v(t))</h2>
-        <div class="canvas-container">
-            <canvas id="orbit-canvas"></canvas>
+    <!-- Panel 2: Quantel Liquid Paintbox Viewport -->
+    <div class="panel" style="padding: 10px;">
+        <h2>Vulkan Framebuffer Surface: Continuous Trajectory Paintbox</h2>
+        <div class="paintbox-container">
+            <canvas id="paint-canvas"></canvas>
         </div>
     </div>
 
-    <!-- Panel 3: ACID Register Status -->
+    <!-- Panel 3: ACID Register Sanctum -->
     <div class="panel">
         <h2>ACID Register Sanctum</h2>
         
         <div class="metric-card">
-            <div class="metric-title">Invariant TOTIENT(t) = Modpow(u,v,u)</div>
+            <div class="metric-title">Invariant TOTIENT(t)</div>
             <div class="metric-value emerald" id="val-totient">0</div>
         </div>
 
@@ -291,22 +317,27 @@
             <div class="metric-title">Displacement Modulo (S_Σ mod 256)</div>
             <div class="metric-value" id="val-disp">152</div>
         </div>
+
+        <div class="metric-card">
+            <div class="metric-title">Quantel Frame Shading Mode</div>
+            <div class="metric-value" style="font-size: 12px; color: var(--text-muted);">EDO-22 LISSAJOUS BLEND</div>
+        </div>
     </div>
 
     <!-- Telemetry Table -->
     <div class="table-container">
-        <h2>Real-Time Dynamic Trajectory Ledger</h2>
+        <h2>Dynamic Trajectory Ledger across Continuous t</h2>
         <table id="telemetry-table">
             <thead>
                 <tr>
-                    <th>Time Slice (t)</th>
-                    <th>Current Nonce x(t)</th>
-                    <th>Forward Integral u(t)</th>
-                    <th>Back Integral v(t)</th>
+                    <th>Slice (t)</th>
+                    <th>Nonce x(t)</th>
+                    <th>Forward u(t)</th>
+                    <th>Back v(t)</th>
                     <th>S_Π(t) (Product)</th>
                     <th>S_Σ(t) (Quotient)</th>
                     <th>TOTIENT(t)</th>
-                    <th>Parity & Recovery</th>
+                    <th>Bijective Parity</th>
                 </tr>
             </thead>
             <tbody id="telemetry-tbody"></tbody>
@@ -319,6 +350,16 @@ const MOTZKIN_PRIME = 953467954;
 const LN2_SCALED = 693;
 const ALICE_OFFSET = 17;
 const BOB_OFFSET = 23;
+
+let activeTool = 'brush';
+let isPainting = false;
+let trajectoryRecords = [];
+
+function setTool(tool) {
+    activeTool = tool;
+    document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tool-${tool}`).classList.add('active');
+}
 
 function computeTrajectory(seed, k, totalT) {
     const pow2_k = Math.pow(2, k);
@@ -367,8 +408,8 @@ function renderUI() {
     const k = parseInt(document.getElementById('exponent-k').value, 10);
     const totalT = parseInt(document.getElementById('time-slices').value, 10);
 
-    const records = computeTrajectory(seed, k, totalT);
-    const lastRec = records[records.length - 1];
+    trajectoryRecords = computeTrajectory(seed, k, totalT);
+    const lastRec = trajectoryRecords[trajectoryRecords.length - 1];
 
     document.getElementById('val-totient').innerText = "0";
     document.getElementById('val-spi').innerText = lastRec.s_pi.toLocaleString();
@@ -378,7 +419,7 @@ function renderUI() {
     // Render Table
     const tbody = document.getElementById('telemetry-tbody');
     tbody.innerHTML = '';
-    records.forEach(r => {
+    trajectoryRecords.forEach(r => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>t=${String(r.t).padStart(2, '0')}</td>
@@ -393,39 +434,39 @@ function renderUI() {
         tbody.appendChild(row);
     });
 
-    // Render Canvas Orbit
-    renderCanvas(records);
+    drawPaintbox();
 }
 
-function renderCanvas(records) {
-    const canvas = document.getElementById('orbit-canvas');
+function drawPaintbox() {
+    const canvas = document.getElementById('paint-canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.parentElement.clientWidth;
     canvas.height = canvas.parentElement.clientHeight;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Background Grid (Quantel Framebuffer raster)
+    ctx.fillStyle = '#020408';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Coordinate Grid
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
+    for (let x = 0; x < canvas.width; x += 32) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 40) {
+    for (let y = 0; y < canvas.height; y += 32) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
     }
 
-    if (records.length < 2) return;
+    if (trajectoryRecords.length < 2) return;
 
-    const maxU = records[records.length - 1].u;
-    const maxV = records[records.length - 1].v;
+    const maxU = trajectoryRecords[trajectoryRecords.length - 1].u;
+    const maxV = trajectoryRecords[trajectoryRecords.length - 1].v;
 
-    // Draw Forward/Back Phase Trajectory Orbit
+    // Draw Continuous Trajectory Ribbon (LFM Liquid Paint)
     ctx.beginPath();
     ctx.strokeStyle = '#06b6d4';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
 
-    records.forEach((r, idx) => {
+    trajectoryRecords.forEach((r, idx) => {
         const px = 40 + (r.u / maxU) * (canvas.width - 80);
         const py = (canvas.height - 40) - (r.v / maxV) * (canvas.height - 80);
         if (idx === 0) ctx.moveTo(px, py);
@@ -433,22 +474,55 @@ function renderCanvas(records) {
     });
     ctx.stroke();
 
-    // Draw Nodes
-    records.forEach((r) => {
+    // Draw Shaded Nodes
+    trajectoryRecords.forEach((r) => {
         const px = 40 + (r.u / maxU) * (canvas.width - 80);
         const py = (canvas.height - 40) - (r.v / maxV) * (canvas.height - 80);
         ctx.fillStyle = '#10b981';
         ctx.beginPath();
-        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
         ctx.fill();
     });
 }
 
-document.getElementById('btn-evolve').addEventListener('click', renderUI);
-document.getElementById('btn-fault').addEventListener('click', () => {
+function clearCanvas() {
+    drawPaintbox();
+}
+
+function injectFault() {
     alert("Simulated Hardware Fault Injected!\nExecuting LFM ACID WAL Rollback: Restoring TOTIENT to shadow register state (0).");
     renderUI();
-});
+}
+
+// Quantel Paint Interaction
+const pCanvas = document.getElementById('paint-canvas');
+pCanvas.addEventListener('mousedown', (e) => { isPainting = true; paint(e); });
+pCanvas.addEventListener('mousemove', (e) => { if (isPainting) paint(e); });
+window.addEventListener('mouseup', () => { isPainting = false; });
+
+function paint(e) {
+    const rect = pCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const ctx = pCanvas.getContext('2d');
+    const size = document.getElementById('brush-size').value;
+
+    if (activeTool === 'brush') {
+        ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.beginPath();
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (activeTool === 'liquid') {
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (activeTool === 'stencil') {
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - size, y - size, size * 2, size * 2);
+    }
+}
 
 window.addEventListener('resize', renderUI);
 window.addEventListener('load', renderUI);
