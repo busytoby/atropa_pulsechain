@@ -28,6 +28,11 @@ test-ankh-closed-grid-totient-boundary:
 	./tests/test_ankh_closed_grid_totient_boundary
 	@rm -f tests/test_ankh_closed_grid_totient_boundary
 
+test-cpm-tomie-record-lock:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_record_lock.c -o tests/test_cpm_tomie_record_lock
+	./tests/test_cpm_tomie_record_lock
+	@rm -f tests/test_cpm_tomie_record_lock
+
 test-cpm-tomie-overlay-bank:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_overlay_bank.c -o tests/test_cpm_tomie_overlay_bank
 	./tests/test_cpm_tomie_overlay_bank
