@@ -95,7 +95,8 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │   │   ├── harvard_1946_biquinary_prover.algol61
 │   │   ├── harvard_1946_divider_prover.algol61
 │   │   ├── harvard_1946_geneva_carry_prover.algol61
-│   │   └── harvard_zuo_hbridge_quadrant_prover.algol61
+│   │   ├── harvard_zuo_hbridge_quadrant_prover.algol61
+│   │   └── harvard_zuo_tape_sync_prover.algol61
 │   └── strategies/                   # COBOL execution strategies (D0-D3 divisions, R0-R15)
 │       ├── glm_hbridge_swiglu.strategy
 │       ├── glm_2d_rope_paintbox.strategy
@@ -117,18 +118,19 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │       ├── harvard_1946_biquinary.strategy
 │       ├── harvard_1946_divider.strategy
 │       ├── harvard_1946_geneva_carry.strategy
-│       └── harvard_zuo_hbridge_quadrant.strategy
+│       ├── harvard_zuo_hbridge_quadrant.strategy
+│       └── harvard_zuo_tape_sync.strategy
 ├── tsfi2-deepseek/
 │   ├── src/                          # C11 Virtual hardware, MCP server, and runtime core
 │   │   ├── auncient_edsac_firewall.c # EDSAC Initial Orders 1 & 2 compiler firewall
-│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge
+│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge, Tape Sync
 │   │   ├── tsfi_mcp_server.c         # Native Model Context Protocol (MCP) server
 │   │   ├── tsfi_displacementshader.c # WinchesterMQ vertex displacement coordinate scaler
 │   │   ├── tsfi_gguf_loader.c        # Pure C GGUF loader & H-Bridge SwiGLU activation
 │   │   └── tsfi_faster_lighter_llm.c # High-throughput Edge LLM inference engine
 │   └── inc/                          # Core system and hardware register headers
 ├── tests/                            # Comprehensive C test suites and verification harnesses
-│   ├── test_auncient_edsac_firewall.c# 32-suite integrated EDSAC & Harvard formal test battery
+│   ├── test_auncient_edsac_firewall.c# 33-suite integrated EDSAC & Harvard formal test battery
 │   ├── test_rooted_browser_zmm.c     # Rooted Vulkan Wayland Presenter test harness
 │   └── test_zorse_vdso_hogan_units.c # Monotonic VDSO low-latency benchmark suite
 ├── frontend/                         # Pure HTML5/Canvas presenters (Zero external frameworks)
@@ -150,7 +152,7 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 SYSTEM0 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution.
 
 ### Compilation & Running Test Suites
-To build and execute the full **32-suite EDSAC compiler firewall and formal prover test battery**:
+To build and execute the full **33-suite EDSAC compiler firewall and formal prover test battery**:
 
 ```bash
 gcc -Wall -Wextra -Werror -std=c11 -O3 \
@@ -203,6 +205,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 \
 30. **Harvard 1946 Subtractive Divider**: Proves non-restoring subtractive division residue conservation ($A = Q \cdot B + R$), strict remainder boundedness ($0 \le R < B$), and division-by-zero mechanical clutch alarm rollback.
 31. **Harvard 1946 Geneva-Drive Ripple-Carry**: Proves multi-decade simultaneous tens-carry monotonicity ($999{,}999 + 1 = 1{,}000{,}000$), 360° drive cycle execution, and gear-jam alarm clutch rollback.
 32. **Harvard Zuo H-Bridge Quadrant Inversion**: Proves diagonal FET commutation symmetry ($|V_{\text{diff}}| \equiv |V_{\text{inv}}|$), SwiGLU gating clamp in $[7/8, 1.0]$, and arm short-circuit shadow rollback in the open singularity.
+33. **Harvard Zuo Dual-Tape Cross-Feed Sync**: Proves dual-stream Banach leaf coordinate projection monotonicity ($\text{Index}_{\text{arg}} = \lfloor \text{Leaf}_{\text{val}} / \text{stride} \rfloor$), stride boundedness in $[1..64]$, and tape skew shadow rollback.
 
 ---
 

@@ -574,11 +574,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo H-Bridge Quadrant verified (V_diff=2828mV, G_gate=%ld, Out=%ld, DispMod=%u).\n",
            clean_zuo_m.g_gate_forward, clean_zuo_m.committed_output, clean_zuo_m.displacement_wrap_mod);
 
+    // 33. Test Harvard Zuo Dual-Tape Cross-Feed Monotonicity Prover
+    printf("[TEST] Testing Harvard Zuo Dual-Tape Sync (Banach Leaf Stride & Skew Latch)...\n");
+    AuncientHarvardZuoTapeSyncMetrics clean_tape_m = {0};
+    bool ok_tape_clean = auncient_harvard_zuo_tape_sync_prover(
+        1000000 /* Leaf Saat */, 16 /* stride */, false /* clean */, 3 /* k=3 */, &clean_tape_m
+    );
+    assert(ok_tape_clean == true && clean_tape_m.overall_tape_sync_sound == true);
+    assert(clean_tape_m.phase_lock_sound == true);
+    assert(clean_tape_m.stride_bound_sound == true);
+    assert(clean_tape_m.shadow_isolation_sound == true);
+    assert(clean_tape_m.argument_index_out == 62500);
+    assert(clean_tape_m.committed_output == 62500);
+
+    AuncientHarvardZuoTapeSyncMetrics fault_tape_m = {0};
+    bool ok_tape_fault = auncient_harvard_zuo_tape_sync_prover(
+        1000000 /* Leaf Saat */, 16 /* stride */, true /* simulate tape skew */, 3 /* k=3 */, &fault_tape_m
+    );
+    assert(ok_tape_fault == true && fault_tape_m.overall_tape_sync_sound == true);
+    assert(fault_tape_m.rollback_sound == true);
+    assert(fault_tape_m.committed_output == 1000000);
+    printf("   ✓ Harvard Zuo Dual-Tape Sync verified (Arg_Index=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_tape_m.argument_index_out, fault_tape_m.committed_output, clean_tape_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

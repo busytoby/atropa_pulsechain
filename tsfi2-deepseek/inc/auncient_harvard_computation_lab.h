@@ -247,4 +247,25 @@ bool auncient_harvard_zuo_hbridge_quadrant_prover(
     AuncientHarvardZuoHBridgeMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t value_leaf_idx;
+    uint64_t stride_step;
+    uint64_t argument_index_out;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool phase_lock_sound;
+    bool stride_bound_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_tape_sync_sound;
+} AuncientHarvardZuoTapeSyncMetrics;
+
+bool auncient_harvard_zuo_tape_sync_prover(
+    uint64_t value_leaf_idx,
+    uint64_t stride_step,
+    bool simulate_tape_skew_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoTapeSyncMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
