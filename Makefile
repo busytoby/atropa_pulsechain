@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-cpm-tomie-bios-dispatch:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_bios_dispatch.c -o tests/test_cpm_tomie_bios_dispatch
+	./tests/test_cpm_tomie_bios_dispatch
+	@rm -f tests/test_cpm_tomie_bios_dispatch
+
 test-cpm-tomie-fcb-extent:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_fcb_extent.c -o tests/test_cpm_tomie_fcb_extent
 	./tests/test_cpm_tomie_fcb_extent
