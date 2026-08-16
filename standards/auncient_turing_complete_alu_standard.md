@@ -23,7 +23,7 @@ The standard integrates five interconnected proving domains:
 ## 2. CLAIMS & MATHEMATICAL SPECIFICATION
 
 ### Claim 1: Axiom of Kleene Primitive Operator Universality
-The Fourier ALU supports the complete set of primitive recursive and partial $\mu$-recursive functions over the modular field $\mathbb{F}_{\text{MotzkinPrime}}$:
+The Fourier ALU supports the complete set of primitive recursive and partial $\mu$-recursive functions over the modular field $\mathbf{F}_{P}$ ($P = \text{MotzkinPrime}$):
 1. **Zero Function $\mathcal{Z}(x)$**: Identically grounded at Totient Zero: $\mathcal{Z}(x) \equiv 0$.
 2. **Successor Function $\mathcal{S}(x)$**: Generated via the forward $u$-arm of the Ankh: $\mathcal{S}(x) = x + 1$.
 3. **Projection Function $\mathcal{P}_i^k(x_1, \dots, x_k)$**: Resolved via the orthogonal $v$-arm Euler §§ 214–215 inversion: $\mathcal{P}_i^k(\vec{x}) = x_i$.
