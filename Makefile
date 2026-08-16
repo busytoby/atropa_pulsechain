@@ -63,6 +63,11 @@ test-leslie-biorhythm-notch:
 	./tests/test_leslie_biorhythm_notch
 	@rm -f tests/test_leslie_biorhythm_notch
 
+test-larsen-personality-pll-pmg:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_larsen_personality_pll_pmg.c -o tests/test_larsen_personality_pll_pmg
+	./tests/test_larsen_personality_pll_pmg
+	@rm -f tests/test_larsen_personality_pll_pmg
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
