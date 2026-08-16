@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-auncient-acab-tem-boundary:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_acab_tem_boundary.c -o tests/test_auncient_acab_tem_boundary
+	./tests/test_auncient_acab_tem_boundary
+	@rm -f tests/test_auncient_acab_tem_boundary
+
 test-auncient-spheroid-edo22-alu:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_spheroid_edo22_alu.c -o tests/test_auncient_spheroid_edo22_alu
 	./tests/test_auncient_spheroid_edo22_alu
