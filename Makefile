@@ -28,6 +28,11 @@ test-ankh-closed-grid-totient-boundary:
 	./tests/test_ankh_closed_grid_totient_boundary
 	@rm -f tests/test_ankh_closed_grid_totient_boundary
 
+test-cpm-tomie-dir-hash:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_dir_hash.c -o tests/test_cpm_tomie_dir_hash
+	./tests/test_cpm_tomie_dir_hash
+	@rm -f tests/test_cpm_tomie_dir_hash
+
 test-cpm-tomie-record-lock:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_record_lock.c -o tests/test_cpm_tomie_record_lock
 	./tests/test_cpm_tomie_record_lock
