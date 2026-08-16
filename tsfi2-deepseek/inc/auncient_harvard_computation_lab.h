@@ -102,4 +102,24 @@ bool auncient_harvard_legendre_recurrence_prover(
     AuncientHarvardLegendreMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t periapsis_r0_q16;
+    int64_t final_radius_q16;
+    int64_t committed_radius_q16;
+    uint32_t displacement_wrap_mod;
+    bool shadow_isolation_sound;
+    bool valve_zero_flux_sound;
+    bool rollback_sound;
+    bool overall_orbit_sound;
+} AuncientBallisticOrbitValveMetrics;
+
+bool auncient_ballistic_orbit_valve_prover(
+    int64_t periapsis_r0_q16,
+    int64_t dt_q16,
+    int64_t v0_q16,
+    bool simulate_trajectory_fault,
+    uint32_t k_param,
+    AuncientBallisticOrbitValveMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

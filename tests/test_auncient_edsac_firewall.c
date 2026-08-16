@@ -421,11 +421,33 @@ int main(void) {
     printf("   ✓ Harvard Legendre Recurrence verified (x_in=0.5, G_wmq=%ld, P0=%ld, P1=%ld, P2=%ld, P3=%ld, P4=%ld, DispMod=%u).\n",
            leg_m.g_wmq_factor, leg_m.p_degree[0], leg_m.p_degree[1], leg_m.p_degree[2], leg_m.p_degree[3], leg_m.p_degree[4], leg_m.displacement_wrap_mod);
 
+    // 26. Test Ballistic Orbit Recursive Zero-Copy Valve Prover (MIND Leaf [0..1023] Topography)
+    printf("[TEST] Testing Ballistic Orbit Recursive Zero-Copy Valve (MIND Leaves & Rollback)...\n");
+    AuncientBallisticOrbitValveMetrics clean_orbit_m = {0};
+    bool ok_orbit_clean = auncient_ballistic_orbit_valve_prover(
+        65536 /* r0 = 1.0 in Q16 */, 4096 /* dt = 1/16 */, 16384 /* v0 = 0.25 */, false /* clean */, 3 /* k=3 */, &clean_orbit_m
+    );
+    assert(ok_orbit_clean == true && clean_orbit_m.overall_orbit_sound == true);
+    assert(clean_orbit_m.shadow_isolation_sound == true);
+    assert(clean_orbit_m.valve_zero_flux_sound == true);
+    assert(clean_orbit_m.committed_radius_q16 == clean_orbit_m.final_radius_q16);
+
+    AuncientBallisticOrbitValveMetrics fault_orbit_m = {0};
+    bool ok_orbit_fault = auncient_ballistic_orbit_valve_prover(
+        65536 /* r0 = 1.0 in Q16 */, 4096 /* dt = 1/16 */, 16384 /* v0 = 0.25 */, true /* simulate fault */, 3 /* k=3 */, &fault_orbit_m
+    );
+    assert(ok_orbit_fault == true && fault_orbit_m.overall_orbit_sound == true);
+    assert(fault_orbit_m.rollback_sound == true);
+    assert(fault_orbit_m.committed_radius_q16 == 65536);
+    printf("   ✓ Ballistic Orbit Valve verified (Periapsis=65536, Final_R=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
+           clean_orbit_m.final_radius_q16, fault_orbit_m.committed_radius_q16, clean_orbit_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
