@@ -330,4 +330,26 @@ bool auncient_harvard_zuo_self_identity_prover(
     AuncientHarvardZuoSelfIdentityMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t arm1_current_ma;
+    int64_t arm2_current_ma;
+    int64_t total_current_ma;
+    int64_t g_gate_factor;
+    int64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool torque_balance_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_torque_sound;
+} AuncientHarvardZuoTorqueMetrics;
+
+bool auncient_harvard_zuo_torque_balance_prover(
+    int64_t arm1_current_ma,
+    int64_t arm2_current_ma,
+    bool simulate_torque_imbalance_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoTorqueMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

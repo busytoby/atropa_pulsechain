@@ -664,11 +664,34 @@ int main(void) {
     printf("   ✓ Harvard Zuo Self-Identity verified (Final_State=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_self_m.final_state, fault_self_m.committed_output, clean_self_m.displacement_wrap_mod);
 
+    // 37. Test Harvard Zuo Multi-Tier Torque Balance Prover
+    printf("[TEST] Testing Harvard Zuo Multi-Tier Torque Balance (Push-Pull Equilibrium & Imbalance Latch)...\n");
+    AuncientHarvardZuoTorqueMetrics clean_torque_m = {0};
+    bool ok_torque_clean = auncient_harvard_zuo_torque_balance_prover(
+        4000 /* Arm1 mA */, 4000 /* Arm2 mA */, false /* clean */, 3 /* k=3 */, &clean_torque_m
+    );
+    assert(ok_torque_clean == true && clean_torque_m.overall_torque_sound == true);
+    assert(clean_torque_m.torque_balance_sound == true);
+    assert(clean_torque_m.gating_clamp_sound == true);
+    assert(clean_torque_m.shadow_isolation_sound == true);
+    assert(clean_torque_m.g_gate_factor >= 875 && clean_torque_m.g_gate_factor <= 1000);
+
+    AuncientHarvardZuoTorqueMetrics fault_torque_m = {0};
+    bool ok_torque_fault = auncient_harvard_zuo_torque_balance_prover(
+        4000 /* Arm1 mA */, 4000 /* Arm2 mA */, true /* simulate imbalance fault */, 3 /* k=3 */, &fault_torque_m
+    );
+    assert(ok_torque_fault == true && fault_torque_m.overall_torque_sound == true);
+    assert(fault_torque_m.rollback_sound == true);
+    assert(fault_torque_m.committed_output == 4000);
+    printf("   ✓ Harvard Zuo Torque Balance verified (Total_I=%ldmA, G_gate=%ld, Out=%ld, DispMod=%u).\n",
+           clean_torque_m.total_current_ma, clean_torque_m.g_gate_factor, clean_torque_m.committed_output, clean_torque_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

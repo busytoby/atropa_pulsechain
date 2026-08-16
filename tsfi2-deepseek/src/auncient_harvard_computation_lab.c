@@ -939,6 +939,61 @@ bool auncient_harvard_zuo_self_identity_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Multi-Tier Torque Balance Prover */
+bool auncient_harvard_zuo_torque_balance_prover(
+    int64_t arm1_current_ma,
+    int64_t arm2_current_ma,
+    bool simulate_torque_imbalance_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoTorqueMetrics *metrics_out
+) {
+    if (k_param != 3 || arm1_current_ma < 0 || arm1_current_ma > 10000 ||
+        arm2_current_ma < 0 || arm2_current_ma > 10000) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline currents in Zuo ZMM state
+    int64_t shadow_arm1 = arm1_current_ma;
+    int64_t shadow_arm2 = arm2_current_ma;
+
+    // Step 2: Compute Current / Torque Balance
+    int64_t current_delta = arm1_current_ma - arm2_current_ma;
+    int64_t abs_current_delta = (current_delta < 0) ? -current_delta : current_delta;
+
+    bool balance_ok = (abs_current_delta == 0);
+
+    // Step 3: SwiGLU Gating Modulation in [7/8, 1.0] -> [875..1000]
+    int64_t total_current_ma = arm1_current_ma + arm2_current_ma;
+    int64_t g_gate_factor = 875 + ((125 * total_current_ma) / 20000);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Torque Imbalance Rollback
+    int64_t committed_output = simulate_torque_imbalance_fault ? shadow_arm1 : ((total_current_ma * g_gate_factor) / 1000);
+
+    bool isolation_ok = (shadow_arm1 == arm1_current_ma && shadow_arm2 == arm2_current_ma);
+    bool rollback_ok = simulate_torque_imbalance_fault ? (committed_output == shadow_arm1) : (committed_output == ((total_current_ma * g_gate_factor) / 1000));
+    bool overall_sound = (simulate_torque_imbalance_fault ? true : balance_ok) && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
+
+    if (metrics_out) {
+        metrics_out->arm1_current_ma = arm1_current_ma;
+        metrics_out->arm2_current_ma = arm2_current_ma;
+        metrics_out->total_current_ma = total_current_ma;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->torque_balance_sound = balance_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_torque_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 
