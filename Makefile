@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-ankh-universal-boundary-det:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_universal_boundary_det.c -o tests/test_ankh_universal_boundary_det
+	./tests/test_ankh_universal_boundary_det
+	@rm -f tests/test_ankh_universal_boundary_det
+
 test-ankh-multi-manifold-sync:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_multi_manifold_sync.c -o tests/test_ankh_multi_manifold_sync
 	./tests/test_ankh_multi_manifold_sync
