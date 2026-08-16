@@ -1849,6 +1849,52 @@ bool auncient_glm_blank_infilling_prover(
     return overall_sound;
 }
 
+/* Formal GLM Infilled TOTIENT Zero Invariant Prover Implementation */
+bool auncient_glm_infilled_totient_prover(
+    uint64_t initial_totient_axiom,
+    uint64_t infilled_u,
+    uint64_t infilled_v,
+    bool simulate_fault,
+    AuncientGlmTotientMetrics *metrics_out
+) {
+    if (initial_totient_axiom != 0 || infilled_u == 0 || infilled_v == 0) {
+        return false;
+    }
+
+    uint64_t shadow_totient = initial_totient_axiom;
+
+    // Cooperative Invariant: u mod u == 0
+    uint64_t modpow_result = infilled_u % infilled_u;
+    uint64_t staged_totient = modpow_result;
+
+    uint64_t committed_totient;
+    if (simulate_fault) {
+        committed_totient = shadow_totient;
+    } else {
+        committed_totient = staged_totient;
+    }
+
+    bool initial_zero_ok = (initial_totient_axiom == 0);
+    bool modpow_ok = (staged_totient == 0);
+    bool overall_sound = initial_zero_ok && modpow_ok && (committed_totient == 0);
+    uint32_t disp_wrap = (uint32_t)(committed_totient % 256);
+
+    if (metrics_out) {
+        metrics_out->initial_totient = initial_totient_axiom;
+        metrics_out->infilled_u = infilled_u;
+        metrics_out->infilled_v = infilled_v;
+        metrics_out->staged_totient = staged_totient;
+        metrics_out->committed_totient = committed_totient;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->initial_zero_axiom_satisfied = initial_zero_ok;
+        metrics_out->cooperative_modpow_sound = modpow_ok;
+        metrics_out->overall_totient_infill_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

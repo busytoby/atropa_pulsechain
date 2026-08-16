@@ -747,6 +747,28 @@ bool auncient_glm_blank_infilling_prover(
     AuncientGlmInfillingMetrics *metrics_out
 );
 
+// GLM Infilled TOTIENT Prover Metrics
+typedef struct {
+    uint64_t initial_totient;
+    uint64_t infilled_u;
+    uint64_t infilled_v;
+    uint64_t staged_totient;
+    uint64_t committed_totient;
+    uint32_t displacement_wrap_mod;
+    bool initial_zero_axiom_satisfied;
+    bool cooperative_modpow_sound;
+    bool overall_totient_infill_sound;
+} AuncientGlmTotientMetrics;
+
+// Formal GLM Infilled TOTIENT Zero Invariant Prover
+bool auncient_glm_infilled_totient_prover(
+    uint64_t initial_totient_axiom,
+    uint64_t infilled_u,
+    uint64_t infilled_v,
+    bool simulate_fault,
+    AuncientGlmTotientMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

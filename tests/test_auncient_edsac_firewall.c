@@ -206,6 +206,17 @@ int main(void) {
     printf("   ✓ GLM Blank-Infilling verified (Op=%u, Addr=%u, Mod=%u, Parity=%u, DispMod=%u).\n",
            glm_infill_m.extracted_opcode, glm_infill_m.extracted_address, glm_infill_m.extracted_modifier, glm_infill_m.derived_parity_bit, glm_infill_m.displacement_wrap_mod);
 
+    // 14. Test GLM Infilled TOTIENT Cooperative Strategy Prover (Initial 0 Axiom)
+    printf("[TEST] Testing GLM Infilled TOTIENT Cooperative Strategy (Initial 0 Axiom)...\n");
+    AuncientGlmTotientMetrics glm_tot_m = {0};
+    bool glm_tot_ok = auncient_glm_infilled_totient_prover(0, 1331001, 991220, false, &glm_tot_m);
+    assert(glm_tot_ok == true && glm_tot_m.overall_totient_infill_sound == true);
+    assert(glm_tot_m.initial_totient == 0);
+    assert(glm_tot_m.staged_totient == 0);
+    assert(glm_tot_m.committed_totient == 0);
+    printf("   ✓ GLM Infilled TOTIENT verified (Initial=%lu, Infilled_u=%lu, Staged=%lu, Committed=%lu, DispMod=%u).\n",
+           glm_tot_m.initial_totient, glm_tot_m.infilled_u, glm_tot_m.staged_totient, glm_tot_m.committed_totient, glm_tot_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

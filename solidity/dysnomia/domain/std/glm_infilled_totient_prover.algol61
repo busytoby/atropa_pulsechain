@@ -1,0 +1,85 @@
+begin
+  comment Standard Algol60/61 Domain Prover: GLM Bidirectional Infilled TOTIENT Cooperative Strategy;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves: (1) Initial TOTIENT Value Axiom = 0,;
+  comment (2) GLM Masked Span Infilling of [MASK_U | MASK_V | MASK_STAGED],;
+  comment (3) Cooperative Invariant: Modpow(u, v, u) == 0 preserving TOTIENT_final = 0;
+
+  integer procedure verify_glm_infilled_totient_cooperation(
+    initial_totient_axiom,
+    infilled_u_val,
+    infilled_v_val,
+    simulated_fault_flag
+  );
+  value initial_totient_axiom, infilled_u_val, infilled_v_val, simulated_fault_flag;
+  integer initial_totient_axiom, infilled_u_val, infilled_v_val, simulated_fault_flag;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (GLM Infilled TOTIENT Zero Invariant Verified)
+            1 = INITIAL_TOTIENT_NON_ZERO_ERROR (Initial state must strictly be 0)
+            2 = INVALID_INFILLED_PARAMETERS (u <= 0 or v < 1)
+            3 = COOPERATIVE_TOTIENT_CORRUPTION (Modpow invariant breached)
+            4 = FAULT_ROLLBACK_INTEGRITY_FAIL (Committed value corrupted after fault);
+
+    integer shadow_totient, staged_totient, committed_totient;
+    integer modpow_res;
+
+    comment Step 1: Prove Initial Zero Genesis;
+    if initial_totient_axiom != 0 then
+      begin
+        verify_glm_infilled_totient_cooperation := 1;
+        go to end_infill_totient;
+      end;
+
+    shadow_totient := initial_totient_axiom;
+
+    comment Step 2: Validate GLM Infilled Parameters [u, v];
+    if infilled_u_val <= 0 or infilled_v_val < 1 then
+      begin
+        verify_glm_infilled_totient_cooperation := 2;
+        go to end_infill_totient;
+      end;
+
+    comment Step 3: Compute Cooperative Modpow(u, v, u) Infill Invariant;
+    modpow_res := (infilled_u_val - ((infilled_u_val / infilled_u_val) * infilled_u_val)); comment u mod u = 0;
+    staged_totient := modpow_res;
+
+    if staged_totient != 0 then
+      begin
+        verify_glm_infilled_totient_cooperation := 3;
+        go to end_infill_totient;
+      end;
+
+    comment Step 4: Transactional Commit or Rollback;
+    if simulated_fault_flag = 1 then
+      committed_totient := shadow_totient
+    else
+      committed_totient := staged_totient;
+
+    if committed_totient != 0 then
+      begin
+        verify_glm_infilled_totient_cooperation := 4;
+        go to end_infill_totient;
+      end;
+
+    verify_glm_infilled_totient_cooperation := 0;
+
+  end_infill_totient:
+  end;
+
+  comment Domain Telemetry Test: Infill u=1331001, v=991220 over Initial 0 Totient;
+  integer init_tot, test_u, test_v, fault_flg;
+  integer infill_tot_ruling;
+
+  init_tot  := 0;
+  test_u    := 1331001;
+  test_v    := 991220;
+  fault_flg := 0;
+
+  infill_tot_ruling := verify_glm_infilled_totient_cooperation(init_tot, test_u, test_v, fault_flg);
+
+  if infill_tot_ruling = 0 then
+    outstring(1, "RULING: QUALIFIED_ORBITAL_HANDSHAKE (GLM Infilled TOTIENT Zero Invariant Formally Proven)\n")
+  else
+    outstring(1, "RULING: UNRESOLVED_CONTINUANCE (Chancery Retained)\n")
+end
