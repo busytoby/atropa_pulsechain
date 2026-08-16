@@ -724,6 +724,29 @@ bool auncient_glm_2d_rope_prover(
     AuncientGlm2dRoPEMetrics *metrics_out
 );
 
+// GLM Bidirectional Blank-Infilling Prover Metrics
+typedef struct {
+    uint32_t extracted_opcode;
+    uint32_t extracted_address;
+    uint32_t extracted_modifier;
+    uint32_t derived_parity_bit;
+    uint32_t displacement_wrap_mod;
+    bool opcode_matches_target;
+    bool address_grounded;
+    bool post_parity_compliant;
+    bool overall_infilling_sound;
+} AuncientGlmInfillingMetrics;
+
+// Formal GLM Bidirectional Blank-Infilling Prover
+bool auncient_glm_blank_infilling_prover(
+    uint32_t genesis_nonce,
+    uint32_t target_parity_bit,
+    uint32_t infilled_raw_inst,
+    uint32_t expected_opcode,
+    uint32_t expected_address,
+    AuncientGlmInfillingMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

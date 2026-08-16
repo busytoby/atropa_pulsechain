@@ -1807,6 +1807,49 @@ bool auncient_glm_2d_rope_prover(
     return overall_sound;
 }
 
+/* Formal GLM Bidirectional Blank-Infilling Prover Implementation */
+bool auncient_glm_blank_infilling_prover(
+    uint32_t genesis_nonce,
+    uint32_t target_parity_bit,
+    uint32_t infilled_raw_inst,
+    uint32_t expected_opcode,
+    uint32_t expected_address,
+    AuncientGlmInfillingMetrics *metrics_out
+) {
+    if (genesis_nonce == 0) {
+        return false;
+    }
+
+    // Unpack 32-bit infilled EDSAC instruction word [Op:8 | Addr:22 | Mod:2]
+    uint32_t op   = (infilled_raw_inst >> 24) & 0xFF;
+    uint32_t addr = (infilled_raw_inst >> 2) & 0x3FFFFF;
+    uint32_t mod  = infilled_raw_inst & 0x03;
+
+    bool op_ok = (op == expected_opcode);
+    bool addr_ok = (addr == expected_address);
+
+    uint32_t derived_parity = (op + addr + mod) % 2;
+    bool parity_ok = (derived_parity == target_parity_bit);
+
+    uint32_t disp_wrap = infilled_raw_inst % 256;
+    bool overall_sound = op_ok && addr_ok && parity_ok;
+
+    if (metrics_out) {
+        metrics_out->extracted_opcode = op;
+        metrics_out->extracted_address = addr;
+        metrics_out->extracted_modifier = mod;
+        metrics_out->derived_parity_bit = derived_parity;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->opcode_matches_target = op_ok;
+        metrics_out->address_grounded = addr_ok;
+        metrics_out->post_parity_compliant = parity_ok;
+        metrics_out->overall_infilling_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

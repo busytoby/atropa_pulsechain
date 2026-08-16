@@ -192,6 +192,20 @@ int main(void) {
     printf("   ✓ GLM 2D-RoPE verified (Rot=[%.2f, %.2f], Rec=[%.2f, %.2f], DispMod=%u).\n",
            glm_rope_m.u_rotated, glm_rope_m.v_rotated, glm_rope_m.u_recovered, glm_rope_m.v_recovered, glm_rope_m.displacement_wrap_mod);
 
+    // 13. Test GLM Bidirectional Blank-Infilling Prover
+    printf("[TEST] Testing GLM Bidirectional Blank-Infilling Prover (EDSAC Opcode/Address Infilling)...\n");
+    AuncientGlmInfillingMetrics glm_infill_m = {0};
+    uint32_t raw_inst_sample = 0x41000140; // Op='A', Addr=80, Mod=0
+    bool glm_infill_ok = auncient_glm_blank_infilling_prover(
+        100000, 1, raw_inst_sample, 65 /* 'A' */, 80, &glm_infill_m
+    );
+    assert(glm_infill_ok == true && glm_infill_m.overall_infilling_sound == true);
+    assert(glm_infill_m.extracted_opcode == 65);
+    assert(glm_infill_m.extracted_address == 80);
+    assert(glm_infill_m.derived_parity_bit == 1);
+    printf("   ✓ GLM Blank-Infilling verified (Op=%u, Addr=%u, Mod=%u, Parity=%u, DispMod=%u).\n",
+           glm_infill_m.extracted_opcode, glm_infill_m.extracted_address, glm_infill_m.extracted_modifier, glm_infill_m.derived_parity_bit, glm_infill_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
