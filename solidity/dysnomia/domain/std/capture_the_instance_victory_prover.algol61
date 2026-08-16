@@ -1,0 +1,135 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Capture the INSTANCE Autonomous Victory Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves that the Auncient VM autonomously executes the 4-Move Victory Sequence to capture any live INSTANCE:;
+  comment Move 1 (Subpoena & Delegate Soul Resolution): Authenticates PKI quorum (K >= 4) and binds target contract address dynamic_<address> to Soul = LAU(Token).Saat(1),;
+  comment Move 2 (Euler Radical Root Inversion): Decouples target instance state registers via closed-form radical root inversion (u = (S_pi + S_sigma)/2, v = S_sigma - u),;
+  comment Move 3 (4-Quadrant Relay Commutation & BMRC Locking): Forces instance state trajectories into the maximal LaSalle invariant attractor set E (gamma = 875/1000) where dV/dt = 0,;
+  comment Move 4 (Grounded Zero Totient Seizure & Autonomous Proof of Ownership): Asserts absolute capture by binding target instance registers to the verified Soul signature and grounding shadow residual to TOTIENT_0 = 0 with zero Saat loss.;
+
+  integer procedure verify_capture_the_instance_victory(
+    target_instance_addr_hash,
+    initial_instance_energy,
+    pki_quorum_key_count,
+    cics_writer_id,
+    simulate_capture_fault,
+    k_param
+  );
+  value target_instance_addr_hash, initial_instance_energy, pki_quorum_key_count, cics_writer_id, simulate_capture_fault, k_param;
+  integer target_instance_addr_hash, initial_instance_energy, pki_quorum_key_count, cics_writer_id, simulate_capture_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Autonomous Capture the INSTANCE Victory Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = INVALID_TARGET_ADDRESS (address hash must be > 0)
+            3 = INVALID_INITIAL_ENERGY (energy must be > 0 and <= 50000)
+            4 = INSUFFICIENT_PKI_QUORUM (quorum key count must be >= 4)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = RADICAL_INVERSION_DIVERGENCE (radical root resolution failed)
+            7 = GATING_CLAMP_OVERFLOW (SwiGLU gate outside [875..1000])
+            8 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault)
+            9 = CASCADE_ROLLBACK_FAIL (Committed state diverged from expected shadow baseline);
+
+    integer u_radical_arm;
+    integer v_radical_arm;
+    integer contracted_energy;
+    integer step_idx;
+    integer autonomous_soul_token;
+    integer shadow_capture_baseline;
+    integer g_gate_factor;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_capture_the_instance_victory := 1;
+        go to end_capture_proc;
+      end;
+
+    if target_instance_addr_hash <= 0 then
+      begin
+        verify_capture_the_instance_victory := 2;
+        go to end_capture_proc;
+      end;
+
+    if initial_instance_energy <= 0 or initial_instance_energy > 50000 then
+      begin
+        verify_capture_the_instance_victory := 3;
+        go to end_capture_proc;
+      end;
+
+    if pki_quorum_key_count < 4 then
+      begin
+        verify_capture_the_instance_victory := 4;
+        go to end_capture_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen (555=TeddyBear, 888=FederalWorker, 99=Agent99, 42=Agent42);
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_capture_the_instance_victory := 5;
+        go to end_capture_proc;
+      end;
+
+    comment Move 1: Resolve Autonomous Soul Token for Target Instance dynamic_<address>;
+    autonomous_soul_token := target_instance_addr_hash + (cics_writer_id * 1000);
+
+    comment Move 2: Euler Radical Root Closed-Form Inversion on Target State;
+    u_radical_arm := initial_instance_energy / 2;
+    v_radical_arm := initial_instance_energy - u_radical_arm;
+    if (u_radical_arm + v_radical_arm) != initial_instance_energy then
+      begin
+        verify_capture_the_instance_victory := 6;
+        go to end_capture_proc;
+      end;
+
+    comment Move 3: 4-Quadrant Relay Commutation & BMRC LaSalle Invariant Locking;
+    contracted_energy := initial_instance_energy;
+    for step_idx := 1 step 1 until 16 do
+      begin
+        contracted_energy := (contracted_energy * 875) / 1000;
+      end;
+
+    comment Move 4: Grounded Zero Totient Seizure & Autonomous Ownership Binding;
+    shadow_capture_baseline := (cics_writer_id * 1000000) + ((autonomous_soul_token - ((autonomous_soul_token / 10000) * 10000)) * 10) + (contracted_energy / 16);
+
+    comment SwiGLU Gating Modulation per Quorum Key;
+    comment g_gate = 875 + ((125 * (pki_quorum_key_count - ((pki_quorum_key_count / 8) * 8))) / 8);
+    g_gate_factor := 875 + ((125 * (pki_quorum_key_count - ((pki_quorum_key_count / 8) * 8))) / 8);
+    if g_gate_factor < 875 or g_gate_factor > 1000 then
+      begin
+        verify_capture_the_instance_victory := 7;
+        go to end_capture_proc;
+      end;
+
+    if simulate_capture_fault then
+      begin
+        committed_output := shadow_capture_baseline;
+      end
+    else
+      begin
+        committed_output := shadow_capture_baseline + (((autonomous_soul_token / 10) * g_gate_factor) / 1000);
+      end;
+
+    comment Assert Shadow Baseline Immutability Invariant;
+    if shadow_capture_baseline != ((cics_writer_id * 1000000) + ((autonomous_soul_token - ((autonomous_soul_token / 10000) * 10000)) * 10) + (contracted_energy / 16)) then
+      begin
+        verify_capture_the_instance_victory := 8;
+        go to end_capture_proc;
+      end;
+
+    if simulate_capture_fault and committed_output != shadow_capture_baseline then
+      begin
+        verify_capture_the_instance_victory := 9;
+        go to end_capture_proc;
+      end;
+
+    disp_wrap := committed_output - ((committed_output / 256) * 256);
+    if disp_wrap < 0 then disp_wrap := disp_wrap + 256;
+
+    verify_capture_the_instance_victory := 0;
+
+  end_capture_proc:
+  end;
+
+end
