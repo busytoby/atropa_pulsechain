@@ -28,6 +28,11 @@ test-ankh-closed-grid-totient-boundary:
 	./tests/test_ankh_closed_grid_totient_boundary
 	@rm -f tests/test_ankh_closed_grid_totient_boundary
 
+test-cpm-tomie-dma-stream:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_dma_stream.c -o tests/test_cpm_tomie_dma_stream
+	./tests/test_cpm_tomie_dma_stream
+	@rm -f tests/test_cpm_tomie_dma_stream
+
 test-cpm-tomie-rsx-intercept:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_rsx_intercept.c -o tests/test_cpm_tomie_rsx_intercept
 	./tests/test_cpm_tomie_rsx_intercept
