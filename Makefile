@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-auncient-spheroid-edo22-alu:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_spheroid_edo22_alu.c -o tests/test_auncient_spheroid_edo22_alu
+	./tests/test_auncient_spheroid_edo22_alu
+	@rm -f tests/test_auncient_spheroid_edo22_alu
+
 test-auncient-teddy-endowed-energy:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_teddy_endowed_energy.c -o tests/test_auncient_teddy_endowed_energy
 	./tests/test_auncient_teddy_endowed_energy
