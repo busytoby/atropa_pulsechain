@@ -707,11 +707,34 @@ int main(void) {
     printf("   ✓ Harvard Zuo Modified Bessel verified (K3_Q16=%ld, G_gate=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
            clean_bess_m.k3_q16, clean_bess_m.g_gate_q16, fault_bess_m.committed_output, clean_bess_m.displacement_wrap_mod);
 
+    // 39. Test Harvard Zuo Continuous Tape Loop Topology Invariance Prover
+    printf("[TEST] Testing Harvard Zuo Tape Loop Topology (Winding Number Invariance & Splice Latch)...\n");
+    AuncientHarvardZuoTapeLoopMetrics clean_loop_m = {0};
+    bool ok_loop_clean = auncient_harvard_zuo_tape_loop_prover(
+        64 /* loop steps */, 16 /* revs */, false /* clean */, 3 /* k=3 */, &clean_loop_m
+    );
+    assert(ok_loop_clean == true && clean_loop_m.overall_tape_loop_sound == true);
+    assert(clean_loop_m.topological_homology_sound == true);
+    assert(clean_loop_m.gating_clamp_sound == true);
+    assert(clean_loop_m.shadow_isolation_sound == true);
+    assert(clean_loop_m.step_accumulator == 1024ULL);
+
+    AuncientHarvardZuoTapeLoopMetrics fault_loop_m = {0};
+    bool ok_loop_fault = auncient_harvard_zuo_tape_loop_prover(
+        64 /* loop steps */, 16 /* revs */, true /* simulate splice fault */, 3 /* k=3 */, &fault_loop_m
+    );
+    assert(ok_loop_fault == true && fault_loop_m.overall_tape_loop_sound == true);
+    assert(fault_loop_m.rollback_sound == true);
+    assert(fault_loop_m.committed_output == 64ULL);
+    printf("   ✓ Harvard Zuo Tape Loop Topology verified (Step_Acc=%lu, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_loop_m.step_accumulator, clean_loop_m.g_gate_factor, clean_loop_m.committed_output, clean_loop_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

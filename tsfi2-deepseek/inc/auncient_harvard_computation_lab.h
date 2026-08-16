@@ -375,4 +375,26 @@ bool auncient_harvard_zuo_bessel_modified_prover(
     AuncientHarvardZuoBesselMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t loop_length_steps;
+    uint32_t total_revolutions;
+    uint64_t step_accumulator;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool topological_homology_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_tape_loop_sound;
+} AuncientHarvardZuoTapeLoopMetrics;
+
+bool auncient_harvard_zuo_tape_loop_prover(
+    uint32_t loop_length_steps,
+    uint32_t total_revolutions,
+    bool simulate_splice_tear_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoTapeLoopMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
