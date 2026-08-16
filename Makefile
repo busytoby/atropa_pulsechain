@@ -248,6 +248,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-gguf-storage-extension:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_gguf_storage_extension.c -o tests/test_ankh_gguf_storage_extension
+	./tests/test_ankh_gguf_storage_extension
+	@rm -f tests/test_ankh_gguf_storage_extension
+
 test-ankh-hogan-endowment:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_hogan_endowment.c -o tests/test_ankh_hogan_endowment
 	./tests/test_ankh_hogan_endowment
