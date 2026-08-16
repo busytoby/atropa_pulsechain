@@ -43,6 +43,16 @@ test-exec-tune-bin: compile-tune-bin
 	./tools/ankh_exec_tune tune_channel.bin
 	@rm -f tools/ankh_exec_tune
 
+compile-teddy-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_compiler_teddy.c -o tools/ankh_compiler_teddy
+	./tools/ankh_compiler_teddy teddy_endow.bin
+	@rm -f tools/ankh_compiler_teddy
+
+test-exec-teddy-bin: compile-teddy-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_exec_teddy.c -o tools/ankh_exec_teddy
+	./tools/ankh_exec_teddy teddy_endow.bin
+	@rm -f tools/ankh_exec_teddy
+
 test-ankh-abi-wmq-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_abi_wmq_compiler.c -o tests/test_ankh_abi_wmq_compiler
 	./tests/test_ankh_abi_wmq_compiler
