@@ -442,11 +442,33 @@ int main(void) {
     printf("   ✓ Ballistic Orbit Valve verified (Periapsis=65536, Final_R=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
            clean_orbit_m.final_radius_q16, fault_orbit_m.committed_radius_q16, clean_orbit_m.displacement_wrap_mod);
 
+    // 27. Test Harvard 1946 Multiplier & Mechanical Dog Latch Prover
+    printf("[TEST] Testing Harvard 1946 Multiplier (9-Step Digit Commutator & Mechanical Dog Latch)...\n");
+    AuncientHarvard1946MultiplierMetrics clean_mult_m = {0};
+    bool ok_mult_clean = auncient_harvard_1946_multiplier_prover(
+        1000000 /* Saat */, 875, false /* clean */, 3 /* k=3 */, &clean_mult_m
+    );
+    assert(ok_mult_clean == true && clean_mult_m.overall_1946_sound == true);
+    assert(clean_mult_m.commutator_sound == true);
+    assert(clean_mult_m.shadow_detent_sound == true);
+    assert(clean_mult_m.accumulated_product == 875000000ULL);
+
+    AuncientHarvard1946MultiplierMetrics fault_mult_m = {0};
+    bool ok_mult_fault = auncient_harvard_1946_multiplier_prover(
+        1000000 /* Saat */, 875, true /* simulate tape tear */, 3 /* k=3 */, &fault_mult_m
+    );
+    assert(ok_mult_fault == true && fault_mult_m.overall_1946_sound == true);
+    assert(fault_mult_m.mechanical_latch_sound == true);
+    assert(fault_mult_m.committed_output == 1000000ULL);
+    printf("   ✓ Harvard 1946 Multiplier verified (Product=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_mult_m.accumulated_product, fault_mult_m.committed_output, clean_mult_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

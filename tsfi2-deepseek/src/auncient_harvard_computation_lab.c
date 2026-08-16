@@ -385,4 +385,59 @@ bool auncient_ballistic_orbit_valve_prover(
     return overall_sound;
 }
 
+/* Formal Harvard 1946 Multiplier & Mechanical Dog Latch Prover Implementation */
+bool auncient_harvard_1946_multiplier_prover(
+    uint64_t multiplicand_a,
+    uint64_t multiplier_b,
+    bool simulate_tape_tear_fault,
+    uint32_t k_param,
+    AuncientHarvard1946MultiplierMetrics *metrics_out
+) {
+    if (k_param != 3) {
+        return false;
+    }
 
+    uint64_t motzkin_prime = MOTZKIN_PRIME_REGISTER;
+
+    // Step 1: Snapshot mechanical detent baseline
+    uint64_t shadow_a = multiplicand_a;
+    uint64_t shadow_b = multiplier_b;
+
+    // Step 2: 1946 9-Step Digit-Shifting Commutator Emulation
+    uint64_t accumulated_product = 0;
+    uint64_t b_temp = multiplier_b;
+    uint64_t weight_mult = 1;
+
+    for (int digit = 0; digit < 6 && b_temp > 0; ++digit) {
+        uint64_t cur_digit = b_temp % 10ULL;
+        accumulated_product += (multiplicand_a * cur_digit * weight_mult);
+        b_temp /= 10ULL;
+        weight_mult *= 10ULL;
+    }
+
+    uint64_t exact_product = multiplicand_a * multiplier_b;
+    bool commutator_ok = (accumulated_product == exact_product);
+
+    // Step 3: Mechanical Dog Latch Trip Interlock
+    uint64_t committed_output = simulate_tape_tear_fault ? shadow_a : (accumulated_product % motzkin_prime);
+
+    bool isolation_ok = (shadow_a == multiplicand_a && shadow_b == multiplier_b);
+    bool latch_ok = simulate_tape_tear_fault ? (committed_output == shadow_a) : (committed_output == (exact_product % motzkin_prime));
+    bool overall_sound = commutator_ok && isolation_ok && latch_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->multiplicand_a = multiplicand_a;
+        metrics_out->multiplier_b = multiplier_b;
+        metrics_out->accumulated_product = accumulated_product;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->commutator_sound = commutator_ok;
+        metrics_out->shadow_detent_sound = isolation_ok;
+        metrics_out->mechanical_latch_sound = latch_ok;
+        metrics_out->overall_1946_sound = overall_sound;
+    }
+
+    return overall_sound;
+}

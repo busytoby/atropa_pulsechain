@@ -122,4 +122,24 @@ bool auncient_ballistic_orbit_valve_prover(
     AuncientBallisticOrbitValveMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t multiplicand_a;
+    uint64_t multiplier_b;
+    uint64_t accumulated_product;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool commutator_sound;
+    bool shadow_detent_sound;
+    bool mechanical_latch_sound;
+    bool overall_1946_sound;
+} AuncientHarvard1946MultiplierMetrics;
+
+bool auncient_harvard_1946_multiplier_prover(
+    uint64_t multiplicand_a,
+    uint64_t multiplier_b,
+    bool simulate_tape_tear_fault,
+    uint32_t k_param,
+    AuncientHarvard1946MultiplierMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
