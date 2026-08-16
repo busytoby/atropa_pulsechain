@@ -14,7 +14,7 @@ This standard establishes the formal mathematical specification, operational axi
 The standard integrates five interconnected proving domains:
 1. Originative Grounding upon Totient Zero ($\text{TOTIENT}_0 \equiv 0$).
 2. Universality of the Kleene $\mu$-Recursive Operator Set ($\{\mathcal{Z}, \mathcal{S}, \mathcal{P}, \circ, \mu\}$).
-3. Bidirectional Reversibility of the Bi-Infinite BMRC Tape ($\mathcal{T}^{-1}(\mathcal{T}(D)) \equiv \mathbf{I}$).
+3. Bidirectional Reversibility of the Bi-Infinite BMRC Tape ($\mathcal{T}^{-1}(\mathcal{T}(D)) \equiv I$).
 4. Guaranteed Halting Decidability under In-Band 2600 Hz Strowger PBX supervisory line seize within $T^* \le 64$ machine cycles.
 5. Zero Net Thermodynamic Entropy Generation ($\Delta S_{\text{Landauer}} \equiv 0$).
 
@@ -23,7 +23,7 @@ The standard integrates five interconnected proving domains:
 ## 2. CLAIMS & MATHEMATICAL SPECIFICATION
 
 ### Claim 1: Axiom of Kleene Primitive Operator Universality
-The Fourier ALU supports the complete set of primitive recursive and partial $\mu$-recursive functions over the modular field $\mathbf{F}_{P}$ ($P = \text{MotzkinPrime}$):
+The Fourier ALU supports the complete set of primitive recursive and partial $\mu$-recursive functions over the modular field $F_P$ ($P = \text{MotzkinPrime}$):
 1. **Zero Function $\mathcal{Z}(x)$**: Identically grounded at Totient Zero: $\mathcal{Z}(x) \equiv 0$.
 2. **Successor Function $\mathcal{S}(x)$**: Generated via the forward $u$-arm of the Ankh: $\mathcal{S}(x) = x + 1$.
 3. **Projection Function $\mathcal{P}_i^k(x_1, \dots, x_k)$**: Resolved via the orthogonal $v$-arm Euler §§ 214–215 inversion: $\mathcal{P}_i^k(\vec{x}) = x_i$.
@@ -32,7 +32,7 @@ The Fourier ALU supports the complete set of primitive recursive and partial $\m
 
 ### Claim 2: Bidirectional Reversible Tape Invariance
 The memory state of the Turing machine is mapped onto an infinite coordinate trajectory sequence $\{(\hat{u}_k, \hat{v}_k)\}_{k=0}^{\infty}$. Head shift transitions $D \in \{-1, +1\}$ preserve symbol entropy identically:
-$$\mathcal{T}_{\text{shift}}^{-1}(\mathcal{T}_{\text{shift}}(D)) \equiv \mathbf{I}$$
+$$\mathcal{T}_{\text{shift}}^{-1}(\mathcal{T}_{\text{shift}}(D)) \equiv I$$
 No cell corruption, memory leakage, or tape boundary clipping occurs across the $10,000+$ cell operational range.
 
 ### Claim 3: In-Band 2600 Hz Strowger Halting Decidability

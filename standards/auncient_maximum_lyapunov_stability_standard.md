@@ -18,7 +18,7 @@ It establishes that across all five physical and symbolic subsystem domains—Wi
 ## 2. FORMAL DEFINITION OF METRIC CONTRACTION & CONTINUITY BOUNDS
 
 ### Definition: Bounded Metric Ratio Contraction (BMRC)
-Let $(\mathcal{M}, d_{\mathcal{M}})$ be a complete metric state space over the modular field $\mathbf{F}_{P}^N$ ($P = \text{MotzkinPrime}$). A state transition map $T: \mathcal{M} \to \mathcal{M}$ is defined as a **Bounded Metric Ratio Contraction (BMRC)** if there exists a real constant $\gamma^* \in (0, 1)$ such that for all state pairs $x, y \in \mathcal{M}$:
+Let $(\mathcal{M}, d_{\mathcal{M}})$ be a complete metric state space over the modular field $F_P^N$ (where $P = \text{MotzkinPrime}$). A state transition map $T: \mathcal{M} \to \mathcal{M}$ is defined as a **Bounded Metric Ratio Contraction (BMRC)** if there exists a real constant $\gamma^* \in (0, 1)$ such that for all state pairs $x, y \in \mathcal{M}$:
 $$d_{\mathcal{M}}(T(x), T(y)) \le \gamma^* \cdot d_{\mathcal{M}}(x, y)$$
 
 In the Auncient Dysnomia VM, this metric ratio is grounded in the non-preferential SwiGLU conduction envelope:
