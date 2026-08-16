@@ -53,6 +53,11 @@ test-band-stage-dmx-patchbay:
 	./tests/test_band_stage_dmx_patchbay
 	@rm -f tests/test_band_stage_dmx_patchbay
 
+test-band-binaural-multitrack:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_band_binaural_multitrack.c -o tests/test_band_binaural_multitrack
+	./tests/test_band_binaural_multitrack
+	@rm -f tests/test_band_binaural_multitrack
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

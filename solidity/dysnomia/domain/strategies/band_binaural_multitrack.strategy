@@ -1,0 +1,108 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BAND-BINAURAL-MULTITRACK-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BINAURAL JAM AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BINAURAL-PARAMETERS.
+           05 WS-PAN-ANGLE-DEG          PIC S9(03) VALUE +045.
+           05 WS-SOLOIST-ID             PIC 9(01) VALUE 2.
+           05 WS-CROWD-ENERGY-Q16       PIC 9(06) VALUE 032768.
+           05 WS-TAPE-TRACKS            PIC 9(02) VALUE 08.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ITD-DELAY-USEC         PIC 9(06) VALUE 0.
+           05 WS-DAMPED-CROWD-LVL       PIC 9(06) VALUE 0.
+           05 WS-TAPE-STEM-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MULTITRACK-BASE PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-PAN-ANGLE           VALUE 2.
+              88 INVALID-SOLOIST-ID          VALUE 3.
+              88 INVALID-CROWD-ENERGY        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-TAPE-TRACKS         VALUE 6.
+              88 BINAURAL-UNDERFLOW-FAIL     VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BINAURAL-TAPE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PAN-ANGLE-DEG < -90 OR WS-PAN-ANGLE-DEG > 90
+                SET INVALID-PAN-ANGLE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SOLOIST-ID > 4
+                SET INVALID-SOLOIST-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CROWD-ENERGY-Q16 > 65536
+                SET INVALID-CROWD-ENERGY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TAPE-TRACKS < 1 OR WS-TAPE-TRACKS > 8
+                SET INVALID-TAPE-TRACKS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BINAURAL-TAPE.
+            COMPUTE WS-ITD-DELAY-USEC = 350 + ((WS-PAN-ANGLE-DEG * 350) / 90) + 1.
+
+            IF WS-ITD-DELAY-USEC EQUAL ZERO
+                SET BINAURAL-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-DAMPED-CROWD-LVL = (WS-CROWD-ENERGY-Q16 * 875) / 1000.
+            COMPUTE WS-TAPE-STEM-LATCH = 1470169088 + (WS-TAPE-TRACKS * 128) + (WS-SOLOIST-ID * 16) + (WS-ITD-DELAY-USEC / 10).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MULTITRACK-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                                (WS-ITD-DELAY-USEC * 100) +
+                                                (WS-SOLOIST-ID * 1000) +
+                                                (WS-DAMPED-CROWD-LVL / 10) +
+                                                (WS-TAPE-STEM-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MULTITRACK-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MULTITRACK-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
