@@ -148,6 +148,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-llm-reasoning:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_llm_reasoning.c -o tests/test_ankh_llm_reasoning
+	./tests/test_ankh_llm_reasoning
+	@rm -f tests/test_ankh_llm_reasoning
+
 test-ankh-protein-folding:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_protein_folding.c -o tests/test_ankh_protein_folding
 	./tests/test_ankh_protein_folding
