@@ -268,4 +268,23 @@ bool auncient_harvard_zuo_tape_sync_prover(
     AuncientHarvardZuoTapeSyncMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t pin_vector_seed;
+    uint64_t sum_input_channels;
+    uint64_t sum_permuted_channels;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool bijectivity_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_plugboard_sound;
+} AuncientHarvardZuoPlugboardMetrics;
+
+bool auncient_harvard_zuo_plugboard_prover(
+    uint64_t pin_vector_seed,
+    bool simulate_cross_talk_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoPlugboardMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

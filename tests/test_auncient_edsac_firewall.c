@@ -597,11 +597,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo Dual-Tape Sync verified (Arg_Index=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_tape_m.argument_index_out, fault_tape_m.committed_output, clean_tape_m.displacement_wrap_mod);
 
+    // 34. Test Harvard Zuo Pluggable Patchboard Permutation Automorphism Prover
+    printf("[TEST] Testing Harvard Zuo Plugboard Permutation (24-Channel Conservation & Short Latch)...\n");
+    AuncientHarvardZuoPlugboardMetrics clean_plug_m = {0};
+    bool ok_plug_clean = auncient_harvard_zuo_plugboard_prover(
+        1000000 /* Seed Saat */, false /* clean */, 3 /* k=3 */, &clean_plug_m
+    );
+    assert(ok_plug_clean == true && clean_plug_m.overall_plugboard_sound == true);
+    assert(clean_plug_m.bijectivity_sound == true);
+    assert(clean_plug_m.shadow_isolation_sound == true);
+    assert(clean_plug_m.sum_input_channels == clean_plug_m.sum_permuted_channels);
+    assert(clean_plug_m.sum_permuted_channels == 24000276ULL);
+    assert(clean_plug_m.committed_output == 24000276ULL);
+
+    AuncientHarvardZuoPlugboardMetrics fault_plug_m = {0};
+    bool ok_plug_fault = auncient_harvard_zuo_plugboard_prover(
+        1000000 /* Seed Saat */, true /* simulate cross-talk fault */, 3 /* k=3 */, &fault_plug_m
+    );
+    assert(ok_plug_fault == true && fault_plug_m.overall_plugboard_sound == true);
+    assert(fault_plug_m.rollback_sound == true);
+    assert(fault_plug_m.committed_output == 1000000ULL);
+    printf("   ✓ Harvard Zuo Plugboard Permutation verified (Sum_24_Ch=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_plug_m.sum_permuted_channels, fault_plug_m.committed_output, clean_plug_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

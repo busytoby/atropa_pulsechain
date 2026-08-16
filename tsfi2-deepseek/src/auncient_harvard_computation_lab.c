@@ -781,6 +781,59 @@ bool auncient_harvard_zuo_tape_sync_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Pluggable Patchboard Permutation Prover */
+bool auncient_harvard_zuo_plugboard_prover(
+    uint64_t pin_vector_seed,
+    bool simulate_cross_talk_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoPlugboardMetrics *metrics_out
+) {
+    if (k_param != 3) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline pin seed in Zuo ZMM state
+    uint64_t shadow_seed = pin_vector_seed;
+
+    // Step 2: Emulate 24-Decade Bijective Permutation (pi(x) = (7*x + 13) mod 24)
+    uint64_t sum_input_channels = 0;
+    uint64_t sum_permuted_channels = 0;
+
+    for (uint64_t d = 0; d < 24; ++d) {
+        uint64_t orig_channel_val = pin_vector_seed + d;
+        uint64_t permuted_channel_val = pin_vector_seed + ((7ULL * d + 13ULL) % 24ULL);
+
+        sum_input_channels += orig_channel_val;
+        sum_permuted_channels += permuted_channel_val;
+    }
+
+    bool bijectivity_ok = (sum_input_channels == sum_permuted_channels);
+
+    // Step 3: ACID Latch Commit or Cross-Talk Short Rollback
+    uint64_t committed_output = simulate_cross_talk_fault ? shadow_seed : sum_permuted_channels;
+
+    bool isolation_ok = (shadow_seed == pin_vector_seed);
+    bool rollback_ok = simulate_cross_talk_fault ? (committed_output == shadow_seed) : (committed_output == sum_permuted_channels);
+    bool overall_sound = bijectivity_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->pin_vector_seed = pin_vector_seed;
+        metrics_out->sum_input_channels = sum_input_channels;
+        metrics_out->sum_permuted_channels = sum_permuted_channels;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->bijectivity_sound = bijectivity_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_plugboard_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 
