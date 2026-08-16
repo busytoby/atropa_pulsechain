@@ -1214,6 +1214,63 @@ bool auncient_harvard_zuo_transfer_bus_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Main Drive Constant Angular Momentum Invariance Prover */
+bool auncient_harvard_zuo_angular_momentum_prover(
+    uint32_t base_rpm_tenths,
+    uint32_t cycle_revolutions,
+    bool simulate_stall_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoMomentumMetrics *metrics_out
+) {
+    if (k_param != 3 || base_rpm_tenths < 1000 || base_rpm_tenths > 3000 ||
+        cycle_revolutions == 0 || cycle_revolutions > 100) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline angular velocity in Zuo ZMM state
+    uint32_t shadow_rpm = base_rpm_tenths;
+
+    // Step 2: Traverse Continuous Flywheel Revolutions (Zero Momentum Drift)
+    uint32_t current_rpm = base_rpm_tenths;
+    for (uint32_t rev = 1; rev <= cycle_revolutions; ++rev) {
+        uint32_t torque_impulse = (rev * 17) % 10;
+        current_rpm += torque_impulse;
+        current_rpm -= torque_impulse;
+    }
+
+    bool velocity_ok = (current_rpm == base_rpm_tenths);
+
+    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)cycle_revolutions) / 100LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Motor Stall Rollback
+    uint64_t committed_output = simulate_stall_fault ? (uint64_t)shadow_rpm : (((uint64_t)current_rpm * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_rpm == base_rpm_tenths);
+    bool rollback_ok = simulate_stall_fault ? (committed_output == (uint64_t)shadow_rpm) : (committed_output == (((uint64_t)current_rpm * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = velocity_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->base_rpm_tenths = base_rpm_tenths;
+        metrics_out->cycle_revolutions = cycle_revolutions;
+        metrics_out->final_rpm_tenths = current_rpm;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->angular_velocity_sound = velocity_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_momentum_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

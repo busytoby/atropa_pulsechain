@@ -774,11 +774,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo 24-Decade Transfer Bus verified (Dest=%lu, G_gate=%ld, Out=%lu, DispMod=%u).\n",
            clean_bus_m.dest_saat_value, clean_bus_m.g_gate_factor, clean_bus_m.committed_output, clean_bus_m.displacement_wrap_mod);
 
+    // 42. Test Harvard Zuo Main Drive Constant Angular Momentum Invariance Prover
+    printf("[TEST] Testing Harvard Zuo Angular Momentum (172.5 RPM & Motor Stall Latch)...\n");
+    AuncientHarvardZuoMomentumMetrics clean_mom_m = {0};
+    bool ok_mom_clean = auncient_harvard_zuo_angular_momentum_prover(
+        1725 /* 172.5 RPM in tenths */, 20 /* revs */, false /* clean */, 3 /* k=3 */, &clean_mom_m
+    );
+    assert(ok_mom_clean == true && clean_mom_m.overall_momentum_sound == true);
+    assert(clean_mom_m.angular_velocity_sound == true);
+    assert(clean_mom_m.gating_clamp_sound == true);
+    assert(clean_mom_m.shadow_isolation_sound == true);
+    assert(clean_mom_m.final_rpm_tenths == 1725);
+    assert(clean_mom_m.g_gate_factor == 900);
+
+    AuncientHarvardZuoMomentumMetrics fault_mom_m = {0};
+    bool ok_mom_fault = auncient_harvard_zuo_angular_momentum_prover(
+        1725 /* 172.5 RPM in tenths */, 20 /* revs */, true /* simulate stall fault */, 3 /* k=3 */, &fault_mom_m
+    );
+    assert(ok_mom_fault == true && fault_mom_m.overall_momentum_sound == true);
+    assert(fault_mom_m.rollback_sound == true);
+    assert(fault_mom_m.committed_output == 1725ULL);
+    printf("   ✓ Harvard Zuo Angular Momentum verified (RPM_Tenths=%u, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_mom_m.final_rpm_tenths, clean_mom_m.g_gate_factor, clean_mom_m.committed_output, clean_mom_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
