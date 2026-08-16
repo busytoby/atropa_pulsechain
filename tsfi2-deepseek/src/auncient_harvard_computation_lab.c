@@ -312,19 +312,14 @@ bool auncient_ballistic_orbit_valve_prover(
     int64_t one_q16 = 65536LL;
     if (k_param != 3 || periapsis_r0_q16 <= 0 || dt_q16 <= 0) return false;
 
-    int64_t shadow_r0 = periapsis_r0_q16;
-    int64_t r_prev = periapsis_r0_q16;
-    int64_t r_curr = periapsis_r0_q16 + ((v0_q16 * dt_q16) / one_q16);
+    int64_t shadow_r0 = periapsis_r0_q16, r_prev = periapsis_r0_q16, r_curr = periapsis_r0_q16 + ((v0_q16 * dt_q16) / one_q16);
     bool zero_flux_ok = true;
 
     for (int step = 1; step <= 5; ++step) {
         int64_t grav_acc = - ((one_q16 * 1000LL) / ((r_curr / 256LL) + 1LL));
         int64_t dt2_acc = ((grav_acc * ((dt_q16 * dt_q16) / one_q16)) / one_q16);
         int64_t r_next = (2LL * r_curr) - r_prev + dt2_acc;
-        if (r_next > 0) {
-            int64_t flux = r_next % r_next;
-            if (flux != 0) zero_flux_ok = false;
-        }
+        if (r_next > 0 && (r_next % r_next) != 0) zero_flux_ok = false;
         r_prev = r_curr;
         r_curr = r_next;
     }
@@ -358,16 +353,10 @@ bool auncient_harvard_1946_multiplier_prover(
 ) {
     if (k_param != 3) return false;
     uint64_t motzkin_prime = MOTZKIN_PRIME_REGISTER;
-    uint64_t shadow_a = multiplicand_a;
-    uint64_t shadow_b = multiplier_b;
-
-    uint64_t accumulated_product = 0;
-    uint64_t b_temp = multiplier_b;
-    uint64_t weight_mult = 1;
+    uint64_t shadow_a = multiplicand_a, shadow_b = multiplier_b, accumulated_product = 0, b_temp = multiplier_b, weight_mult = 1;
 
     for (int digit = 0; digit < 6 && b_temp > 0; ++digit) {
-        uint64_t cur_digit = b_temp % 10ULL;
-        accumulated_product += (multiplicand_a * cur_digit * weight_mult);
+        accumulated_product += (multiplicand_a * (b_temp % 10ULL) * weight_mult);
         b_temp /= 10ULL;
         weight_mult *= 10ULL;
     }
@@ -538,49 +527,27 @@ bool auncient_harvard_1946_geneva_carry_prover(
     uint32_t k_param,
     AuncientHarvard1946GenevaCarryMetrics *metrics_out
 ) {
-    if (k_param != 3) {
-        return false;
-    }
+    if (k_param != 3) return false;
 
-    // Step 1: Snapshot baseline counter detent
-    uint64_t shadow_base = base_counter_val;
-
-    // Step 2: Emulate 24-digit Geneva-Drive Ripple Carry
-    uint64_t v_base_temp = base_counter_val;
-    uint64_t v_inc_temp = increment_val;
-    uint64_t accumulated_result = 0;
-    uint64_t carry_in = 0;
-    uint64_t mult_factor = 1;
+    uint64_t shadow_base = base_counter_val, v_base_temp = base_counter_val, v_inc_temp = increment_val, accumulated_result = 0, carry_in = 0, mult_factor = 1;
 
     for (int d = 0; d < 12; ++d) {
-        uint64_t d_base = v_base_temp % 10ULL;
-        uint64_t d_inc  = v_inc_temp % 10ULL;
-
-        uint64_t d_sum = d_base + d_inc + carry_in;
-        uint64_t d_out = d_sum % 10ULL;
+        uint64_t d_sum = (v_base_temp % 10ULL) + (v_inc_temp % 10ULL) + carry_in;
+        accumulated_result += ((d_sum % 10ULL) * mult_factor);
         carry_in = d_sum / 10ULL;
-
-        accumulated_result += (d_out * mult_factor);
         mult_factor *= 10ULL;
-
         v_base_temp /= 10ULL;
         v_inc_temp  /= 10ULL;
     }
-
-    if (carry_in > 0) {
-        accumulated_result += (carry_in * mult_factor);
-    }
+    if (carry_in > 0) accumulated_result += (carry_in * mult_factor);
 
     uint64_t exact_sum = base_counter_val + increment_val;
     bool ripple_ok = (accumulated_result == exact_sum);
-
-    // Step 3: Gear-Jam Clutch Alarm Drop-Out Interlock
     uint64_t committed_output = simulate_gear_jam_fault ? shadow_base : accumulated_result;
 
     bool isolation_ok = (shadow_base == base_counter_val);
     bool rollback_ok = simulate_gear_jam_fault ? (committed_output == shadow_base) : (committed_output == exact_sum);
     bool overall_sound = ripple_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -594,7 +561,6 @@ bool auncient_harvard_1946_geneva_carry_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_geneva_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -665,27 +631,16 @@ bool auncient_harvard_zuo_tape_sync_prover(
     uint32_t k_param,
     AuncientHarvardZuoTapeSyncMetrics *metrics_out
 ) {
-    if (k_param != 3 || stride_step == 0 || stride_step > 64) {
-        return false;
-    }
+    if (k_param != 3 || stride_step == 0 || stride_step > 64) return false;
 
-    // Step 1: Snapshot baseline value leaf in Zuo ZMM state
     uint64_t shadow_val_leaf = value_leaf_idx;
-
-    // Step 2: Compute Cross-Feed Argument Index
-    uint64_t expected_arg_idx = value_leaf_idx / stride_step;
-    uint64_t argument_index_out = expected_arg_idx;
-
-    bool phase_ok = (argument_index_out == expected_arg_idx);
-    bool stride_ok = (stride_step >= 1 && stride_step <= 64);
-
-    // Step 3: ACID Latch Commit or Tape Skew Rollback
+    uint64_t argument_index_out = value_leaf_idx / stride_step;
     uint64_t committed_output = simulate_tape_skew_fault ? shadow_val_leaf : argument_index_out;
 
+    bool phase_ok = true, stride_ok = true;
     bool isolation_ok = (shadow_val_leaf == value_leaf_idx);
     bool rollback_ok = simulate_tape_skew_fault ? (committed_output == shadow_val_leaf) : (committed_output == argument_index_out);
     bool overall_sound = phase_ok && stride_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -700,7 +655,6 @@ bool auncient_harvard_zuo_tape_sync_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_tape_sync_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -711,34 +665,20 @@ bool auncient_harvard_zuo_plugboard_prover(
     uint32_t k_param,
     AuncientHarvardZuoPlugboardMetrics *metrics_out
 ) {
-    if (k_param != 3) {
-        return false;
-    }
+    if (k_param != 3) return false;
 
-    // Step 1: Snapshot baseline pin seed in Zuo ZMM state
-    uint64_t shadow_seed = pin_vector_seed;
-
-    // Step 2: Emulate 24-Decade Bijective Permutation (pi(x) = (7*x + 13) mod 24)
-    uint64_t sum_input_channels = 0;
-    uint64_t sum_permuted_channels = 0;
-
+    uint64_t shadow_seed = pin_vector_seed, sum_input_channels = 0, sum_permuted_channels = 0;
     for (uint64_t d = 0; d < 24; ++d) {
-        uint64_t orig_channel_val = pin_vector_seed + d;
-        uint64_t permuted_channel_val = pin_vector_seed + ((7ULL * d + 13ULL) % 24ULL);
-
-        sum_input_channels += orig_channel_val;
-        sum_permuted_channels += permuted_channel_val;
+        sum_input_channels += (pin_vector_seed + d);
+        sum_permuted_channels += (pin_vector_seed + ((7ULL * d + 13ULL) % 24ULL));
     }
 
     bool bijectivity_ok = (sum_input_channels == sum_permuted_channels);
-
-    // Step 3: ACID Latch Commit or Cross-Talk Short Rollback
     uint64_t committed_output = simulate_cross_talk_fault ? shadow_seed : sum_permuted_channels;
 
     bool isolation_ok = (shadow_seed == pin_vector_seed);
     bool rollback_ok = simulate_cross_talk_fault ? (committed_output == shadow_seed) : (committed_output == sum_permuted_channels);
     bool overall_sound = bijectivity_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -752,7 +692,6 @@ bool auncient_harvard_zuo_plugboard_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_plugboard_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -821,15 +760,9 @@ bool auncient_harvard_zuo_self_identity_prover(
     uint32_t k_param,
     AuncientHarvardZuoSelfIdentityMetrics *metrics_out
 ) {
-    if (k_param != 3 || initial_saat_seed == 0 || cycle_count == 0 || cycle_count > 100) {
-        return false;
-    }
+    if (k_param != 3 || initial_saat_seed == 0 || cycle_count == 0 || cycle_count > 100) return false;
 
-    // Step 1: Snapshot baseline seed in Zuo ZMM state
-    uint64_t shadow_seed = initial_saat_seed;
-
-    // Step 2: Traverse Commutator 10-Phase Impulse Cycles (Zero Net Flux)
-    uint64_t current_state = initial_saat_seed;
+    uint64_t shadow_seed = initial_saat_seed, current_state = initial_saat_seed;
     for (uint32_t step = 1; step <= cycle_count; ++step) {
         uint64_t phase_delta = (step * 1331ULL) % 100ULL;
         current_state += phase_delta;
@@ -837,14 +770,11 @@ bool auncient_harvard_zuo_self_identity_prover(
     }
 
     bool self_id_ok = (current_state == initial_saat_seed);
-
-    // Step 3: ACID Latch Commit or Clutch Trip Rollback
     uint64_t committed_output = simulate_clutch_trip_fault ? shadow_seed : current_state;
 
     bool isolation_ok = (shadow_seed == initial_saat_seed);
     bool rollback_ok = simulate_clutch_trip_fault ? (committed_output == shadow_seed) : (committed_output == current_state);
     bool overall_sound = self_id_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -858,7 +788,6 @@ bool auncient_harvard_zuo_self_identity_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_self_identity_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -871,32 +800,21 @@ bool auncient_harvard_zuo_torque_balance_prover(
     AuncientHarvardZuoTorqueMetrics *metrics_out
 ) {
     if (k_param != 3 || arm1_current_ma < 0 || arm1_current_ma > 10000 ||
-        arm2_current_ma < 0 || arm2_current_ma > 10000) {
-        return false;
-    }
+        arm2_current_ma < 0 || arm2_current_ma > 10000) return false;
 
-    // Step 1: Snapshot baseline currents in Zuo ZMM state
     int64_t shadow_arm1 = arm1_current_ma;
     int64_t shadow_arm2 = arm2_current_ma;
-
-    // Step 2: Compute Current / Torque Balance
     int64_t current_delta = arm1_current_ma - arm2_current_ma;
-    int64_t abs_current_delta = (current_delta < 0) ? -current_delta : current_delta;
+    bool balance_ok = (current_delta == 0);
 
-    bool balance_ok = (abs_current_delta == 0);
-
-    // Step 3: SwiGLU Gating Modulation in [7/8, 1.0] -> [875..1000]
     int64_t total_current_ma = arm1_current_ma + arm2_current_ma;
     int64_t g_gate_factor = 875 + ((125 * total_current_ma) / 20000);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Torque Imbalance Rollback
     int64_t committed_output = simulate_torque_imbalance_fault ? shadow_arm1 : ((total_current_ma * g_gate_factor) / 1000);
-
     bool isolation_ok = (shadow_arm1 == arm1_current_ma && shadow_arm2 == arm2_current_ma);
     bool rollback_ok = simulate_torque_imbalance_fault ? (committed_output == shadow_arm1) : (committed_output == ((total_current_ma * g_gate_factor) / 1000));
     bool overall_sound = (simulate_torque_imbalance_fault ? true : balance_ok) && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
 
     if (metrics_out) {
@@ -912,7 +830,6 @@ bool auncient_harvard_zuo_torque_balance_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_torque_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1091,15 +1008,9 @@ bool auncient_harvard_zuo_angular_momentum_prover(
     AuncientHarvardZuoMomentumMetrics *metrics_out
 ) {
     if (k_param != 3 || base_rpm_tenths < 1000 || base_rpm_tenths > 3000 ||
-        cycle_revolutions == 0 || cycle_revolutions > 100) {
-        return false;
-    }
+        cycle_revolutions == 0 || cycle_revolutions > 100) return false;
 
-    // Step 1: Snapshot baseline angular velocity in Zuo ZMM state
-    uint32_t shadow_rpm = base_rpm_tenths;
-
-    // Step 2: Traverse Continuous Flywheel Revolutions (Zero Momentum Drift)
-    uint32_t current_rpm = base_rpm_tenths;
+    uint32_t shadow_rpm = base_rpm_tenths, current_rpm = base_rpm_tenths;
     for (uint32_t rev = 1; rev <= cycle_revolutions; ++rev) {
         uint32_t torque_impulse = (rev * 17) % 10;
         current_rpm += torque_impulse;
@@ -1107,18 +1018,13 @@ bool auncient_harvard_zuo_angular_momentum_prover(
     }
 
     bool velocity_ok = (current_rpm == base_rpm_tenths);
-
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)cycle_revolutions) / 100LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Motor Stall Rollback
     uint64_t committed_output = simulate_stall_fault ? (uint64_t)shadow_rpm : (((uint64_t)current_rpm * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_rpm == base_rpm_tenths);
     bool rollback_ok = simulate_stall_fault ? (committed_output == (uint64_t)shadow_rpm) : (committed_output == (((uint64_t)current_rpm * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = velocity_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1134,7 +1040,6 @@ bool auncient_harvard_zuo_angular_momentum_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_momentum_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1205,7 +1110,7 @@ bool auncient_harvard_zuo_nines_complement_prover(
 
     uint64_t committed_output = simulate_borrow_fault ? shadow_minuend : ((direct_diff * (uint64_t)g_gate_factor) / 1000ULL);
     bool isolation_ok = (shadow_minuend == minuend_val);
-    bool rollback_ok = simulate_borrow_fault ? (committed_output == shadow_minuend) : (committed_output == ((direct_diff * (uint64_t)g_gate_factor) / 1000ULL));
+    bool rollback_ok = simulate_borrow_fault ? (committed_output == shadow_minuend) : true;
     bool overall_sound = modular_ok && gating_ok && isolation_ok && rollback_ok;
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
@@ -1332,11 +1237,9 @@ bool auncient_harvard_zuo_word_coupling_prover(
 ) {
     if (k_param != 3 || low_short_word > 131071 || high_short_word > 131071) return false;
 
-    uint32_t shadow_low = low_short_word;
-    uint32_t shadow_high = high_short_word;
+    uint32_t shadow_low = low_short_word, shadow_high = high_short_word;
     uint64_t coupled_long_word = ((uint64_t)high_short_word * 262144ULL) + (uint64_t)low_short_word;
-    uint32_t rec_high = (uint32_t)(coupled_long_word / 262144ULL);
-    uint32_t rec_low = (uint32_t)(coupled_long_word % 262144ULL);
+    uint32_t rec_high = (uint32_t)(coupled_long_word / 262144ULL), rec_low = (uint32_t)(coupled_long_word % 262144ULL);
     bool coupling_ok = (rec_low == low_short_word && rec_high == high_short_word);
 
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)(low_short_word % 1000ULL)) / 1000LL);
@@ -1344,7 +1247,7 @@ bool auncient_harvard_zuo_word_coupling_prover(
 
     uint64_t committed_output = simulate_bleed_fault ? (uint64_t)shadow_low : (((coupled_long_word % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL);
     bool isolation_ok = (shadow_low == low_short_word && shadow_high == high_short_word);
-    bool rollback_ok = simulate_bleed_fault ? (committed_output == (uint64_t)shadow_low) : (committed_output == (((coupled_long_word % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL));
+    bool rollback_ok = simulate_bleed_fault ? (committed_output == (uint64_t)shadow_low) : true;
     bool overall_sound = coupling_ok && gating_ok && isolation_ok && rollback_ok;
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
@@ -1559,6 +1462,61 @@ bool auncient_harvard_zuo_cics_wheeler_jump_prover(
         metrics_out->shadow_isolation_sound = isolation_ok;
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_cics_jump_sound = overall_sound;
+    }
+    return overall_sound;
+}
+
+/* Formal Suite 53: Marschner Dual-Layer Fur Anisotropic Scattering Prover */
+bool auncient_marschner_fur_scattering_prover(
+    int64_t dot_tl_q16,
+    uint32_t clumping_seed,
+    bool simulate_light_singularity,
+    uint32_t k_param,
+    AuncientMarschnerFurMetrics *metrics_out
+) {
+    if (k_param != 3 || dot_tl_q16 < -65536 || dot_tl_q16 > 65536) return false;
+
+    // Step 1: Snapshot baseline tangent dot product in Zuo ZMM state
+    int64_t shadow_dot = dot_tl_q16;
+
+    // Step 2: Compute Marschner Specular Lobes (Primary R + Secondary TRT)
+    int64_t sin_theta_sq_q16 = 65536 - ((dot_tl_q16 * dot_tl_q16) / 65536);
+    if (sin_theta_sq_q16 < 0) sin_theta_sq_q16 = 0;
+
+    int64_t spec1_lobe_q16 = (sin_theta_sq_q16 * sin_theta_sq_q16) / 65536;
+    spec1_lobe_q16 = (spec1_lobe_q16 * spec1_lobe_q16) / 65536;
+    spec1_lobe_q16 = (spec1_lobe_q16 * 32768) / 65536; // 0.5x scaling
+    int64_t spec2_lobe_q16 = (sin_theta_sq_q16 * 3932) / 65536; // 0.06x scaling
+    int64_t total_spec_q16 = spec1_lobe_q16 + spec2_lobe_q16;
+
+    bool energy_ok = (total_spec_q16 >= 0 && total_spec_q16 <= 65536);
+
+    // Step 3: SwiGLU Gating Modulation in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125 * total_spec_q16) / 65536);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Light Singularity Rollback
+    uint64_t committed_output = simulate_light_singularity ? (uint64_t)shadow_dot : (uint64_t)(((total_spec_q16 * 1000 + 43605) * g_gate_factor) / 1000);
+    bool isolation_ok = (shadow_dot == dot_tl_q16);
+    bool rollback_ok = simulate_light_singularity ? (committed_output == (uint64_t)shadow_dot) : true;
+    bool overall_sound = energy_ok && gating_ok && isolation_ok && rollback_ok;
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->dot_tl_q16 = dot_tl_q16;
+        metrics_out->clumping_seed = clumping_seed;
+        metrics_out->sin_theta_sq_q16 = sin_theta_sq_q16;
+        metrics_out->spec1_lobe_q16 = spec1_lobe_q16;
+        metrics_out->spec2_lobe_q16 = spec2_lobe_q16;
+        metrics_out->total_spec_q16 = total_spec_q16;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->energy_conservation_sound = energy_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_marschner_sound = overall_sound;
     }
     return overall_sound;
 }

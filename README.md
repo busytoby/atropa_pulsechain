@@ -142,12 +142,10 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 │   │   ├── harvard_1946_divider_prover.algol61
 │   │   ├── harvard_1946_geneva_carry_prover.algol61
 │   │   ├── harvard_zuo_hbridge_quadrant_prover.algol61
-│   │   ├── harvard_zuo_tape_sync_prover.algol61
-│   │   ├── harvard_zuo_plugboard_prover.algol61
-│   │   ├── harvard_zuo_hankel_prover.algol61
-│   │   ├── harvard_zuo_word_coupling_prover.algol61
-│   │   ├── harvard_zuo_uniselector_sync_prover.algol61
-│   │   └── harvard_zuo_wheeler_jump_prover.algol61
+│   │   ├── golden_jubilee_overdrive_prover.algol61
+│   │   ├── harvard_zuo_sensing_pin_matrix_prover.algol61
+│   │   ├── harvard_zuo_cics_orders1_jump_prover.algol61
+│   │   └── marschner_fur_scattering_prover.algol61
 │   └── strategies/                   # COBOL execution strategies (D0-D3 divisions, R0-R15)
 │       ├── glm_hbridge_swiglu.strategy
 │       ├── glm_2d_rope_paintbox.strategy
@@ -176,9 +174,9 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 │       ├── harvard_zuo_self_identity.strategy
 │       ├── harvard_zuo_torque_balance.strategy
 │       ├── harvard_zuo_bessel_modified.strategy
-│       ├── harvard_zuo_tape_loop.strategy
-│       ├── harvard_zuo_two_out_of_five.strategy
-│       ├── harvard_zuo_transfer_bus.strategy
+│       ├── harvard_zuo_tape_loop_topology.strategy
+│       ├── harvard_zuo_2_out_of_5_parity.strategy
+│       ├── harvard_zuo_24_decade_bus.strategy
 │       ├── harvard_zuo_angular_momentum.strategy
 │       ├── harvard_zuo_subroutine_cascade.strategy
 │       ├── harvard_zuo_nines_complement.strategy

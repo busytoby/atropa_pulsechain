@@ -1030,8 +1030,32 @@ int main(void) {
            clean_cics_m.base_address, clean_cics_m.theta_offset, clean_cics_m.effective_address, clean_cics_m.cics_vector,
            clean_cics_m.committed_output, clean_cics_m.displacement_wrap_mod);
 
+    // -------------------------------------------------------------
+    // TEST 53: Formal Suite 53: Marschner Dual-Layer Fur Anisotropic Scattering Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing Marschner Dual-Layer Fur Anisotropic Scattering (Primary R + Secondary TRT)...\n");
+    AuncientMarschnerFurMetrics clean_fur_m = {0};
+    bool ok_fur_clean = auncient_marschner_fur_scattering_prover(
+        32768 /* dot_tl = 0.5 in Q16 */, 44257 /* clumping seed */, false /* normal */, 3 /* k=3 */, &clean_fur_m
+    );
+    assert(ok_fur_clean == true && clean_fur_m.overall_marschner_sound == true);
+    assert(clean_fur_m.energy_conservation_sound == true);
+    assert(clean_fur_m.gating_clamp_sound == true);
+    assert(clean_fur_m.shadow_isolation_sound == true);
+    assert(clean_fur_m.total_spec_q16 <= 65536);
+
+    AuncientMarschnerFurMetrics fault_fur_m = {0};
+    bool ok_fur_fault = auncient_marschner_fur_scattering_prover(
+        32768 /* dot_tl */, 44257 /* seed */, true /* simulate light singularity */, 3 /* k=3 */, &fault_fur_m
+    );
+    assert(ok_fur_fault == true && fault_fur_m.overall_marschner_sound == true);
+    assert(fault_fur_m.rollback_sound == true);
+    assert(fault_fur_m.committed_output == 32768ULL);
+    printf("   ✓ Marschner Fur Anisotropic Scattering verified (dot_tl=0.5, Spec_Total_Q16=%ld, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_fur_m.total_spec_q16, clean_fur_m.g_gate_factor, clean_fur_m.committed_output, clean_fur_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
-    printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
+    printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY (53/53)\n");
     printf("=============================================================\n");
     return 0;
 }

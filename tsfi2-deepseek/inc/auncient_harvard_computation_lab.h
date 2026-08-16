@@ -672,4 +672,29 @@ bool auncient_harvard_zuo_cics_wheeler_jump_prover(
     AuncientHarvardZuoCicsJumpMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t dot_tl_q16;
+    uint32_t clumping_seed;
+    int64_t sin_theta_sq_q16;
+    int64_t spec1_lobe_q16;
+    int64_t spec2_lobe_q16;
+    int64_t total_spec_q16;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool energy_conservation_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_marschner_sound;
+} AuncientMarschnerFurMetrics;
+
+bool auncient_marschner_fur_scattering_prover(
+    int64_t dot_tl_q16,
+    uint32_t clumping_seed,
+    bool simulate_light_singularity,
+    uint32_t k_param,
+    AuncientMarschnerFurMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
