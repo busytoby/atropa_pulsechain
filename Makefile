@@ -18,6 +18,11 @@ profile:
 test-all: test-hathitrust test-hathitrust-hathifile test-hathitrust-oai test-hathitrust-oai-util test-hathitrust-harvester test-hathitrust-ef test-hathitrust-extended test-hathitrust-xml test-hathitrust-cache-alto-qt test-hathitrust-extra2 test-hathitrust-extra3 test-hathitrust-render test-hathitrust-prman test-hathitrust-lore test-hathitrust-prman-extra test-hathitrust-prman-anim test-hathitrust-prman-blur test-hathitrust-prman-final test-hathitrust-teddy test-hathitrust-final-extra test-hathitrust-tsv-extra test-hathitrust-solr-rdbms test-hathitrust-tsv-bin test-hathitrust-window test-hathitrust-extra-final test-hathitrust-bib-oauth test-tsfi2-compiler-bin test-tsfi2-loader test-tsfi2-compiler test-tsfi2-compiler-standards test-mann test-comp-pass test-mvarsel test-reroute test-delegate-sig test-stagecomp test-ar test-sdfformat test-hydrascene test-renderdelegate test-stagelock test-renderindex test-usdshade test-teddy-loader test-geomcamera test-geomcurves test-geompoints test-luxlight test-geomxform test-stageroot test-primroot test-stagepop test-attributeroot test-stagecache test-stagemask test-geomsubset test-stagearc test-stageinherits test-stagepayloads test-stagevariants test-stagetraverser test-stagemetadata test-camerafrustum test-stagereferences test-stagespecializes test-stagerelationship test-stagetimecodes test-vactrolpickup test-npnpnpvalve test-curvesbasis test-singularityring test-subdivcurves test-subdivscheme test-curvestension test-curveswidths test-curveswrap test-timesamples test-micropolygonmesh test-shadowmap test-quasirandomsampler test-displacementshader test-texgensample test-depthoffield test-quadtreeslicer test-riinterface test-cinefex-adv test-sss test-envmap test-hairshading test-proximity-occlusion test-krowz-sickness test-auncient-teddy-personality test-tsfi-montecarlo
 	@echo "All tests completed successfully."
 
+test-vaesen-mood-edo22:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_vaesen_mood_edo22.c -o tests/test_vaesen_mood_edo22
+	./tests/test_vaesen_mood_edo22
+	@rm -f tests/test_vaesen_mood_edo22
+
 test-lyapunov-totient-empathy:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_lyapunov_totient_empathy.c -o tests/test_lyapunov_totient_empathy
 	./tests/test_lyapunov_totient_empathy
