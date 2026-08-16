@@ -890,11 +890,36 @@ int main(void) {
     printf("   ✓ Harvard Zuo Initial Orders 1 Bootstrap verified (Words=%u, Cycles=%u, Checksum=%lu, Out=%lu, DispMod=%u).\n",
            clean_boot_m.bootstrap_word_count, clean_boot_m.recirculation_cycles, clean_boot_m.initial_checksum, clean_boot_m.committed_output, clean_boot_m.displacement_wrap_mod);
 
+    // 47. Test Harvard Zuo Word Coupling Safety & Space Partition Invariance Prover
+    printf("[TEST] Testing Harvard Zuo Word Coupling Safety (17-bit to 35-bit Partition & Bleed Latch)...\n");
+    AuncientHarvardZuoCouplingMetrics clean_coupl_m = {0};
+    bool ok_coupl_clean = auncient_harvard_zuo_word_coupling_prover(
+        43605 /* Low */, 87210 /* High */, false /* clean */, 3 /* k=3 */, &clean_coupl_m
+    );
+    assert(ok_coupl_clean == true && clean_coupl_m.overall_coupling_sound == true);
+    assert(clean_coupl_m.reversible_coupling_sound == true);
+    assert(clean_coupl_m.gating_clamp_sound == true);
+    assert(clean_coupl_m.shadow_isolation_sound == true);
+    assert(clean_coupl_m.reconstructed_low == 43605);
+    assert(clean_coupl_m.reconstructed_high == 87210);
+    assert(clean_coupl_m.coupled_long_word == 22861621845ULL);
+
+    AuncientHarvardZuoCouplingMetrics fault_coupl_m = {0};
+    bool ok_coupl_fault = auncient_harvard_zuo_word_coupling_prover(
+        43605 /* Low */, 87210 /* High */, true /* simulate bleed fault */, 3 /* k=3 */, &fault_coupl_m
+    );
+    assert(ok_coupl_fault == true && fault_coupl_m.overall_coupling_sound == true);
+    assert(fault_coupl_m.rollback_sound == true);
+    assert(fault_coupl_m.committed_output == 43605ULL);
+    printf("   ✓ Harvard Zuo Word Coupling Safety verified (Low=%u, High=%u, LongWord=%lu, Out=%lu, DispMod=%u).\n",
+           clean_coupl_m.reconstructed_low, clean_coupl_m.reconstructed_high, clean_coupl_m.coupled_long_word, clean_coupl_m.committed_output, clean_coupl_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

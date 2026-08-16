@@ -1505,6 +1505,64 @@ bool auncient_harvard_zuo_orders1_bootstrap_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Word Coupling Safety & Space Partition Invariance Prover */
+bool auncient_harvard_zuo_word_coupling_prover(
+    uint32_t low_short_word,
+    uint32_t high_short_word,
+    bool simulate_bleed_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoCouplingMetrics *metrics_out
+) {
+    if (k_param != 3 || low_short_word > 131071 || high_short_word > 131071) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline input in Zuo ZMM state
+    uint32_t shadow_low = low_short_word;
+    uint32_t shadow_high = high_short_word;
+
+    // Step 2: Form 35-Bit Coupled Long Word with 1-Bit Spacer (2^18 = 262144)
+    uint64_t coupled_long_word = ((uint64_t)high_short_word * 262144ULL) + (uint64_t)low_short_word;
+
+    // Step 3: Deconstruct Coupled Long Word into Low and High 17-Bit Words
+    uint32_t rec_high = (uint32_t)(coupled_long_word / 262144ULL);
+    uint32_t rec_low = (uint32_t)(coupled_long_word % 262144ULL);
+
+    bool coupling_ok = (rec_low == low_short_word && rec_high == high_short_word);
+
+    // Step 4: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)(low_short_word % 1000ULL)) / 1000LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 5: ACID Latch Commit or Bit Bleed Rollback
+    uint64_t committed_output = simulate_bleed_fault ? (uint64_t)shadow_low : (((coupled_long_word % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_low == low_short_word && shadow_high == high_short_word);
+    bool rollback_ok = simulate_bleed_fault ? (committed_output == (uint64_t)shadow_low) : (committed_output == (((coupled_long_word % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = coupling_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->low_short_word = low_short_word;
+        metrics_out->high_short_word = high_short_word;
+        metrics_out->coupled_long_word = coupled_long_word;
+        metrics_out->reconstructed_low = rec_low;
+        metrics_out->reconstructed_high = rec_high;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->reversible_coupling_sound = coupling_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_coupling_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

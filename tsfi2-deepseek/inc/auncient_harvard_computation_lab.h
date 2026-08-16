@@ -552,4 +552,28 @@ bool auncient_harvard_zuo_orders1_bootstrap_prover(
     AuncientHarvardZuoOrders1Metrics *metrics_out
 );
 
+typedef struct {
+    uint32_t low_short_word;
+    uint32_t high_short_word;
+    uint64_t coupled_long_word;
+    uint32_t reconstructed_low;
+    uint32_t reconstructed_high;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool reversible_coupling_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_coupling_sound;
+} AuncientHarvardZuoCouplingMetrics;
+
+bool auncient_harvard_zuo_word_coupling_prover(
+    uint32_t low_short_word,
+    uint32_t high_short_word,
+    bool simulate_bleed_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoCouplingMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
