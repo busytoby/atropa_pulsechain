@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-auncient-sage-pll-phase-detent:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_sage_pll_phase_detent.c -o tests/test_auncient_sage_pll_phase_detent
+	./tests/test_auncient_sage_pll_phase_detent
+	@rm -f tests/test_auncient_sage_pll_phase_detent
+
 test-auncient-acab-tem-boundary:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_acab_tem_boundary.c -o tests/test_auncient_acab_tem_boundary
 	./tests/test_auncient_acab_tem_boundary
