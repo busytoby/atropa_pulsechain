@@ -136,7 +136,8 @@ SYSTEM0 is the native, verified **Auncient** Dysnomia Virtual Machine, Yul virtu
 │   ├── king_chen_jurchen_euler_amsterdam_territory.md
 │   ├── glm_zorse_fet_weight_accumulation_dynamics.md
 │   ├── totient_formal_proof_harvard_computation_laboratory.md
-│   └── hbridge_relay_biquinary_formal_proofs_harvard_1946.md
+│   ├── hbridge_relay_biquinary_formal_proofs_harvard_1946.md
+│   └── zuo_dissolution_of_geneva_carry.md
 └── Makefile                          # Clean-room compilation and test automation
 ```
 
