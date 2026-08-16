@@ -310,4 +310,24 @@ bool auncient_harvard_zuo_hankel_prover(
     AuncientHarvardZuoHankelMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t initial_saat_seed;
+    uint32_t cycle_count;
+    uint64_t final_state;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool self_identity_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_self_identity_sound;
+} AuncientHarvardZuoSelfIdentityMetrics;
+
+bool auncient_harvard_zuo_self_identity_prover(
+    uint64_t initial_saat_seed,
+    uint32_t cycle_count,
+    bool simulate_clutch_trip_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoSelfIdentityMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

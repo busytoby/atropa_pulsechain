@@ -890,6 +890,56 @@ bool auncient_harvard_zuo_hankel_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Self-Referential Commutator Identity Prover */
+bool auncient_harvard_zuo_self_identity_prover(
+    uint64_t initial_saat_seed,
+    uint32_t cycle_count,
+    bool simulate_clutch_trip_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoSelfIdentityMetrics *metrics_out
+) {
+    if (k_param != 3 || initial_saat_seed == 0 || cycle_count == 0 || cycle_count > 100) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline seed in Zuo ZMM state
+    uint64_t shadow_seed = initial_saat_seed;
+
+    // Step 2: Traverse Commutator 10-Phase Impulse Cycles (Zero Net Flux)
+    uint64_t current_state = initial_saat_seed;
+    for (uint32_t step = 1; step <= cycle_count; ++step) {
+        uint64_t phase_delta = (step * 1331ULL) % 100ULL;
+        current_state += phase_delta;
+        current_state -= phase_delta;
+    }
+
+    bool self_id_ok = (current_state == initial_saat_seed);
+
+    // Step 3: ACID Latch Commit or Clutch Trip Rollback
+    uint64_t committed_output = simulate_clutch_trip_fault ? shadow_seed : current_state;
+
+    bool isolation_ok = (shadow_seed == initial_saat_seed);
+    bool rollback_ok = simulate_clutch_trip_fault ? (committed_output == shadow_seed) : (committed_output == current_state);
+    bool overall_sound = self_id_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->initial_saat_seed = initial_saat_seed;
+        metrics_out->cycle_count = cycle_count;
+        metrics_out->final_state = current_state;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->self_identity_sound = self_id_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_self_identity_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

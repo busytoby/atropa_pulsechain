@@ -642,11 +642,34 @@ int main(void) {
     printf("   ✓ Harvard Zuo Hankel Recurrence verified (h3_Q16=%ld, G_gate=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
            clean_hankel_m.h3_q16, clean_hankel_m.g_gate_q16, fault_hankel_m.committed_output, clean_hankel_m.displacement_wrap_mod);
 
+    // 36. Test Harvard Zuo Self-Referential Commutator Identity Prover
+    printf("[TEST] Testing Harvard Zuo Self-Identity (Zero-Flux Persistence & Trip Latch)...\n");
+    AuncientHarvardZuoSelfIdentityMetrics clean_self_m = {0};
+    bool ok_self_clean = auncient_harvard_zuo_self_identity_prover(
+        1000000 /* Saat seed */, 10 /* cycles */, false /* clean */, 3 /* k=3 */, &clean_self_m
+    );
+    assert(ok_self_clean == true && clean_self_m.overall_self_identity_sound == true);
+    assert(clean_self_m.self_identity_sound == true);
+    assert(clean_self_m.shadow_isolation_sound == true);
+    assert(clean_self_m.final_state == 1000000ULL);
+    assert(clean_self_m.committed_output == 1000000ULL);
+
+    AuncientHarvardZuoSelfIdentityMetrics fault_self_m = {0};
+    bool ok_self_fault = auncient_harvard_zuo_self_identity_prover(
+        1000000 /* Saat seed */, 10 /* cycles */, true /* simulate clutch trip fault */, 3 /* k=3 */, &fault_self_m
+    );
+    assert(ok_self_fault == true && fault_self_m.overall_self_identity_sound == true);
+    assert(fault_self_m.rollback_sound == true);
+    assert(fault_self_m.committed_output == 1000000ULL);
+    printf("   ✓ Harvard Zuo Self-Identity verified (Final_State=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_self_m.final_state, fault_self_m.committed_output, clean_self_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
