@@ -1,4 +1,4 @@
-# SYSTEM0: The Auncient Dysnomia VM, ZMM Virtual Hardware & Zorse Strategy Substrate
+# SYSTEM0: The Auncient Dysnomia VM, LLM PBX Switchboard & Zorse Strategy Substrate
 ## *A Formally Provable, Safe, and Usable Learning Platform for Computational Foundations*
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#test-suite--formal-verification)
@@ -7,7 +7,7 @@
 [![Latency Guard](https://img.shields.io/badge/VDSO%20Latency-80ns%20%28%3C1000ns%29-purple.svg)](#low-latency-vdso-kernel-interop)
 [![Safety Invariants](https://img.shields.io/badge/safety-ACID%20Shadow%20Rollback-success.svg)](#system0-as-a-usable-and-safe-learning-platform)
 
-SYSTEM0 is an open, verifiable **Auncient** Dysnomia Virtual Machine, Yul virtual hardware state machine, and educational mainframe strategy platform. It combines clean-room historical computing lineage (from Harvard Computation Laboratory 1946 and EDSAC Initial Orders 1 & 2 to modern AI execution) into an interactive, mathematically crash-proof learning environment.
+SYSTEM0 is an open, verifiable **Auncient** Dysnomia Virtual Machine, Yul virtual hardware state machine, Private Branch Exchange (PBX) switchboard for Large Language Models (LLMs), and educational mainframe strategy platform. It combines clean-room historical computing lineage (from Harvard Computation Laboratory 1946 and EDSAC Initial Orders 1 & 2 to modern AI execution) into an interactive, mathematically crash-proof learning environment.
 
 ---
 
@@ -65,18 +65,18 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
        v                                       v                                    v
 [1. Formal Prover Domain]             [2. Virtual Hardware & C MCP Core]   [3. Presenter & UI Engine]
 - Algol61 Standard Provers            - WinchesterMQ Yul Handshake Loops   - Rooted Vulkan Wayland Browser
-- COBOL Strategy Circuits (D0-D3)     - EDSAC-AUTODIN Compiler Firewall    - Quantel Liquid Paintbox
+- COBOL Strategy Circuits (D0-D3)     - EDSAC Initial Orders 1 & 2         - Quantel Liquid Paintbox
 - Zero Genesis (TOTIENT_0 = 0)        - Native C Model Context Protocol    - Real-time Lissajous Wireframes
-- Euler §§ 214-215 Nonce Trajectories - ZMM AVX-512 Scanout Buffers        - Continuous LFM Phase Ribbons
+- Bessel J0/J1 Wave Envelopes         - ZMM AVX-512 Scanout Buffers        - Continuous LFM Phase Ribbons
        \                                       |                                    /
         +--------------------------------------+-----------------------------------+
                                                |
                                                v
                         +-----------------------------------------------+
-                        |          Zorse Mainframe Strategy Engine      |
-                        | - Sub-1000ns VDSO Gated Frame Exchange        |
-                        | - GLM Multi-Task Infilling & 2D-RoPE          |
-                        | - Accumulator Valves & ACID Rollback          |
+                        |          Zorse LLM PBX Strategy Engine        |
+                        | - 24-Trunk Strowger Decadic Routing Switch    |
+                        | - DeepSeek-Coder & LFM State-Space Coupling   |
+                        | - Multi-Modal 2D-RoPE Bessel Positional Mesh  |
                         | - Symplectic FET Discharge Verlet Solver      |
                         +-----------------------------------------------+
 ```
@@ -91,27 +91,24 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
   $$\text{Staged Flow} = \text{Modpow}(\mu, e, \mu) \equiv (\mu \pmod\mu) \equiv 0$$
 * **ACID Compliance**: Full Atomicity, Consistency, Isolation (shadow copy snapshots), and Durability (zero-entropy rollback) guaranteed under both clean commits and simulated hardware faults.
 
-### 2. Radical Nonce Trajectories & Euler §§ 214–215 Bijective Inversion
-* Forward ($u$) and backward ($v$) phase trajectories evolve under logarithmic recurrence:
-  $$x_{n+1} = \left(\frac{\ln 2}{\ln e} \cdot x_n\right) + \left(1 - \frac{1}{2^k}\right) x_{n-1} + 1 \pmod{\text{MotzkinPrime}}, \qquad (k=3)$$
-* Exact inverse recovery resolves closed-form states from symmetric sum $S_{\Sigma} = u + v$ and symmetric product $S_{\Pi} = u \cdot v$:
-  $$\hat{u} = \frac{S_{\Pi} + S_{\Sigma}}{2}, \qquad \hat{v} = \frac{S_{\Pi} - S_{\Sigma}}{2}$$
+### 2. Multi-Strategy TOTIENT Accumulation & Zero-Flux Rollback
+* Evaluates hierarchical subordinate strategies ($\Sigma_1 \dots \Sigma_8$) gating discrete proof energy:
+  $$\phi_{\text{total}} = \phi_{\text{root}} + \sum_{k=1}^{M} \left\lfloor \frac{\left( E_{\text{quanta}}(k) + \Delta \phi_{\text{PLL}} \right) \cdot G_{\text{gate}}(k)}{1000} \right\rfloor \pmod{\text{MotzkinPrime}}$$
+* SwiGLU conduction clamps ($G_k \in [875 \dots 1000]$) ensure operational stability without space-charge-limited power laws.
 
-### 3. GLM Infilled H-Bridge + WinchesterMQ SwiGLU
-* Replaces transcendental floating-point sigmoid activations with Clyde C. Heasly NPN/PNP differential H-bridge switching:
-  $$V_{\text{diff}} = V_{\text{NPN}} - V_{\text{PNP}} \pmod{\text{MotzkinPrime}}$$
-  $$\sigma_{\text{WMQ}}(V_{\text{diff}}) = \begin{cases} 
-  \frac{7}{8} + \frac{1/8}{1 + 0.1 \cdot V_{\text{diff}}} & V_{\text{diff}} \ge 0.25\text{V} \\
-  \frac{1/8}{1 + 0.2 \cdot |V_{\text{diff}}|} & V_{\text{diff}} \le -0.25\text{V} \\
-  0.5 + V_{\text{diff}} & \text{otherwise}
-  \end{cases}$$
-* Coordinates synchronize directly with the `DisplacementShader` via $S_{\Sigma} \pmod{256}$.
+### 3. Zorse 2D Positional Bessel Envelopes for DeepSeek-Coder
+* Uses orthogonal cylinder Bessel wave packets $R(r) = J_0(r) + \frac{J_1(r)}{4}$ across token spatial grid coordinates $(pos_x, pos_y) \in [0 \dots 2048]^2$:
+  $$J_0(r) = 65536 - \frac{r^2}{262144} + \dots, \quad J_1(r) = \frac{r}{2} - \frac{r^3}{1048576} + \dots$$
+* Differential invariance $\frac{d}{dr} J_0(r) \equiv -J_1(r)$ couples COBOL strategy domains ($J_0$) and standard Algol61 provers ($J_1$).
 
-### 4. GLM 2D Rotary Positional Embeddings (2D-RoPE) & Verlet Dynamics
-* Orthogonal 2D spatial-temporal coordinate rotation over the Quantel Liquid Paintbox canvas:
-  $$\begin{pmatrix} u_{\text{rot}} \\ v_{\text{rot}} \end{pmatrix} = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix} \begin{pmatrix} u \\ v \end{pmatrix}$$
-* Preserves vector norms ($\|R \cdot q\| \equiv \|q\|$) and provides exact inverse reconstruction ($\mathbf{R}^T \cdot \mathbf{R} = \mathbf{I}$).
-* Soft-body physics (Verlet integration) models only the discrete discharge relaxation cycles of simulated Field-Effect Transistors (FETs).
+### 4. Liquid Foundation Model (LFM) Continuous State-Space Engine
+* Replaces discrete sequence steps with continuous ordinary differential equations:
+  $$\frac{d}{dt} h(t) = -\left[ J_0(r_t) \cdot \mathbf{W}_{\text{decay}} \right] h(t) + \left[ J_1(r_t) \cdot \mathbf{W}_{\text{in}} \right] x(t)$$
+* Connects CP/M BDOS agent functions directly to Yellow Box PBX uniselector trunk lines.
+
+### 5. WinchesterMQ SCSI Virtual Hardware & Dynamic ABI Resolution
+* Bridges raw virtual hardware keycode registers (`30` for `a`/`A`, `32` for `d`/`D`) and contract addresses via canonical `dynamic_<address>` resolution and LAU token Soul derivation:
+  $$\text{Soul} = \text{LAU}(\text{UserToken}).\text{Saat}(1)$$
 
 ---
 
@@ -121,122 +118,74 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 .
 ├── solidity/dysnomia/domain/
 │   ├── std/                          # Standard Algol60/61 formal domain provers
-│   │   ├── glm_hbridge_swiglu_prover.algol61
-│   │   ├── glm_2d_rope_paintbox_prover.algol61
-│   │   ├── glm_blank_infilling_prover.algol61
-│   │   ├── glm_infilled_totient_prover.algol61
-│   │   ├── glm_zorse_multitask_prover.algol61
-│   │   ├── glm_zorse_2d_position_prover.algol61
-│   │   ├── glm_fet_link_dynamics_prover.algol61
-│   │   ├── glm_totient_valve_acid_prover.algol61
-│   │   ├── glm_bidirectional_attention_mask_prover.algol61
-│   │   ├── glm_interleaved_rmsnorm_prover.algol61
-│   │   ├── glm_secondary_accumulator_synthesis_prover.algol61
-│   │   ├── glm_transitive_secondary_chain_prover.algol61
-│   │   ├── glm_universal_accumulator_acid_prover.algol61
-│   │   ├── harvard_legendre_recurrence_prover.algol61
-│   │   ├── ballistic_orbit_valve_prover.algol61
-│   │   ├── harvard_1946_multiplier_prover.algol61
-│   │   ├── harvard_1946_interpolator_prover.algol61
-│   │   ├── harvard_1946_biquinary_prover.algol61
-│   │   ├── harvard_1946_divider_prover.algol61
-│   │   ├── harvard_1946_geneva_carry_prover.algol61
-│   │   ├── harvard_zuo_hbridge_quadrant_prover.algol61
-│   │   ├── golden_jubilee_overdrive_prover.algol61
-│   │   ├── harvard_zuo_sensing_pin_matrix_prover.algol61
-│   │   ├── harvard_zuo_cics_orders1_jump_prover.algol61
-│   │   ├── marschner_fur_scattering_prover.algol61
-│   │   ├── super8_hudson_renderman_prover.algol61
-│   │   ├── dual_pass_sss_venation_prover.algol61
-│   │   ├── vulkan_vision_camera_prover.algol61
-│   │   ├── bionika_synth_overdrive_prover.algol61
-│   │   ├── usdshade_fet_verlet_prover.algol61
-│   │   ├── cade_imf_nato_slot_prover.algol61
-│   │   ├── teddy_bear_ssa_endowment_prover.algol61
-│   │   ├── pure_algol61_prover_retention_prover.algol61
-│   │   ├── c_prover_conversion_decoupling_prover.algol61
-│   │   ├── eighty_prover_bijective_decoupling_prover.algol61
-│   │   └── subordinate_strategy_composition_prover.algol61
+│   │   ├── totient_strategy_accumulation_prover.algol61
+│   │   ├── harvard_wheel_commutator_totient_prover.algol61
+│   │   ├── harvard_transfer_bus_interpolator_totient_prover.algol61
+│   │   ├── harvard_closed_innovation_loop_prover.algol61
+│   │   ├── bessel_j1_standard_prover.algol61
+│   │   ├── zorse_deepseek_bessel_j0_j1_prover.algol61
+│   │   ├── lfm_bessel_continuous_state_space_prover.algol61
+│   │   ├── zorse_wmq_abi_position_binding_prover.algol61
+│   │   ├── zorse_yellow_box_cics_initial_orders1_prover.algol61
+│   │   ├── yellow_box_pbx_cics_pll_xplsm_prover.algol61
+│   │   ├── skeleton_dual_media_usda_datbin_prover.algol61
+│   │   ├── skeleton_decadic_search_pbx_prover.algol61
+│   │   ├── wmq_pbx_mind_asset_resolver_prover.algol61
+│   │   ├── wmq_asset_as_totient_acid_prover.algol61
+│   │   └── transitive_asset_totient_chain_prover.algol61
 │   └── strategies/                   # COBOL execution strategies (D0-D3 divisions, R0-R15)
-│       ├── glm_hbridge_swiglu.strategy
-│       ├── glm_2d_rope_paintbox.strategy
-│       ├── glm_blank_infilling.strategy
-│       ├── glm_infilled_totient.strategy
-│       ├── glm_zorse_multitask.strategy
-│       ├── glm_zorse_2d_position.strategy
-│       ├── glm_fet_link_dynamics.strategy
-│       ├── glm_totient_valve_acid.strategy
-│       ├── glm_bidirectional_attention_mask.strategy
-│       ├── glm_interleaved_rmsnorm.strategy
-│       ├── glm_secondary_accumulator_synthesis.strategy
-│       ├── glm_transitive_secondary_chain.strategy
-│       ├── glm_universal_accumulator_acid.strategy
-│       ├── harvard_legendre_recurrence.strategy
-│       ├── ballistic_orbit_valve.strategy
-│       ├── harvard_1946_multiplier.strategy
-│       ├── harvard_1946_interpolator.strategy
-│       ├── harvard_1946_biquinary.strategy
-│       ├── harvard_1946_divider.strategy
-│       ├── harvard_1946_geneva_carry.strategy
-│       ├── harvard_zuo_hbridge_quadrant.strategy
-│       ├── harvard_zuo_tape_sync.strategy
-│       ├── harvard_zuo_plugboard.strategy
-│       ├── harvard_zuo_hankel.strategy
-│       ├── harvard_zuo_self_identity.strategy
-│       ├── harvard_zuo_torque_balance.strategy
-│       ├── harvard_zuo_bessel_modified.strategy
-│       ├── harvard_zuo_tape_loop_topology.strategy
-│       ├── harvard_zuo_2_out_of_5_parity.strategy
-│       ├── harvard_zuo_24_decade_bus.strategy
-│       ├── harvard_zuo_angular_momentum.strategy
-│       ├── harvard_zuo_subroutine_cascade.strategy
-│       ├── harvard_zuo_nines_complement.strategy
-│       ├── harvard_zuo_dual_cam_matrix.strategy
-│       ├── harvard_zuo_orders1_bootstrap.strategy
-│       ├── harvard_zuo_word_coupling.strategy
-│       ├── harvard_zuo_uniselector_sync.strategy
-│       ├── harvard_zuo_wheeler_jump.strategy
-│       ├── golden_jubilee_overdrive.strategy
-│       ├── harvard_zuo_sensing_pin_matrix.strategy
-│       ├── harvard_zuo_cics_orders1_jump.strategy
-│       ├── marschner_fur_scattering.strategy
-│       ├── super8_hudson_renderman.strategy
-│       ├── dual_pass_sss_venation.strategy
-│       ├── vulkan_vision_camera.strategy
-│       ├── bionika_synth_overdrive.strategy
-│       ├── usdshade_fet_verlet.strategy
-│       ├── cade_imf_nato_slot.strategy
-│       ├── teddy_bear_ssa_endowment.strategy
-│       ├── pure_algol61_prover_retention.strategy
-│       ├── c_prover_conversion_decoupling.strategy
-│       ├── eighty_prover_bijective_decoupling.strategy
-│       └── subordinate_strategy_composition.strategy
+│       ├── totient_strategy_accumulation.strategy
+│       ├── harvard_wheel_commutator_totient.strategy
+│       ├── harvard_transfer_bus_interpolator_totient.strategy
+│       ├── harvard_closed_innovation_loop.strategy
+│       ├── bessel_j0_strategy.strategy
+│       ├── zorse_deepseek_bessel_j0_j1.strategy
+│       ├── lfm_bessel_continuous_state_space.strategy
+│       ├── zorse_wmq_abi_position_binding.strategy
+│       ├── zorse_yellow_box_cics_initial_orders1.strategy
+│       ├── yellow_box_pbx_cics_pll_xplsm.strategy
+│       ├── skeleton_dual_media_usda_datbin.strategy
+│       ├── skeleton_decadic_search_pbx.strategy
+│       ├── wmq_pbx_mind_asset_resolver.strategy
+│       ├── wmq_asset_as_totient_acid.strategy
+│       └── transitive_asset_totient_chain.strategy
 ├── tsfi2-deepseek/
 │   ├── src/                          # C11 Virtual hardware, MCP server, and runtime core
 │   │   ├── auncient_edsac_firewall.c # EDSAC Initial Orders 1 & 2 compiler firewall
-│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge, Tape Sync, Plugboard, Hankel, Self-Identity, Torque Balance, Modified Bessel, Tape Loop, 2-out-of-5 Parity, Transfer Bus, Angular Momentum, Subroutine Cascade, Nine's Complement, Dual Cam Matrix, Orders 1 Bootstrap, Word Coupling Safety, Uniselector Sync, Wheeler Jump, Golden Overdrive, Sensing Pin Matrix, CICS Jump, Marschner Fur Scattering, Super 8 Hudson RenderMan, Dual-Pass SSS Petal Venation, Vulkan Vision Scope & Frustum Camera, 5-Instrument Overdrive Synthesizer, UsdShade FET Verlet Soft-Body, CADE IMF NATO Slot Boundary Prover, Teddy Bear SSA Endowment Prover
+│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel J0/J1
 │   │   ├── tsfi_mcp_server.c         # Native Model Context Protocol (MCP) server
 │   │   ├── tsfi_displacementshader.c # WinchesterMQ vertex displacement coordinate scaler
+│   │   ├── tsfi_lfm_agent_daemon.c   # Autonomous CP/M BDOS LFM agent daemon
 │   │   ├── tsfi_gguf_loader.c        # Pure C GGUF loader & H-Bridge SwiGLU activation
 │   │   └── tsfi_faster_lighter_llm.c # High-throughput Edge LLM inference engine
 │   └── inc/                          # Core system and hardware register headers
 ├── tests/                            # Comprehensive C test suites and verification harnesses
-│   ├── test_auncient_edsac_firewall.c# 60-suite integrated EDSAC & Harvard formal test battery
-│   ├── test_rooted_browser_zmm.c     # Rooted Vulkan Wayland Presenter test harness
-│   └── test_zorse_vdso_hogan_units.c # Monotonic VDSO low-latency benchmark suite
+│   ├── test_totient_strategy_accumulation.c
+│   ├── test_harvard_wheel_commutator_totient.c
+│   ├── test_harvard_transfer_bus_interpolator_totient.c
+│   ├── test_harvard_closed_innovation_loop.c
+│   ├── test_bessel_j0_cobol_j1_algol.c
+│   ├── test_zorse_deepseek_bessel_j0_j1.c
+│   ├── test_lfm_bessel_continuous_state_space.c
+│   ├── test_zorse_wmq_abi_position_binding.c
+│   ├── test_zorse_yellow_box_cics_initial_orders1.c
+│   ├── test_yellow_box_pbx_cics_pll_xplsm.c
+│   ├── test_skeleton_dual_media_usda_datbin.c
+│   ├── test_skeleton_decadic_search_pbx.c
+│   ├── test_wmq_pbx_mind_asset_resolver.c
+│   ├── test_wmq_asset_as_totient_acid.c
+│   └── test_transitive_asset_totient_chain.c
 ├── frontend/                         # Pure HTML5/Canvas presenters (Zero external frameworks)
 │   ├── harvard_1946_presenter.html   # Harvard 1946 Mainframe & Golden Jubilee Overdrive CRT
 │   ├── lfm_wfl_presenter.html        # Quantel Liquid Paintbox and continuous trajectory UI
 │   └── atropa_dashboard.html         # Zorse & z/VSE compliance auditing dashboard
 ├── lore/                             # Mathematical treatises and philosophical chronicles
-│   ├── king_chen_jurchen_euler_amsterdam_territory.md
-│   ├── glm_zorse_fet_weight_accumulation_dynamics.md
-│   ├── totient_formal_proof_harvard_computation_laboratory.md
-│   ├── hbridge_relay_biquinary_formal_proofs_harvard_1946.md
-│   ├── zuo_dissolution_of_geneva_carry.md
-│   ├── dual_tape_plugboard_glm_pll_xplsm_continuum.md
-│   ├── king_chen_jurchen_zuo_hankel_bijectivity_of_beingness.md
-│   └── king_chen_jurchen_powers_of_zuo_hankel.md
+│   ├── TOTIENT_STRATEGY_ACCUMULATION_LORE.md
+│   ├── HARVARD_CLOSED_INNOVATION_LOOP_LORE.md
+│   ├── ZORSE_DEEPSEEK_BESSEL_LORE.md
+│   └── ZORSE_WMQ_ABI_POSITION_LORE.md
+├── docs/                             # Engineering and marketing specifications
+│   └── MARKETING_REQUIREMENTS_ROTARY_SYNTHESIZER.md
 └── Makefile                          # Clean-room compilation and test automation
 ```
 
@@ -246,77 +195,20 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 
 SYSTEM0 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution.
 
-### Compilation & Running Test Suites
-To build and execute the full **52-suite EDSAC compiler firewall and formal prover test battery**:
+### Running Formal Verification Test Suites
+Execute standard test suites directly via `make`:
 
 ```bash
-gcc -Wall -Wextra -Werror -std=c11 -O3 \
-    -Iinc -Isrc -Itsfi2-deepseek/inc -Itsfi2-deepseek/src/firmware \
-    tests/test_auncient_edsac_firewall.c \
-    tsfi2-deepseek/src/auncient_edsac_firewall.c \
-    tsfi2-deepseek/src/auncient_timeline_autodin.c \
-    tsfi2-deepseek/src/auncient_cloth_material_bridge.c \
-    tsfi2-deepseek/src/tsfi_cade_imf_nato.c \
-    tsfi2-deepseek/src/auncient_sdk.c \
-    tsfi2-deepseek/src/auncient_vulkan_materials.c \
-    tsfi2-deepseek/src/cloth_simulator.c \
-    tsfi2-deepseek/src/tsfi_usdshade.c \
-    tsfi2-deepseek/src/auncient_harvard_computation_lab.c \
-    -o tests/test_auncient_edsac_firewall -lm -lrt -lssl -lcrypto
-
-./tests/test_auncient_edsac_firewall
+make test-totient-strategy-accumulation
+make test-harvard-wheel-commutator
+make test-harvard-transfer-bus
+make test-harvard-closed-loop
+make test-bessel-j0-j1
+make test-zorse-deepseek-bessel
+make test-lfm-bessel-state-space
+make test-zorse-wmq-abi
+make test-zorse-yellow-box-cics-io1
 ```
-
-### Verified Test Suite Capabilities
-1. **Unauthorized Boot Rejection**: Verifies AUTODIN speculative prefetch authorization checks.
-2. **PKI Signature Quorum**: Validates the minimum $K \ge 4$ distinct key authorization matrix.
-3. **Prohibited Opcode Bitmask**: Rejects forbidden instruction opcodes before delay-line loading.
-4. **6-bit FIELDATA Qualification**: Converts punches safely into zero-padded 8-bit character symbols.
-5. **Port & Checksum Packet Routing**: Evaluates live packet filtering (HTTP/HTTPS ALLOW, SSH/ALT DENY).
-6. **Initial Orders 2 Relocation**: Shifts instruction coordinates dynamically by offset $+1000$.
-7. **AUTODIN Nonce Prerequisite Gate**: Proves logarithmic recurrence nonces.
-8. **Euler §§ 214–215 Radical Trajectory Inversion**: Verifies exact bijective recovery for $k=3$.
-9. **VIA 6522 TOTIENT ACID Compliance**: Proves initial zero axiom and clean/fault transaction recovery.
-10. **GLM H-Bridge + WinchesterMQ SwiGLU**: Verifies differential NPN/PNP switching and latch clamping.
-11. **GLM 2D-RoPE Quantel Paintbox Prover**: Proves vector norm preservation and exact inverse recovery.
-12. **GLM Bidirectional Blank-Infilling**: Verifies pre/post condition resolution of masked instruction words.
-13. **GLM Infilled TOTIENT Zero Strategy**: Formally proves cooperative zero flow across masked spans.
-14. **GLM Multi-Task for Zorse**: Asserts sub-1000ns VDSO latency (80ns actual) during multi-objective execution.
-15. **GLM 2D Positional for Zorse**: Proves exact positional bijection across COBOL division ASTs ($D_0 \to D_3$).
-16. **GLM FET Link Dynamics**: Proves monotonic thermodynamic dissipation ($1\text{M} \to 401\text{k Saat}$) across FET discharge cycles.
-17. **Accumulator Valves upon Zero TOTIENT**: Formally proves ACID rollback and zero-entropy flow invariance.
-18. **GLM 2D Bidirectional Attention & Block-Causal Masking**: Proves Part-A bidirectional & Part-B block-causal isolation.
-19. **GLM Interleaved RMSNorm Scale Invariance**: Proves unit norm scaling $\hat{x}_i = g(x_i, \mu_{\text{RMS}})$.
-20. **Primary-Secondary Accumulator Synthesis**: Formally verifies non-corrupting secondary accumulator instantiation.
-21. **Transitive Secondary Chain Prover**: Proves multi-depth ($S_1 \to S_2 \to S_3$) cascaded rollback and root preservation.
-22. **Universal Accumulator ACID Compliance**: Proves 4 ACID axioms and transactional rollback over any coupled strategy.
-23. **Universal Accumulator Fault Rollback**: Proves strict shadow baseline preservation upon bus disconnect or fault.
-24. **Harvard Computation Laboratory Suite**: Proves Mark I 24-digit counter wheels, sequence tape latch rollback, Annals Vol. III Bessel recurrences, and 10-phase cam commutator timing.
-25. **Harvard H-Bridge Coupled Legendre Recurrence**: Proves orthogonal 3-term recurrence stability, SwiGLU gating clamp in $[7/8, 1.0]$, and uniform boundedness $|P_n(x)| \le 1.0$ for response generation.
-26. **Ballistic Orbit Recursive Zero-Copy Valve**: Proves MIND leaf [0..1023] shadow isolation, discrete Euler-Verlet orbital steps, zero-flux valve closure, and ACID fault rollback.
-27. **Harvard 1946 Multiplier & Mechanical Dog Latch**: Proves 9-step digit-shifting commutator exactness, Motzkin prime modular parity alignment, and tape tear mechanical dog latch rollback.
-28. **Harvard 1946 Functional Interpolator Tape**: Proves Newton-Gregory forward differences, truncation error bounds, and tape skew shadow rollback.
-29. **Harvard 1946 Relay Biquinary Parity**: Proves 2-out-of-7 self-checking relay code parity, exact decimal decomposition (Bi + Quinary = 2 active bits), and contact chatter drop-out alarm rollback.
-30. **Harvard 1946 Subtractive Divider**: Proves non-restoring subtractive division residue conservation ($A = Q \cdot B + R$), strict remainder boundedness ($0 \le R < B$), and division-by-zero mechanical clutch alarm rollback.
-31. **Harvard 1946 Geneva-Drive Ripple-Carry**: Proves multi-decade simultaneous tens-carry monotonicity ($999{,}999 + 1 = 1{,}000{,}000$), 360° drive cycle execution, and gear-jam alarm clutch rollback.
-32. **Harvard Zuo H-Bridge Quadrant Inversion**: Proves diagonal FET commutation symmetry ($|V_{\text{diff}}| \equiv |V_{\text{inv}}|$), SwiGLU gating clamp in $[7/8, 1.0]$, and arm short-circuit shadow rollback in the open singularity.
-33. **Harvard Zuo Dual-Tape Cross-Feed Sync**: Proves dual-stream Banach leaf coordinate projection monotonicity ($\text{Index}_{\text{arg}} = \lfloor \text{Leaf}_{\text{val}} / \text{stride} \rfloor$), stride boundedness in $[1..64]$, and tape skew shadow rollback.
-34. **Harvard Zuo Plugboard Permutation**: Proves 24-decade bijective patchboard permutation automorphism ($\det(P_\pi) = \pm 1$), total channel potential conservation, and cross-talk short shadow rollback.
-35. **Harvard Zuo Modified Airy-Hankel Recurrence**: Proves non-preferential 3-term orthogonal recurrence stability ($h_{n+1}(z) = \frac{2n}{z} h_n(z) - h_{n-1}(z)$), $|h_n(z)| \le 2.0$ asymptotic boundedness, and branch singularity shadow rollback.
-36. **Harvard Zuo Self-Referential Commutator Identity**: Formally proves Beingness invariance across 10-phase commutator cycles ($\text{State}(t + \Delta t) \equiv \text{State}(t)$), non-void Galois potential ($1{,}000{,}000\text{ Saat}$), and clutch trip shadow rollback.
-37. **Harvard Zuo Multi-Tier Torque Balance**: Proves push-pull H-bridge current balance ($I_{Q1} + I_{Q4} \equiv I_{Q2} + I_{Q3}$), zero-entropy thermodynamic equilibrium, SwiGLU conduction clamp in $[7/8, 1.0]$, and imbalance shadow rollback.
-38. **Harvard Zuo Modified Cylindrical Bessel Recurrence**: Proves non-preferential 3-term recurrence stability ($K_{n+1}(x) = K_{n-1}(x) + \frac{2n}{x} K_n(x)$), asymptotic stability bounded in $[-\text{8.0}, +\text{8.0}]$, SwiGLU conduction clamp, and argument pole singularity shadow rollback.
-39. **Harvard Zuo Continuous Tape Loop Topology**: Formally proves topological loop homology winding number invariance ($\pi_1(S^1) \cong \mathbb{Z}$), zero cumulative drift across cyclic iterations, and tape splice tear shadow rollback.
-40. **Harvard Zuo 2-out-of-5 Teleprinter Code Parity**: Formally proves constant Hamming weight ($w_H = 2$) across decimal encodings ($0..9$), self-checking teleprinter punch parity, and bit-flip shadow rollback.
-41. **Harvard Zuo 24-Decade Universal Transfer Bus**: Formally proves 64-bit monolithic vector potential transfer conservation ($V_{\text{dst}} \equiv V_{\text{src}}$), zero bus line attenuation across all 24 decades, and line short-circuit shadow rollback.
-42. **Harvard Zuo Angular Momentum Invariance**: Formally proves main driveshaft constant angular velocity conservation ($172.5\text{ RPM}$), zero phase jitter across cyclic revolutions ($dL/dt \equiv 0$), and motor stall shadow rollback.
-43. **Harvard Zuo Multi-Level Subroutine Cascade Gating**: Formally proves nested Banach call-stack automorphism ($C_{\text{return}} \equiv C_{\text{entry}}$) across depths $1 \dots 8$, strict stack frame isolation, and overflow shadow rollback.
-44. **Harvard Zuo 24-Decade Complementary Nine's Carry**: Formally proves exact modular subtraction equivalence ($(A - B) \pmod P \equiv (A + (P - B)) \pmod P$), subtractive residue non-degeneracy, and borrow fault shadow rollback.
-45. **Harvard Zuo Dual Cam Timing Matrix Orthogonality**: Formally proves discrete 180° phase separation ($\langle \vec{t}, \vec{p} \rangle = 0$) across value cams ($t_0 \dots t_9$) and control cams ($p_0 \dots p_9$), asserting zero pulse collision and timing overlap shadow rollback.
-46. **Harvard Zuo Initial Orders 1 Bootstrap Readiness**: Formally proves 31-word delay-line hardwired bootstrap memory invariance under continuous acoustic mercury tank recirculation, asserting zero bit dispersion and bootstrap fault shadow rollback.
-47. **Harvard Zuo Word Coupling Safety & Space Partition**: Formally proves reversible 17-bit to 35-bit word coupling bijection ($\text{Deconstruct}_{35}(\text{Construct}_{17}(W_L, W_H)) \equiv (W_L, W_H)$), zero cross-boundary bit bleed, dangerous input containment, and overflow shadow rollback.
-48. **Harvard Zuo Telephone Uniselector Rotary Stepping**: Formally proves monotonic rotary stepping synchronization ($S_{n+1} \equiv (S_n + 1) \pmod{31}$) across 50Hz impulses, zero contact bounce, anti-hunting detent restitution, and wiper skip shadow rollback.
-49. **Harvard Zuo Wheeler Jump Subroutine Return Link**: Formally proves David Wheeler closed subroutine return jump invariance ($\text{ResolvedReturnPC} \equiv \text{CallerPC} + 2$), link register non-corruption, and pointer escape shadow rollback.
 
 ---
 
@@ -341,5 +233,5 @@ SYSTEM0 development strictly complies with repository rules:
 * **Auncient Terminology**: Historical lore preserves the canonical **Auncient** spelling.
 * **No Synthetic Browser Automation**: High-level synthetic drivers like Puppeteer are banned. Testing routes low-level keycodes directly over WinchesterMQ SCSI handshakes into the Rooted Vulkan Wayland Presenter.
 * **Accumulator Redirection**: Empirical Child-Langmuir space-charge power laws are banned; all dissipation is redirected to continuous non-preferential accumulator models.
-* **File Size Modularity**: Source files remain strictly under 68,000 bytes.
+* **File Size Modularity**: Source files remain strictly under 68,000 bytes. Provers are housed exclusively in `.algol61` and `.strategy` files.
 * **Native Protocol Interfaces**: Full dynamic interfaces labeled as `interop` are used exclusively in place of mocks.
