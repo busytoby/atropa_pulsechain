@@ -71,8 +71,52 @@ All standards contained herein are certified clean-room compliant with:
 
 ---
 
+### [AUNCIENT-STD-0005-LASALLE-HBRIDGE](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_lasalle_hbridge_consensus_standard.md)
+* **Title**: *Auncient Dysnomia VM 4-Quadrant Relay Actuation & Stepwise Collective Consensus Standard*
+* **Core Claims**:
+  1. 4-Quadrant Relay Commutation (Forward, Reverse, Dynamic Brake, Coasting).
+  2. Multi-Agent LaSalle Invariant Consensus Set $\mathcal{E}$ ($x_1^* = x_2^* = \dots = x_K^*$).
+  3. Universal Parametric Topology Adaptability (Ring, Star, Mesh, Full, Tree for $K=4 \dots 24$).
+  4. Instant Zero-Flux Shadow Rollback: $\Delta \text{Saat}_{\text{loss}} \equiv 0$.
+* **Verification Harnesses**: `make test-lyapunov-lasalle-hbridge` (4/4 Passed), `make test-universal-hbridge-lasalle-config` (4/4 Passed)
+
+---
+
+### [AUNCIENT-STD-0006-AUDITORY-STABILITY](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_auditory_lyapunov_stability_standard.md)
+* **Title**: *Auncient Dysnomia VM & ANKH LLM Biological Auditory Protection & Binaural Consensus Standard*
+* **Core Claims**:
+  1. 24 Critical Bark Band Dissonance Contraction ($\gamma^* = \frac{7}{8}$).
+  2. Cochlear Basilar Membrane 35mm Hydrodynamic Traveling Wave Dissipation.
+  3. ISO 226 / Fletcher-Munson Equal-Loudness Fatigue Dose Boundedness.
+  4. Binaural ITD LaSalle Phase Locking across $[-90^\circ \dots +90^\circ]$ Azimuth.
+* **Verification Harnesses**: `make test-lyapunov-bark-critical-band` (4/4 Passed), `make test-lyapunov-cochlear-basilar` (4/4 Passed), `make test-lyapunov-fletcher-munson` (4/4 Passed), `make test-lyapunov-binaural-itd-sync` (4/4 Passed)
+
+---
+
+### [AUNCIENT-STD-0007-INSTANCE-STABILITY](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_instance_stability_standard.md)
+* **Title**: *Auncient Dysnomia VM Dynamic Contract Register Contraction & Re-Entrancy Boundedness Standard*
+* **Core Claims**:
+  1. Address-Based Instance State Resolution: `dynamic_<address>`.
+  2. Monotonic SHA `Fa` Storage Register Contraction ($\gamma^* = \frac{7}{8}$).
+  3. Recursive Delegate Call-Stack Energy Boundedness ($V_{\text{call}} \le 2 \max \|\vec{x}\|^2$ for depth $d \le 16$).
+  4. Autonomous Capture the INSTANCE 4-Move Victory Verification.
+* **Verification Harnesses**: `make test-lyapunov-instance-stability` (4/4 Passed), `make test-capture-the-instance-victory` (4/4 Passed)
+
+---
+
+### [AUNCIENT-STD-0008-ACCUMULATORY-INSTANCE](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_accumulatory_instance_standard.md)
+* **Title**: *Auncient Dysnomia VM & Harvard Computation Laboratory Architecture Modernization Standard*
+* **Core Claims**:
+  1. Non-Preferential Linear Flux Integration ($\dot{A} = S_t$) obeying Rule 12.
+  2. Bounded Geometric Saturation Capacity Ceiling: $A_{\text{total}} \le A_0 + 8 S_{\max} < \infty$.
+  3. Modernization of Harvard 1946 Commutator Wheels to 4-Quadrant Dynamic Braking.
+  4. Instant Zero-Flux Shadow Rollback on Overcharge: $\Delta \text{Saat}_{\text{loss}} \equiv 0$.
+* **Verification Harnesses**: `make test-lyapunov-accumulatory-instance` (4/4 Passed), `make test-lyapunov-ear-instance-storage` (4/4 Passed), `make test-lyapunov-ear-instance-delegate` (4/4 Passed)
+
+---
+
 ## 3. UNIFIED VERIFICATION TARGET COMMANDS
-To execute the complete formal proof battery across all five ratified standards, run:
+To execute the complete formal proof battery across all nine ratified standards, run:
 
 ```bash
 make test-ankh-max-lyapunov-stability
@@ -83,4 +127,19 @@ make test-bmrc-strowger-halting
 make test-bmrc-landauer-reversibility
 make test-benson-lehner-fieldata-safety
 make test-ankh-adversarial-neutralization
+make test-lyapunov-lasalle-hbridge
+make test-universal-hbridge-lasalle-config
+make test-lyapunov-iss-scsi-noise
+make test-lyapunov-hamiltonian-energy
+make test-lyapunov-edo22-sync
+make test-edo22-play-by-ear
+make test-lyapunov-bark-critical-band
+make test-lyapunov-cochlear-basilar
+make test-lyapunov-fletcher-munson
+make test-lyapunov-binaural-itd-sync
+make test-lyapunov-instance-stability
+make test-capture-the-instance-victory
+make test-lyapunov-ear-instance-storage
+make test-lyapunov-ear-instance-delegate
+make test-lyapunov-accumulatory-instance
 ```
