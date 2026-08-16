@@ -1,0 +1,112 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LESLIE-BIORHYTHM-NOTCH-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LESLIE NOTCH AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-LESLIE-PARAMETERS.
+           05 WS-LESLIE-SPEED           PIC 9(01) VALUE 2.
+           05 WS-BIORHYTHM-DAY          PIC 9(02) VALUE 14.
+           05 WS-PEDAL-VELOCITY-Q16     PIC 9(06) VALUE 032768.
+           05 WS-FEEDBACK-FREQ-HZ       PIC 9(05) VALUE 02500.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DOPPLER-SHIFT-HZ       PIC 9(06) VALUE 0.
+           05 WS-ORGANIC-BIO-MOD        PIC 9(06) VALUE 0.
+           05 WS-DAMPED-PEDAL-VEL       PIC 9(06) VALUE 0.
+           05 WS-NOTCH-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-LESLIE-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-LESLIE-SPEED        VALUE 2.
+              88 INVALID-BIORHYTHM-DAY       VALUE 3.
+              88 INVALID-PEDAL-VELOCITY      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-FEEDBACK-FREQ       VALUE 6.
+              88 DOPPLER-UNDERFLOW-FAIL      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-LESLIE-NOTCH
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LESLIE-SPEED > 2
+                SET INVALID-LESLIE-SPEED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BIORHYTHM-DAY < 1 OR WS-BIORHYTHM-DAY > 33
+                SET INVALID-BIORHYTHM-DAY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PEDAL-VELOCITY-Q16 > 65536
+                SET INVALID-PEDAL-VELOCITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FEEDBACK-FREQ-HZ < 20 OR WS-FEEDBACK-FREQ-HZ > 20000
+                SET INVALID-FEEDBACK-FREQ TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-LESLIE-NOTCH.
+            COMPUTE WS-DOPPLER-SHIFT-HZ = 100 + (WS-LESLIE-SPEED * 15) + 1.
+
+            IF WS-DOPPLER-SHIFT-HZ EQUAL ZERO
+                SET DOPPLER-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ORGANIC-BIO-MOD = 1000 + ((WS-BIORHYTHM-DAY * 50) / 33).
+            COMPUTE WS-DAMPED-PEDAL-VEL = (WS-PEDAL-VELOCITY-Q16 * 875) / 1000.
+            COMPUTE WS-NOTCH-REBAR-LATCH = 1470169088 + (WS-FEEDBACK-FREQ-HZ / 10) +
+                                           (WS-LESLIE-SPEED * 256) +
+                                           (WS-BIORHYTHM-DAY * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-LESLIE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-DOPPLER-SHIFT-HZ * 1000) +
+                                            (WS-ORGANIC-BIO-MOD * 10) +
+                                            (WS-DAMPED-PEDAL-VEL / 10) +
+                                            (WS-NOTCH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-LESLIE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-LESLIE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

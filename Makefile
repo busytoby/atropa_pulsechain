@@ -58,6 +58,11 @@ test-band-binaural-multitrack:
 	./tests/test_band_binaural_multitrack
 	@rm -f tests/test_band_binaural_multitrack
 
+test-leslie-biorhythm-notch:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_leslie_biorhythm_notch.c -o tests/test_leslie_biorhythm_notch
+	./tests/test_leslie_biorhythm_notch
+	@rm -f tests/test_leslie_biorhythm_notch
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
