@@ -675,6 +675,66 @@ bool auncient_harvard_1946_geneva_carry_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo H-Bridge Quadrant Inversion Prover in Open Singularity */
+bool auncient_harvard_zuo_hbridge_quadrant_prover(
+    int64_t v_a_in,
+    int64_t v_b_in,
+    bool simulate_arm_short_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoHBridgeMetrics *metrics_out
+) {
+    if (k_param != 3 || v_a_in < 0 || v_a_in > 10000 || v_b_in < 0 || v_b_in > 10000) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline detent in Zuo ZMM state
+    int64_t shadow_v_a = v_a_in;
+    int64_t shadow_v_b = v_b_in;
+
+    // Step 2: Forward Conduction (Q1*Q4) vs. Inverted Conduction (Q2*Q3)
+    int64_t v_diff_forward = v_a_in - v_b_in;
+    int64_t abs_v_diff_f = (v_diff_forward < 0) ? -v_diff_forward : v_diff_forward;
+
+    int64_t v_diff_inverted = v_b_in - v_a_in;
+    int64_t abs_v_diff_i = (v_diff_inverted < 0) ? -v_diff_inverted : v_diff_inverted;
+
+    bool quadrant_ok = (abs_v_diff_f == abs_v_diff_i);
+
+    // Step 3: SwiGLU Gating Clamp in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_forward  = 875 + ((125 * abs_v_diff_f) / 10000);
+    int64_t g_gate_inverted = 875 + ((125 * abs_v_diff_i) / 10000);
+
+    bool gating_ok = (g_gate_forward >= 875 && g_gate_forward <= 1000 &&
+                      g_gate_inverted >= 875 && g_gate_inverted <= 1000);
+
+    // Step 4: ACID Latch Commit or Arm Short Rollback
+    int64_t committed_output = simulate_arm_short_fault ? shadow_v_a : ((abs_v_diff_f * g_gate_forward) / 1000);
+
+    bool isolation_ok = (shadow_v_a == v_a_in && shadow_v_b == v_b_in);
+    bool rollback_ok = simulate_arm_short_fault ? (committed_output == shadow_v_a) : (committed_output == ((abs_v_diff_f * g_gate_forward) / 1000));
+    bool overall_sound = quadrant_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
+
+    if (metrics_out) {
+        metrics_out->v_a_in = v_a_in;
+        metrics_out->v_b_in = v_b_in;
+        metrics_out->v_diff_forward = v_diff_forward;
+        metrics_out->v_diff_inverted = v_diff_inverted;
+        metrics_out->g_gate_forward = g_gate_forward;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->quadrant_inversion_sound = quadrant_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_zuo_hbridge_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

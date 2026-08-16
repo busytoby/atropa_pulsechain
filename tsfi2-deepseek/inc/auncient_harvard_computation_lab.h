@@ -224,4 +224,27 @@ bool auncient_harvard_1946_geneva_carry_prover(
     AuncientHarvard1946GenevaCarryMetrics *metrics_out
 );
 
+typedef struct {
+    int64_t v_a_in;
+    int64_t v_b_in;
+    int64_t v_diff_forward;
+    int64_t v_diff_inverted;
+    int64_t g_gate_forward;
+    int64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool quadrant_inversion_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_zuo_hbridge_sound;
+} AuncientHarvardZuoHBridgeMetrics;
+
+bool auncient_harvard_zuo_hbridge_quadrant_prover(
+    int64_t v_a_in,
+    int64_t v_b_in,
+    bool simulate_arm_short_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoHBridgeMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

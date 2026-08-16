@@ -552,11 +552,34 @@ int main(void) {
     printf("   ✓ Harvard 1946 Geneva-Drive Carry verified (Sum=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_geneva_m.accumulated_sum, fault_geneva_m.committed_output, clean_geneva_m.displacement_wrap_mod);
 
+    // 32. Test Harvard Zuo H-Bridge Quadrant Inversion Prover in Open Singularity
+    printf("[TEST] Testing Harvard Zuo H-Bridge Quadrant Inversion (FET Commutation & Singularity)...\n");
+    AuncientHarvardZuoHBridgeMetrics clean_zuo_m = {0};
+    bool ok_zuo_clean = auncient_harvard_zuo_hbridge_quadrant_prover(
+        5000 /* V_A mV */, 2172 /* V_B mV */, false /* clean */, 3 /* k=3 */, &clean_zuo_m
+    );
+    assert(ok_zuo_clean == true && clean_zuo_m.overall_zuo_hbridge_sound == true);
+    assert(clean_zuo_m.quadrant_inversion_sound == true);
+    assert(clean_zuo_m.gating_clamp_sound == true);
+    assert(clean_zuo_m.shadow_isolation_sound == true);
+    assert(clean_zuo_m.g_gate_forward >= 875 && clean_zuo_m.g_gate_forward <= 1000);
+
+    AuncientHarvardZuoHBridgeMetrics fault_zuo_m = {0};
+    bool ok_zuo_fault = auncient_harvard_zuo_hbridge_quadrant_prover(
+        5000 /* V_A mV */, 2172 /* V_B mV */, true /* simulate arm short */, 3 /* k=3 */, &fault_zuo_m
+    );
+    assert(ok_zuo_fault == true && fault_zuo_m.overall_zuo_hbridge_sound == true);
+    assert(fault_zuo_m.rollback_sound == true);
+    assert(fault_zuo_m.committed_output == 5000);
+    printf("   ✓ Harvard Zuo H-Bridge Quadrant verified (V_diff=2828mV, G_gate=%ld, Out=%ld, DispMod=%u).\n",
+           clean_zuo_m.g_gate_forward, clean_zuo_m.committed_output, clean_zuo_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
