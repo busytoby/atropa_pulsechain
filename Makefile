@@ -33,6 +33,16 @@ test-exec-hello-bin: compile-hello-bin
 	./tools/ankh_exec_bin hello.bin
 	@rm -f tools/ankh_exec_bin
 
+compile-tune-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_compiler_tune.c -o tools/ankh_compiler_tune
+	./tools/ankh_compiler_tune tune_channel.bin
+	@rm -f tools/ankh_compiler_tune
+
+test-exec-tune-bin: compile-tune-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_exec_tune.c -o tools/ankh_exec_tune
+	./tools/ankh_exec_tune tune_channel.bin
+	@rm -f tools/ankh_exec_tune
+
 test-ankh-abi-wmq-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_abi_wmq_compiler.c -o tests/test_ankh_abi_wmq_compiler
 	./tests/test_ankh_abi_wmq_compiler
