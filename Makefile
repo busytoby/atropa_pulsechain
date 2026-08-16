@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-auncient-teddy-endowed-energy:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_teddy_endowed_energy.c -o tests/test_auncient_teddy_endowed_energy
+	./tests/test_auncient_teddy_endowed_energy
+	@rm -f tests/test_auncient_teddy_endowed_energy
+
 test-ankh-island-symplectic-sw:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_symplectic_sw.c -o tests/test_ankh_island_symplectic_sw
 	./tests/test_ankh_island_symplectic_sw
