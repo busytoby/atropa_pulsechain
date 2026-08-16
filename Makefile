@@ -58,6 +58,11 @@ test-sdk-agent-runtime:
 	./tools/ankh_sdk_runtime hello.bin tune_channel.bin teddy_endow.bin stat.bin
 	@rm -f tools/ankh_sdk_runtime
 
+test-cpm-master-fleet: compile-stat-bin compile-dir-bin compile-pip-bin compile-asm-bin compile-ddt-bin compile-ed-bin compile-submit-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_master_orchestrator.c -o tools/cpm_master_orchestrator
+	./tools/cpm_master_orchestrator
+	@rm -f tools/cpm_master_orchestrator
+
 compile-ed-bin:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_ed.c -o tools/cpm_compiler_ed
 	./tools/cpm_compiler_ed ed.bin
