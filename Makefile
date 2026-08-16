@@ -68,6 +68,11 @@ test-larsen-personality-pll-pmg:
 	./tests/test_larsen_personality_pll_pmg
 	@rm -f tests/test_larsen_personality_pll_pmg
 
+test-larsen-voice-mood-haptics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_larsen_voice_mood_haptics.c -o tests/test_larsen_voice_mood_haptics
+	./tests/test_larsen_voice_mood_haptics
+	@rm -f tests/test_larsen_voice_mood_haptics
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
