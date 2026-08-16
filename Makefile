@@ -198,6 +198,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-kermit-transduction:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_kermit_transduction.c -o tests/test_ankh_kermit_transduction
+	./tests/test_ankh_kermit_transduction
+	@rm -f tests/test_ankh_kermit_transduction
+
 test-ankh-proof-engine:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_proof_engine.c -o tests/test_ankh_proof_engine
 	./tests/test_ankh_proof_engine
