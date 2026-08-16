@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-ankh-island-symplectic-sw:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_symplectic_sw.c -o tests/test_ankh_island_symplectic_sw
+	./tests/test_ankh_island_symplectic_sw
+	@rm -f tests/test_ankh_island_symplectic_sw
+
 test-ankh-totient-acid-blackstart:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_totient_acid_blackstart.c -o tests/test_ankh_totient_acid_blackstart
 	./tests/test_ankh_totient_acid_blackstart
