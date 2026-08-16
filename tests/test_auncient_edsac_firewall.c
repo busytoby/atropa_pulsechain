@@ -820,11 +820,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo Subroutine Cascade verified (Return_Coord=%lu, G_gate=%ld, Out=%lu, DispMod=%u).\n",
            clean_casc_m.return_coordinate, clean_casc_m.g_gate_factor, clean_casc_m.committed_output, clean_casc_m.displacement_wrap_mod);
 
+    // 44. Test Harvard Zuo 24-Decade Complementary Nine's Carry Invariance Prover
+    printf("[TEST] Testing Harvard Zuo Nine's Complement (Direct/Modular Subtraction & Borrow Latch)...\n");
+    AuncientHarvardZuoNinesMetrics clean_nines_m = {0};
+    bool ok_nines_clean = auncient_harvard_zuo_nines_complement_prover(
+        1000000 /* Minuend */, 43605 /* Subtrahend */, false /* clean */, 3 /* k=3 */, &clean_nines_m
+    );
+    assert(ok_nines_clean == true && clean_nines_m.overall_nines_sound == true);
+    assert(clean_nines_m.modular_equivalence_sound == true);
+    assert(clean_nines_m.gating_clamp_sound == true);
+    assert(clean_nines_m.shadow_isolation_sound == true);
+    assert(clean_nines_m.direct_diff_val == 956395ULL);
+    assert(clean_nines_m.modular_diff_val == 956395ULL);
+
+    AuncientHarvardZuoNinesMetrics fault_nines_m = {0};
+    bool ok_nines_fault = auncient_harvard_zuo_nines_complement_prover(
+        1000000 /* Minuend */, 43605 /* Subtrahend */, true /* simulate borrow fault */, 3 /* k=3 */, &fault_nines_m
+    );
+    assert(ok_nines_fault == true && fault_nines_m.overall_nines_sound == true);
+    assert(fault_nines_m.rollback_sound == true);
+    assert(fault_nines_m.committed_output == 1000000ULL);
+    printf("   ✓ Harvard Zuo Nine's Complement verified (Diff=%lu, Modular=%lu, Out=%lu, DispMod=%u).\n",
+           clean_nines_m.direct_diff_val, clean_nines_m.modular_diff_val, clean_nines_m.committed_output, clean_nines_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

@@ -484,4 +484,27 @@ bool auncient_harvard_zuo_subroutine_cascade_prover(
     AuncientHarvardZuoCascadeMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t minuend_val;
+    uint64_t subtrahend_val;
+    uint64_t direct_diff_val;
+    uint64_t modular_diff_val;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool modular_equivalence_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_nines_sound;
+} AuncientHarvardZuoNinesMetrics;
+
+bool auncient_harvard_zuo_nines_complement_prover(
+    uint64_t minuend_val,
+    uint64_t subtrahend_val,
+    bool simulate_borrow_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoNinesMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
