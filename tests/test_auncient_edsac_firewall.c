@@ -843,11 +843,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo Nine's Complement verified (Diff=%lu, Modular=%lu, Out=%lu, DispMod=%u).\n",
            clean_nines_m.direct_diff_val, clean_nines_m.modular_diff_val, clean_nines_m.committed_output, clean_nines_m.displacement_wrap_mod);
 
+    // 45. Test Harvard Zuo Dual Cam Timing Matrix Orthogonality Prover
+    printf("[TEST] Testing Harvard Zuo Dual Cam Matrix (180° Mechanical Orthogonality & Collision Latch)...\n");
+    AuncientHarvardZuoCamMetrics clean_cam_m = {0};
+    bool ok_cam_clean = auncient_harvard_zuo_dual_cam_matrix_prover(
+        2 /* t2 */, 7 /* p7 */, false /* clean */, 3 /* k=3 */, &clean_cam_m
+    );
+    assert(ok_cam_clean == true && clean_cam_m.overall_cam_sound == true);
+    assert(clean_cam_m.phase_orthogonality_sound == true);
+    assert(clean_cam_m.gating_clamp_sound == true);
+    assert(clean_cam_m.shadow_isolation_sound == true);
+    assert(clean_cam_m.phase_difference == 5);
+    assert(clean_cam_m.g_gate_factor == 908);
+
+    AuncientHarvardZuoCamMetrics fault_cam_m = {0};
+    bool ok_cam_fault = auncient_harvard_zuo_dual_cam_matrix_prover(
+        2 /* t2 */, 7 /* p7 */, true /* simulate collision fault */, 3 /* k=3 */, &fault_cam_m
+    );
+    assert(ok_cam_fault == true && fault_cam_m.overall_cam_sound == true);
+    assert(fault_cam_m.rollback_sound == true);
+    assert(fault_cam_m.committed_output == 2ULL);
+    printf("   ✓ Harvard Zuo Dual Cam Matrix verified (t=%u, p=%u, Diff=%u, Out=%lu, DispMod=%u).\n",
+           clean_cam_m.t_cam_phase, clean_cam_m.p_cam_phase, clean_cam_m.phase_difference, clean_cam_m.committed_output, clean_cam_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

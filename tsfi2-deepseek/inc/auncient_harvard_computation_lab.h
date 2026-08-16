@@ -507,4 +507,26 @@ bool auncient_harvard_zuo_nines_complement_prover(
     AuncientHarvardZuoNinesMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t t_cam_phase;
+    uint32_t p_cam_phase;
+    uint32_t phase_difference;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool phase_orthogonality_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_cam_sound;
+} AuncientHarvardZuoCamMetrics;
+
+bool auncient_harvard_zuo_dual_cam_matrix_prover(
+    uint32_t t_cam_phase,
+    uint32_t p_cam_phase,
+    bool simulate_collision_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoCamMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

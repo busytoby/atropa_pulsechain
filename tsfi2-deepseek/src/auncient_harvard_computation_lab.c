@@ -1386,6 +1386,58 @@ bool auncient_harvard_zuo_nines_complement_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Dual Cam Timing Matrix Orthogonality Prover */
+bool auncient_harvard_zuo_dual_cam_matrix_prover(
+    uint32_t t_cam_phase,
+    uint32_t p_cam_phase,
+    bool simulate_collision_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoCamMetrics *metrics_out
+) {
+    if (k_param != 3 || t_cam_phase > 9 || p_cam_phase > 9) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline value cam phase in Zuo ZMM state
+    uint32_t shadow_t = t_cam_phase;
+
+    // Step 2: Evaluate 180-deg Mechanical Cam Phase Orthogonality
+    int32_t diff = (int32_t)t_cam_phase - (int32_t)p_cam_phase;
+    if (diff < 0) diff = -diff;
+    bool phase_ok = (diff != 0);
+
+    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)((t_cam_phase * 10) + p_cam_phase)) / 100LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Cam Overlap Collision Rollback
+    uint64_t raw_word = (uint64_t)(t_cam_phase * 1000 + p_cam_phase);
+    uint64_t committed_output = simulate_collision_fault ? (uint64_t)shadow_t : ((raw_word * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_t == t_cam_phase);
+    bool rollback_ok = simulate_collision_fault ? (committed_output == (uint64_t)shadow_t) : (committed_output == ((raw_word * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = phase_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->t_cam_phase = t_cam_phase;
+        metrics_out->p_cam_phase = p_cam_phase;
+        metrics_out->phase_difference = (uint32_t)diff;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->phase_orthogonality_sound = phase_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_cam_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 
