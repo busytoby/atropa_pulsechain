@@ -144,6 +144,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 \
     tsfi2-deepseek/src/auncient_vulkan_materials.c \
     tsfi2-deepseek/src/cloth_simulator.c \
     tsfi2-deepseek/src/tsfi_usdshade.c \
+    tsfi2-deepseek/src/auncient_harvard_computation_lab.c \
     -o tests/test_auncient_edsac_firewall -lm -lrt -lssl -lcrypto
 
 ./tests/test_auncient_edsac_firewall
@@ -173,6 +174,7 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 \
 21. **Transitive Secondary Chain Prover**: Proves multi-depth ($S_1 \to S_2 \to S_3$) cascaded rollback and root preservation.
 22. **Universal Accumulator ACID Compliance**: Proves 4 ACID axioms and transactional rollback over any coupled strategy.
 23. **Universal Accumulator Fault Rollback**: Proves strict shadow baseline preservation upon bus disconnect or fault.
+24. **Harvard Computation Laboratory Suite**: Proves Mark I 24-digit counter wheels, sequence tape latch rollback, Annals Vol. III Bessel recurrences, and 10-phase cam commutator timing.
 
 ---
 

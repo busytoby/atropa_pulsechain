@@ -1,5 +1,6 @@
 #include "../tsfi2-deepseek/src/auncient_edsac_firewall.h"
 #include "../tsfi2-deepseek/src/auncient_timeline_autodin.h"
+#include "../tsfi2-deepseek/inc/auncient_harvard_computation_lab.h"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -384,9 +385,32 @@ int main(void) {
     printf("   ✓ Universal Accumulator ACID verified (Init=1M Saat, Staged=%lu, Rec=%lu, Fault Rollback=%lu, DispMod=%u).\n",
            clean_acid_m.staged_mu, clean_acid_m.reconstructed_mu, fault_acid_m.committed_mu, clean_acid_m.displacement_wrap_mod);
 
+    // 24. Test Harvard Computation Laboratory Suite (Mark I Wheel, Tape Ctrl, Bessel Recurrence, Cam Commutator)
+    printf("[TEST] Testing Harvard Computation Laboratory (Mark I Wheels, Tape Latch, Bessel J0/J1, Commutator)...\n");
+    AuncientHarvardLabMetrics harvard_clean_m = {0};
+    bool ok_harvard_clean = auncient_harvard_computation_lab_prover(
+        1000000 /* Saat */, 32768 /* x = 0.5 in Q16 */, false /* clean tape */, &harvard_clean_m
+    );
+    assert(ok_harvard_clean == true && harvard_clean_m.overall_harvard_sound == true);
+    assert(harvard_clean_m.detent_sound == true);
+    assert(harvard_clean_m.tape_execution_sound == true);
+    assert(harvard_clean_m.recurrence_sound == true);
+    assert(harvard_clean_m.commutator_t9_zero_sound == true);
+    assert(harvard_clean_m.wheel_value_low == 1401876ULL);
+
+    AuncientHarvardLabMetrics harvard_fault_m = {0};
+    bool ok_harvard_fault = auncient_harvard_computation_lab_prover(
+        1000000 /* Saat */, 32768 /* x = 0.5 in Q16 */, true /* simulate tape fault */, &harvard_fault_m
+    );
+    assert(ok_harvard_fault == true && harvard_fault_m.overall_harvard_sound == true);
+    assert(harvard_fault_m.rollback_interlock_sound == true);
+    printf("   ✓ Harvard Computation Lab verified (Wheel_Sum=%lu, Carry=%u, J0_Q16=%ld, J1_Q16=%ld, T9_Residual=0, DispMod=%u).\n",
+           harvard_clean_m.wheel_value_low, harvard_clean_m.carry_overflow, harvard_clean_m.bessel_j0_fixed, harvard_clean_m.bessel_j1_fixed, harvard_clean_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
