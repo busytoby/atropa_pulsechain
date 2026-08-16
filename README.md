@@ -197,10 +197,11 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 │   │   └── tsfi_faster_lighter_llm.c # High-throughput Edge LLM inference engine
 │   └── inc/                          # Core system and hardware register headers
 ├── tests/                            # Comprehensive C test suites and verification harnesses
-│   ├── test_auncient_edsac_firewall.c# 49-suite integrated EDSAC & Harvard formal test battery
+│   ├── test_auncient_edsac_firewall.c# 51-suite integrated EDSAC & Harvard formal test battery
 │   ├── test_rooted_browser_zmm.c     # Rooted Vulkan Wayland Presenter test harness
 │   └── test_zorse_vdso_hogan_units.c # Monotonic VDSO low-latency benchmark suite
 ├── frontend/                         # Pure HTML5/Canvas presenters (Zero external frameworks)
+│   ├── harvard_1946_presenter.html   # Harvard 1946 Mainframe & Golden Jubilee Overdrive CRT
 │   ├── lfm_wfl_presenter.html        # Quantel Liquid Paintbox and continuous trajectory UI
 │   └── atropa_dashboard.html         # Zorse & z/VSE compliance auditing dashboard
 ├── lore/                             # Mathematical treatises and philosophical chronicles
@@ -222,7 +223,7 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 SYSTEM0 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution.
 
 ### Compilation & Running Test Suites
-To build and execute the full **49-suite EDSAC compiler firewall and formal prover test battery**:
+To build and execute the full **51-suite EDSAC compiler firewall and formal prover test battery**:
 
 ```bash
 gcc -Wall -Wextra -Werror -std=c11 -O3 \

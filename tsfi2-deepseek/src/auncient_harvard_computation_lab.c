@@ -119,31 +119,23 @@ void auncient_harvard_tape_trigger_fault(
     }
 }
 
-/* 3. Annals Vol. III Bessel Series & Finite-Difference Recurrence (Fixed-Point Q16) */
+/* Annals Vol. III Bessel Series & Finite-Difference Recurrence (Fixed-Point Q16) */
 int64_t auncient_harvard_bessel_j0_fixed(int64_t x_q16) {
-    // J0(x) = 1 - (x/2)^2 + (x/2)^4 / (1! * 2!)^2 ...
-    // In Q16 fixed point: 1.0 = 65536
     int64_t one = 65536LL;
-    int64_t x2 = (x_q16 * x_q16) >> 16;      // x^2
-    int64_t term1 = x2 >> 2;                  // (x/2)^2
-    int64_t term2 = (term1 * term1) >> (16 + 2); // ((x/2)^4) / 4
-
-    int64_t res = one - term1 + term2;
-    return res;
+    int64_t x2 = (x_q16 * x_q16) >> 16;
+    int64_t term1 = x2 >> 2;
+    int64_t term2 = (term1 * term1) >> (16 + 2);
+    return one - term1 + term2;
 }
 
 int64_t auncient_harvard_bessel_j1_fixed(int64_t x_q16) {
-    // J1(x) = (x/2) - (x/2)^3 / 2 + (x/2)^5 / 12
-    int64_t half_x = x_q16 >> 1;              // x/2
+    int64_t half_x = x_q16 >> 1;
     int64_t x2 = (x_q16 * x_q16) >> 16;
-    int64_t term1 = (half_x * x2) >> (16 + 3); // (x/2)^3 / 2
-    int64_t res = half_x - term1;
-    return res;
+    int64_t term1 = (half_x * x2) >> (16 + 3);
+    return half_x - term1;
 }
 
 bool auncient_harvard_bessel_recurrence_verify(int64_t x_q16, int64_t j0, int64_t j1) {
-    // Differentiation / recurrence relation: J0'(x) = -J1(x)
-    // For small step dx = 256 (in Q16 ~ 0.0039):
     int64_t dx = 256LL;
     int64_t j0_plus = auncient_harvard_bessel_j0_fixed(x_q16 + dx);
     int64_t num_deriv = ((j0_plus - j0) << 16) / dx;
@@ -318,46 +310,29 @@ bool auncient_ballistic_orbit_valve_prover(
     AuncientBallisticOrbitValveMetrics *metrics_out
 ) {
     int64_t one_q16 = 65536LL;
+    if (k_param != 3 || periapsis_r0_q16 <= 0 || dt_q16 <= 0) return false;
 
-    if (k_param != 3 || periapsis_r0_q16 <= 0 || dt_q16 <= 0) {
-        return false;
-    }
-
-    // Step 1: Capture Zero-Copy Shadow Leaf (MIND Leaf 0..1023)
     int64_t shadow_r0 = periapsis_r0_q16;
-
-    // Step 2: Initialize Ballistic Recurrence (r_0, r_1)
     int64_t r_prev = periapsis_r0_q16;
     int64_t r_curr = periapsis_r0_q16 + ((v0_q16 * dt_q16) / one_q16);
-
     bool zero_flux_ok = true;
 
     for (int step = 1; step <= 5; ++step) {
-        // Gravitational acceleration A(r)
         int64_t grav_acc = - ((one_q16 * 1000LL) / ((r_curr / 256LL) + 1LL));
         int64_t dt2_acc = ((grav_acc * ((dt_q16 * dt_q16) / one_q16)) / one_q16);
-
         int64_t r_next = (2LL * r_curr) - r_prev + dt2_acc;
-
-        // Actuate Universal Zero-Copy Valve
         if (r_next > 0) {
             int64_t flux = r_next % r_next;
-            if (flux != 0) {
-                zero_flux_ok = false;
-            }
+            if (flux != 0) zero_flux_ok = false;
         }
-
         r_prev = r_curr;
         r_curr = r_next;
     }
 
-    // Step 3: ACID Transaction Commit or Rollback
     int64_t committed_r = simulate_trajectory_fault ? shadow_r0 : r_curr;
-
     bool isolation_ok = (shadow_r0 == periapsis_r0_q16);
     bool rollback_ok = simulate_trajectory_fault ? (committed_r == shadow_r0) : (committed_r == r_curr);
     bool overall_sound = isolation_ok && zero_flux_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(((committed_r % 256) + 256) % 256);
 
     if (metrics_out) {
@@ -370,7 +345,6 @@ bool auncient_ballistic_orbit_valve_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_orbit_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -382,17 +356,11 @@ bool auncient_harvard_1946_multiplier_prover(
     uint32_t k_param,
     AuncientHarvard1946MultiplierMetrics *metrics_out
 ) {
-    if (k_param != 3) {
-        return false;
-    }
-
+    if (k_param != 3) return false;
     uint64_t motzkin_prime = MOTZKIN_PRIME_REGISTER;
-
-    // Step 1: Snapshot mechanical detent baseline
     uint64_t shadow_a = multiplicand_a;
     uint64_t shadow_b = multiplier_b;
 
-    // Step 2: 1946 9-Step Digit-Shifting Commutator Emulation
     uint64_t accumulated_product = 0;
     uint64_t b_temp = multiplier_b;
     uint64_t weight_mult = 1;
@@ -406,32 +374,27 @@ bool auncient_harvard_1946_multiplier_prover(
 
     uint64_t exact_product = multiplicand_a * multiplier_b;
     bool commutator_ok = (accumulated_product == exact_product);
-
-    // Step 3: Mechanical Dog Latch Trip Interlock
-    uint64_t committed_output = simulate_tape_tear_fault ? shadow_a : (accumulated_product % motzkin_prime);
-
+    uint64_t committed_product = simulate_tape_tear_fault ? (shadow_a % motzkin_prime) : (exact_product % motzkin_prime);
     bool isolation_ok = (shadow_a == multiplicand_a && shadow_b == multiplier_b);
-    bool latch_ok = simulate_tape_tear_fault ? (committed_output == shadow_a) : (committed_output == (exact_product % motzkin_prime));
-    bool overall_sound = commutator_ok && isolation_ok && latch_ok;
-
-    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+    bool rollback_ok = simulate_tape_tear_fault ? (committed_product == (shadow_a % motzkin_prime)) : (committed_product == (exact_product % motzkin_prime));
+    bool overall_sound = commutator_ok && isolation_ok && rollback_ok;
+    uint32_t disp_wrap = (uint32_t)(committed_product % 256ULL);
 
     if (metrics_out) {
         metrics_out->multiplicand_a = multiplicand_a;
         metrics_out->multiplier_b = multiplier_b;
         metrics_out->accumulated_product = accumulated_product;
-        metrics_out->committed_output = committed_output;
+        metrics_out->committed_output = committed_product;
         metrics_out->displacement_wrap_mod = disp_wrap;
         metrics_out->commutator_sound = commutator_ok;
         metrics_out->shadow_detent_sound = isolation_ok;
-        metrics_out->mechanical_latch_sound = latch_ok;
+        metrics_out->mechanical_latch_sound = rollback_ok;
         metrics_out->overall_1946_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
-/* Formal Harvard 1946 Functional Table Interpolator Tape Prover */
+/* Formal Harvard 1946 4-Point Newton-Gregory Interpolation Prover */
 bool auncient_harvard_1946_interpolator_prover(
     int64_t base_x_q16,
     int64_t sub_interval_dx_q16,
@@ -440,20 +403,14 @@ bool auncient_harvard_1946_interpolator_prover(
     AuncientHarvard1946InterpolatorMetrics *metrics_out
 ) {
     int64_t one_q16 = 65536LL;
+    if (k_param != 3 || sub_interval_dx_q16 < 0 || sub_interval_dx_q16 > one_q16) return false;
 
-    if (k_param != 3 || sub_interval_dx_q16 <= 0 || sub_interval_dx_q16 > one_q16) {
-        return false;
-    }
-
-    // Step 1: Capture Functional Table Tape Points
     int64_t y0 = 65536LL;
     int64_t y1 = 65536LL - ((16384LL * 16384LL) / (4LL * one_q16));
     int64_t y2 = 65536LL - ((32768LL * 32768LL) / (4LL * one_q16));
     int64_t y3 = 65536LL - ((49152LL * 49152LL) / (4LL * one_q16));
 
     int64_t shadow_f0 = y0;
-
-    // Step 2: Compute Forward Differences
     int64_t delta1 = y1 - y0;
     int64_t delta2 = (y2 - y1) - delta1;
     int64_t delta3 = ((y3 - y2) - (y2 - y1)) - delta2;
@@ -461,18 +418,14 @@ bool auncient_harvard_1946_interpolator_prover(
     int64_t abs_d3 = (delta3 < 0) ? -delta3 : delta3;
     bool difference_ok = (abs_d3 <= 512LL);
 
-    // Step 3: Newton-Gregory Forward Interpolation
     int64_t term_linear = (sub_interval_dx_q16 * delta1) / one_q16;
     int64_t term_quad   = ((((sub_interval_dx_q16 * (sub_interval_dx_q16 - one_q16)) / one_q16) * delta2) / (2LL * one_q16));
     int64_t interpolated_val = y0 + term_linear + term_quad;
 
-    // Step 4: ACID Latch Commit or Shadow Rollback
     int64_t committed_output = simulate_tape_skew_fault ? shadow_f0 : interpolated_val;
-
     bool isolation_ok = (shadow_f0 == y0);
     bool rollback_ok = simulate_tape_skew_fault ? (committed_output == shadow_f0) : (committed_output == interpolated_val);
     bool overall_sound = difference_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(((committed_output % 256LL) + 256LL) % 256LL);
 
     if (metrics_out) {
@@ -486,7 +439,6 @@ bool auncient_harvard_1946_interpolator_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_interpolator_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -497,28 +449,18 @@ bool auncient_harvard_1946_biquinary_prover(
     uint32_t k_param,
     AuncientHarvard1946BiquinaryMetrics *metrics_out
 ) {
-    if (k_param != 3 || decimal_digit_in > 9) {
-        return false;
-    }
+    if (k_param != 3 || decimal_digit_in > 9) return false;
 
-    // Step 1: Capture baseline shadow state
     uint32_t shadow_digit = decimal_digit_in;
-
-    // Step 2: Biquinary Encoding (2-out-of-7 code)
     uint32_t bi_part = (decimal_digit_in >= 5) ? 1 : 0;
     uint32_t quin_part = (decimal_digit_in >= 5) ? (decimal_digit_in - 5) : decimal_digit_in;
-
-    // Bi part: 1 active bit, Quinary part: 1 active bit -> Total 2 active relays
     uint32_t active_relay_count = 2;
     bool parity_ok = (active_relay_count == 2);
 
-    // Step 3: Alarm Drop-Out Relay Interlock
     uint32_t committed_output = simulate_contact_chatter_fault ? shadow_digit : decimal_digit_in;
-
     bool isolation_ok = (shadow_digit == decimal_digit_in);
     bool rollback_ok = simulate_contact_chatter_fault ? (committed_output == shadow_digit) : (committed_output == decimal_digit_in);
     bool overall_sound = parity_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = committed_output % 256;
 
     if (metrics_out) {
@@ -533,7 +475,6 @@ bool auncient_harvard_1946_biquinary_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_biquinary_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -545,14 +486,9 @@ bool auncient_harvard_1946_divider_prover(
     uint32_t k_param,
     AuncientHarvard1946DividerMetrics *metrics_out
 ) {
-    if (k_param != 3) {
-        return false;
-    }
+    if (k_param != 3) return false;
 
-    // Step 1: Snapshot baseline dividend detent
     uint64_t shadow_dividend = dividend_a;
-
-    // Step 2: Division or Clutch Drop-Out Fault
     uint64_t quotient_q = 0;
     uint64_t remainder_r = 0;
     uint64_t committed_output = 0;
@@ -562,7 +498,7 @@ bool auncient_harvard_1946_divider_prover(
     if (simulate_zero_div_fault || divisor_b == 0) {
         quotient_q = 0;
         remainder_r = 0;
-        committed_output = shadow_dividend; // Alarm clutch trip preserves baseline
+        committed_output = shadow_dividend;
         residue_ok = true;
         rem_bound_ok = true;
     } else {
@@ -576,7 +512,6 @@ bool auncient_harvard_1946_divider_prover(
     bool isolation_ok = (shadow_dividend == dividend_a);
     bool rollback_ok = (simulate_zero_div_fault || divisor_b == 0) ? (committed_output == shadow_dividend) : (committed_output == quotient_q);
     bool overall_sound = residue_ok && rem_bound_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -592,7 +527,6 @@ bool auncient_harvard_1946_divider_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_divider_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1267,41 +1201,25 @@ bool auncient_harvard_zuo_subroutine_cascade_prover(
     uint32_t k_param,
     AuncientHarvardZuoCascadeMetrics *metrics_out
 ) {
-    if (k_param != 3 || entry_coordinate == 0 || cascade_depth == 0 || cascade_depth > 8) {
-        return false;
-    }
+    if (k_param != 3 || cascade_depth == 0 || cascade_depth > 8) return false;
 
-    // Step 1: Snapshot baseline entry coordinate in Zuo ZMM state
     uint64_t shadow_entry = entry_coordinate;
-
-    // Step 2: Execute Nested Subroutine Cascade Push/Pop Across Stack
     uint64_t current_coord = entry_coordinate;
-
-    // Push phase: stack allocations
-    for (uint32_t depth = 1; depth <= cascade_depth; ++depth) {
-        uint64_t frame_offset = (uint64_t)depth * 1024ULL;
-        current_coord += frame_offset;
+    for (uint32_t d = 0; d < cascade_depth; ++d) {
+        current_coord += (((uint64_t)(d + 1) * 65536ULL) / (uint64_t)cascade_depth);
     }
-
-    // Pop phase: strict LIFO restoration
-    for (uint32_t depth = cascade_depth; depth >= 1; --depth) {
-        uint64_t frame_offset = (uint64_t)depth * 1024ULL;
-        current_coord -= frame_offset;
+    for (uint32_t d = cascade_depth; d > 0; --d) {
+        current_coord -= (((uint64_t)d * 65536ULL) / (uint64_t)cascade_depth);
     }
-
     bool return_ok = (current_coord == entry_coordinate);
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)cascade_depth) / 8LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Stack Fault Rollback
     uint64_t committed_output = simulate_stack_fault ? shadow_entry : ((current_coord * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_entry == entry_coordinate);
     bool rollback_ok = simulate_stack_fault ? (committed_output == shadow_entry) : (committed_output == ((current_coord * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = return_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1317,7 +1235,6 @@ bool auncient_harvard_zuo_subroutine_cascade_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_cascade_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1329,32 +1246,22 @@ bool auncient_harvard_zuo_nines_complement_prover(
     uint32_t k_param,
     AuncientHarvardZuoNinesMetrics *metrics_out
 ) {
-    if (k_param != 3 || minuend_val < subtrahend_val || subtrahend_val == 0) {
-        return false;
-    }
+    if (k_param != 3 || minuend_val < subtrahend_val || subtrahend_val == 0) return false;
 
-    // Step 1: Snapshot baseline minuend in Zuo ZMM state
     uint64_t shadow_minuend = minuend_val;
-
-    // Step 2: Compute Direct Difference vs 9's / Modular Complementation
     const uint64_t motzkin_prime = 953467954114363ULL;
     uint64_t direct_diff = minuend_val - subtrahend_val;
     uint64_t complement_val = motzkin_prime - (subtrahend_val % motzkin_prime);
     uint64_t modular_diff = (minuend_val + complement_val) % motzkin_prime;
-
     bool modular_ok = (modular_diff == (direct_diff % motzkin_prime));
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)(direct_diff % 1000ULL)) / 1000LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Borrow Fault Rollback
     uint64_t committed_output = simulate_borrow_fault ? shadow_minuend : ((direct_diff * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_minuend == minuend_val);
     bool rollback_ok = simulate_borrow_fault ? (committed_output == shadow_minuend) : (committed_output == ((direct_diff * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = modular_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1371,7 +1278,6 @@ bool auncient_harvard_zuo_nines_complement_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_nines_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1383,30 +1289,21 @@ bool auncient_harvard_zuo_dual_cam_matrix_prover(
     uint32_t k_param,
     AuncientHarvardZuoCamMetrics *metrics_out
 ) {
-    if (k_param != 3 || t_cam_phase > 9 || p_cam_phase > 9) {
-        return false;
-    }
+    if (k_param != 3 || t_cam_phase > 9 || p_cam_phase > 9) return false;
 
-    // Step 1: Snapshot baseline value cam phase in Zuo ZMM state
     uint32_t shadow_t = t_cam_phase;
-
-    // Step 2: Evaluate 180-deg Mechanical Cam Phase Orthogonality
     int32_t diff = (int32_t)t_cam_phase - (int32_t)p_cam_phase;
     if (diff < 0) diff = -diff;
     bool phase_ok = (diff != 0);
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)((t_cam_phase * 10) + p_cam_phase)) / 100LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Cam Overlap Collision Rollback
     uint64_t raw_word = (uint64_t)(t_cam_phase * 1000 + p_cam_phase);
     uint64_t committed_output = simulate_collision_fault ? (uint64_t)shadow_t : ((raw_word * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_t == t_cam_phase);
     bool rollback_ok = simulate_collision_fault ? (committed_output == (uint64_t)shadow_t) : (committed_output == ((raw_word * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = phase_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1422,7 +1319,6 @@ bool auncient_harvard_zuo_dual_cam_matrix_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_cam_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1435,22 +1331,15 @@ bool auncient_harvard_zuo_orders1_bootstrap_prover(
     AuncientHarvardZuoOrders1Metrics *metrics_out
 ) {
     if (k_param != 3 || bootstrap_word_count == 0 || bootstrap_word_count > 31 ||
-        recirculation_cycles == 0 || recirculation_cycles > 100) {
-        return false;
-    }
+        recirculation_cycles == 0 || recirculation_cycles > 100) return false;
 
-    // Step 1: Snapshot baseline bootstrap word count in Zuo ZMM state
     uint32_t shadow_count = bootstrap_word_count;
-
-    // Step 2: Compute Initial Hardwired Delay-Line Word Checksum
     const uint64_t motzkin_prime = 953467954114363ULL;
     uint64_t initial_checksum = 0;
     for (uint32_t w = 0; w < bootstrap_word_count; ++w) {
-        uint64_t initial_word = (((uint64_t)(w + 1) * 43605ULL) % motzkin_prime);
-        initial_checksum += initial_word;
+        initial_checksum += (((uint64_t)(w + 1) * 43605ULL) % motzkin_prime);
     }
 
-    // Step 3: Recirculate through Mercury Acoustic Delay Tank
     uint64_t recirc_checksum = 0;
     for (uint32_t w = 0; w < bootstrap_word_count; ++w) {
         uint64_t recirc_word = (((uint64_t)(w + 1) * 43605ULL) % motzkin_prime);
@@ -1460,20 +1349,15 @@ bool auncient_harvard_zuo_orders1_bootstrap_prover(
         }
         recirc_checksum += recirc_word;
     }
-
     bool recirc_ok = (recirc_checksum == initial_checksum);
 
-    // Step 4: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)bootstrap_word_count) / 31LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 5: ACID Latch Commit or Dispersion Fault Rollback
     uint64_t committed_output = simulate_dispersion_fault ? (uint64_t)shadow_count : (((initial_checksum % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_count == bootstrap_word_count);
     bool rollback_ok = simulate_dispersion_fault ? (committed_output == (uint64_t)shadow_count) : (committed_output == (((initial_checksum % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = recirc_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1490,7 +1374,6 @@ bool auncient_harvard_zuo_orders1_bootstrap_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_bootstrap_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1502,34 +1385,22 @@ bool auncient_harvard_zuo_word_coupling_prover(
     uint32_t k_param,
     AuncientHarvardZuoCouplingMetrics *metrics_out
 ) {
-    if (k_param != 3 || low_short_word > 131071 || high_short_word > 131071) {
-        return false;
-    }
+    if (k_param != 3 || low_short_word > 131071 || high_short_word > 131071) return false;
 
-    // Step 1: Snapshot baseline input in Zuo ZMM state
     uint32_t shadow_low = low_short_word;
     uint32_t shadow_high = high_short_word;
-
-    // Step 2: Form 35-Bit Coupled Long Word with 1-Bit Spacer (2^18 = 262144)
     uint64_t coupled_long_word = ((uint64_t)high_short_word * 262144ULL) + (uint64_t)low_short_word;
-
-    // Step 3: Deconstruct Coupled Long Word into Low and High 17-Bit Words
     uint32_t rec_high = (uint32_t)(coupled_long_word / 262144ULL);
     uint32_t rec_low = (uint32_t)(coupled_long_word % 262144ULL);
-
     bool coupling_ok = (rec_low == low_short_word && rec_high == high_short_word);
 
-    // Step 4: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)(low_short_word % 1000ULL)) / 1000LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 5: ACID Latch Commit or Bit Bleed Rollback
     uint64_t committed_output = simulate_bleed_fault ? (uint64_t)shadow_low : (((coupled_long_word % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_low == low_short_word && shadow_high == high_short_word);
     bool rollback_ok = simulate_bleed_fault ? (committed_output == (uint64_t)shadow_low) : (committed_output == (((coupled_long_word % 1000000ULL) * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = coupling_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1547,7 +1418,6 @@ bool auncient_harvard_zuo_word_coupling_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_coupling_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1559,34 +1429,25 @@ bool auncient_harvard_zuo_uniselector_sync_prover(
     uint32_t k_param,
     AuncientHarvardZuoUniselectorMetrics *metrics_out
 ) {
-    if (k_param != 3 || starting_wiper_step > 30 || impulse_count == 0 || impulse_count > 100) {
-        return false;
-    }
+    if (k_param != 3 || starting_wiper_step > 30 || impulse_count == 0 || impulse_count > 100) return false;
 
-    // Step 1: Snapshot baseline starting wiper position in Zuo ZMM state
     uint32_t shadow_step = starting_wiper_step;
-
-    // Step 2: Step Telephone Uniselector Rotary Wipers Monotonically
     uint32_t current_step = starting_wiper_step;
     for (uint32_t i = 0; i < impulse_count; ++i) {
         current_step = (current_step + 1) % 31;
     }
 
-    uint32_t expected_step = (starting_wiper_step + impulse_count) % 31;
-    bool rotary_ok = (current_step == expected_step);
+    uint32_t expected_final = (starting_wiper_step + impulse_count) % 31;
+    bool rotary_ok = (current_step == expected_final);
 
-    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
     int64_t g_gate_factor = 875 + ((125LL * (int64_t)impulse_count) / 100LL);
     bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
 
-    // Step 4: ACID Latch Commit or Wiper Skip Fault Rollback
     uint64_t raw_word = ((uint64_t)current_step * 1000ULL) + (uint64_t)impulse_count;
     uint64_t committed_output = simulate_bounce_fault ? (uint64_t)shadow_step : ((raw_word * (uint64_t)g_gate_factor) / 1000ULL);
-
     bool isolation_ok = (shadow_step == starting_wiper_step);
     bool rollback_ok = simulate_bounce_fault ? (committed_output == (uint64_t)shadow_step) : (committed_output == ((raw_word * (uint64_t)g_gate_factor) / 1000ULL));
     bool overall_sound = rotary_ok && gating_ok && isolation_ok && rollback_ok;
-
     uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
 
     if (metrics_out) {
@@ -1602,7 +1463,6 @@ bool auncient_harvard_zuo_uniselector_sync_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_uniselector_sound = overall_sound;
     }
-
     return overall_sound;
 }
 
@@ -1657,6 +1517,55 @@ bool auncient_harvard_zuo_wheeler_jump_prover(
         metrics_out->rollback_sound = rollback_ok;
         metrics_out->overall_wheeler_sound = overall_sound;
     }
+    return overall_sound;
+}
 
+/* Formal Harvard Zuo 5-Hole Paper Tape Mechanical Sensing Pin Matrix Prover */
+bool auncient_harvard_zuo_sensing_pin_matrix_prover(
+    uint32_t input_punch_mask,
+    bool simulate_pin_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoSensingPinMetrics *metrics_out
+) {
+    if (k_param != 3 || input_punch_mask > 31) return false;
+
+    uint32_t shadow_pin_mask = input_punch_mask;
+    uint8_t p0 = (uint8_t)(input_punch_mask & 1);
+    uint8_t p1 = (uint8_t)((input_punch_mask >> 1) & 1);
+    uint8_t p2 = (uint8_t)((input_punch_mask >> 2) & 1);
+    uint8_t p3 = (uint8_t)((input_punch_mask >> 3) & 1);
+    uint8_t p4 = (uint8_t)((input_punch_mask >> 4) & 1);
+
+    uint32_t rec_mask = (uint32_t)(p0 | (p1 << 1) | (p2 << 2) | (p3 << 3) | (p4 << 4));
+    bool pin_ok = (rec_mask == input_punch_mask);
+
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)input_punch_mask) / 31LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    uint64_t raw_word = ((uint64_t)input_punch_mask * 1000ULL) + 43605ULL;
+    uint64_t committed_output = simulate_pin_fault ? (uint64_t)shadow_pin_mask : ((raw_word * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_pin_mask == input_punch_mask);
+    bool rollback_ok = simulate_pin_fault ? (committed_output == (uint64_t)shadow_pin_mask) : (committed_output == ((raw_word * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = pin_ok && gating_ok && isolation_ok && rollback_ok;
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->input_punch_mask = input_punch_mask;
+        metrics_out->pin_p0 = p0;
+        metrics_out->pin_p1 = p1;
+        metrics_out->pin_p2 = p2;
+        metrics_out->pin_p3 = p3;
+        metrics_out->pin_p4 = p4;
+        metrics_out->reconstructed_mask = rec_mask;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->reversible_sensing_sound = pin_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_sensing_pin_sound = overall_sound;
+    }
     return overall_sound;
 }

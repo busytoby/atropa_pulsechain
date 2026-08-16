@@ -978,6 +978,31 @@ int main(void) {
     printf("   ✓ Golden Jubilee Analog Voltage Overdrive verified (CleanDisp=%.4f, ClippedDisp=%.4f, Harmonics=%.2f V).\n",
            clean_disp, clipped_disp, harmonic_dispersion);
 
+    // 51. Test Harvard Zuo 5-Hole Paper Tape Mechanical Sensing Pin Matrix Prover
+    printf("[TEST] Testing Harvard Zuo 5-Hole Sensing Pin Matrix (Bijective Mechanical Punch & Gating)...\n");
+    AuncientHarvardZuoSensingPinMetrics clean_pin_m = {0};
+    bool ok_pin_clean = auncient_harvard_zuo_sensing_pin_matrix_prover(
+        19 /* Punch 10011b (19) */, false /* clean */, 3 /* k=3 */, &clean_pin_m
+    );
+    assert(ok_pin_clean == true && clean_pin_m.overall_sensing_pin_sound == true);
+    assert(clean_pin_m.reversible_sensing_sound == true);
+    assert(clean_pin_m.gating_clamp_sound == true);
+    assert(clean_pin_m.shadow_isolation_sound == true);
+    assert(clean_pin_m.pin_p0 == 1 && clean_pin_m.pin_p1 == 1 && clean_pin_m.pin_p2 == 0 && clean_pin_m.pin_p3 == 0 && clean_pin_m.pin_p4 == 1);
+    assert(clean_pin_m.reconstructed_mask == 19);
+    assert(clean_pin_m.g_gate_factor == 951);
+
+    AuncientHarvardZuoSensingPinMetrics fault_pin_m = {0};
+    bool ok_pin_fault = auncient_harvard_zuo_sensing_pin_matrix_prover(
+        19 /* Punch 10011b */, true /* simulate pin fault */, 3 /* k=3 */, &fault_pin_m
+    );
+    assert(ok_pin_fault == true && fault_pin_m.overall_sensing_pin_sound == true);
+    assert(fault_pin_m.rollback_sound == true);
+    assert(fault_pin_m.committed_output == 19ULL);
+    printf("   ✓ Harvard Zuo 5-Hole Sensing Pin Matrix verified (Punch=%u, P0..P4=%u%u%u%u%u, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_pin_m.input_punch_mask, clean_pin_m.pin_p0, clean_pin_m.pin_p1, clean_pin_m.pin_p2, clean_pin_m.pin_p3, clean_pin_m.pin_p4,
+           clean_pin_m.g_gate_factor, clean_pin_m.committed_output, clean_pin_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

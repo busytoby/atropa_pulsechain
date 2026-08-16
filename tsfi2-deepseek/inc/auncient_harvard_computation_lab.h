@@ -622,4 +622,29 @@ bool auncient_harvard_zuo_wheeler_jump_prover(
     AuncientHarvardZuoWheelerMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t input_punch_mask;
+    uint8_t pin_p0;
+    uint8_t pin_p1;
+    uint8_t pin_p2;
+    uint8_t pin_p3;
+    uint8_t pin_p4;
+    uint32_t reconstructed_mask;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool reversible_sensing_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_sensing_pin_sound;
+} AuncientHarvardZuoSensingPinMetrics;
+
+bool auncient_harvard_zuo_sensing_pin_matrix_prover(
+    uint32_t input_punch_mask,
+    bool simulate_pin_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoSensingPinMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
