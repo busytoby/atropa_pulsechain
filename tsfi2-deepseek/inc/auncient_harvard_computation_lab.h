@@ -418,4 +418,26 @@ bool auncient_harvard_zuo_two_out_of_five_prover(
     AuncientHarvardZuo2of5Metrics *metrics_out
 );
 
+typedef struct {
+    uint64_t source_saat_value;
+    uint32_t decade_count;
+    uint64_t dest_saat_value;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool bus_transfer_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_bus_sound;
+} AuncientHarvardZuoBusMetrics;
+
+bool auncient_harvard_zuo_transfer_bus_prover(
+    uint64_t source_saat_value,
+    uint32_t decade_count,
+    bool simulate_bus_short_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoBusMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

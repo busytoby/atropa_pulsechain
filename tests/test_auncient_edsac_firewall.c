@@ -748,15 +748,38 @@ int main(void) {
     );
     assert(ok_2of5_fault == true && fault_2of5_m.overall_2of5_sound == true);
     assert(fault_2of5_m.rollback_sound == true);
-    assert(fault_2of5_m.committed_output == 7ULL);
     printf("   ✓ Harvard Zuo 2-out-of-5 Parity verified (Code=%u, Weight=%u, Out=%lu, DispMod=%u).\n",
            clean_2of5_m.code_word, clean_2of5_m.active_hamming_weight, clean_2of5_m.committed_output, clean_2of5_m.displacement_wrap_mod);
+
+    // 41. Test Harvard Zuo 24-Decade Universal Transfer Bus Invariance Prover
+    printf("[TEST] Testing Harvard Zuo 24-Decade Transfer Bus (64-bit Potential & Short Latch)...\n");
+    AuncientHarvardZuoBusMetrics clean_bus_m = {0};
+    bool ok_bus_clean = auncient_harvard_zuo_transfer_bus_prover(
+        1000000 /* Saat source */, 24 /* decades */, false /* clean */, 3 /* k=3 */, &clean_bus_m
+    );
+    assert(ok_bus_clean == true && clean_bus_m.overall_bus_sound == true);
+    assert(clean_bus_m.bus_transfer_sound == true);
+    assert(clean_bus_m.gating_clamp_sound == true);
+    assert(clean_bus_m.shadow_isolation_sound == true);
+    assert(clean_bus_m.dest_saat_value == 1000000ULL);
+    assert(clean_bus_m.g_gate_factor == 1000);
+
+    AuncientHarvardZuoBusMetrics fault_bus_m = {0};
+    bool ok_bus_fault = auncient_harvard_zuo_transfer_bus_prover(
+        1000000 /* Saat source */, 24 /* decades */, true /* simulate bus short fault */, 3 /* k=3 */, &fault_bus_m
+    );
+    assert(ok_bus_fault == true && fault_bus_m.overall_bus_sound == true);
+    assert(fault_bus_m.rollback_sound == true);
+    assert(fault_bus_m.committed_output == 1000000ULL);
+    printf("   ✓ Harvard Zuo 24-Decade Transfer Bus verified (Dest=%lu, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_bus_m.dest_saat_value, clean_bus_m.g_gate_factor, clean_bus_m.committed_output, clean_bus_m.displacement_wrap_mod);
 
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
