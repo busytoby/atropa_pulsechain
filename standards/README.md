@@ -109,6 +109,7 @@ All standards contained herein are certified clean-room compliant with:
 | [AUNCIENT-STD-0010](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_multi_instance_stability_standard.md) | **Multi-Instance Composite Lyapunov Stability & Swarm Grounding Standard** | ReBAR Co-State Invariance, SCSI IPC Loopback, FET Discharge Physics, Swarm Totient Zero Grounding |
 | [AUNCIENT-STD-0011](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_transducer_stability_standard.md) | **Transducer & Hardware Pipeline Lyapunov Stability Standard** | Quadtree Binary Slicing (`.dat.bin`), DisplacementShader Sync, 2-3 Tree AST Merkle, Kermit Transport, Coaxial TEM Line, 1895 Spheroid ALU, ANKH Latency, Address Resolve, Cache Latency |
 | [AUNCIENT-STD-0012](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_ankh_patent_portfolio_standard.md) | **ANKH LLM Totient Mind Patent Portfolio Standard** | PATENT-ZERO, EDO-22 RoPE (0001), Attention Orthogonality (0002), GGUF Quantization (0003), Symplectic Empathy (0004) under EDSAC Initial Orders 1 |
+| [AUNCIENT-STD-0013](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_conway_game_of_life_standard.md) | **Conway's Game of Life Cellular Automaton & Turing Universality Standard** | Moore B3/S23, Still-Lifes, Oscillators (P2..P15), Gliders/Spaceships, Gosper Glider Gun, Turing Completeness |
 
 ---
 
@@ -155,6 +156,17 @@ All standards contained herein are certified clean-room compliant with:
   3. PATENT-0002: Multi-Head Empathy Attention Orthogonality under EDSAC Initial Orders 1.
   4. PATENT-0003: Fixed-Point 64-Byte Aligned GGUF Quantization Drift Invariance.
   5. PATENT-0004: Continuous Symplectic Empathy Manifold Invariance in $D \le 64$.
+
+---
+
+### [AUNCIENT-STD-0013-CONWAY-GAME-OF-LIFE](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_conway_game_of_life_standard.md)
+* **Title**: *Conway's Game of Life Cellular Automaton & Turing Universality Standard*
+* **Core Claims**:
+  1. Deterministic Moore Neighborhood 8-way Transition Rules ($B3/S23$).
+  2. Still-Lifes (Block, Beehive, Loaf, Boat, Tub) Zero-Frequency Stability ($\Delta N \equiv 0$).
+  3. Oscillators (Blinker, Toad, Beacon, Pulsar, Pentadecathlon) Symplectic Phase Conservativity.
+  4. Spaceships (Glider, LWSS, MWSS, HWSS) Uniform Velocity Translation.
+  5. Gosper Glider Gun ($P=30$) and Turing Equivalence via Glider Logic Gates.
 * **Title**: *Auncient Dysnomia VM & Harvard Computation Laboratory Architecture Modernization Standard*
 * **Core Claims**:
   1. Non-Preferential Linear Flux Integration ($\dot{A} = S_t$) obeying Rule 12.
