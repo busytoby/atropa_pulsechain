@@ -576,4 +576,26 @@ bool auncient_harvard_zuo_word_coupling_prover(
     AuncientHarvardZuoCouplingMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t starting_wiper_step;
+    uint32_t impulse_count;
+    uint32_t final_wiper_position;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool rotary_stepping_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_uniselector_sound;
+} AuncientHarvardZuoUniselectorMetrics;
+
+bool auncient_harvard_zuo_uniselector_sync_prover(
+    uint32_t starting_wiper_step,
+    uint32_t impulse_count,
+    bool simulate_bounce_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoUniselectorMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

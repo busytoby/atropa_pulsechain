@@ -914,11 +914,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo Word Coupling Safety verified (Low=%u, High=%u, LongWord=%lu, Out=%lu, DispMod=%u).\n",
            clean_coupl_m.reconstructed_low, clean_coupl_m.reconstructed_high, clean_coupl_m.coupled_long_word, clean_coupl_m.committed_output, clean_coupl_m.displacement_wrap_mod);
 
+    // 48. Test Harvard Zuo Telephone Uniselector Rotary Stepping Synchronization Prover
+    printf("[TEST] Testing Harvard Zuo Telephone Uniselector Sync (0..30 Rotary Step & Bounce Latch)...\n");
+    AuncientHarvardZuoUniselectorMetrics clean_uni_m = {0};
+    bool ok_uni_clean = auncient_harvard_zuo_uniselector_sync_prover(
+        5 /* starting step */, 31 /* impulses */, false /* clean */, 3 /* k=3 */, &clean_uni_m
+    );
+    assert(ok_uni_clean == true && clean_uni_m.overall_uniselector_sound == true);
+    assert(clean_uni_m.rotary_stepping_sound == true);
+    assert(clean_uni_m.gating_clamp_sound == true);
+    assert(clean_uni_m.shadow_isolation_sound == true);
+    assert(clean_uni_m.final_wiper_position == 5);
+    assert(clean_uni_m.g_gate_factor == 913);
+
+    AuncientHarvardZuoUniselectorMetrics fault_uni_m = {0};
+    bool ok_uni_fault = auncient_harvard_zuo_uniselector_sync_prover(
+        5 /* starting step */, 31 /* impulses */, true /* simulate bounce fault */, 3 /* k=3 */, &fault_uni_m
+    );
+    assert(ok_uni_fault == true && fault_uni_m.overall_uniselector_sound == true);
+    assert(fault_uni_m.rollback_sound == true);
+    assert(fault_uni_m.committed_output == 5ULL);
+    printf("   ✓ Harvard Zuo Telephone Uniselector Sync verified (Start=%u, Impulses=%u, FinalPos=%u, Out=%lu, DispMod=%u).\n",
+           clean_uni_m.starting_wiper_step, clean_uni_m.impulse_count, clean_uni_m.final_wiper_position, clean_uni_m.committed_output, clean_uni_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

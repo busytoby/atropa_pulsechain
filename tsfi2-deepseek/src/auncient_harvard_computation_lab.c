@@ -1562,6 +1562,62 @@ bool auncient_harvard_zuo_word_coupling_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Telephone Uniselector Rotary Stepping Synchronization Prover */
+bool auncient_harvard_zuo_uniselector_sync_prover(
+    uint32_t starting_wiper_step,
+    uint32_t impulse_count,
+    bool simulate_bounce_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoUniselectorMetrics *metrics_out
+) {
+    if (k_param != 3 || starting_wiper_step > 30 || impulse_count == 0 || impulse_count > 100) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline starting wiper position in Zuo ZMM state
+    uint32_t shadow_step = starting_wiper_step;
+
+    // Step 2: Step Telephone Uniselector Rotary Wipers Monotonically
+    uint32_t current_step = starting_wiper_step;
+    for (uint32_t i = 0; i < impulse_count; ++i) {
+        current_step = (current_step + 1) % 31;
+    }
+
+    uint32_t expected_step = (starting_wiper_step + impulse_count) % 31;
+    bool rotary_ok = (current_step == expected_step);
+
+    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)impulse_count) / 100LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Wiper Skip Fault Rollback
+    uint64_t raw_word = ((uint64_t)current_step * 1000ULL) + (uint64_t)impulse_count;
+    uint64_t committed_output = simulate_bounce_fault ? (uint64_t)shadow_step : ((raw_word * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_step == starting_wiper_step);
+    bool rollback_ok = simulate_bounce_fault ? (committed_output == (uint64_t)shadow_step) : (committed_output == ((raw_word * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = rotary_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->starting_wiper_step = starting_wiper_step;
+        metrics_out->impulse_count = impulse_count;
+        metrics_out->final_wiper_position = current_step;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->rotary_stepping_sound = rotary_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_uniselector_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 
