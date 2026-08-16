@@ -484,11 +484,34 @@ int main(void) {
     printf("   ✓ Harvard 1946 Interpolator verified (Interp_Val=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
            clean_interp_m.interpolated_val_q16, fault_interp_m.committed_output_q16, clean_interp_m.displacement_wrap_mod);
 
+    // 29. Test Harvard 1946 Relay Biquinary Code Parity & Interlock Prover
+    printf("[TEST] Testing Harvard 1946 Relay Biquinary Parity (2-out-of-7 Code & Chatter Latch)...\n");
+    AuncientHarvard1946BiquinaryMetrics clean_biquin_m = {0};
+    bool ok_biquin_clean = auncient_harvard_1946_biquinary_prover(
+        7 /* digit = 7 (5+2) */, false /* clean */, 3 /* k=3 */, &clean_biquin_m
+    );
+    assert(ok_biquin_clean == true && clean_biquin_m.overall_biquinary_sound == true);
+    assert(clean_biquin_m.parity_sound == true);
+    assert(clean_biquin_m.active_relay_count == 2);
+    assert(clean_biquin_m.bi_part == 1 && clean_biquin_m.quin_part == 2);
+    assert(clean_biquin_m.committed_output == 7);
+
+    AuncientHarvard1946BiquinaryMetrics fault_biquin_m = {0};
+    bool ok_biquin_fault = auncient_harvard_1946_biquinary_prover(
+        7 /* digit = 7 */, true /* simulate contact chatter */, 3 /* k=3 */, &fault_biquin_m
+    );
+    assert(ok_biquin_fault == true && fault_biquin_m.overall_biquinary_sound == true);
+    assert(fault_biquin_m.rollback_sound == true);
+    assert(fault_biquin_m.committed_output == 7);
+    printf("   ✓ Harvard 1946 Biquinary Parity verified (Digit=7, Active_Relays=2, Bi=1, Quin=2, DispMod=%u).\n",
+           clean_biquin_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

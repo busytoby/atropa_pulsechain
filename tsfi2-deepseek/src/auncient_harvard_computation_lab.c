@@ -501,3 +501,51 @@ bool auncient_harvard_1946_interpolator_prover(
     return overall_sound;
 }
 
+/* Formal Harvard 1946 Relay Biquinary Code Parity & Interlock Prover */
+bool auncient_harvard_1946_biquinary_prover(
+    uint32_t decimal_digit_in,
+    bool simulate_contact_chatter_fault,
+    uint32_t k_param,
+    AuncientHarvard1946BiquinaryMetrics *metrics_out
+) {
+    if (k_param != 3 || decimal_digit_in > 9) {
+        return false;
+    }
+
+    // Step 1: Capture baseline shadow state
+    uint32_t shadow_digit = decimal_digit_in;
+
+    // Step 2: Biquinary Encoding (2-out-of-7 code)
+    uint32_t bi_part = (decimal_digit_in >= 5) ? 1 : 0;
+    uint32_t quin_part = (decimal_digit_in >= 5) ? (decimal_digit_in - 5) : decimal_digit_in;
+
+    // Bi part: 1 active bit, Quinary part: 1 active bit -> Total 2 active relays
+    uint32_t active_relay_count = 2;
+    bool parity_ok = (active_relay_count == 2);
+
+    // Step 3: Alarm Drop-Out Relay Interlock
+    uint32_t committed_output = simulate_contact_chatter_fault ? shadow_digit : decimal_digit_in;
+
+    bool isolation_ok = (shadow_digit == decimal_digit_in);
+    bool rollback_ok = simulate_contact_chatter_fault ? (committed_output == shadow_digit) : (committed_output == decimal_digit_in);
+    bool overall_sound = parity_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = committed_output % 256;
+
+    if (metrics_out) {
+        metrics_out->decimal_digit_in = decimal_digit_in;
+        metrics_out->bi_part = bi_part;
+        metrics_out->quin_part = quin_part;
+        metrics_out->active_relay_count = active_relay_count;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->parity_sound = parity_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_biquinary_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+

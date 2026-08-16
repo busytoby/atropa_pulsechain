@@ -162,4 +162,24 @@ bool auncient_harvard_1946_interpolator_prover(
     AuncientHarvard1946InterpolatorMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t decimal_digit_in;
+    uint32_t bi_part;
+    uint32_t quin_part;
+    uint32_t active_relay_count;
+    uint32_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool parity_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_biquinary_sound;
+} AuncientHarvard1946BiquinaryMetrics;
+
+bool auncient_harvard_1946_biquinary_prover(
+    uint32_t decimal_digit_in,
+    bool simulate_contact_chatter_fault,
+    uint32_t k_param,
+    AuncientHarvard1946BiquinaryMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H
