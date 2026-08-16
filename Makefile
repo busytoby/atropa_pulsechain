@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-cpm-tomie-bdos-tpa:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_bdos_tpa.c -o tests/test_cpm_tomie_bdos_tpa
+	./tests/test_cpm_tomie_bdos_tpa
+	@rm -f tests/test_cpm_tomie_bdos_tpa
+
 test-auncient-acab-skin-dispersion:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_acab_skin_dispersion.c -o tests/test_auncient_acab_skin_dispersion
 	./tests/test_auncient_acab_skin_dispersion
