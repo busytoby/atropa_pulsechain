@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-ankh-acid-torque-commutation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_acid_torque_commutation.c -o tests/test_ankh_acid_torque_commutation
+	./tests/test_ankh_acid_torque_commutation
+	@rm -f tests/test_ankh_acid_torque_commutation
+
 test-ankh-accumulator-skeleton:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_accumulator_skeleton.c -o tests/test_ankh_accumulator_skeleton
 	./tests/test_ankh_accumulator_skeleton
