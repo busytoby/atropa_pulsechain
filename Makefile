@@ -138,6 +138,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-agent-pipeline:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_agent_pipeline.c -o tests/test_ankh_agent_pipeline
+	./tests/test_ankh_agent_pipeline
+	@rm -f tests/test_ankh_agent_pipeline
+
 test-ankh-closed-toolset-ext:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_closed_toolset_ext.c -o tests/test_ankh_closed_toolset_ext
 	./tests/test_ankh_closed_toolset_ext
