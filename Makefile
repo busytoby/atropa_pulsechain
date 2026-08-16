@@ -228,6 +228,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-tree-indexing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_tree_indexing.c -o tests/test_ankh_tree_indexing
+	./tests/test_ankh_tree_indexing
+	@rm -f tests/test_ankh_tree_indexing
+
 test-ankh-hardware-gating:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_hardware_gating.c -o tests/test_ankh_hardware_gating
 	./tests/test_ankh_hardware_gating
