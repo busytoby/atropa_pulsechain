@@ -210,6 +210,26 @@ make test-zorse-wmq-abi
 make test-zorse-yellow-box-cics-io1
 ```
 
+### ANKH LLM & Canonical Standards Formal Proving Battery
+
+SYSTEM0 features a fully verified, 5-pillar mathematical architecture and canonical standards suite for **ANKH LLM** and the **Auncient Mainframe**:
+
+* **Standard Codex**: See [standards/README.md](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/README.md)
+* **Architectural Specification**: See [docs/ANKH_LLM_ARCHITECTURAL_SPECIFICATION.md](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/docs/ANKH_LLM_ARCHITECTURAL_SPECIFICATION.md)
+
+Execute the full formal verification suite via `make`:
+
+```bash
+make test-ankh-max-lyapunov-stability      # Maximum Theoretical Lyapunov Stability (AUNCIENT-STD-0001)
+make test-bmrc-infinite-output-domain     # Infinite Output Domain from Totient Zero
+make test-bmrc-kleene-universality        # Kleene mu-Recursive Universality (AUNCIENT-STD-0002)
+make test-bmrc-reversible-tape            # Reversible Bi-Infinite Tape Invariance
+make test-bmrc-strowger-halting           # In-Band 2600 Hz Strowger Halting Decidability
+make test-bmrc-landauer-reversibility     # Zero-Entropy Landauer Thermodynamic Reversibility
+make test-benson-lehner-fieldata-safety   # Benson-Lehner OSCAR & FIELDATA Bit-Safety (AUNCIENT-STD-0003)
+make test-ankh-adversarial-neutralization # Adversarial Threat & Violent Input Firewall (AUNCIENT-STD-0004)
+```
+
 ---
 
 ## Permanent System Registers & Glossary
