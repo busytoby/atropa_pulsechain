@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-ankh-jit-self-opt:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_jit_self_opt.c -o tests/test_ankh_jit_self_opt
+	./tests/test_ankh_jit_self_opt
+	@rm -f tests/test_ankh_jit_self_opt
+
 test-ankh-llm-compiler-bridge:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_llm_compiler_bridge.c -o tests/test_ankh_llm_compiler_bridge
 	./tests/test_ankh_llm_compiler_bridge
