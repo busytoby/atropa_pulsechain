@@ -53,6 +53,16 @@ test-exec-teddy-bin: compile-teddy-bin
 	./tools/ankh_exec_teddy teddy_endow.bin
 	@rm -f tools/ankh_exec_teddy
 
+compile-stat-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_stat.c -o tools/cpm_compiler_stat
+	./tools/cpm_compiler_stat stat.bin
+	@rm -f tools/cpm_compiler_stat
+
+test-exec-stat-bin: compile-stat-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_stat.c -o tools/cpm_exec_stat
+	./tools/cpm_exec_stat stat.bin
+	@rm -f tools/cpm_exec_stat
+
 test-ankh-abi-wmq-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_abi_wmq_compiler.c -o tests/test_ankh_abi_wmq_compiler
 	./tests/test_ankh_abi_wmq_compiler
