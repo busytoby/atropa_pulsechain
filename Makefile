@@ -28,6 +28,11 @@ test-ankh-closed-grid-totient-boundary:
 	./tests/test_ankh_closed_grid_totient_boundary
 	@rm -f tests/test_ankh_closed_grid_totient_boundary
 
+test-cpm-tomie-overlay-bank:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_overlay_bank.c -o tests/test_cpm_tomie_overlay_bank
+	./tests/test_cpm_tomie_overlay_bank
+	@rm -f tests/test_cpm_tomie_overlay_bank
+
 test-cpm-tomie-ccp-pipeline:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_ccp_pipeline.c -o tests/test_cpm_tomie_ccp_pipeline
 	./tests/test_cpm_tomie_ccp_pipeline
