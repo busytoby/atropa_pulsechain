@@ -58,6 +58,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-binary-coaxial-totient:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_binary_coaxial_totient.c -o tests/test_ankh_binary_coaxial_totient
+	./tests/test_ankh_binary_coaxial_totient hello.bin tune_channel.bin
+	@rm -f tests/test_ankh_binary_coaxial_totient
+
 test-ankh-jit-self-opt:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_jit_self_opt.c -o tests/test_ankh_jit_self_opt
 	./tests/test_ankh_jit_self_opt
