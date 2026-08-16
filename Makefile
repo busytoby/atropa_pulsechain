@@ -168,6 +168,11 @@ test-exec-fold-bin: compile-fold-bin
 	./tools/cpm_exec_fold fold.bin
 	@rm -f tools/cpm_exec_fold
 
+test-ankh-gguf-quadtree-pipeline:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_gguf_quadtree_pipeline.c -o tools/ankh_gguf_quadtree_pipeline
+	./tools/ankh_gguf_quadtree_pipeline
+	@rm -f tools/ankh_gguf_quadtree_pipeline
+
 test-cpm-master-fleet-18:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_master_orchestrator_18.c -o tools/cpm_master_orchestrator_18
 	./tools/cpm_master_orchestrator_18
