@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-auncient-spheroid-montecarlo:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_spheroid_montecarlo.c -o tests/test_auncient_spheroid_montecarlo
+	./tests/test_auncient_spheroid_montecarlo
+	@rm -f tests/test_auncient_spheroid_montecarlo
+
 test-auncient-teddy-multisig-inher:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_teddy_multisig_inher.c -o tests/test_auncient_teddy_multisig_inher
 	./tests/test_auncient_teddy_multisig_inher
