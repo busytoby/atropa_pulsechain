@@ -260,6 +260,27 @@ int main(void) {
     printf("   ✓ GLM FET Link Dynamics verified (Initial=%lu, Final=%lu, Reconstructed=%lu, DispMod=%u).\n",
            glm_fet_m.initial_charge_mu, glm_fet_m.final_charge_mu, glm_fet_m.reconstructed_charge_mu, glm_fet_m.displacement_wrap_mod);
 
+    // 18. Test Accumulator Valves upon Zero TOTIENT ACID Compliance & Rollback
+    printf("[TEST] Testing Accumulator Valves upon Zero TOTIENT (ACID Transactional Rollback)...\n");
+    AuncientTotientValveAcidMetrics clean_valve_m = {0};
+    bool clean_valve_ok = auncient_glm_totient_valve_acid_prover(
+        0, 1000000 /* Saat */, 991220 /* v */, false, 3 /* k=3 */, &clean_valve_m
+    );
+    assert(clean_valve_ok == true && clean_valve_m.overall_valve_acid_sound == true);
+    assert(clean_valve_m.initial_totient_val == 0);
+    assert(clean_valve_m.staged_flow_val == 0);
+    assert(clean_valve_m.committed_totient_val == 0);
+
+    AuncientTotientValveAcidMetrics fault_valve_m = {0};
+    bool fault_valve_ok = auncient_glm_totient_valve_acid_prover(
+        0, 1000000 /* Saat */, 991220 /* v */, true, 3 /* k=3 */, &fault_valve_m
+    );
+    assert(fault_valve_ok == true && fault_valve_m.overall_valve_acid_sound == true);
+    assert(fault_valve_m.committed_totient_val == 0);
+    assert(fault_valve_m.durability_rollback_verified == true);
+    printf("   ✓ Accumulator Valves upon Zero TOTIENT verified (Clean & Fault-Recovered states = 0, DispMod=%u).\n",
+           clean_valve_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");

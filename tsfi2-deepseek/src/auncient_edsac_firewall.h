@@ -835,6 +835,31 @@ bool auncient_glm_fet_link_dynamics_prover(
     AuncientGlmFetLinkMetrics *metrics_out
 );
 
+// Accumulator Valve upon Zero TOTIENT ACID Prover Metrics
+typedef struct {
+    uint64_t initial_totient_val;
+    uint64_t valve_charge_mu;
+    uint64_t valve_exponent_e;
+    uint64_t staged_flow_val;
+    uint64_t committed_totient_val;
+    uint32_t displacement_wrap_mod;
+    bool initial_zero_genesis_ok;
+    bool valve_flow_sound;
+    bool isolation_shadow_preserved;
+    bool durability_rollback_verified;
+    bool overall_valve_acid_sound;
+} AuncientTotientValveAcidMetrics;
+
+// Formal Accumulator Valve upon Zero TOTIENT ACID Prover
+bool auncient_glm_totient_valve_acid_prover(
+    uint64_t initial_totient_axiom,
+    uint64_t valve_charge_mu,
+    uint64_t valve_exponent_e,
+    bool simulate_fault,
+    uint32_t k_param,
+    AuncientTotientValveAcidMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H
