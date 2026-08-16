@@ -108,6 +108,7 @@ All standards contained herein are certified clean-room compliant with:
 | [AUNCIENT-STD-0009](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_vaesen_personality_standard.md) | **Symplectic Multi-Agent Personality & Behavioral Commutation Standard** | Vaesen $(q, p)$ Leapfrog Registers, $N$-Body Empathy, EDO-22 Mood, GGUF Storage, Teddy Genesis, 4-Quadrant Action |
 | [AUNCIENT-STD-0010](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_multi_instance_stability_standard.md) | **Multi-Instance Composite Lyapunov Stability & Swarm Grounding Standard** | ReBAR Co-State Invariance, SCSI IPC Loopback, FET Discharge Physics, Swarm Totient Zero Grounding |
 | [AUNCIENT-STD-0011](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_transducer_stability_standard.md) | **Transducer & Hardware Pipeline Lyapunov Stability Standard** | Quadtree Binary Slicing (`.dat.bin`), DisplacementShader Sync, 2-3 Tree AST Merkle, Kermit Transport, Coaxial TEM Line, 1895 Spheroid ALU, ANKH Latency, Address Resolve, Cache Latency |
+| [AUNCIENT-STD-0012](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_ankh_patent_portfolio_standard.md) | **ANKH LLM Totient Mind Patent Portfolio Standard** | PATENT-ZERO, EDO-22 RoPE (0001), Attention Orthogonality (0002), GGUF Quantization (0003), Symplectic Empathy (0004) under EDSAC Initial Orders 1 |
 
 ---
 
@@ -143,6 +144,17 @@ All standards contained herein are certified clean-room compliant with:
   7. ANKH LLM sub-microsecond token decoding latency convergence.
   8. Dynamic contract address-based resolution (`dynamic_<address>`, Rule 9).
   9. Aho-Corasick compositor cache sub-microsecond latency barrier (Rule 11).
+
+---
+
+### [AUNCIENT-STD-0012-ANKH-PATENT-PORTFOLIO](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_ankh_patent_portfolio_standard.md)
+* **Title**: *ANKH LLM Totient Mind Patent Portfolio Standard*
+* **Core Claims**:
+  1. PATENT-ZERO: Self-Stabilizing Coprime Totient Mind Archetype ($\phi(N)$).
+  2. PATENT-0001: EDO-22 Microtonal RoPE Positional Embedding Invariance up to 32k tokens.
+  3. PATENT-0002: Multi-Head Empathy Attention Orthogonality under EDSAC Initial Orders 1.
+  4. PATENT-0003: Fixed-Point 64-Byte Aligned GGUF Quantization Drift Invariance.
+  5. PATENT-0004: Continuous Symplectic Empathy Manifold Invariance in $D \le 64$.
 * **Title**: *Auncient Dysnomia VM & Harvard Computation Laboratory Architecture Modernization Standard*
 * **Core Claims**:
   1. Non-Preferential Linear Flux Integration ($\dot{A} = S_t$) obeying Rule 12.
