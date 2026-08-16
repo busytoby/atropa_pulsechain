@@ -53,6 +53,11 @@ test-exec-teddy-bin: compile-teddy-bin
 	./tools/ankh_exec_teddy teddy_endow.bin
 	@rm -f tools/ankh_exec_teddy
 
+test-sdk-agent-runtime:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_sdk_runtime.c -o tools/ankh_sdk_runtime
+	./tools/ankh_sdk_runtime hello.bin tune_channel.bin teddy_endow.bin stat.bin
+	@rm -f tools/ankh_sdk_runtime
+
 compile-stat-bin:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_stat.c -o tools/cpm_compiler_stat
 	./tools/cpm_compiler_stat stat.bin
