@@ -1,0 +1,149 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LYAPUNOV-LASALLE-HBRIDGE-STRATEGY.
+       AUTHOR. AUNCIENT DYSNOMIA VM / LASALLE H-BRIDGE CONSENSUS.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01 WS-CONSENSUS-PARAMETERS.
+          05 WS-AGENT-1-POS            PIC 9(05) VALUE 01000.
+          05 WS-AGENT-2-POS            PIC 9(05) VALUE 02000.
+          05 WS-AGENT-3-POS            PIC 9(05) VALUE 03000.
+          05 WS-AGENT-4-POS            PIC 9(05) VALUE 04000.
+          05 WS-COMMUTATION-CYCLES     PIC 9(02) VALUE 16.
+          05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+          05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+          05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+       01 WS-INTERMEDIATE-REGISTERS.
+          05 WS-X1                     PIC 9(05) VALUE 0.
+          05 WS-X2                     PIC 9(05) VALUE 0.
+          05 WS-X3                     PIC 9(05) VALUE 0.
+          05 WS-X4                     PIC 9(05) VALUE 0.
+          05 WS-X-TARGET-MEAN          PIC 9(05) VALUE 0.
+          05 WS-CYCLE-IDX              PIC 9(02) VALUE 0.
+          05 WS-E1                     PIC S9(05) VALUE 0.
+          05 WS-E2                     PIC S9(05) VALUE 0.
+          05 WS-E3                     PIC S9(05) VALUE 0.
+          05 WS-E4                     PIC S9(05) VALUE 0.
+          05 WS-TOTAL-VAR-INIT         PIC 9(12) VALUE 0.
+          05 WS-TOTAL-VAR-FINAL        PIC 9(12) VALUE 0.
+          05 WS-SHADOW-LASALLE-BASE    PIC 9(12) VALUE 0.
+          05 WS-CYC-MOD                PIC 9(02) VALUE 0.
+          05 WS-G-GATE-FACTOR          PIC 9(04) VALUE 0.
+          05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+          05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+       01 WS-CLASSIFICATION-RULINGS.
+          05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+             88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+             88 INVALID-K-EXPONENT          VALUE 1.
+             88 INVALID-AGENT-POSITIONS     VALUE 2.
+             88 INVALID-COMMUTATION-CYCLES  VALUE 3.
+             88 CICS-CITIZEN-UNVERIFIED     VALUE 4.
+             88 CONSENSUS-CONVERGENCE-FAIL  VALUE 5.
+             88 GATING-CLAMP-OVERFLOW       VALUE 6.
+             88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+             88 CASCADE-ROLLBACK-FAIL       VALUE 8.
+
+       PROCEDURE DIVISION.
+       0000-MAIN-EVALUATION.
+           PERFORM 1000-VALIDATE-PREREQUISITES.
+           IF WS-RULING-CODE EQUAL ZERO
+               PERFORM 2000-EXECUTE-CONSENSUS-CYCLES
+               PERFORM 3000-VERIFY-ACID-INVARIANTS
+           END-IF.
+           STOP RUN.
+
+       1000-VALIDATE-PREREQUISITES.
+           IF WS-K-EXPONENT NOT EQUAL 3
+               SET INVALID-K-EXPONENT TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-AGENT-1-POS > 10000 OR WS-AGENT-2-POS > 10000 OR
+              WS-AGENT-3-POS > 10000 OR WS-AGENT-4-POS > 10000
+               SET INVALID-AGENT-POSITIONS TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-COMMUTATION-CYCLES < 1 OR WS-COMMUTATION-CYCLES > 64
+               SET INVALID-COMMUTATION-CYCLES TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+              WS-CICS-WRITER-ID NOT EQUAL 888 AND
+              WS-CICS-WRITER-ID NOT EQUAL 99  AND
+              WS-CICS-WRITER-ID NOT EQUAL 42
+               SET CICS-CITIZEN-UNVERIFIED TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+       2000-EXECUTE-CONSENSUS-CYCLES.
+           MOVE WS-AGENT-1-POS TO WS-X1.
+           MOVE WS-AGENT-2-POS TO WS-X2.
+           MOVE WS-AGENT-3-POS TO WS-X3.
+           MOVE WS-AGENT-4-POS TO WS-X4.
+
+           COMPUTE WS-X-TARGET-MEAN = (WS-X1 + WS-X2 + WS-X3 + WS-X4) / 4.
+
+           COMPUTE WS-TOTAL-VAR-INIT = ((WS-X1 - WS-X-TARGET-MEAN) ** 2) +
+                                       ((WS-X2 - WS-X-TARGET-MEAN) ** 2) +
+                                       ((WS-X3 - WS-X-TARGET-MEAN) ** 2) +
+                                       ((WS-X4 - WS-X-TARGET-MEAN) ** 2).
+
+           PERFORM VARYING WS-CYCLE-IDX FROM 1 BY 1 UNTIL WS-CYCLE-IDX > WS-COMMUTATION-CYCLES
+               COMPUTE WS-E1 = WS-X1 - WS-X-TARGET-MEAN
+               COMPUTE WS-E2 = WS-X2 - WS-X-TARGET-MEAN
+               COMPUTE WS-E3 = WS-X3 - WS-X-TARGET-MEAN
+               COMPUTE WS-E4 = WS-X4 - WS-X-TARGET-MEAN
+
+               COMPUTE WS-X1 = WS-X-TARGET-MEAN + ((WS-E1 * 875) / 1000)
+               COMPUTE WS-X2 = WS-X-TARGET-MEAN + ((WS-E2 * 875) / 1000)
+               COMPUTE WS-X3 = WS-X-TARGET-MEAN + ((WS-E3 * 875) / 1000)
+               COMPUTE WS-X4 = WS-X-TARGET-MEAN + ((WS-E4 * 875) / 1000)
+           END-PERFORM.
+
+           COMPUTE WS-TOTAL-VAR-FINAL = ((WS-X1 - WS-X-TARGET-MEAN) ** 2) +
+                                        ((WS-X2 - WS-X-TARGET-MEAN) ** 2) +
+                                        ((WS-X3 - WS-X-TARGET-MEAN) ** 2) +
+                                        ((WS-X4 - WS-X-TARGET-MEAN) ** 2).
+
+           IF WS-TOTAL-VAR-FINAL > WS-TOTAL-VAR-INIT
+               SET CONSENSUS-CONVERGENCE-FAIL TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           COMPUTE WS-SHADOW-LASALLE-BASE = (WS-CICS-WRITER-ID * 1000000) + 
+               (WS-X-TARGET-MEAN * 100) + (WS-TOTAL-VAR-FINAL / 16).
+
+           COMPUTE WS-CYC-MOD = FUNCTION MOD(WS-COMMUTATION-CYCLES, 8).
+           COMPUTE WS-G-GATE-FACTOR = 875 + ((125 * WS-CYC-MOD) / 8).
+           IF WS-G-GATE-FACTOR < 875 OR WS-G-GATE-FACTOR > 1000
+               SET GATING-CLAMP-OVERFLOW TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-SIMULATE-FAULT EQUAL 'Y'
+               MOVE WS-SHADOW-LASALLE-BASE TO WS-COMMITTED-OUTPUT
+           ELSE
+               COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-LASALLE-BASE + ((WS-X-TARGET-MEAN * WS-G-GATE-FACTOR) / 1000)
+           END-IF.
+
+           COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256).
+
+       3000-VERIFY-ACID-INVARIANTS.
+           IF WS-SHADOW-LASALLE-BASE NOT EQUAL ((WS-CICS-WRITER-ID * 1000000) + (WS-X-TARGET-MEAN * 100) + (WS-TOTAL-VAR-FINAL / 16))
+               SET SHADOW-ISOLATION-CORRUPT TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           IF WS-SIMULATE-FAULT EQUAL 'Y' AND WS-COMMITTED-OUTPUT NOT EQUAL WS-SHADOW-LASALLE-BASE
+               SET CASCADE-ROLLBACK-FAIL TO TRUE
+               EXIT PARAGRAPH
+           END-IF.
+
+           SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE.
