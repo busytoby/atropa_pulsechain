@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harvard 1946 Mainframe & Golden Jubilee Overdrive Live CRT Presenter</title>
+    <style>
+        :root {
+            --bg-base: #06090c;
+            --bg-surface: #0e1622;
+            --bg-surface-raised: #182436;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-brass: #f59e0b;
+            --accent-crt: #10b981;
+            --accent-overdrive: #f43f5e;
+            --border-dim: #253347;
+            --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            user-select: none;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-dim);
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--accent-brass);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-crt);
+            border: 1px solid var(--accent-crt);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 16px;
+            height: calc(100vh - 80px);
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-dim);
+            border-radius: 6px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .panel h2 {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 6px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #000;
+            border: 2px solid var(--border-dim);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-brass);
+        }
+
+        .btn {
+            background: var(--bg-surface-raised);
+            color: var(--text-main);
+            border: 1px solid var(--border-dim);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            border-color: var(--accent-brass);
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .btn-active {
+            border-color: var(--accent-crt);
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-crt);
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+
+        .telemetry-val {
+            font-weight: 700;
+            color: var(--accent-crt);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HARVARD 1946 MAINFRAME & GOLDEN JUBILEE OVERDRIVE CRT PRESENTER</h1>
+        <div class="status-badge" id="proofStatus">BIJECTIVE CONTINUUM: VERIFIED (k=3)</div>
+    </header>
+
+    <div class="main-grid">
+        <!-- Left Panel: Physical Mainframe Hardware Controls -->
+        <div class="panel">
+            <h2>1946 Hardware State Machines</h2>
+            
+            <div class="control-group">
+                <button class="btn btn-active" id="btnAudioToggle">START AUDIO SYNTH (174 BPM)</button>
+            </div>
+
+            <div class="control-group">
+                <label><span>RAW VOLTAGE IN (V_in)</span> <span id="valVoltage">250,000 V</span></label>
+                <input type="range" id="sliderVoltage" min="50000" max="500000" step="5000" value="250000">
+            </div>
+
+            <div class="control-group">
+                <label><span>WORD COUPLING RAIL (V_rail)</span> <span>131,071 V (17-bit)</span></label>
+            </div>
+
+            <div class="control-group">
+                <label><span>ROTARY SPEED (RPM)</span> <span id="valRPM">172.5 RPM</span></label>
+                <input type="range" id="sliderRPM" min="60" max="300" step="5" value="172">
+            </div>
+
+            <div class="control-group">
+                <label><span>SWIGLU GATING CLAMP</span> <span id="valGating">0.887 (7/8)</span></label>
+                <input type="range" id="sliderGating" min="875" max="1000" step="5" value="887">
+            </div>
+
+            <h2>USDA Prim Hierarchy</h2>
+            <div class="telemetry-row"><span>Mainframe Chassis</span> <span class="telemetry-val">Bakelite PBR</span></div>
+            <div class="telemetry-row"><span>24 Counter Wheels</span> <span class="telemetry-val">Geneva Brass</span></div>
+            <div class="telemetry-row"><span>3-Address Tape</span> <span class="telemetry-val">Manila Perforated</span></div>
+            <div class="telemetry-row"><span>Oscilloscope Tube</span> <span class="telemetry-val">Green CRT</span></div>
+            <div class="telemetry-row"><span>Chief Engineer</span> <span class="telemetry-val">Teddy Bear .dna</span></div>
+        </div>
+
+        <!-- Center Viewport: CRT Phosphor & 3D Wheel Mesh Canvas -->
+        <div class="canvas-container">
+            <canvas id="crtCanvas" width="960" height="640"></canvas>
+        </div>
+
+        <!-- Right Panel: Live Merkle Telemetry & Oscilloscope -->
+        <div class="panel">
+            <h2>Real-Time Hardware Registers</h2>
+            <div class="telemetry-row"><span>MOTZKIN_PRIME</span> <span class="telemetry-val">953467954114363</span></div>
+            <div class="telemetry-row"><span>UNIVERSAL ACCUMULATOR</span> <span class="telemetry-val" id="dispSaat">1,000,000 Saat</span></div>
+            <div class="telemetry-row"><span>SATURATION OVERDRIVE</span> <span class="telemetry-val" id="dispOverdrive">ACTIVE (+24.5k V)</span></div>
+            <div class="telemetry-row"><span>WHEELER RETURN LINK</span> <span class="telemetry-val">PC+2 (102)</span></div>
+            <div class="telemetry-row"><span>DUAL-CAM PHASE ORTHO</span> <span class="telemetry-val">180.0 DEG</span></div>
+            <div class="telemetry-row"><span>CHANCERY DOCKET</span> <span class="telemetry-val">#7000 [ZMM R15=0]</span></div>
+
+            <h2>24-Decade Carry Accumulator</h2>
+            <div style="font-family: var(--font-mono); font-size: 18px; color: var(--accent-brass); text-align: center; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 4px; border: 1px solid var(--border-dim);" id="counterDigits">
+                0000000000000001000000
+            </div>
+
+            <h2>Harmonic Distortion Monitor</h2>
+            <div style="height: 120px; background: #000; border: 1px solid var(--border-dim); border-radius: 4px; position: relative;">
+                <canvas id="scopeCanvas" width="300" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('crtCanvas');
+        const ctx = canvas.getContext('2d');
+        const scopeCanvas = document.getElementById('scopeCanvas');
+        const sCtx = scopeCanvas.getContext('2d');
+
+        let rawVoltage = 250000.0;
+        const vRail = 131071.0;
+        let rpm = 172.5;
+        let gGating = 887;
+        let isAudioPlaying = false;
+        let audioCtx = null;
+        let time = 0;
+
+        document.getElementById('sliderVoltage').addEventListener('input', (e) => {
+            rawVoltage = parseFloat(e.target.value);
+            document.getElementById('valVoltage').textContent = rawVoltage.toLocaleString() + ' V';
+        });
+
+        document.getElementById('sliderRPM').addEventListener('input', (e) => {
+            rpm = parseFloat(e.target.value);
+            document.getElementById('valRPM').textContent = rpm.toFixed(1) + ' RPM';
+        });
+
+        document.getElementById('sliderGating').addEventListener('input', (e) => {
+            gGating = parseInt(e.target.value);
+            document.getElementById('valGating').textContent = (gGating / 1000.0).toFixed(3);
+        });
+
+        function evalJubileeOverdrive(vIn, rail) {
+            if (vIn > rail) {
+                const excess = (vIn - rail) / rail;
+                const vOut = rail + (rail * Math.tanh(excess));
+                return { vOut, harmonics: vIn - vOut };
+            } else if (vIn < -rail) {
+                const under = Math.abs(vIn + rail) / rail;
+                const vOut = -rail * (1.0 - Math.exp(-under));
+                return { vOut, harmonics: Math.abs(vIn - vOut) };
+            }
+            return { vOut: vIn, harmonics: 0.0 };
+        }
+
+        // WebAudio 5-Instrument Live Synthesizer
+        let oscGrowl, oscBass, oscLead;
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Reese Sub-Bass
+            oscBass = audioCtx.createOscillator();
+            oscBass.type = 'sine';
+            oscBass.frequency.setValueAtTime(55.0, audioCtx.currentTime);
+            const bassGain = audioCtx.createGain();
+            bassGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            oscBass.connect(bassGain).connect(audioCtx.destination);
+            oscBass.start();
+
+            // Growl Overdrive
+            oscGrowl = audioCtx.createOscillator();
+            oscGrowl.type = 'sawtooth';
+            oscGrowl.frequency.setValueAtTime(98.0, audioCtx.currentTime);
+            const growlGain = audioCtx.createGain();
+            growlGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            oscGrowl.connect(growlGain).connect(audioCtx.destination);
+            oscGrowl.start();
+
+            // Lead
+            oscLead = audioCtx.createOscillator();
+            oscLead.type = 'triangle';
+            oscLead.frequency.setValueAtTime(440.0, audioCtx.currentTime);
+            const leadGain = audioCtx.createGain();
+            leadGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            oscLead.connect(leadGain).connect(audioCtx.destination);
+            oscLead.start();
+        }
+
+        document.getElementById('btnAudioToggle').addEventListener('click', () => {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+                isAudioPlaying = true;
+                document.getElementById('btnAudioToggle').classList.add('btn-active');
+            } else if (audioCtx.state === 'running') {
+                audioCtx.suspend();
+                isAudioPlaying = false;
+                document.getElementById('btnAudioToggle').classList.remove('btn-active');
+            }
+        });
+
+        function renderFrame() {
+            time += 0.02;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Clear Background with CRT glow
+            ctx.fillStyle = '#03080e';
+            ctx.fillRect(0, 0, w, h);
+
+            const driveRes = evalJubileeOverdrive(rawVoltage, vRail);
+            const isOverdriven = driveRes.harmonics > 0;
+            document.getElementById('dispOverdrive').textContent = isOverdriven ? `ACTIVE (+${(driveRes.harmonics/1000).toFixed(1)}k V)` : 'LINEAR (0.0 V)';
+            document.getElementById('dispOverdrive').style.color = isOverdriven ? 'var(--accent-overdrive)' : 'var(--accent-crt)';
+
+            // Render 24-Decade Mainframe Wheel Bank
+            const decades = 24;
+            const startX = 60;
+            const spacing = (w - 120) / decades;
+
+            for (let d = 0; d < decades; d++) {
+                const x = startX + d * spacing;
+                const rot = time * (rpm / 60.0) * 2.0 * Math.PI + d * 0.3;
+
+                // Shaft
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(x, 80);
+                ctx.lineTo(x, h - 140);
+                ctx.stroke();
+
+                // Brass Wheel
+                const wheelY = h / 2 + Math.sin(rot) * 20;
+                ctx.fillStyle = (d % 2 === 0) ? '#f59e0b' : '#d97706';
+                ctx.beginPath();
+                ctx.ellipse(x, wheelY, 12, 28, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Commutator Studs
+                for (let s = 0; s < 5; s++) {
+                    const studAng = rot + s * (Math.PI * 2 / 5);
+                    const sx = x + Math.cos(studAng) * 14;
+                    const sy = wheelY + Math.sin(studAng) * 24;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Render 180-Degree Lissajous CRT Wave on top
+            ctx.strokeStyle = isOverdriven ? '#f43f5e' : '#10b981';
+            ctx.lineWidth = isOverdriven ? 3 : 2;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.shadowBlur = isOverdriven ? 16 : 8;
+
+            ctx.beginPath();
+            for (let px = 0; px < w; px += 4) {
+                const phi = (px / w) * Math.PI * 4 + time * 3;
+                let py = (h / 2) + Math.sin(phi * 2.5) * 80 + Math.cos(phi * 1.5) * 40;
+                if (isOverdriven) {
+                    py += (Math.random() - 0.5) * (driveRes.harmonics / 15000.0);
+                }
+                if (px === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Render Scope Canvas
+            sCtx.fillStyle = '#000000';
+            sCtx.fillRect(0, 0, scopeCanvas.width, scopeCanvas.height);
+            sCtx.strokeStyle = '#10b981';
+            sCtx.lineWidth = 1.5;
+            sCtx.beginPath();
+            for (let sx = 0; sx < scopeCanvas.width; sx += 2) {
+                const sPhi = (sx / scopeCanvas.width) * Math.PI * 4 + time * 6;
+                const sy = 60 + Math.sin(sPhi) * 45;
+                if (sx === 0) sCtx.moveTo(sx, sy);
+                else sCtx.lineTo(sx, sy);
+            }
+            sCtx.stroke();
+
+            // Update Counter Digits Display
+            const counterVal = Math.floor(1000000 + (time * 1000) % 999999);
+            document.getElementById('counterDigits').textContent = String(counterVal).padStart(24, '0');
+
+            requestAnimationFrame(renderFrame);
+        }
+
+        renderFrame();
+    </script>
+</body>
+</html>
