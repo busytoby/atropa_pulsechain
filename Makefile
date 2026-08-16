@@ -23,6 +23,16 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+compile-hello-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_compiler_hello.c -o tools/ankh_compiler_hello
+	./tools/ankh_compiler_hello hello.bin
+	@rm -f tools/ankh_compiler_hello
+
+test-exec-hello-bin: compile-hello-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_exec_bin.c -o tools/ankh_exec_bin
+	./tools/ankh_exec_bin hello.bin
+	@rm -f tools/ankh_exec_bin
+
 test-ankh-abi-wmq-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_abi_wmq_compiler.c -o tests/test_ankh_abi_wmq_compiler
 	./tests/test_ankh_abi_wmq_compiler
