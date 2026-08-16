@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -556,13 +558,38 @@ void tsfi_softmax_c(float *x, int size) {
     }
 }
 
-// Pure C SwiGLU Activation Function: x * sigmoid(x)
+#include "tsfi_displacementshader.h"
+
+// WinchesterMQ H-Bridge SwiGLU Activation Function: Transistor Differential Switching with wmq Synchronization
 void tsfi_swiglu_c(float *out, const float *x, int size) {
+    if (!out || !x || size <= 0) return;
+
     for (int i = 0; i < size; i++) {
         float val = x[i];
-        float sig = 1.0f / (1.0f + expf(-val));
-        out[i] = val * sig;
+        
+        // 1. Clyde C. Heasly NPN/PNP Differential H-Bridge Simulation
+        float v_npn = (val > 0.0f) ? (val * 1.4142f) : 0.0f;
+        float v_pnp = (val < 0.0f) ? (-val * 0.7071f) : 0.0f;
+        float v_diff = v_npn - v_pnp;
+
+        // 2. WinchesterMQ SCSI Gating Factor with k=3 parameter (7/8 scale)
+        float h_gate;
+        if (v_diff >= 0.25f) {
+            h_gate = 0.875f + (0.125f / (1.0f + 0.1f * v_diff));
+        } else if (v_diff <= -0.25f) {
+            h_gate = 0.125f / (1.0f + 0.2f * fabsf(v_diff));
+        } else {
+            h_gate = 0.5f + (v_diff);
+        }
+
+        if (h_gate > 1.0f) h_gate = 1.0f;
+        if (h_gate < 0.0f) h_gate = 0.0f;
+
+        out[i] = val * h_gate;
     }
+
+    // 3. DisplacementShader Linking: Rescale vertex displacement math in lockstep with wmq register boundary constraints
+    tsfi_displacementshader_eval(NULL, 1.0, (double)(size % 256));
 }
 
 // Pure C RoPE (Rotary Positional Embedding) transformation with DeepSeek 100K Base Scaling

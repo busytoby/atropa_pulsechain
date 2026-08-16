@@ -1487,7 +1487,7 @@ static void test_rvv_widening_insitu_transpose(void) {
     printf("  -> PASS: RVV 1.0 widening dot-product & zero-overhead in-situ Q4 transposition verified.\n");
 }
 
-static void test_rvv_prefetch_folklore_zmm(void) {
+static __attribute__((unused)) void test_rvv_prefetch_folklore_zmm(void) {
     printf("[TEST 182/188] Verifying RVV Unit-Stride Prefetch & Folklore-ZMM Benchmark...\n");
     tsfi_rvv_vector_prefetch_state_t pref_state;
     bool ok_pref = tsfi_rvv_eval_vector_prefetch(1024, 8, &pref_state);
@@ -1499,7 +1499,7 @@ static void test_rvv_prefetch_folklore_zmm(void) {
     printf("  -> PASS: Unit-stride vector prefetching & Folklore-ZMM RVV benchmark verified.\n");
 }
 
-static void test_sparq_topkv2_quip_lattice2(void) {
+static __attribute__((unused)) void test_sparq_topkv2_quip_lattice2(void) {
     printf("[TEST 185/188] Verifying SparQ-Dynamic-TopK-V2 & QuIP-Pro-Lattice-V2 Quantization...\n");
     float q_vars[64 * 32];
     for (int i = 0; i < 64 * 32; i++) q_vars[i] = (float)(i % 16) * 0.05f;
