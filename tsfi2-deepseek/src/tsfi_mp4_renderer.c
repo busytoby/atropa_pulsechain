@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 #include "tsfi_mp4_renderer.h"
+#include "auncient_harvard_computation_lab.h"
+#include "tsfi_displacementshader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -503,7 +505,7 @@ static void draw_demoscene_bubble_text(uint32_t *fb, int w, int h, int x, int y,
 // -----------------------------------------------------------------------------
 static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, float t, uint64_t merkle_proof) {
     int box_x = 40, box_y = 40;
-    int box_w = 540, box_h = 125;
+    int box_w = 620, box_h = 145;
     uint32_t hud_cyan = 0xFF00FFCC;
 
     for (int by = 0; by < box_h; by++) {
@@ -513,23 +515,34 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
                 int px = box_x + bx;
                 if (px >= 0 && px < w) {
                     uint32_t bg = fb[py * w + px];
-                    uint8_t r = (uint8_t)(((bg >> 16) & 0xFF) * 0.4f);
-                    uint8_t g = (uint8_t)(((bg >> 8) & 0xFF) * 0.4f);
-                    uint8_t b = (uint8_t)((bg & 0xFF) * 0.4f);
+                    uint8_t r = (uint8_t)(((bg >> 16) & 0xFF) * 0.35f);
+                    uint8_t g = (uint8_t)(((bg >> 8) & 0xFF) * 0.35f);
+                    uint8_t b = (uint8_t)((bg & 0xFF) * 0.35f);
                     fb[py * w + px] = 0xFF000000 | (r << 16) | (g << 8) | b;
                 }
             }
         }
     }
 
-    draw_text(fb, w, h, box_x + 15, box_y + 12, "CHANCERY DOCKET #7000 [ZMM R15=0]", hud_cyan, 2);
-    char buf1[64];
-    snprintf(buf1, sizeof(buf1), "TIME: %05.2fS | SCENE %d/7 | FPS 60", t, scene);
-    draw_text(fb, w, h, box_x + 15, box_y + 35, buf1, 0xFFFFFFFF, 2);
+    draw_text(fb, w, h, box_x + 15, box_y + 10, "HARVARD 1946 X CICS DISCOVERY [0xC1C5]", hud_cyan, 2);
 
-    int bar_y = box_y + 60;
-    int score_len = (int)((t / 90.0f) * 440.0f);
-    if (score_len > 440) score_len = 440;
+    // Live Evaluation of Suite 52 (CICS Jump Prover) & Suite 50 (5-Hole Sensing Pin)
+    uint32_t dynamic_punch = ((uint32_t)(t * 4.0f)) % 32;
+    AuncientHarvardZuoSensingPinMetrics pin_m = {0};
+    auncient_harvard_zuo_sensing_pin_matrix_prover(dynamic_punch, false, 3, &pin_m);
+
+    AuncientHarvardZuoCicsJumpMetrics cics_m = {0};
+    uint32_t dyn_base = 100 + (((uint32_t)(t * 10.0f)) % 500);
+    uint32_t dyn_theta = 50 + (((uint32_t)(t * 5.0f)) % 200);
+    auncient_harvard_zuo_cics_wheeler_jump_prover(dyn_base, dyn_theta, false, 3, &cics_m);
+
+    char buf1[80];
+    snprintf(buf1, sizeof(buf1), "TIME: %05.2fS | SUITE 52/52 | SCENE %d/7 | FPS 60", t, scene);
+    draw_text(fb, w, h, box_x + 15, box_y + 32, buf1, 0xFFFFFFFF, 2);
+
+    int bar_y = box_y + 54;
+    int score_len = (int)((t / 90.0f) * 500.0f);
+    if (score_len > 500) score_len = 500;
 
     for (int bx = 0; bx < score_len; bx++) {
         int px = box_x + 15 + bx;
@@ -539,15 +552,25 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
         }
     }
 
-    char buf2[64];
-    snprintf(buf2, sizeof(buf2), "VAESEN EMOTION: [VIGILANCE 0.95] | R0: %3.0fHZ", (scene == 6) ? 20.0f : (scene == 1 ? 55.0f : 110.0f));
-    draw_text(fb, w, h, box_x + 15, box_y + 85, buf2, 0xFFFFD700, 2);
+    char buf2[80];
+    snprintf(buf2, sizeof(buf2), "5-HOLE PUNCH: %02u [%u%u%u%u%u] | G_GATE: %ld/1000",
+             pin_m.input_punch_mask, pin_m.pin_p0, pin_m.pin_p1, pin_m.pin_p2, pin_m.pin_p3, pin_m.pin_p4, pin_m.g_gate_factor);
+    draw_text(fb, w, h, box_x + 15, box_y + 70, buf2, 0xFFFFD700, 2);
+
+    char buf3[80];
+    snprintf(buf3, sizeof(buf3), "CICS TARGET: 0x%04X | EFF_ADDR: %04u | ACCUM: 1,000,000 SAAT",
+             cics_m.target_pc, cics_m.effective_address);
+    draw_text(fb, w, h, box_x + 15, box_y + 92, buf3, 0xFF00E5FF, 2);
+
+    char buf4[80];
+    snprintf(buf4, sizeof(buf4), "FORMAL RULING: QUALIFIED_ORBITAL_HANDSHAKE [ACID LATCH SEALED]");
+    draw_text(fb, w, h, box_x + 15, box_y + 115, buf4, 0xFF76FF03, 2);
 
     int tree_x = 60, tree_y = h - 140;
     draw_text(fb, w, h, tree_x + 35, tree_y - 20, "2-3 MERKLE AST", 0xFFFFD700, 1);
     draw_text(fb, w, h, tree_x + 45, tree_y + 12, "ROOT", 0xFFFFFFFF, 1);
 
-    int rx = w - 440, ry = h - 60;
+    int rx = w - 460, ry = h - 60;
     draw_text(fb, w, h, rx, ry - 25, "MERKLE PROOF: 0X0D4E0757DE528828", 0xFF00FFCC, 2);
     for (int b = 0; b < 16; b++) {
         uint32_t bit_col = ((merkle_proof >> (b * 4)) & 0x1) ? 0xFF00FFCC : 0xFF444444;
