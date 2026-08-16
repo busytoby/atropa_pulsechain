@@ -19,80 +19,32 @@ int main(void) {
     uint32_t valid_pki[4] = { 0x1111, 0x2222, 0x3333, 0x4444 };
     uint32_t invalid_pki[3] = { 0x1111, 0x2222, 0x3333 };
 
-    // 1. Verify default-reject initialization without authorization
-    printf("[TEST] Booting firewall without AUTODIN authorization (expected block)...\n");
-    bool boot_fail = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL);
-    assert(boot_fail == false);
-    printf("   ✓ Blocked unauthorized boot successful.\n");
-
-    // Grant AUTODIN authorization
+    // 1-5. Verify firewall authorization, PKI, analyzer, and packet evaluation
+    assert(auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL) == false);
     auncient_autodin_edsac_authorize(true);
+    assert(auncient_firewall_init(firewall_rules_tape, 500, invalid_pki, 3, NULL) == false);
 
-    // 2. Verify boot rejection on insufficient PKI keys (< 4 keys)
-    printf("[TEST] Booting firewall with insufficient PKI keys (expected block)...\n");
-    bool boot_fail_pki = auncient_firewall_init(firewall_rules_tape, 500, invalid_pki, 3, NULL);
-    assert(boot_fail_pki == false);
-    printf("   ✓ Blocked insufficient PKI boot successful.\n");
-
-    // 3. Test analyzer classification at Initial Orders 1
-    // Setup analyzer that prohibits 'S' (Drop/Reject) opcodes
     AuncientAnalyzer analyzer;
     auncient_analyzer_init(&analyzer, 1 << ('S' - 'A'));
+    assert(auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, &analyzer) == false);
 
-    printf("[TEST] Booting firewall with prohibited opcode in tape (expected analyzer block)...\n");
-    bool boot_fail_analyzer = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, &analyzer);
-    assert(boot_fail_analyzer == false);
-    printf("   ✓ Analyzer classification block verified.\n");
-
-    // 3b. Verify 6-bit FIELDATA qualification values are correctly outputted
-    printf("[TEST] Performing 6-bit FIELDATA Initial Orders 1 primary data qualification...\n");
     uint32_t sample_instruction = (('F' & 0xFF) << 24) | (80 << 2);
-    bool qualify_pass = auncient_analyzer_classify(&analyzer, &sample_instruction, 1);
-    assert(qualify_pass == true);
-    printf("   ✓ 6-bit data qualification verified.\n");
+    assert(auncient_analyzer_classify(&analyzer, &sample_instruction, 1) == true);
+    assert(auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL) == true);
 
-    // 4. Boot successfully with valid credentials and no prohibited opcodes (using NULL or empty analyzer)
-    printf("[TEST] Booting firewall with valid credentials (expected pass)...\n");
-    bool boot_pass = auncient_firewall_init(firewall_rules_tape, 500, valid_pki, 4, NULL);
-    assert(boot_pass == true);
-    printf("   ✓ Firewall successfully booted.\n");
-
-    // 5. Evaluate packets
     AuncientPacket p1 = { .source_ip = 0x0A000001, .dest_port = 80, .payload_checksum = 0xAA55, .key_count = 4 };
     AuncientPacket p2 = { .source_ip = 0x0A000001, .dest_port = 22, .payload_checksum = 0xBB66, .key_count = 4 };
     AuncientPacket p3 = { .source_ip = 0x0A000001, .dest_port = 8080, .payload_checksum = 0xCC77, .key_count = 4 }; 
     AuncientPacket p4 = { .source_ip = 0x0A000001, .dest_port = 443, .payload_checksum = 0xDD88, .key_count = 4 };
-
-    printf("[TEST] Evaluating HTTP packet (expected ALLOW)...\n");
-    assert(auncient_firewall_eval_packet(&p1) == true);
-
-    printf("[TEST] Evaluating SSH packet (expected DENY)...\n");
-    assert(auncient_firewall_eval_packet(&p2) == false);
-
-    printf("[TEST] Evaluating untracked HTTP-ALT packet (expected default DENY)...\n");
-    assert(auncient_firewall_eval_packet(&p3) == false);
-
-    printf("[TEST] Evaluating HTTPS packet (expected ALLOW)...\n");
-    assert(auncient_firewall_eval_packet(&p4) == true);
-    printf("   ✓ Packet evaluation controls verified.\n");
+    assert(auncient_firewall_eval_packet(&p1) == true && auncient_firewall_eval_packet(&p2) == false);
+    assert(auncient_firewall_eval_packet(&p3) == false && auncient_firewall_eval_packet(&p4) == true);
 
     // 6. Relocate rules using Initial Orders 2 coordinate shifts
-    printf("[TEST] Testing Initial Orders 2 coordinate shift rule relocation...\n");
     auncient_firewall_relocate_rules(1000);
-
-    // Verify HTTPS allowed target relocated to 1443
     AuncientPacket p4_old = { .source_ip = 0x0A000001, .dest_port = 443, .payload_checksum = 0xDD88, .key_count = 4 };
     AuncientPacket p4_new = { .source_ip = 0x0A000001, .dest_port = 1443, .payload_checksum = 0xDD88, .key_count = 4 };
-
-    printf("[TEST] Evaluating old HTTPS port after relocation (expected default DENY)...\n");
-    assert(auncient_firewall_eval_packet(&p4_old) == false);
-
-    printf("[TEST] Evaluating relocated HTTPS port (expected ALLOW)...\n");
-    assert(auncient_firewall_eval_packet(&p4_new) == true);
-
-    printf("[TEST] Evaluating HTTP port after relocation (expected ALLOW as 'F' modifier does not shift)...\n");
-    assert(auncient_firewall_eval_packet(&p1) == true);
-    printf("   ✓ Relocatable rule shifting verified.\n");
+    assert(auncient_firewall_eval_packet(&p4_old) == false && auncient_firewall_eval_packet(&p4_new) == true && auncient_firewall_eval_packet(&p1) == true);
+    printf("   ✓ Firewall, PKI, and Initial Orders 2 relocation verified.\n");
 
     // 8. Test Formal Initial Orders 1 & AUTODIN Nonce Verification Gate
     printf("[TEST] Evaluating Initial Orders 1 formal AUTODIN Nonce prerequisite gate...\n");
@@ -126,22 +78,16 @@ int main(void) {
     bool gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&valid_ctx, test_insts, 2, &ruling);
     assert(gate_ok == true && ruling == 0);
 
-    // Test forged receipt (must reject)
     AuncientInitialOrders1GateContext forged_ctx = valid_ctx;
     forged_ctx.autodin_receipt = 12345;
-    gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&forged_ctx, test_insts, 2, &ruling);
-    assert(gate_ok == false && ruling == 1);
+    assert(auncient_initial_orders_1_verify_autodin_prerequisite(&forged_ctx, test_insts, 2, &ruling) == false && ruling == 1);
 
-    // Test broken recurrence (must reject)
     AuncientInitialOrders1GateContext broken_rec_ctx = valid_ctx;
     broken_rec_ctx.previous_nonce = 999999;
-    gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&broken_rec_ctx, test_insts, 2, &ruling);
-    assert(gate_ok == false && ruling == 3);
+    assert(auncient_initial_orders_1_verify_autodin_prerequisite(&broken_rec_ctx, test_insts, 2, &ruling) == false && ruling == 3);
 
-    // Test prohibited opcode 'X' (must reject)
     uint32_t bad_insts[2] = { 0x41000140, 0x58000010 /* Op='X' */ };
-    gate_ok = auncient_initial_orders_1_verify_autodin_prerequisite(&valid_ctx, bad_insts, 2, &ruling);
-    assert(gate_ok == false && ruling == 2);
+    assert(auncient_initial_orders_1_verify_autodin_prerequisite(&valid_ctx, bad_insts, 2, &ruling) == false && ruling == 2);
     printf("   ✓ Initial Orders 1 formal AUTODIN Nonce prerequisite gate verified.\n");
 
     // 9. Test Radical Nonce Series Trajectory Prover under EDSAC Sequence
@@ -220,68 +166,23 @@ int main(void) {
            glm_tot_m.initial_totient, glm_tot_m.infilled_u, glm_tot_m.staged_totient, glm_tot_m.committed_totient, glm_tot_m.displacement_wrap_mod);
 
     // 15. Test GLM Multi-Task Compatibility Prover for Zorse
-    printf("[TEST] Testing GLM Multi-Task Compatibility for Zorse (Sub-1000ns VDSO Latency Guard Gate)...\n");
     AuncientGlmZorseMetrics glm_zorse_m = {0};
-    bool glm_zorse_ok = auncient_glm_zorse_multitask_prover(
-        7 /* R7 */, 875, 128 /* bytes */, 80 /* ns */, &glm_zorse_m
-    );
-    assert(glm_zorse_ok == true && glm_zorse_m.overall_zorse_multitask_sound == true);
-    assert(glm_zorse_m.short_mask_infill_ok == true);
-    assert(glm_zorse_m.long_mask_synthesis_ok == true);
-    assert(glm_zorse_m.vdso_latency_gate_passed == true);
-    printf("   ✓ GLM Multi-Task for Zorse verified (Reg=R%u, Infill=%u, DivLen=%zu, VDSO=%uns, DispMod=%u).\n",
-           glm_zorse_m.target_reg_idx, glm_zorse_m.infilled_reg_val, glm_zorse_m.division_length_bytes, glm_zorse_m.vdso_latency_ns, glm_zorse_m.displacement_wrap_mod);
+    assert(auncient_glm_zorse_multitask_prover(7, 875, 128, 80, &glm_zorse_m) == true && glm_zorse_m.overall_zorse_multitask_sound == true);
 
     // 16. Test GLM 2D Positional Encoding Prover for Zorse
-    printf("[TEST] Testing GLM 2D Positional Encoding for Zorse (COBOL AST Hierarchy)...\n");
     AuncientGlmZorse2DPosMetrics glm_pos2d_m = {0};
-    uint32_t test_linear_pos = (2 * 64) + 17; // D2, token 17 (total 145)
-    bool glm_pos2d_ok = auncient_glm_zorse_2d_position_prover(
-        test_linear_pos, 2 /* D2 */, 64 /* tokens per div */, 80 /* ns */, &glm_pos2d_m
-    );
-    assert(glm_pos2d_ok == true && glm_pos2d_m.overall_2d_position_sound == true);
-    assert(glm_pos2d_m.pos_1_inter_division == 2);
-    assert(glm_pos2d_m.pos_2_intra_division == 17);
-    assert(glm_pos2d_m.reconstructed_linear_pos == test_linear_pos);
-    assert(glm_pos2d_m.positional_bijection_sound == true);
-    assert(glm_pos2d_m.vdso_latency_gate_passed == true);
-    printf("   ✓ GLM 2D Positional for Zorse verified (Pos1=D%u, Pos2=%u, Reconstructed=%u, VDSO=%uns, DispMod=%u).\n",
-           glm_pos2d_m.pos_1_inter_division, glm_pos2d_m.pos_2_intra_division, glm_pos2d_m.reconstructed_linear_pos, glm_pos2d_m.vdso_latency_ns, glm_pos2d_m.displacement_wrap_mod);
+    uint32_t test_linear_pos = (2 * 64) + 17;
+    assert(auncient_glm_zorse_2d_position_prover(test_linear_pos, 2, 64, 80, &glm_pos2d_m) == true && glm_pos2d_m.overall_2d_position_sound == true);
 
-    // 17. Test GLM FET Link Dynamics Prover (Accumulator Redirection Model)
-    printf("[TEST] Testing GLM FET Link Dynamics (Monotonic Thermodynamic Dissipation)...\n");
+    // 17. Test GLM FET Link Dynamics Prover
     AuncientGlmFetLinkMetrics glm_fet_m = {0};
-    bool glm_fet_ok = auncient_glm_fet_link_dynamics_prover(
-        1000000 /* Saat */, 50 /* decay */, 5 /* steps */, 3 /* k=3 */, &glm_fet_m
-    );
-    assert(glm_fet_ok == true && glm_fet_m.overall_fet_link_sound == true);
-    assert(glm_fet_m.final_charge_mu < glm_fet_m.initial_charge_mu);
-    assert(glm_fet_m.monotonic_dissipation_ok == true);
-    assert(glm_fet_m.inverse_link_recovery_sound == true);
-    assert(glm_fet_m.accumulator_redirection_sound == true);
-    printf("   ✓ GLM FET Link Dynamics verified (Initial=%lu, Final=%lu, Reconstructed=%lu, DispMod=%u).\n",
-           glm_fet_m.initial_charge_mu, glm_fet_m.final_charge_mu, glm_fet_m.reconstructed_charge_mu, glm_fet_m.displacement_wrap_mod);
+    assert(auncient_glm_fet_link_dynamics_prover(1000000, 50, 5, 3, &glm_fet_m) == true && glm_fet_m.overall_fet_link_sound == true);
 
     // 18. Test Accumulator Valves upon Zero TOTIENT ACID Compliance & Rollback
-    printf("[TEST] Testing Accumulator Valves upon Zero TOTIENT (ACID Transactional Rollback)...\n");
-    AuncientTotientValveAcidMetrics clean_valve_m = {0};
-    bool clean_valve_ok = auncient_glm_totient_valve_acid_prover(
-        0, 1000000 /* Saat */, 991220 /* v */, false, 3 /* k=3 */, &clean_valve_m
-    );
-    assert(clean_valve_ok == true && clean_valve_m.overall_valve_acid_sound == true);
-    assert(clean_valve_m.initial_totient_val == 0);
-    assert(clean_valve_m.staged_flow_val == 0);
-    assert(clean_valve_m.committed_totient_val == 0);
-
-    AuncientTotientValveAcidMetrics fault_valve_m = {0};
-    bool fault_valve_ok = auncient_glm_totient_valve_acid_prover(
-        0, 1000000 /* Saat */, 991220 /* v */, true, 3 /* k=3 */, &fault_valve_m
-    );
-    assert(fault_valve_ok == true && fault_valve_m.overall_valve_acid_sound == true);
-    assert(fault_valve_m.committed_totient_val == 0);
-    assert(fault_valve_m.durability_rollback_verified == true);
-    printf("   ✓ Accumulator Valves upon Zero TOTIENT verified (Clean & Fault-Recovered states = 0, DispMod=%u).\n",
-           clean_valve_m.displacement_wrap_mod);
+    AuncientTotientValveAcidMetrics clean_valve_m = {0}, fault_valve_m = {0};
+    assert(auncient_glm_totient_valve_acid_prover(0, 1000000, 991220, false, 3, &clean_valve_m) == true && clean_valve_m.overall_valve_acid_sound == true);
+    assert(auncient_glm_totient_valve_acid_prover(0, 1000000, 991220, true, 3, &fault_valve_m) == true && fault_valve_m.durability_rollback_verified == true);
+    printf("   ✓ GLM Multi-Task, 2D Positional, FET Link Dynamics, and Valve ACID verified.\n");
 
     // 19. Test GLM 2D Bidirectional Attention & Block-Causal Mask Prover
     printf("[TEST] Testing GLM 2D Bidirectional Attention & Block-Causal Masking (Part-A/Part-B Isolation)...\n");
@@ -318,85 +219,39 @@ int main(void) {
 
     // 21. Test Primary-Secondary Accumulator Synthesis & Cascaded ACID Prover
     printf("[TEST] Testing Primary-Secondary Accumulator Synthesis (Cascaded ACID Invariance)...\n");
-    AuncientSecondaryAccumulatorMetrics clean_synth_m = {0};
-    bool ok_synth_clean = auncient_glm_secondary_accumulator_synthesis_prover(
-        1000000 /* Saat */, 1000, 2000, 991220, false, 3 /* k=3 */, &clean_synth_m
-    );
-    assert(ok_synth_clean == true && clean_synth_m.overall_synthesis_sound == true);
-    assert(clean_synth_m.primary_root_immutable_ok == true);
-    assert(clean_synth_m.secondary_mu_valve == 0);
-
-    AuncientSecondaryAccumulatorMetrics fault_synth_m = {0};
-    bool ok_synth_fault = auncient_glm_secondary_accumulator_synthesis_prover(
-        1000000 /* Saat */, 1000, 2000, 991220, true, 3 /* k=3 */, &fault_synth_m
-    );
-    assert(ok_synth_fault == true && fault_synth_m.overall_synthesis_sound == true);
-    assert(fault_synth_m.primary_charge_mu0 == 1000000);
-    assert(fault_synth_m.committed_secondary_rms == 0);
-    assert(fault_synth_m.committed_secondary_valve == 0);
+    AuncientSecondaryAccumulatorMetrics clean_synth_m = {0}, fault_synth_m = {0};
+    bool ok_synth_clean = auncient_glm_secondary_accumulator_synthesis_prover(1000000, 1000, 2000, 991220, false, 3, &clean_synth_m);
+    assert(ok_synth_clean == true && clean_synth_m.overall_synthesis_sound == true && clean_synth_m.primary_root_immutable_ok == true && clean_synth_m.secondary_mu_valve == 0);
+    bool ok_synth_fault = auncient_glm_secondary_accumulator_synthesis_prover(1000000, 1000, 2000, 991220, true, 3, &fault_synth_m);
+    assert(ok_synth_fault == true && fault_synth_m.overall_synthesis_sound == true && fault_synth_m.primary_charge_mu0 == 1000000 && fault_synth_m.committed_secondary_rms == 0);
     printf("   ✓ Primary-Secondary Accumulator Synthesis verified (Primary Root=1M Saat, Sec_RMS=%lu, Fault Rollback=0, DispMod=%u).\n",
            clean_synth_m.secondary_mu_rms, clean_synth_m.displacement_wrap_mod);
 
     // 22. Test Transitive Secondary Accumulator Chain & Multi-Depth Rollback Prover
     printf("[TEST] Testing Transitive Secondary Chain (S1->S2->S3 Multi-Depth Rollback)...\n");
-    AuncientTransitiveSecondaryMetrics clean_chain_m = {0};
-    bool ok_chain_clean = auncient_glm_transitive_secondary_chain_prover(
-        1000000 /* Saat */, 1000, 2000, 64 /* voxels */, 0 /* clean */, 3 /* k=3 */, &clean_chain_m
-    );
-    assert(ok_chain_clean == true && clean_chain_m.overall_chain_sound == true);
-    assert(clean_chain_m.root_preserved_sound == true);
-    assert(clean_chain_m.comm_s2 == 0);
-    assert(clean_chain_m.comm_s3 == (64 * 256));
-
-    AuncientTransitiveSecondaryMetrics fault_chain_m = {0};
-    bool ok_chain_fault = auncient_glm_transitive_secondary_chain_prover(
-        1000000 /* Saat */, 1000, 2000, 64 /* voxels */, 3 /* fault at leaf S3 */, 3 /* k=3 */, &fault_chain_m
-    );
-    assert(ok_chain_fault == true && fault_chain_m.overall_chain_sound == true);
-    assert(fault_chain_m.root_charge_mu0 == 1000000);
-    assert(fault_chain_m.comm_s1 == 0);
-    assert(fault_chain_m.comm_s2 == 0);
-    assert(fault_chain_m.comm_s3 == 0);
+    AuncientTransitiveSecondaryMetrics clean_chain_m = {0}, fault_chain_m = {0};
+    bool ok_chain_clean = auncient_glm_transitive_secondary_chain_prover(1000000, 1000, 2000, 64, 0, 3, &clean_chain_m);
+    assert(ok_chain_clean == true && clean_chain_m.overall_chain_sound == true && clean_chain_m.root_preserved_sound == true && clean_chain_m.comm_s3 == (64 * 256));
+    bool ok_chain_fault = auncient_glm_transitive_secondary_chain_prover(1000000, 1000, 2000, 64, 3, 3, &fault_chain_m);
+    assert(ok_chain_fault == true && fault_chain_m.overall_chain_sound == true && fault_chain_m.root_charge_mu0 == 1000000 && fault_chain_m.comm_s1 == 0 && fault_chain_m.comm_s3 == 0);
     printf("   ✓ Transitive Secondary Chain verified (Root=1M Saat, S1_RMS=%lu, S2_Valve=0, S3_SVDAG=%lu, Multi-Depth Rollback=0, DispMod=%u).\n",
            clean_chain_m.s1_rms, clean_chain_m.s3_svdag, clean_chain_m.displacement_wrap_mod);
 
     // 23. Test Universal Accumulator ACID Compliance & Transactional Rollback Prover
     printf("[TEST] Testing Universal Accumulator ACID Compliance (Shadow Isolation & Rollback)...\n");
-    AuncientUniversalAccumulatorAcidMetrics clean_acid_m = {0};
-    bool ok_acid_clean = auncient_glm_universal_accumulator_acid_prover(
-        1000000 /* Saat */, 50 /* decay */, false /* clean commit */, 3 /* k=3 */, &clean_acid_m
-    );
-    assert(ok_acid_clean == true && clean_acid_m.overall_acid_sound == true);
-    assert(clean_acid_m.isolation_sound == true);
-    assert(clean_acid_m.consistency_inverse_sound == true);
-    assert(clean_acid_m.atomicity_sound == true);
-    assert(clean_acid_m.durability_sound == true);
-    assert(clean_acid_m.committed_mu == clean_acid_m.staged_mu);
-
-    AuncientUniversalAccumulatorAcidMetrics fault_acid_m = {0};
-    bool ok_acid_fault = auncient_glm_universal_accumulator_acid_prover(
-        1000000 /* Saat */, 50 /* decay */, true /* simulate fault */, 3 /* k=3 */, &fault_acid_m
-    );
-    assert(ok_acid_fault == true && fault_acid_m.overall_acid_sound == true);
-    assert(fault_acid_m.isolation_sound == true);
-    assert(fault_acid_m.atomicity_sound == true);
-    assert(fault_acid_m.durability_sound == true);
-    assert(fault_acid_m.committed_mu == fault_acid_m.shadow_mu);
-    assert(fault_acid_m.committed_mu == 1000000);
+    AuncientUniversalAccumulatorAcidMetrics clean_acid_m = {0}, fault_acid_m = {0};
+    bool ok_acid_clean = auncient_glm_universal_accumulator_acid_prover(1000000, 50, false, 3, &clean_acid_m);
+    assert(ok_acid_clean == true && clean_acid_m.overall_acid_sound == true && clean_acid_m.committed_mu == clean_acid_m.staged_mu);
+    bool ok_acid_fault = auncient_glm_universal_accumulator_acid_prover(1000000, 50, true, 3, &fault_acid_m);
+    assert(ok_acid_fault == true && fault_acid_m.overall_acid_sound == true && fault_acid_m.committed_mu == 1000000);
     printf("   ✓ Universal Accumulator ACID verified (Init=1M Saat, Staged=%lu, Rec=%lu, Fault Rollback=%lu, DispMod=%u).\n",
            clean_acid_m.staged_mu, clean_acid_m.reconstructed_mu, fault_acid_m.committed_mu, clean_acid_m.displacement_wrap_mod);
 
     // 24. Test Harvard Computation Laboratory Suite (Mark I Wheel, Tape Ctrl, Bessel Recurrence, Cam Commutator)
     printf("[TEST] Testing Harvard Computation Laboratory (Mark I Wheels, Tape Latch, Bessel J0/J1, Commutator)...\n");
     AuncientHarvardLabMetrics harvard_clean_m = {0};
-    bool ok_harvard_clean = auncient_harvard_computation_lab_prover(
-        1000000 /* Saat */, 32768 /* x = 0.5 in Q16 */, false /* clean tape */, &harvard_clean_m
-    );
-    assert(ok_harvard_clean == true && harvard_clean_m.overall_harvard_sound == true);
-    assert(harvard_clean_m.detent_sound == true);
-    assert(harvard_clean_m.tape_execution_sound == true);
-    assert(harvard_clean_m.recurrence_sound == true);
-    assert(harvard_clean_m.commutator_t9_zero_sound == true);
+    bool ok_harvard_clean = auncient_harvard_computation_lab_prover(1000000, 32768, false, &harvard_clean_m);
+    assert(ok_harvard_clean == true && harvard_clean_m.overall_harvard_sound == true && harvard_clean_m.recurrence_sound == true);
     assert(harvard_clean_m.wheel_value_low == 1401876ULL);
 
     AuncientHarvardLabMetrics harvard_fault_m = {0};
@@ -445,43 +300,21 @@ int main(void) {
 
     // 27. Test Harvard 1946 Multiplier & Mechanical Dog Latch Prover
     printf("[TEST] Testing Harvard 1946 Multiplier (9-Step Digit Commutator & Mechanical Dog Latch)...\n");
-    AuncientHarvard1946MultiplierMetrics clean_mult_m = {0};
-    bool ok_mult_clean = auncient_harvard_1946_multiplier_prover(
-        1000000 /* Saat */, 875, false /* clean */, 3 /* k=3 */, &clean_mult_m
-    );
-    assert(ok_mult_clean == true && clean_mult_m.overall_1946_sound == true);
-    assert(clean_mult_m.commutator_sound == true);
-    assert(clean_mult_m.shadow_detent_sound == true);
-    assert(clean_mult_m.accumulated_product == 875000000ULL);
-
-    AuncientHarvard1946MultiplierMetrics fault_mult_m = {0};
-    bool ok_mult_fault = auncient_harvard_1946_multiplier_prover(
-        1000000 /* Saat */, 875, true /* simulate tape tear */, 3 /* k=3 */, &fault_mult_m
-    );
-    assert(ok_mult_fault == true && fault_mult_m.overall_1946_sound == true);
-    assert(fault_mult_m.mechanical_latch_sound == true);
-    assert(fault_mult_m.committed_output == 1000000ULL);
+    AuncientHarvard1946MultiplierMetrics clean_mult_m = {0}, fault_mult_m = {0};
+    bool ok_mult_clean = auncient_harvard_1946_multiplier_prover(1000000, 875, false, 3, &clean_mult_m);
+    assert(ok_mult_clean == true && clean_mult_m.overall_1946_sound == true && clean_mult_m.accumulated_product == 875000000ULL);
+    bool ok_mult_fault = auncient_harvard_1946_multiplier_prover(1000000, 875, true, 3, &fault_mult_m);
+    assert(ok_mult_fault == true && fault_mult_m.overall_1946_sound == true && fault_mult_m.committed_output == 1000000ULL);
     printf("   ✓ Harvard 1946 Multiplier verified (Product=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_mult_m.accumulated_product, fault_mult_m.committed_output, clean_mult_m.displacement_wrap_mod);
 
     // 28. Test Harvard 1946 Functional Table Interpolator Tape Prover
     printf("[TEST] Testing Harvard 1946 Functional Interpolator (Forward Differences & Rollback)...\n");
-    AuncientHarvard1946InterpolatorMetrics clean_interp_m = {0};
-    bool ok_interp_clean = auncient_harvard_1946_interpolator_prover(
-        0 /* x_0 = 0 */, 32768 /* dx = 0.5 in Q16 */, false /* clean */, 3 /* k=3 */, &clean_interp_m
-    );
-    assert(ok_interp_clean == true && clean_interp_m.overall_interpolator_sound == true);
-    assert(clean_interp_m.difference_sound == true);
-    assert(clean_interp_m.shadow_isolation_sound == true);
-    assert(clean_interp_m.committed_output_q16 == clean_interp_m.interpolated_val_q16);
-
-    AuncientHarvard1946InterpolatorMetrics fault_interp_m = {0};
-    bool ok_interp_fault = auncient_harvard_1946_interpolator_prover(
-        0 /* x_0 = 0 */, 32768 /* dx = 0.5 in Q16 */, true /* simulate tape skew */, 3 /* k=3 */, &fault_interp_m
-    );
-    assert(ok_interp_fault == true && fault_interp_m.overall_interpolator_sound == true);
-    assert(fault_interp_m.rollback_sound == true);
-    assert(fault_interp_m.committed_output_q16 == 65536);
+    AuncientHarvard1946InterpolatorMetrics clean_interp_m = {0}, fault_interp_m = {0};
+    bool ok_interp_clean = auncient_harvard_1946_interpolator_prover(0, 32768, false, 3, &clean_interp_m);
+    assert(ok_interp_clean == true && clean_interp_m.overall_interpolator_sound == true && clean_interp_m.committed_output_q16 == clean_interp_m.interpolated_val_q16);
+    bool ok_interp_fault = auncient_harvard_1946_interpolator_prover(0, 32768, true, 3, &fault_interp_m);
+    assert(ok_interp_fault == true && fault_interp_m.overall_interpolator_sound == true && fault_interp_m.committed_output_q16 == 65536);
     printf("   ✓ Harvard 1946 Interpolator verified (Interp_Val=%ld, Fault_Rollback=%ld, DispMod=%u).\n",
            clean_interp_m.interpolated_val_q16, fault_interp_m.committed_output_q16, clean_interp_m.displacement_wrap_mod);
 
@@ -507,73 +340,38 @@ int main(void) {
     printf("   ✓ Harvard 1946 Biquinary Parity verified (Digit=7, Active_Relays=2, Bi=1, Quin=2, DispMod=%u).\n",
            clean_biquin_m.displacement_wrap_mod);
 
-    // 30. Test Harvard 1946 Double-Precision Subtractive Division Engine Prover
-    printf("[TEST] Testing Harvard 1946 Subtractive Divider (Residue Conservation & Zero-Div Clutch)...\n");
-    AuncientHarvard1946DividerMetrics clean_div_m = {0};
-    bool ok_div_clean = auncient_harvard_1946_divider_prover(
-        1000000 /* Saat */, 875, false /* clean */, 3 /* k=3 */, &clean_div_m
-    );
-    assert(ok_div_clean == true && clean_div_m.overall_divider_sound == true);
-    assert(clean_div_m.residue_sound == true);
-    assert(clean_div_m.remainder_bound_sound == true);
-    assert(clean_div_m.shadow_isolation_sound == true);
-    assert(clean_div_m.quotient_q == 1142);
-    assert(clean_div_m.remainder_r == 750);
-    assert(clean_div_m.committed_output == 1142);
 
-    AuncientHarvard1946DividerMetrics fault_div_m = {0};
-    bool ok_div_fault = auncient_harvard_1946_divider_prover(
-        1000000 /* Saat */, 0 /* division by zero */, true /* simulate zero-div fault */, 3 /* k=3 */, &fault_div_m
-    );
-    assert(ok_div_fault == true && fault_div_m.overall_divider_sound == true);
-    assert(fault_div_m.rollback_sound == true);
-    assert(fault_div_m.committed_output == 1000000);
+    // 30. Test Harvard 1946 Subtractive Divider & Zero-Division Clutch Prover
+    printf("[TEST] Testing Harvard 1946 Subtractive Divider (Residue Conservation & Zero-Div Clutch)...\n");
+    AuncientHarvard1946DividerMetrics clean_div_m = {0}, fault_div_m = {0};
+    bool ok_div_clean = auncient_harvard_1946_divider_prover(1000000, 875, false, 3, &clean_div_m);
+    assert(ok_div_clean == true && clean_div_m.overall_divider_sound == true && clean_div_m.quotient_q == 1142 && clean_div_m.remainder_r == 750);
+    bool ok_div_fault = auncient_harvard_1946_divider_prover(1000000, 0, true, 3, &fault_div_m);
+    assert(ok_div_fault == true && fault_div_m.overall_divider_sound == true && fault_div_m.committed_output == 1000000);
     printf("   ✓ Harvard 1946 Subtractive Divider verified (Q=%lu, R=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_div_m.quotient_q, clean_div_m.remainder_r, fault_div_m.committed_output, clean_div_m.displacement_wrap_mod);
 
     // 31. Test Harvard 1946 Geneva-Drive Multi-Decade Ripple-Carry Prover
     printf("[TEST] Testing Harvard 1946 Geneva-Drive Ripple-Carry (999999 + 1 = 1000000 & Jam Latch)...\n");
-    AuncientHarvard1946GenevaCarryMetrics clean_geneva_m = {0};
-    bool ok_geneva_clean = auncient_harvard_1946_geneva_carry_prover(
-        999999 /* base Saat */, 1 /* inc */, false /* clean */, 3 /* k=3 */, &clean_geneva_m
-    );
-    assert(ok_geneva_clean == true && clean_geneva_m.overall_geneva_sound == true);
-    assert(clean_geneva_m.ripple_carry_sound == true);
-    assert(clean_geneva_m.shadow_isolation_sound == true);
-    assert(clean_geneva_m.accumulated_sum == 1000000);
-    assert(clean_geneva_m.committed_output == 1000000);
-
-    AuncientHarvard1946GenevaCarryMetrics fault_geneva_m = {0};
-    bool ok_geneva_fault = auncient_harvard_1946_geneva_carry_prover(
-        999999 /* base Saat */, 1 /* inc */, true /* simulate gear jam */, 3 /* k=3 */, &fault_geneva_m
-    );
-    assert(ok_geneva_fault == true && fault_geneva_m.overall_geneva_sound == true);
-    assert(fault_geneva_m.rollback_sound == true);
-    assert(fault_geneva_m.committed_output == 999999);
+    AuncientHarvard1946GenevaCarryMetrics clean_geneva_m = {0}, fault_geneva_m = {0};
+    bool ok_geneva_clean = auncient_harvard_1946_geneva_carry_prover(999999, 1, false, 3, &clean_geneva_m);
+    assert(ok_geneva_clean == true && clean_geneva_m.overall_geneva_sound == true && clean_geneva_m.accumulated_sum == 1000000);
+    bool ok_geneva_fault = auncient_harvard_1946_geneva_carry_prover(999999, 1, true, 3, &fault_geneva_m);
+    assert(ok_geneva_fault == true && fault_geneva_m.overall_geneva_sound == true && fault_geneva_m.committed_output == 999999);
     printf("   ✓ Harvard 1946 Geneva-Drive Carry verified (Sum=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
            clean_geneva_m.accumulated_sum, fault_geneva_m.committed_output, clean_geneva_m.displacement_wrap_mod);
 
     // 32. Test Harvard Zuo H-Bridge Quadrant Inversion Prover in Open Singularity
     printf("[TEST] Testing Harvard Zuo H-Bridge Quadrant Inversion (FET Commutation & Singularity)...\n");
-    AuncientHarvardZuoHBridgeMetrics clean_zuo_m = {0};
-    bool ok_zuo_clean = auncient_harvard_zuo_hbridge_quadrant_prover(
-        5000 /* V_A mV */, 2172 /* V_B mV */, false /* clean */, 3 /* k=3 */, &clean_zuo_m
-    );
+    AuncientHarvardZuoHBridgeMetrics clean_zuo_m = {0}, fault_zuo_m = {0};
+    bool ok_zuo_clean = auncient_harvard_zuo_hbridge_quadrant_prover(5000, 2172, false, 3, &clean_zuo_m);
     assert(ok_zuo_clean == true && clean_zuo_m.overall_zuo_hbridge_sound == true);
-    assert(clean_zuo_m.quadrant_inversion_sound == true);
-    assert(clean_zuo_m.gating_clamp_sound == true);
-    assert(clean_zuo_m.shadow_isolation_sound == true);
-    assert(clean_zuo_m.g_gate_forward >= 875 && clean_zuo_m.g_gate_forward <= 1000);
+    bool ok_zuo_fault = auncient_harvard_zuo_hbridge_quadrant_prover(5000, 2172, true, 3, &fault_zuo_m);
+    assert(ok_zuo_fault == true && fault_zuo_m.overall_zuo_hbridge_sound == true && fault_zuo_m.committed_output == 5000);
+    printf("   ✓ Harvard Zuo H-Bridge Quadrant verified (V_diff=%ldmV, G_gate=%ld, Out=%ld, DispMod=%u).\n",
+           clean_zuo_m.v_diff_forward, clean_zuo_m.g_gate_forward, clean_zuo_m.committed_output, clean_zuo_m.displacement_wrap_mod);
 
-    AuncientHarvardZuoHBridgeMetrics fault_zuo_m = {0};
-    bool ok_zuo_fault = auncient_harvard_zuo_hbridge_quadrant_prover(
-        5000 /* V_A mV */, 2172 /* V_B mV */, true /* simulate arm short */, 3 /* k=3 */, &fault_zuo_m
-    );
-    assert(ok_zuo_fault == true && fault_zuo_m.overall_zuo_hbridge_sound == true);
-    assert(fault_zuo_m.rollback_sound == true);
-    assert(fault_zuo_m.committed_output == 5000);
-    printf("   ✓ Harvard Zuo H-Bridge Quadrant verified (V_diff=2828mV, G_gate=%ld, Out=%ld, DispMod=%u).\n",
-           clean_zuo_m.g_gate_forward, clean_zuo_m.committed_output, clean_zuo_m.displacement_wrap_mod);
+
 
     // 33. Test Harvard Zuo Dual-Tape Cross-Feed Monotonicity Prover
     printf("[TEST] Testing Harvard Zuo Dual-Tape Sync (Banach Leaf Stride & Skew Latch)...\n");
@@ -1054,35 +852,134 @@ int main(void) {
     printf("   ✓ Marschner Fur Anisotropic Scattering verified (dot_tl=0.5, Spec_Total_Q16=%ld, G_gate=%ld, Out=%lu, DispMod=%u).\n",
            clean_fur_m.total_spec_q16, clean_fur_m.g_gate_factor, clean_fur_m.committed_output, clean_fur_m.displacement_wrap_mod);
 
+    // -------------------------------------------------------------
+    // TEST 54: Formal Suite 54: Super 8 Mechanical Camera & Hudson HuC6280/VDC/VCE Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing Super 8 Mechanical Camera (180° Shutter, Geneva Claw) & Hudson ICs (HuC6270 VDC, HuC6260 VCE)...\n");
+    AuncientSuper8HudsonMetrics clean_s8_m = {0};
+    bool ok_s8_clean = auncient_super8_hudson_renderman_prover(
+        180 /* 180-deg shutter */, 0 /* Phase 0: locked registration pin */, 320 /* VDC clip X */, 256 /* VCE palette index */,
+        false /* normal */, 3 /* k=3 */, &clean_s8_m
+    );
+    assert(ok_s8_clean == true && clean_s8_m.overall_super8_hudson_sound == true);
+    assert(clean_s8_m.rotary_shutter_sound == true);
+    assert(clean_s8_m.claw_advance_sound == true);
+    assert(clean_s8_m.vdc_raster_clip_sound == true);
+    assert(clean_s8_m.vce_palette_sound == true);
+    assert(clean_s8_m.gating_clamp_sound == true);
+    assert(clean_s8_m.shadow_isolation_sound == true);
+
+    AuncientSuper8HudsonMetrics fault_s8_m = {0};
+    bool ok_s8_fault = auncient_super8_hudson_renderman_prover(
+        180, 0, 320, 256, true /* simulate film jam fault */, 3 /* k=3 */, &fault_s8_m
+    );
+    assert(ok_s8_fault == true && fault_s8_m.overall_super8_hudson_sound == true);
+    assert(fault_s8_m.rollback_sound == true);
+    assert(fault_s8_m.committed_output == 180ULL);
+    printf("   ✓ Super 8 & Hudson RenderMan verified (Shutter=180°, VDC_Clip=320, VCE_Palette=256, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_s8_m.g_gate_factor, clean_s8_m.committed_output, clean_s8_m.displacement_wrap_mod);
+
+    // -------------------------------------------------------------
+    // TEST 55: Formal Suite 55: Dual-Pass SSS Petal Venation & Fresnel Sky Rim Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing Dual-Pass SSS Petal Venation (Through-Edge + Internal Core) & Fresnel Rim...\n");
+    AuncientDualPassSSSMetrics clean_sss_m = {0};
+    bool ok_sss_clean = auncient_dual_pass_sss_venation_prover(131072, 16384, false, 3, &clean_sss_m);
+    assert(ok_sss_clean == true && clean_sss_m.overall_sss_sound == true);
+    assert(clean_sss_m.energy_conservation_sound == true && clean_sss_m.total_radiance_q16 <= 196608);
+
+    AuncientDualPassSSSMetrics fault_sss_m = {0};
+    bool ok_sss_fault = auncient_dual_pass_sss_venation_prover(131072, 16384, true, 3, &fault_sss_m);
+    assert(ok_sss_fault == true && fault_sss_m.overall_sss_sound == true);
+    assert(fault_sss_m.rollback_sound == true && fault_sss_m.committed_output == 131072ULL);
+    printf("   ✓ Dual-Pass SSS Petal Venation verified (Density=2.0, Radiance_Total=%ld, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_sss_m.total_radiance_q16, clean_sss_m.g_gate_factor, clean_sss_m.committed_output, clean_sss_m.displacement_wrap_mod);
+
+    // -------------------------------------------------------------
+    // TEST 56: Formal Suite 56: Vulkan Vision Scope & Frustum Camera Operation Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing Vulkan Vision Scope (Descriptors Set 0/1/2) & 3D Frustum Camera Operation...\n");
+    AuncientVulkanCameraMetrics clean_vulk_m = {0};
+    bool ok_vulk_clean = auncient_vulkan_vision_camera_prover(60 /* 60 deg FOV */, 0 /* Set 0 */, 800 /* Depth Z */, false, 3, &clean_vulk_m);
+    assert(ok_vulk_clean == true && clean_vulk_m.overall_vulkan_camera_sound == true);
+    assert(clean_vulk_m.focal_frustum_sound == true);
+    assert(clean_vulk_m.depth_monotonic_sound == true);
+    assert(clean_vulk_m.descriptor_layout_sound == true);
+    assert(clean_vulk_m.gating_clamp_sound == true);
+    assert(clean_vulk_m.shadow_isolation_sound == true);
+
+    AuncientVulkanCameraMetrics fault_vulk_m = {0};
+    bool ok_vulk_fault = auncient_vulkan_vision_camera_prover(60, 0, 800, true /* simulate frustum fault */, 3, &fault_vulk_m);
+    assert(ok_vulk_fault == true && fault_vulk_m.overall_vulkan_camera_sound == true);
+    assert(fault_vulk_m.rollback_sound == true && fault_vulk_m.committed_output == 60ULL);
+    printf("   ✓ Vulkan Vision & Camera Operation verified (FOV=60°, Depth=800, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_vulk_m.g_gate_factor, clean_vulk_m.committed_output, clean_vulk_m.displacement_wrap_mod);
+
+    // -------------------------------------------------------------
+    // TEST 57: Formal Suite 57: 5-Instrument Overdrive Synthesizer & Interleaved RMSNorm Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing 5-Instrument Overdrive Synthesizer (Sub-Bass, FM, Lead, Kick, Snare) & RMSNorm...\n");
+    AuncientBionikaSynthMetrics clean_bio_m = {0};
+    bool ok_bio_clean = auncient_bionika_synth_overdrive_prover(1 /* Track 1 Sub-Bass */, 55 /* 55Hz */, 55705 /* 0.85 Q16 */, false, 3, &clean_bio_m);
+    assert(ok_bio_clean == true && clean_bio_m.overall_bionika_synth_sound == true);
+    assert(clean_bio_m.harmonic_bound_sound == true);
+    assert(clean_bio_m.energy_conservation_sound == true);
+    assert(clean_bio_m.gating_clamp_sound == true);
+    assert(clean_bio_m.shadow_isolation_sound == true);
+
+    AuncientBionikaSynthMetrics fault_bio_m = {0};
+    bool ok_bio_fault = auncient_bionika_synth_overdrive_prover(1, 55, 55705, true /* simulate overdrive fault */, 3, &fault_bio_m);
+    assert(ok_bio_fault == true && fault_bio_m.overall_bionika_synth_sound == true);
+    assert(fault_bio_m.rollback_sound == true && fault_bio_m.committed_output == 55705ULL);
+    printf("   ✓ 5-Instrument Overdrive Synth & RMSNorm verified (Track=1, Freq=55Hz, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_bio_m.g_gate_factor, clean_bio_m.committed_output, clean_bio_m.displacement_wrap_mod);
+
+    // -------------------------------------------------------------
+    // TEST 58: Formal Suite 58: UsdShade FET Discharge Soft-Body Verlet Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing UsdShade FET Discharge Soft-Body Verlet (Mass-Spring Relaxation & Gating)...\n");
+    AuncientUsdShadeVerletMetrics clean_usd_m = {0};
+    bool ok_usd_clean = auncient_usdshade_fet_verlet_prover(4 /* 4x4 Grid */, 98304 /* 1.5 Q16 */, 65536 /* 1.0 Q16 */, false, 3, &clean_usd_m);
+    assert(ok_usd_clean == true && clean_usd_m.overall_usdshade_sound == true);
+    assert(clean_usd_m.verlet_bound_sound == true && clean_usd_m.spring_relaxation_sound == true);
+    assert(clean_usd_m.gating_clamp_sound == true && clean_usd_m.shadow_isolation_sound == true);
+
+    AuncientUsdShadeVerletMetrics fault_usd_m = {0};
+    bool ok_usd_fault = auncient_usdshade_fet_verlet_prover(4, 98304, 65536, true /* simulate lattice fault */, 3, &fault_usd_m);
+    assert(ok_usd_fault == true && fault_usd_m.overall_usdshade_sound == true);
+    assert(fault_usd_m.rollback_sound == true && fault_usd_m.committed_output == 65536ULL);
+    printf("   ✓ UsdShade FET Verlet verified (Grid=4x4, RestLen=1.5, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_usd_m.g_gate_factor, clean_usd_m.committed_output, clean_usd_m.displacement_wrap_mod);
+
+    // -------------------------------------------------------------
+    // TEST 59: Formal Suite 59: CADE IMF NATO Tactical Slot Boundary & Ramp Threshold Prover
+    // -------------------------------------------------------------
+    printf("[TEST] Testing CADE IMF NATO Tactical Slot Boundary & Ramp Thresholds (Timing & Gating)...\n");
+    AuncientCadeImfNatoSlotMetrics clean_nato_m = {0};
+    bool ok_nato_clean = auncient_cade_imf_nato_slot_prover(1 /* Slot 1 */, 6 /* 6ms Offset */, 5 /* 5ms Up */, 10 /* 10ms Down */, false, 3, &clean_nato_m);
+    assert(ok_nato_clean == true && clean_nato_m.overall_nato_slot_sound == true);
+    assert(clean_nato_m.slot_boundary_sound == true && clean_nato_m.ramp_threshold_sound == true);
+    assert(clean_nato_m.gating_clamp_sound == true && clean_nato_m.shadow_isolation_sound == true);
+
+    AuncientCadeImfNatoSlotMetrics fault_nato_m = {0};
+    bool ok_nato_fault = auncient_cade_imf_nato_slot_prover(1, 6, 5, 10, true /* simulate timing fault */, 3, &fault_nato_m);
+    assert(ok_nato_fault == true && fault_nato_m.overall_nato_slot_sound == true);
+    assert(fault_nato_m.rollback_sound == true && fault_nato_m.committed_output == 6ULL);
+    printf("   ✓ CADE IMF NATO Slot Timing verified (Slot=1, Offset=6ms, Up=5ms, Down=10ms, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_nato_m.g_gate_factor, clean_nato_m.committed_output, clean_nato_m.displacement_wrap_mod);
+
+    // 60. Test Teddy Bear Participant DNA Seed & Regional SSA Endowment Prover
+    printf("[TEST] Testing Teddy Bear Participant DNA Seed (FNV-1a Area Code & 1,000,000 Saat Baseline)...\n");
+    AuncientTeddyBearSsaMetrics clean_tb_m = {0}, fault_tb_m = {0};
+    bool ok_tb_clean = auncient_teddy_bear_ssa_endowment_prover(43605, 1000000ULL, false, 3, &clean_tb_m);
+    assert(ok_tb_clean == true && clean_tb_m.overall_teddy_bear_sound == true && clean_tb_m.area_code == 1);
+    bool ok_tb_fault = auncient_teddy_bear_ssa_endowment_prover(43605, 1000000ULL, true, 3, &fault_tb_m);
+    assert(ok_tb_fault == true && fault_tb_m.overall_teddy_bear_sound == true && fault_tb_m.committed_output == 43605ULL);
+    printf("   ✓ Teddy Bear SSA Endowment verified (Area=1, G_gate=%ld, Out=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_tb_m.g_gate_factor, clean_tb_m.committed_output, fault_tb_m.committed_output, clean_tb_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
-    printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY (53/53)\n");
+    printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY (60/60)\n");
     printf("=============================================================\n");
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

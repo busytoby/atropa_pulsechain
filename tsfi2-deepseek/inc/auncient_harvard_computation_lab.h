@@ -697,4 +697,188 @@ bool auncient_marschner_fur_scattering_prover(
     AuncientMarschnerFurMetrics *metrics_out
 );
 
+typedef struct {
+    uint32_t shutter_angle_deg;
+    uint32_t claw_pull_down_phase;
+    uint32_t vdc_clip_x;
+    uint32_t vce_palette_idx;
+    int64_t exposure_fraction_q16;
+    uint32_t vce_rgb565;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool rotary_shutter_sound;
+    bool claw_advance_sound;
+    bool vdc_raster_clip_sound;
+    bool vce_palette_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_super8_hudson_sound;
+} AuncientSuper8HudsonMetrics;
+
+bool auncient_super8_hudson_renderman_prover(
+    uint32_t shutter_angle_deg,
+    uint32_t claw_pull_down_phase,
+    uint32_t vdc_clip_x,
+    uint32_t vce_palette_idx,
+    bool simulate_film_jam_fault,
+    uint32_t k_param,
+    AuncientSuper8HudsonMetrics *metrics_out
+);
+
+typedef struct {
+    int64_t density_flower_q16;
+    int64_t normal_mag_q16;
+    int64_t sss_through_q16;
+    int64_t sss_internal_q16;
+    int64_t fresnel_rim_q16;
+    int64_t total_radiance_q16;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool energy_conservation_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_sss_sound;
+} AuncientDualPassSSSMetrics;
+
+bool auncient_dual_pass_sss_venation_prover(
+    int64_t density_flower_q16,
+    int64_t normal_mag_q16,
+    bool simulate_over_exposure_fault,
+    uint32_t k_param,
+    AuncientDualPassSSSMetrics *metrics_out
+);
+
+typedef struct {
+    uint32_t camera_fov_deg;
+    uint32_t descriptor_set_idx;
+    uint32_t mesh_depth_z;
+    int64_t focal_length_q16;
+    int64_t projected_z_q16;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool focal_frustum_sound;
+    bool depth_monotonic_sound;
+    bool descriptor_layout_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_vulkan_camera_sound;
+} AuncientVulkanCameraMetrics;
+
+bool auncient_vulkan_vision_camera_prover(
+    uint32_t camera_fov_deg,
+    uint32_t descriptor_set_idx,
+    uint32_t mesh_depth_z,
+    bool simulate_frustum_fault,
+    uint32_t k_param,
+    AuncientVulkanCameraMetrics *metrics_out
+);
+
+typedef struct {
+    uint32_t instrument_track_idx;
+    uint32_t base_freq_hz;
+    int64_t gain_q16;
+    int64_t harmonic_q16;
+    int64_t rms_norm_q16;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool harmonic_bound_sound;
+    bool energy_conservation_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_bionika_synth_sound;
+} AuncientBionikaSynthMetrics;
+
+bool auncient_bionika_synth_overdrive_prover(
+    uint32_t instrument_track_idx,
+    uint32_t base_freq_hz,
+    int64_t gain_q16,
+    bool simulate_overdrive_fault,
+    uint32_t k_param,
+    AuncientBionikaSynthMetrics *metrics_out
+);
+
+typedef struct {
+    uint32_t grid_size_n;
+    int64_t rest_len_q16;
+    int64_t charge_level_q16;
+    int64_t verlet_disp_q16;
+    int64_t spring_force_q16;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool verlet_bound_sound;
+    bool spring_relaxation_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_usdshade_sound;
+} AuncientUsdShadeVerletMetrics;
+
+bool auncient_usdshade_fet_verlet_prover(
+    uint32_t grid_size_n,
+    int64_t rest_len_q16,
+    int64_t charge_level_q16,
+    bool simulate_lattice_fault,
+    uint32_t k_param,
+    AuncientUsdShadeVerletMetrics *metrics_out
+);
+
+typedef struct {
+    uint32_t slot_selector;
+    uint32_t offset_ms;
+    uint32_t up_ramp_ms;
+    uint32_t down_ramp_ms;
+    int64_t timing_envelope_q16;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool slot_boundary_sound;
+    bool ramp_threshold_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_nato_slot_sound;
+} AuncientCadeImfNatoSlotMetrics;
+
+bool auncient_cade_imf_nato_slot_prover(
+    uint32_t slot_selector,
+    uint32_t offset_ms,
+    uint32_t up_ramp_ms,
+    uint32_t down_ramp_ms,
+    bool simulate_timing_fault,
+    uint32_t k_param,
+    AuncientCadeImfNatoSlotMetrics *metrics_out
+);
+
+typedef struct {
+    uint32_t dna_seed;
+    uint32_t area_code;
+    uint64_t simulated_endowment_saat;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool area_code_bound_sound;
+    bool endowment_value_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_teddy_bear_sound;
+} AuncientTeddyBearSsaMetrics;
+
+bool auncient_teddy_bear_ssa_endowment_prover(
+    uint32_t dna_seed,
+    uint64_t simulated_endowment_saat,
+    bool simulate_registry_fault,
+    uint32_t k_param,
+    AuncientTeddyBearSsaMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

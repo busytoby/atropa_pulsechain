@@ -145,7 +145,18 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 │   │   ├── golden_jubilee_overdrive_prover.algol61
 │   │   ├── harvard_zuo_sensing_pin_matrix_prover.algol61
 │   │   ├── harvard_zuo_cics_orders1_jump_prover.algol61
-│   │   └── marschner_fur_scattering_prover.algol61
+│   │   ├── marschner_fur_scattering_prover.algol61
+│   │   ├── super8_hudson_renderman_prover.algol61
+│   │   ├── dual_pass_sss_venation_prover.algol61
+│   │   ├── vulkan_vision_camera_prover.algol61
+│   │   ├── bionika_synth_overdrive_prover.algol61
+│   │   ├── usdshade_fet_verlet_prover.algol61
+│   │   ├── cade_imf_nato_slot_prover.algol61
+│   │   ├── teddy_bear_ssa_endowment_prover.algol61
+│   │   ├── pure_algol61_prover_retention_prover.algol61
+│   │   ├── c_prover_conversion_decoupling_prover.algol61
+│   │   ├── eighty_prover_bijective_decoupling_prover.algol61
+│   │   └── subordinate_strategy_composition_prover.algol61
 │   └── strategies/                   # COBOL execution strategies (D0-D3 divisions, R0-R15)
 │       ├── glm_hbridge_swiglu.strategy
 │       ├── glm_2d_rope_paintbox.strategy
@@ -184,18 +195,33 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 │       ├── harvard_zuo_orders1_bootstrap.strategy
 │       ├── harvard_zuo_word_coupling.strategy
 │       ├── harvard_zuo_uniselector_sync.strategy
-│       └── harvard_zuo_wheeler_jump.strategy
+│       ├── harvard_zuo_wheeler_jump.strategy
+│       ├── golden_jubilee_overdrive.strategy
+│       ├── harvard_zuo_sensing_pin_matrix.strategy
+│       ├── harvard_zuo_cics_orders1_jump.strategy
+│       ├── marschner_fur_scattering.strategy
+│       ├── super8_hudson_renderman.strategy
+│       ├── dual_pass_sss_venation.strategy
+│       ├── vulkan_vision_camera.strategy
+│       ├── bionika_synth_overdrive.strategy
+│       ├── usdshade_fet_verlet.strategy
+│       ├── cade_imf_nato_slot.strategy
+│       ├── teddy_bear_ssa_endowment.strategy
+│       ├── pure_algol61_prover_retention.strategy
+│       ├── c_prover_conversion_decoupling.strategy
+│       ├── eighty_prover_bijective_decoupling.strategy
+│       └── subordinate_strategy_composition.strategy
 ├── tsfi2-deepseek/
 │   ├── src/                          # C11 Virtual hardware, MCP server, and runtime core
 │   │   ├── auncient_edsac_firewall.c # EDSAC Initial Orders 1 & 2 compiler firewall
-│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge, Tape Sync, Plugboard, Hankel, Self-Identity, Torque Balance, Modified Bessel, Tape Loop, 2-out-of-5 Parity, Transfer Bus, Angular Momentum, Subroutine Cascade, Nine's Complement, Dual Cam Matrix, Orders 1 Bootstrap, Word Coupling Safety, Uniselector Sync, Wheeler Jump
+│   │   ├── auncient_harvard_computation_lab.c # Harvard Mark I wheels, tape latch, Bessel, Legendre, Orbit, Multiplier, Interpolator, Biquinary, Divider, Geneva, Zuo H-Bridge, Tape Sync, Plugboard, Hankel, Self-Identity, Torque Balance, Modified Bessel, Tape Loop, 2-out-of-5 Parity, Transfer Bus, Angular Momentum, Subroutine Cascade, Nine's Complement, Dual Cam Matrix, Orders 1 Bootstrap, Word Coupling Safety, Uniselector Sync, Wheeler Jump, Golden Overdrive, Sensing Pin Matrix, CICS Jump, Marschner Fur Scattering, Super 8 Hudson RenderMan, Dual-Pass SSS Petal Venation, Vulkan Vision Scope & Frustum Camera, 5-Instrument Overdrive Synthesizer, UsdShade FET Verlet Soft-Body, CADE IMF NATO Slot Boundary Prover, Teddy Bear SSA Endowment Prover
 │   │   ├── tsfi_mcp_server.c         # Native Model Context Protocol (MCP) server
 │   │   ├── tsfi_displacementshader.c # WinchesterMQ vertex displacement coordinate scaler
 │   │   ├── tsfi_gguf_loader.c        # Pure C GGUF loader & H-Bridge SwiGLU activation
 │   │   └── tsfi_faster_lighter_llm.c # High-throughput Edge LLM inference engine
 │   └── inc/                          # Core system and hardware register headers
 ├── tests/                            # Comprehensive C test suites and verification harnesses
-│   ├── test_auncient_edsac_firewall.c# 52-suite integrated EDSAC & Harvard formal test battery
+│   ├── test_auncient_edsac_firewall.c# 60-suite integrated EDSAC & Harvard formal test battery
 │   ├── test_rooted_browser_zmm.c     # Rooted Vulkan Wayland Presenter test harness
 │   └── test_zorse_vdso_hogan_units.c # Monotonic VDSO low-latency benchmark suite
 ├── frontend/                         # Pure HTML5/Canvas presenters (Zero external frameworks)

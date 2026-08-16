@@ -532,7 +532,7 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
 
     draw_text(fb, w, h, box_x + 15, box_y + 10, "HARVARD 1946 X CICS DISCOVERY [0xC1C5]", hud_cyan, 2);
 
-    // Live Evaluation of Suite 52 (CICS Jump Prover) & Suite 50 (5-Hole Sensing Pin)
+    // Live Evaluation of Suite 56 (Vulkan Camera), Suite 57 (Bionika Synth), Suite 52 (CICS Jump)
     uint32_t dynamic_punch = ((uint32_t)(t * 4.0f)) % 32;
     AuncientHarvardZuoSensingPinMetrics pin_m = {0};
     auncient_harvard_zuo_sensing_pin_matrix_prover(dynamic_punch, false, 3, &pin_m);
@@ -542,8 +542,14 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
     uint32_t dyn_theta = 50 + (((uint32_t)(t * 5.0f)) % 200);
     auncient_harvard_zuo_cics_wheeler_jump_prover(dyn_base, dyn_theta, false, 3, &cics_m);
 
+    AuncientVulkanCameraMetrics vulk_m = {0};
+    auncient_vulkan_vision_camera_prover(60, 0, 800, false, 3, &vulk_m);
+
+    AuncientBionikaSynthMetrics synth_m = {0};
+    auncient_bionika_synth_overdrive_prover(1, 55, 55705, false, 3, &synth_m);
+
     char buf1[80];
-    snprintf(buf1, sizeof(buf1), "TIME: %05.2fS | SUITE 52/52 | SCENE %d/7 | FPS 60", t, scene);
+    snprintf(buf1, sizeof(buf1), "TIME: %05.2fS | SUITE 57/57 | SCENE %d/7 | FPS 60", t, scene);
     draw_text(fb, w, h, box_x + 15, box_y + 32, buf1, 0xFFFFFFFF, 2);
 
     int bar_y = box_y + 54;
@@ -559,13 +565,13 @@ static void draw_ast_merkle_proving_hud(uint32_t *fb, int w, int h, int scene, f
     }
 
     char buf2[80];
-    snprintf(buf2, sizeof(buf2), "5-HOLE PUNCH: %02u [%u%u%u%u%u] | G_GATE: %ld/1000",
-             pin_m.input_punch_mask, pin_m.pin_p0, pin_m.pin_p1, pin_m.pin_p2, pin_m.pin_p3, pin_m.pin_p4, pin_m.g_gate_factor);
+    snprintf(buf2, sizeof(buf2), "VULKAN FOV: %02u° [Z=%04u] | SYNTH RMS: %05ld | G_GATE: %ld/1000",
+             vulk_m.camera_fov_deg, vulk_m.mesh_depth_z, synth_m.rms_norm_q16, synth_m.g_gate_factor);
     draw_text(fb, w, h, box_x + 15, box_y + 70, buf2, 0xFFFFD700, 2);
 
     char buf3[80];
-    snprintf(buf3, sizeof(buf3), "CICS TARGET: 0x%04X | EFF_ADDR: %04u | ACCUM: 1,000,000 SAAT",
-             cics_m.target_pc, cics_m.effective_address);
+    snprintf(buf3, sizeof(buf3), "CICS TARGET: 0x%04X | PUNCH: %02u | ACCUM: 1,000,000 SAAT",
+             cics_m.target_pc, pin_m.input_punch_mask);
     draw_text(fb, w, h, box_x + 15, box_y + 92, buf3, 0xFF00E5FF, 2);
 
     char buf4[80];
