@@ -138,6 +138,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-toolset-self-evolution:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_toolset_self_evolution.c -o tests/test_ankh_toolset_self_evolution
+	./tests/test_ankh_toolset_self_evolution
+	@rm -f tests/test_ankh_toolset_self_evolution
+
 test-ankh-tomie-life-agent:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_tomie_life_agent.c -o tests/test_ankh_tomie_life_agent
 	./tests/test_ankh_tomie_life_agent
