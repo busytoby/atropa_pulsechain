@@ -769,6 +769,28 @@ bool auncient_glm_infilled_totient_prover(
     AuncientGlmTotientMetrics *metrics_out
 );
 
+// GLM Multi-Task Zorse Prover Metrics
+typedef struct {
+    uint32_t target_reg_idx;
+    uint32_t infilled_reg_val;
+    size_t division_length_bytes;
+    uint32_t vdso_latency_ns;
+    uint32_t displacement_wrap_mod;
+    bool short_mask_infill_ok;
+    bool long_mask_synthesis_ok;
+    bool vdso_latency_gate_passed;
+    bool overall_zorse_multitask_sound;
+} AuncientGlmZorseMetrics;
+
+// Formal GLM Multi-Task Compatibility Prover for Zorse
+bool auncient_glm_zorse_multitask_prover(
+    uint32_t target_reg_idx,
+    uint32_t short_mask_target_val,
+    size_t division_len,
+    uint32_t vdso_latency_ns,
+    AuncientGlmZorseMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

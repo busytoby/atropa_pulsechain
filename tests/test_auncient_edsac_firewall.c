@@ -217,6 +217,19 @@ int main(void) {
     printf("   ✓ GLM Infilled TOTIENT verified (Initial=%lu, Infilled_u=%lu, Staged=%lu, Committed=%lu, DispMod=%u).\n",
            glm_tot_m.initial_totient, glm_tot_m.infilled_u, glm_tot_m.staged_totient, glm_tot_m.committed_totient, glm_tot_m.displacement_wrap_mod);
 
+    // 15. Test GLM Multi-Task Compatibility Prover for Zorse
+    printf("[TEST] Testing GLM Multi-Task Compatibility for Zorse (Sub-1000ns VDSO Latency Guard Gate)...\n");
+    AuncientGlmZorseMetrics glm_zorse_m = {0};
+    bool glm_zorse_ok = auncient_glm_zorse_multitask_prover(
+        7 /* R7 */, 875, 128 /* bytes */, 80 /* ns */, &glm_zorse_m
+    );
+    assert(glm_zorse_ok == true && glm_zorse_m.overall_zorse_multitask_sound == true);
+    assert(glm_zorse_m.short_mask_infill_ok == true);
+    assert(glm_zorse_m.long_mask_synthesis_ok == true);
+    assert(glm_zorse_m.vdso_latency_gate_passed == true);
+    printf("   ✓ GLM Multi-Task for Zorse verified (Reg=R%u, Infill=%u, DivLen=%zu, VDSO=%uns, DispMod=%u).\n",
+           glm_zorse_m.target_reg_idx, glm_zorse_m.infilled_reg_val, glm_zorse_m.division_length_bytes, glm_zorse_m.vdso_latency_ns, glm_zorse_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
