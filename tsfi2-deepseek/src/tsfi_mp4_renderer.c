@@ -32,9 +32,15 @@ static void compute_19d_projection(const char *address, float t, float *out_coor
 }
 
 void tsfi_mp4_pipeline_init(TsfiMp4Pipeline *pipe, const char *audio_wav, const char *output_mp4) {
+    tsfi_mp4_pipeline_init_custom(pipe, (float)MP4_DEFAULT_SECONDS, audio_wav, output_mp4);
+}
+
+void tsfi_mp4_pipeline_init_custom(TsfiMp4Pipeline *pipe, float duration_seconds, const char *audio_wav, const char *output_mp4) {
     if (!pipe) return;
     memset(pipe, 0, sizeof(TsfiMp4Pipeline));
-    pipe->total_frames = MP4_TOTAL_FRAMES;
+    float dur = (duration_seconds > 0.0f) ? duration_seconds : (float)MP4_DEFAULT_SECONDS;
+    pipe->duration_seconds = dur;
+    pipe->total_frames = (int)(dur * (float)MP4_FPS);
     if (audio_wav) strncpy(pipe->audio_wav_path, audio_wav, sizeof(pipe->audio_wav_path) - 1);
     if (output_mp4) strncpy(pipe->output_mp4_path, output_mp4, sizeof(pipe->output_mp4_path) - 1);
 }
@@ -624,6 +630,8 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     if (!ctx || !ctx->framebuffer) return;
 
     float t = ctx->timestamp_sec;
+    float total_dur = (ctx->total_duration_sec > 0.0f) ? ctx->total_duration_sec : (float)MP4_DEFAULT_SECONDS;
+    float norm_t = (t / total_dur) * (float)MP4_DEFAULT_SECONDS; // Normalized to 7 standard movements
     int w = MP4_WIDTH;
     int h = MP4_HEIGHT;
     uint32_t *fb = ctx->framebuffer;
@@ -645,7 +653,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     // -------------------------------------------------------------------------
     // SCENE 1: VERSE 1 (00:00 - 15:00) | 1946 HARVARD MARK I 24-DECADE ROTARY COUNTER WHEELS
     // -------------------------------------------------------------------------
-    if (t < 15.0f) {
+    if (norm_t < 15.0f) {
         ctx->scene_index = 1;
         // Rich Bakelite Chassis Floor & Laboratory Wall Gradient
         for (int y = 0; y < h; y++) {
@@ -687,7 +695,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     // -------------------------------------------------------------------------
     // SCENE 2: CHORUS 1 (15:00 - 25:00) | 1946 HARVARD 3-ADDRESS PERFORATED TAPE TRANSPORT
     // -------------------------------------------------------------------------
-    else if (t < 25.0f) {
+    else if (norm_t < 25.0f) {
         ctx->scene_index = 2;
         for (int i = 0; i < w * h; i++) fb[i] = 0xFF050E12;
 
@@ -732,7 +740,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     // -------------------------------------------------------------------------
     // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D USDA Volumetric Double-Helix DNA Lattice
     // -------------------------------------------------------------------------
-    else if (t < 38.0f) {
+    else if (norm_t < 38.0f) {
         ctx->scene_index = 3;
         for (int y = 0; y < h; y++) {
             uint32_t col = (y % 4 == 0) ? 0xFF181005 : 0xFF0A0702;
@@ -770,7 +778,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     // -------------------------------------------------------------------------
     // SCENE 4: CHORUS 2 (38:00 - 50:00) | 3D USDA Volumetric Trefoil Knot Manifold
     // -------------------------------------------------------------------------
-    else if (t < 50.0f) {
+    else if (norm_t < 50.0f) {
         ctx->scene_index = 4;
         for (int i = 0; i < w * h; i++) fb[i] = 0xFF030712;
 
@@ -815,11 +823,11 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     // -------------------------------------------------------------------------
     // SCENE 5: VERSE 3 (50:00 - 62:00) | 3D USDA Geodesic Singularity Icosahedron
     // -------------------------------------------------------------------------
-    else if (t < 62.0f) {
+    else if (norm_t < 62.0f) {
         ctx->scene_index = 5;
         for (int i = 0; i < w * h; i++) fb[i] = 0xFF0E0402;
 
-        float tension = (t - 50.0f) / 12.0f;
+        float tension = (norm_t - 50.0f) / 12.0f;
         float r_scale = 320.0f * (1.0f - tension * 0.88f);
 
         float phi_gold = (1.0f + sqrtf(5.0f)) * 0.5f;
@@ -878,7 +886,7 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     // -------------------------------------------------------------------------
     // SCENE 6: CHORUS 3 (62:00 - 80:00) | 3D VOLUMETRIC BLAST & 3D USDA TEDDY BEAR
     // -------------------------------------------------------------------------
-    else if (t < 80.0f) {
+    else if (norm_t < 80.0f) {
         ctx->scene_index = 6;
         float drop_t = t - 62.0f;
         for (int y = 0; y < h; y++) {
@@ -993,6 +1001,7 @@ bool tsfi_mp4_compile_video_with_audio(TsfiMp4Pipeline *pipe) {
 
     TsfiRenderFrameContext ctx;
     ctx.framebuffer = frame;
+    ctx.total_duration_sec = pipe->duration_seconds;
 
     for (int f = 0; f < pipe->total_frames; f++) {
         ctx.frame_index = (uint32_t)f;
