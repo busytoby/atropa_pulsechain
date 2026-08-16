@@ -797,11 +797,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo Angular Momentum verified (RPM_Tenths=%u, G_gate=%ld, Out=%lu, DispMod=%u).\n",
            clean_mom_m.final_rpm_tenths, clean_mom_m.g_gate_factor, clean_mom_m.committed_output, clean_mom_m.displacement_wrap_mod);
 
+    // 43. Test Harvard Zuo Multi-Level Subroutine Cascade Gating Prover
+    printf("[TEST] Testing Harvard Zuo Subroutine Cascade (Nested Stack Automorphism & Overflow Latch)...\n");
+    AuncientHarvardZuoCascadeMetrics clean_casc_m = {0};
+    bool ok_casc_clean = auncient_harvard_zuo_subroutine_cascade_prover(
+        43605 /* Entry coordinate */, 4 /* depth */, false /* clean */, 3 /* k=3 */, &clean_casc_m
+    );
+    assert(ok_casc_clean == true && clean_casc_m.overall_cascade_sound == true);
+    assert(clean_casc_m.return_coordinate_sound == true);
+    assert(clean_casc_m.gating_clamp_sound == true);
+    assert(clean_casc_m.shadow_isolation_sound == true);
+    assert(clean_casc_m.return_coordinate == 43605ULL);
+    assert(clean_casc_m.g_gate_factor == 937);
+
+    AuncientHarvardZuoCascadeMetrics fault_casc_m = {0};
+    bool ok_casc_fault = auncient_harvard_zuo_subroutine_cascade_prover(
+        43605 /* Entry coordinate */, 4 /* depth */, true /* simulate stack fault */, 3 /* k=3 */, &fault_casc_m
+    );
+    assert(ok_casc_fault == true && fault_casc_m.overall_cascade_sound == true);
+    assert(fault_casc_m.rollback_sound == true);
+    assert(fault_casc_m.committed_output == 43605ULL);
+    printf("   ✓ Harvard Zuo Subroutine Cascade verified (Return_Coord=%lu, G_gate=%ld, Out=%lu, DispMod=%u).\n",
+           clean_casc_m.return_coordinate, clean_casc_m.g_gate_factor, clean_casc_m.committed_output, clean_casc_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

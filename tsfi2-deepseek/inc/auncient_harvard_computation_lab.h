@@ -462,4 +462,26 @@ bool auncient_harvard_zuo_angular_momentum_prover(
     AuncientHarvardZuoMomentumMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t entry_coordinate;
+    uint32_t cascade_depth;
+    uint64_t return_coordinate;
+    int64_t g_gate_factor;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool return_coordinate_sound;
+    bool gating_clamp_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_cascade_sound;
+} AuncientHarvardZuoCascadeMetrics;
+
+bool auncient_harvard_zuo_subroutine_cascade_prover(
+    uint64_t entry_coordinate,
+    uint32_t cascade_depth,
+    bool simulate_stack_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoCascadeMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

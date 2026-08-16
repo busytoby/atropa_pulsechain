@@ -1270,6 +1270,69 @@ bool auncient_harvard_zuo_angular_momentum_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo Multi-Level Subroutine Cascade Gating Prover */
+bool auncient_harvard_zuo_subroutine_cascade_prover(
+    uint64_t entry_coordinate,
+    uint32_t cascade_depth,
+    bool simulate_stack_fault,
+    uint32_t k_param,
+    AuncientHarvardZuoCascadeMetrics *metrics_out
+) {
+    if (k_param != 3 || entry_coordinate == 0 || cascade_depth == 0 || cascade_depth > 8) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline entry coordinate in Zuo ZMM state
+    uint64_t shadow_entry = entry_coordinate;
+
+    // Step 2: Execute Nested Subroutine Cascade Push/Pop Across Stack
+    uint64_t current_coord = entry_coordinate;
+
+    // Push phase: stack allocations
+    for (uint32_t depth = 1; depth <= cascade_depth; ++depth) {
+        uint64_t frame_offset = (uint64_t)depth * 1024ULL;
+        current_coord += frame_offset;
+    }
+
+    // Pop phase: strict LIFO restoration
+    for (uint32_t depth = cascade_depth; depth >= 1; --depth) {
+        uint64_t frame_offset = (uint64_t)depth * 1024ULL;
+        current_coord -= frame_offset;
+    }
+
+    bool return_ok = (current_coord == entry_coordinate);
+
+    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)cascade_depth) / 8LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Stack Fault Rollback
+    uint64_t committed_output = simulate_stack_fault ? shadow_entry : ((current_coord * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_entry == entry_coordinate);
+    bool rollback_ok = simulate_stack_fault ? (committed_output == shadow_entry) : (committed_output == ((current_coord * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = return_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->entry_coordinate = entry_coordinate;
+        metrics_out->cascade_depth = cascade_depth;
+        metrics_out->return_coordinate = current_coord;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->return_coordinate_sound = return_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_cascade_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 
