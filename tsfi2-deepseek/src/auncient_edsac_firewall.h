@@ -883,6 +883,53 @@ bool auncient_glm_bidirectional_attention_mask_prover(
     AuncientGlmAttnMaskMetrics *metrics_out
 );
 
+// GLM Interleaved RMSNorm Prover Metrics
+typedef struct {
+    float original_rms;
+    float scaled_rms;
+    float norm_x0;
+    float norm_x1;
+    float output_norm_rms;
+    uint32_t displacement_wrap_mod;
+    bool scale_invariance_sound;
+    bool unit_norm_sound;
+    bool overall_rmsnorm_sound;
+} AuncientGlmRmsNormMetrics;
+
+// Formal GLM Interleaved RMSNorm Prover
+bool auncient_glm_interleaved_rmsnorm_prover(
+    const float *x_vector,
+    size_t dim,
+    float alpha_scalar,
+    AuncientGlmRmsNormMetrics *metrics_out
+);
+
+// Secondary Accumulator Synthesis & Cascaded ACID Metrics
+typedef struct {
+    uint64_t primary_charge_mu0;
+    uint64_t secondary_mu_rms;
+    uint64_t secondary_mu_valve;
+    uint64_t committed_secondary_rms;
+    uint64_t committed_secondary_valve;
+    uint32_t displacement_wrap_mod;
+    bool primary_root_immutable_ok;
+    bool secondary_rms_sound;
+    bool secondary_valve_sound;
+    bool cascaded_rollback_sound;
+    bool overall_synthesis_sound;
+} AuncientSecondaryAccumulatorMetrics;
+
+// Formal Primary-Secondary Accumulator Synthesis Prover
+bool auncient_glm_secondary_accumulator_synthesis_prover(
+    uint64_t primary_charge_mu0,
+    uint64_t staged_activation_x0,
+    uint64_t staged_activation_x1,
+    uint64_t valve_exponent_e,
+    bool simulate_fault,
+    uint32_t k_param,
+    AuncientSecondaryAccumulatorMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

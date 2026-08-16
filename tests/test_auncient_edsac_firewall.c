@@ -303,6 +303,38 @@ int main(void) {
 
     printf("   ✓ GLM 2D Bidirectional Attention verified (Part-A Bidirectional=ALLOW, Part-A Peek=DENY, Part-B Context=ALLOW, Future Causal=DENY).\n");
 
+    // 20. Test GLM Interleaved RMSNorm Scale Invariance & Unit Norm Prover
+    printf("[TEST] Testing GLM Interleaved RMSNorm (Scale Invariance & Unit Norm Invariants)...\n");
+    float x_in[4] = { 1.0f, 2.0f, -1.0f, -2.0f };
+    AuncientGlmRmsNormMetrics rms_m = {0};
+    bool ok_rms = auncient_glm_interleaved_rmsnorm_prover(x_in, 4, 2.5f /* alpha */, &rms_m);
+    assert(ok_rms == true && rms_m.overall_rmsnorm_sound == true);
+    assert(rms_m.scale_invariance_sound == true);
+    assert(rms_m.unit_norm_sound == true);
+    printf("   ✓ GLM Interleaved RMSNorm verified (RMS_orig=%.3f, RMS_scaled=%.3f, Out_RMS=%.3f, DispMod=%u).\n",
+           rms_m.original_rms, rms_m.scaled_rms, rms_m.output_norm_rms, rms_m.displacement_wrap_mod);
+
+    // 21. Test Primary-Secondary Accumulator Synthesis & Cascaded ACID Prover
+    printf("[TEST] Testing Primary-Secondary Accumulator Synthesis (Cascaded ACID Invariance)...\n");
+    AuncientSecondaryAccumulatorMetrics clean_synth_m = {0};
+    bool ok_synth_clean = auncient_glm_secondary_accumulator_synthesis_prover(
+        1000000 /* Saat */, 1000, 2000, 991220, false, 3 /* k=3 */, &clean_synth_m
+    );
+    assert(ok_synth_clean == true && clean_synth_m.overall_synthesis_sound == true);
+    assert(clean_synth_m.primary_root_immutable_ok == true);
+    assert(clean_synth_m.secondary_mu_valve == 0);
+
+    AuncientSecondaryAccumulatorMetrics fault_synth_m = {0};
+    bool ok_synth_fault = auncient_glm_secondary_accumulator_synthesis_prover(
+        1000000 /* Saat */, 1000, 2000, 991220, true, 3 /* k=3 */, &fault_synth_m
+    );
+    assert(ok_synth_fault == true && fault_synth_m.overall_synthesis_sound == true);
+    assert(fault_synth_m.primary_charge_mu0 == 1000000);
+    assert(fault_synth_m.committed_secondary_rms == 0);
+    assert(fault_synth_m.committed_secondary_valve == 0);
+    printf("   ✓ Primary-Secondary Accumulator Synthesis verified (Primary Root=1M Saat, Sec_RMS=%lu, Fault Rollback=0, DispMod=%u).\n",
+           clean_synth_m.secondary_mu_rms, clean_synth_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
