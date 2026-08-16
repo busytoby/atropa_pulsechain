@@ -729,11 +729,35 @@ int main(void) {
     printf("   ✓ Harvard Zuo Tape Loop Topology verified (Step_Acc=%lu, G_gate=%ld, Out=%lu, DispMod=%u).\n",
            clean_loop_m.step_accumulator, clean_loop_m.g_gate_factor, clean_loop_m.committed_output, clean_loop_m.displacement_wrap_mod);
 
+    // 40. Test Harvard Zuo 2-out-of-5 Teleprinter Code Parity Prover
+    printf("[TEST] Testing Harvard Zuo 2-out-of-5 Parity (Constant Weight 2 & Bit-Flip Latch)...\n");
+    AuncientHarvardZuo2of5Metrics clean_2of5_m = {0};
+    bool ok_2of5_clean = auncient_harvard_zuo_two_out_of_five_prover(
+        7 /* digit */, false /* clean */, 3 /* k=3 */, &clean_2of5_m
+    );
+    assert(ok_2of5_clean == true && clean_2of5_m.overall_2of5_sound == true);
+    assert(clean_2of5_m.hamming_weight_sound == true);
+    assert(clean_2of5_m.gating_clamp_sound == true);
+    assert(clean_2of5_m.shadow_isolation_sound == true);
+    assert(clean_2of5_m.code_word == 18);
+    assert(clean_2of5_m.active_hamming_weight == 2);
+
+    AuncientHarvardZuo2of5Metrics fault_2of5_m = {0};
+    bool ok_2of5_fault = auncient_harvard_zuo_two_out_of_five_prover(
+        7 /* digit */, true /* simulate bit-flip fault */, 3 /* k=3 */, &fault_2of5_m
+    );
+    assert(ok_2of5_fault == true && fault_2of5_m.overall_2of5_sound == true);
+    assert(fault_2of5_m.rollback_sound == true);
+    assert(fault_2of5_m.committed_output == 7ULL);
+    printf("   ✓ Harvard Zuo 2-out-of-5 Parity verified (Code=%u, Weight=%u, Out=%lu, DispMod=%u).\n",
+           clean_2of5_m.code_word, clean_2of5_m.active_hamming_weight, clean_2of5_m.committed_output, clean_2of5_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 

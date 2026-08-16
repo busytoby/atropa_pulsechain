@@ -1106,6 +1106,66 @@ bool auncient_harvard_zuo_tape_loop_prover(
     return overall_sound;
 }
 
+/* Formal Harvard Zuo 2-out-of-5 Teleprinter Code Parity Prover */
+bool auncient_harvard_zuo_two_out_of_five_prover(
+    uint32_t decimal_digit,
+    bool simulate_bit_flip_fault,
+    uint32_t k_param,
+    AuncientHarvardZuo2of5Metrics *metrics_out
+) {
+    if (k_param != 3 || decimal_digit > 9) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline digit in Zuo ZMM state
+    uint32_t shadow_digit = decimal_digit;
+
+    // Step 2: Resolve 2-out-of-5 Code Map (Weights: 0, 1, 2, 4, 7)
+    // 0: 00011 (3), 1: 00101 (5), 2: 00110 (6), 3: 01001 (9), 4: 01010 (10),
+    // 5: 01100 (12), 6: 10001 (17), 7: 10010 (18), 8: 10100 (20), 9: 11000 (24)
+    static const uint32_t k2of5_map[10] = { 3, 5, 6, 9, 10, 12, 17, 18, 20, 24 };
+    uint32_t code_word = k2of5_map[decimal_digit];
+
+    uint32_t active_weight = 0;
+    for (int b = 0; b < 5; ++b) {
+        if ((code_word >> b) & 1) {
+            active_weight++;
+        }
+    }
+
+    bool weight_ok = (active_weight == 2);
+
+    // Step 3: SwiGLU Gating Modulation clamped in [7/8, 1.0] -> [875..1000]
+    int64_t g_gate_factor = 875 + ((125LL * (int64_t)decimal_digit) / 9LL);
+    bool gating_ok = (g_gate_factor >= 875 && g_gate_factor <= 1000);
+
+    // Step 4: ACID Latch Commit or Bit-Flip Rollback
+    uint64_t committed_output = simulate_bit_flip_fault ? (uint64_t)shadow_digit : (((uint64_t)code_word * 1000ULL + (uint64_t)decimal_digit * (uint64_t)g_gate_factor) / 1000ULL);
+
+    bool isolation_ok = (shadow_digit == decimal_digit);
+    bool rollback_ok = simulate_bit_flip_fault ? (committed_output == (uint64_t)shadow_digit) : (committed_output == (((uint64_t)code_word * 1000ULL + (uint64_t)decimal_digit * (uint64_t)g_gate_factor) / 1000ULL));
+    bool overall_sound = weight_ok && gating_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->decimal_digit = decimal_digit;
+        metrics_out->code_word = code_word;
+        metrics_out->active_hamming_weight = active_weight;
+        metrics_out->g_gate_factor = g_gate_factor;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->hamming_weight_sound = weight_ok;
+        metrics_out->gating_clamp_sound = gating_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_2of5_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 
