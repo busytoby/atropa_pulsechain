@@ -620,93 +620,91 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
     float lx = 0.577f, ly = -0.577f, lz = 0.577f;
 
     // -------------------------------------------------------------------------
-    // SCENE 1: VERSE 1 (00:00 - 15:00) | 3D USDA Obsidian Silk Torus & Tomte
+    // SCENE 1: VERSE 1 (00:00 - 15:00) | 1946 HARVARD MARK I 24-DECADE ROTARY COUNTER WHEELS
     // -------------------------------------------------------------------------
     if (t < 15.0f) {
         ctx->scene_index = 1;
+        // Rich Bakelite Chassis Floor & Laboratory Wall Gradient
         for (int y = 0; y < h; y++) {
             float v = (float)y / (float)h;
-            uint32_t col = 0xFF000000 | ((uint32_t)(15.0f * (1.0f - v)) << 16) | ((uint32_t)(10.0f * (1.0f - v)) << 8) | (uint32_t)(20.0f * v + 5.0f);
+            uint32_t col = 0xFF000000 | ((uint32_t)(25.0f * (1.0f - v) + 8.0f) << 16) | ((uint32_t)(20.0f * (1.0f - v) + 6.0f) << 8) | (uint32_t)(35.0f * v + 12.0f);
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        int rings = 20, segs = 32;
-        for (int ri = 0; ri < rings; ri++) {
-            float u = (float)ri / (float)rings;
-            float phi = u * 2.0f * (float)M_PI;
-            int px0 = 0, py0 = 0, first_x = 0, first_y = 0;
-            float pz0 = 0, first_z = 0;
+        // Render 24-Decade Brass Mainshafts & Rotating Counter Wheels
+        int decades = 24;
+        float wheel_spacing = 38.0f;
+        float start_x = -((float)decades * 0.5f) * wheel_spacing;
 
-            for (int s = 0; s < segs; s++) {
-                float v = (float)s / (float)segs;
-                float theta = v * 2.0f * (float)M_PI;
+        for (int dec = 0; dec < decades; dec++) {
+            float shaft_x = start_x + (float)dec * wheel_spacing;
+            float step_rot = (t * 4.0f) + (float)dec * 0.4f;
 
-                float r_maj = 280.0f + coords19[ri % 19] * 40.0f;
-                float r_min = 90.0f + sinf(t * 3.0f + theta * 3.0f) * 20.0f;
+            // 1. Draw Vertical Steel Drive Shaft
+            draw_3d_volumetric_cylinder(fb, zbuf, w, h, shaft_x, 0.0f, 480.0f, 4.0f, 420.0f, cam_pitch, cam_yaw, 800.0f, 0xFF888888, lx, ly, lz);
 
-                float x3d = (r_maj + r_min * cosf(theta)) * cosf(phi);
-                float y3d = r_min * sinf(theta);
-                float z3d = (r_maj + r_min * cosf(theta)) * sinf(phi);
+            // 2. Draw Stepped Brass 10-Digit Counter Wheel (Annals 1946 Geneva Mechanism)
+            uint32_t wheel_brass = (dec % 2 == 0) ? 0xFFFFD700 : 0xFFDAA520;
+            draw_3d_volumetric_cylinder(fb, zbuf, w, h, shaft_x, sinf(step_rot) * 15.0f, 480.0f, 16.0f, 22.0f, cam_pitch + step_rot, cam_yaw, 800.0f, wheel_brass, lx, ly, lz);
 
-                int sx = 0, sy = 0; float depth = 0;
-                project_3d_point(x3d - 150.0f, y3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx, &sy, &depth);
-
-                if (s == 0) { first_x = sx; first_y = sy; first_z = depth; }
-                else {
-                    uint32_t silk_col = (ri % 2 == 0) ? 0xFF5D4A73 : 0xFF7E6998;
-                    draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, sx, sy, depth, silk_col, 3.5f, lx, ly, lz);
-                }
-                px0 = sx; py0 = sy; pz0 = depth;
+            // 3. 10-Phase Commutator Contact Studs around Wheel Periphery
+            for (int stud = 0; stud < 10; stud++) {
+                float stud_ang = (float)stud * (2.0f * (float)M_PI / 10.0f) + step_rot;
+                float stud_x = shaft_x + cosf(stud_ang) * 18.0f;
+                float stud_y = sinf(step_rot) * 15.0f + sinf(stud_ang) * 18.0f;
+                draw_3d_volumetric_sphere(fb, zbuf, w, h, stud_x, stud_y, 480.0f, 2.5f, cam_pitch, cam_yaw, 800.0f, 0xFFFFFFFF, lx, ly, lz);
             }
-            draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, first_x, first_y, first_z, 0xFF5D4A73, 3.5f, lx, ly, lz);
         }
 
         draw_3d_vaesen_character(fb, zbuf, w, h, 1, t, cam_yaw, cam_pitch, lx, ly, lz);
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "BIONIKA", 0xFF00FFFF, 0xFF00A876, 0xFF003822, t * 3.0f);
-        draw_text(fb, w, h, (int)cx - 240, 260, "VERSE 1: 3D OBSIDIAN SILK & AUNCIENT TOMTE", 0xFFE0E0E0, 2);
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 240, 180, "HARVARD 1946", 0xFFFFD700, 0xFFFFAB00, 0xFF3E2723, t * 3.0f);
+        draw_text(fb, w, h, (int)cx - 280, 260, "VERSE 1: 24-DECADE MECHANICAL COUNTER WHEELS & MAINSHAFT", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 3D USDA Gyroscope & Nacken
+    // SCENE 2: CHORUS 1 (15:00 - 25:00) | 1946 HARVARD 3-ADDRESS PERFORATED TAPE TRANSPORT
     // -------------------------------------------------------------------------
     else if (t < 25.0f) {
         ctx->scene_index = 2;
-        for (int i = 0; i < w * h; i++) fb[i] = 0xFF010A05;
+        for (int i = 0; i < w * h; i++) fb[i] = 0xFF050E12;
 
-        float beat = fmodf(t, 0.5f) / 0.5f;
-        float pulse = 1.0f + 0.28f * expf(-beat * 8.0f);
+        float tape_feed = t * 120.0f;
+        int tape_segments = 48;
 
-        for (int d = 0; d < 19; d++) {
-            float rad = (80.0f + (float)d * 22.0f) * pulse;
-            float ring_pitch = (float)d * 0.25f + t * 0.8f;
-            float ring_yaw = (float)d * 0.35f + t * 0.6f;
-            int pts = 32;
-            int px0 = 0, py0 = 0, first_x = 0, first_y = 0;
-            float pz0 = 0, first_z = 0;
+        // Render Continuous Perforated Paper Tape Loop with 24-Decade Hole Matrix
+        for (int seg = 0; seg < tape_segments; seg++) {
+            float frac = (float)seg / (float)tape_segments;
+            float tape_z = -400.0f + fmodf(frac * 800.0f + tape_feed, 800.0f);
+            float tape_y = sinf(tape_z * 0.008f) * 45.0f;
 
-            for (int p = 0; p < pts; p++) {
-                float ang = (float)p * (2.0f * (float)M_PI / (float)pts);
-                float x3d = cosf(ang) * rad;
-                float y3d = sinf(ang) * rad;
-                float z3d = sinf(ang * 4.0f + t * 3.0f) * (coords19[d] * 20.0f);
+            // Draw Paper Tape Margin Rails (Manila Paper Cream Color)
+            int sx_l = 0, sy_l = 0, sx_r = 0, sy_r = 0;
+            float dl = 0, dr = 0;
+            project_3d_point(-160.0f, tape_y, tape_z, cam_pitch, cam_yaw, 800.0f, w, h, &sx_l, &sy_l, &dl);
+            project_3d_point(160.0f, tape_y, tape_z, cam_pitch, cam_yaw, 800.0f, w, h, &sx_r, &sy_r, &dr);
 
-                int sx = 0, sy = 0; float depth = 0;
-                project_3d_point(x3d + 150.0f, y3d, z3d, ring_pitch, ring_yaw, 800.0f, w, h, &sx, &sy, &depth);
+            draw_3d_volumetric_wire(fb, zbuf, w, h, sx_l, sy_l, dl, sx_r, sy_r, dr, 0xFFEEDC82, 3.5f, lx, ly, lz);
 
-                if (p == 0) { first_x = sx; first_y = sy; first_z = depth; }
-                else {
-                    uint32_t c_col = (d % 2 == 0) ? 0xFF00FFAA : 0xFF00F5FF;
-                    draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, sx, sy, depth, c_col, 3.0f, lx, ly, lz);
+            // Perforated Sensing Pin Holes (24 Decades across Tape Width)
+            for (int h_idx = 0; h_idx < 6; h_idx++) {
+                float hole_x = -120.0f + (float)h_idx * 48.0f;
+                bool is_punched = (((seg * 7 + h_idx * 13) % 5) == 0);
+                if (is_punched) {
+                    draw_3d_volumetric_sphere(fb, zbuf, w, h, hole_x, tape_y, tape_z, 5.0f, cam_pitch, cam_yaw, 800.0f, 0xFF00FFAA, lx, ly, lz);
+                } else {
+                    draw_3d_volumetric_sphere(fb, zbuf, w, h, hole_x, tape_y, tape_z, 2.5f, cam_pitch, cam_yaw, 800.0f, 0xFF332211, lx, ly, lz);
                 }
-                px0 = sx; py0 = sy; pz0 = depth;
             }
-            draw_3d_volumetric_wire(fb, zbuf, w, h, px0, py0, pz0, first_x, first_y, first_z, 0xFF00FFAA, 3.0f, lx, ly, lz);
         }
+
+        // Stepping Solenoid Armature Cylinders (Left and Right Spools)
+        draw_3d_volumetric_cylinder(fb, zbuf, w, h, -220.0f, -80.0f, 400.0f, 40.0f, 60.0f, cam_pitch, cam_yaw, 800.0f, 0xFF555555, lx, ly, lz);
+        draw_3d_volumetric_cylinder(fb, zbuf, w, h, 220.0f, -80.0f, 400.0f, 40.0f, 60.0f, cam_pitch, cam_yaw, 800.0f, 0xFF555555, lx, ly, lz);
 
         draw_3d_vaesen_character(fb, zbuf, w, h, 2, t, cam_yaw, cam_pitch, lx, ly, lz);
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 190, 180, "DISPATCH", 0xFF76FF03, 0xFF00C853, 0xFF003815, t * 3.5f);
-        draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 1: 3D GYROSCOPE & NACKEN EMERGENCE", 0xFFE0E0E0, 2);
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 240, 180, "TAPE FEED", 0xFF00FFAA, 0xFF00E676, 0xFF003311, t * 3.5f);
+        draw_text(fb, w, h, (int)cx - 280, 260, "CHORUS 1: 3-ADDRESS SEQUENCE TAPE STEPPER & SENSING PINS", 0xFFE0E0E0, 2);
     }
     // -------------------------------------------------------------------------
     // SCENE 3: VERSE 2 (25:00 - 38:00) | 3D USDA Volumetric Double-Helix DNA Lattice
@@ -898,43 +896,48 @@ void tsfi_mp4_render_scene_frame(TsfiRenderFrameContext *ctx) {
         draw_text(fb, w, h, (int)cx - 240, 260, "CHORUS 3: 3D VOLUMETRIC BLAST & TEDDY BEAR", 0xFF00FFFF, 2);
     }
     // -------------------------------------------------------------------------
-    // SCENE 7: OUTRO (80:00 - 90:00) | 3D USDA Volumetric Fibonacci Dew Spiral
+    // SCENE 7: OUTRO (80:00 - 90:00) | 1946 DUAL-CAM 180-DEGREE TIMING OSCILLOSCOPE CRT
     // -------------------------------------------------------------------------
     else {
         ctx->scene_index = 7;
-        float outro_t = (t - 80.0f) / 10.0f;
 
+        // Vintage Oscilloscope Green Phosphor CRT Screen Background
         for (int y = 0; y < h; y++) {
-            float mist = (1.0f - outro_t) * ((float)y / (float)h);
-            uint32_t col = 0xFF000000 | ((uint32_t)(8.0f * mist) << 16) | ((uint32_t)(22.0f * mist + 4.0f) << 8) | (uint32_t)(14.0f * mist + 4.0f);
+            float v = (float)y / (float)h;
+            uint32_t col = 0xFF000000 | ((uint32_t)(8.0f * (1.0f - v)) << 16) | ((uint32_t)(40.0f * (1.0f - v) + 12.0f) << 8) | (uint32_t)(18.0f * v + 6.0f);
             for (int x = 0; x < w; x++) fb[y * w + x] = col;
         }
 
-        int spiral_pts = 64;
-        int prev_x = 0, prev_y = 0;
-        float prev_z = 0;
-        for (int sp = 0; sp < spiral_pts; sp++) {
-            float theta = (float)sp * 0.25f + t * 0.5f;
-            float r = (float)sp * 4.5f * (1.0f - outro_t * 0.5f);
-            float x3d = r * cosf(theta);
-            float y3d = r * sinf(theta) * 0.7f;
-            float z3d = -150.0f + (float)sp * 5.0f;
+        // Draw 180-Degree Orthogonal Dual-Cam Timing Vectors (t_cam vs p_cam)
+        int trace_pts = 200;
+        int prev_tx = 0, prev_ty = 0, prev_px = 0, prev_py = 0;
+        float prev_tz = 0, prev_pz = 0;
 
-            int sx = 0, sy = 0; float depth = 0;
-            project_3d_point(x3d, y3d, z3d, cam_pitch, cam_yaw, 800.0f, w, h, &sx, &sy, &depth);
+        for (int p = 0; p < trace_pts; p++) {
+            float frac = (float)p / (float)trace_pts;
+            float phi = frac * 4.0f * (float)M_PI + t * 4.0f;
 
-            if (sp > 0) {
-                draw_3d_volumetric_wire(fb, zbuf, w, h, prev_x, prev_y, prev_z, sx, sy, depth, 0xFF689B77, 3.0f, lx, ly, lz);
+            // Value Cam t_n (Cos wave) vs Control Cam p_n (180-deg phase shift Sin wave)
+            float t_val = cosf(phi) * 160.0f;
+            float p_val = -cosf(phi) * 160.0f; // Exact 180-degree mechanical opposition
+            float z_pos = -300.0f + frac * 600.0f;
+
+            int sx_t = 0, sy_t = 0, sx_p = 0, sy_p = 0;
+            float dt = 0, dp = 0;
+
+            project_3d_point(t_val - 120.0f, sinf(phi * 2.0f) * 40.0f, z_pos, cam_pitch, cam_yaw, 800.0f, w, h, &sx_t, &sy_t, &dt);
+            project_3d_point(p_val + 120.0f, cosf(phi * 2.0f) * 40.0f, z_pos, cam_pitch, cam_yaw, 800.0f, w, h, &sx_p, &sy_p, &dp);
+
+            if (p > 0) {
+                draw_3d_volumetric_wire(fb, zbuf, w, h, prev_tx, prev_ty, prev_tz, sx_t, sy_t, dt, 0xFF00FF77, 3.5f, lx, ly, lz);
+                draw_3d_volumetric_wire(fb, zbuf, w, h, prev_px, prev_py, prev_pz, sx_p, sy_p, dp, 0xFFFFCC00, 3.5f, lx, ly, lz);
             }
-            // 3D USDA Crystalline Dew Sphere Prims (Radius 4px)
-            if (sp % 4 == 0 && (1.0f - outro_t) > 0.1f) {
-                draw_3d_volumetric_sphere(fb, zbuf, w, h, x3d, y3d, z3d, 4.0f, cam_pitch, cam_yaw, 800.0f, 0xFFFFFFFF, lx, ly, lz);
-            }
-            prev_x = sx; prev_y = sy; prev_z = depth;
+            prev_tx = sx_t; prev_ty = sy_t; prev_tz = dt;
+            prev_px = sx_p; prev_py = sy_p; prev_pz = dp;
         }
 
-        draw_demoscene_bubble_text(fb, w, h, (int)cx - 170, 180, "SETTLED", 0xFF69F0AE, 0xFF00BFA5, 0xFF004D40, t * 2.0f);
-        draw_text(fb, w, h, (int)cx - 240, 260, "OUTRO: 3D FIBONACCI SEAL & CHANCERY PROOF", 0xFFE0E0E0, 2);
+        draw_demoscene_bubble_text(fb, w, h, (int)cx - 240, 180, "ORTHOGONAL", 0xFF69F0AE, 0xFF00BFA5, 0xFF004D40, t * 2.5f);
+        draw_text(fb, w, h, (int)cx - 280, 260, "OUTRO: 180-DEGREE DUAL-CAM TIMING ORTHOGONALITY & CHANCERY SEAL", 0xFFE0E0E0, 2);
     }
 
     apply_super8_film_grain(fb, w, h, t);
