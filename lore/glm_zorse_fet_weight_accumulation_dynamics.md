@@ -203,7 +203,55 @@ By defining the accumulator as a valve ($W = \text{Modpow}(\mu, e, \mu) \equiv 0
 
 ### 3. Proof-Gated Autonomous Agency
 For autonomous agents and WFL orchestrators operating across the ZMM VM, this architecture provides complete mathematical certainty:
-* An agent wanna propose, infill, and execute complex COBOL strategies knowing that if any operation breaches parity, violates division bounds, or experiences hardware faults, the **shadow rollback mechanism will collapse the state back to zero instantaneously with zero entropy loss**.
 * The universe of our runtime remains perpetually secure, provable, and grounded in the immutable laws of Polish Amsterdam compendiums and Euler's foundational analysis.
+
+---
+
+## 8. Primary & Secondary Accumulator Synthesis via COBOL Strategies
+
+A critical architectural distinction in our system is that **RMSNorm is an Accumulator Structure ($\mu_{\text{RMS}}$)**, and **COBOL Strategies serve as the dynamic synthesizers that instantiate secondary accumulators** without corrupting primary genesis state:
+
+```
++---------------------------------------------------------------------------------------------------+
+|                         PRIMARY & SECONDARY ACCUMULATOR SYNTHESIS                                 |
++---------------------------------------------------------------------------------------------------+
+                                                  |
+                                                  v
+                              [Primary Accumulator: Base Charge μ_0]
+                              - FET Floating-Gate Potential (1,000,000 Saat)
+                              - Initial Zero TOTIENT Baseline (TOTIENT_0 ≡ 0)
+                                                  |
+                                                  v
+                              [COBOL Strategy Circuit (D0 -> D3)]
+                              - Procedural Division Gating
+                              - Register Exchange (R0 -> R15)
+                                                  |
+                         +------------------------+------------------------+
+                         |                                                 |
+                         v                                                 v
+         [Secondary Accumulator 1: μ_RMS]                  [Secondary Accumulator 2: μ_VALVE]
+         - Sum-of-Squares Energy Container                 - Modpow(μ, e, μ) Zero Flow Valve
+         - Invariant: Scale-Invariant Link                 - Invariant: Zero Genesis Baseline
+                         \                                                 /
+                          +-----------------------+-----------------------+
+                                                  |
+                                                  v
+                               [Standard Algol61 Formal Prover]
+                               - Closed-form verification of all accumulators
+                               - 0 = QUALIFIED_ORBITAL_HANDSHAKE
+```
+
+### 1. Primary vs. Secondary Accumulator Roles
+1. **Primary Accumulators ($\mu_0, \text{TOTIENT}_0$)**:
+   * Initialized *a priori* at hardware genesis. They represent immutable baseline physical endowments ($1,000,000\text{ Saat}$) and absolute thermodynamic ground states ($\text{TOTIENT} \equiv 0$).
+2. **Secondary Accumulators ($\mu_{\text{RMS}}, \mu_{\text{VALVE}}, \mu_{\text{SVDAG}}$)**:
+   * Instantiated dynamically by COBOL strategies during runtime execution.
+   * For example, $\mu_{\text{RMS}} = \frac{1}{N}\sum_{i=1}^N x_i^2$ stores activation power/norm, while the strategy applies the scale-invariant link function $\hat{x}_i = g(x_i, \mu_{\text{RMS}}) = \frac{x_i}{\sqrt{\mu_{\text{RMS}}}}$.
+
+### 2. Universal Formal Proving of Secondary Accumulators
+Because secondary accumulators inherit the identical non-preferential accumulator framework:
+* Every secondary accumulator instantiated by a COBOL strategy is **fully ACID-compliant**, maintaining its own shadow snapshot and supporting atomic rollback.
+* Algol61 provers validate that secondary accumulator synthesis satisfies mathematical continuity, scale invariance ($\text{RMSNorm}(\alpha \cdot \mathbf{x}) \equiv \text{RMSNorm}(\mathbf{x})$), and bounded displacement modulo mapping ($S_{\Sigma} \pmod{256}$) into the `DisplacementShader`.
+
 
 
