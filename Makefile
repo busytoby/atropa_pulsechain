@@ -253,6 +253,11 @@ test-ankh-abi-wmq-compiler:
 	./tests/test_ankh_abi_wmq_compiler
 	@rm -f tests/test_ankh_abi_wmq_compiler
 
+test-ankh-fleet18-orchestration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_fleet18_orchestration.c -o tests/test_ankh_fleet18_orchestration
+	./tests/test_ankh_fleet18_orchestration
+	@rm -f tests/test_ankh_fleet18_orchestration
+
 test-ankh-gguf-storage-extension:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_gguf_storage_extension.c -o tests/test_ankh_gguf_storage_extension
 	./tests/test_ankh_gguf_storage_extension
