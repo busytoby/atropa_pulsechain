@@ -23,6 +23,11 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
+test-ankh-multi-manifold-sync:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_multi_manifold_sync.c -o tests/test_ankh_multi_manifold_sync
+	./tests/test_ankh_multi_manifold_sync
+	@rm -f tests/test_ankh_multi_manifold_sync
+
 test-ankh-closed-grid-totient-boundary:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_closed_grid_totient_boundary.c -o tests/test_ankh_closed_grid_totient_boundary
 	./tests/test_ankh_closed_grid_totient_boundary
