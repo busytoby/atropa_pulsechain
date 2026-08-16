@@ -58,6 +58,16 @@ test-sdk-agent-runtime:
 	./tools/ankh_sdk_runtime hello.bin tune_channel.bin teddy_endow.bin stat.bin
 	@rm -f tools/ankh_sdk_runtime
 
+compile-patch-bin:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_patch.c -o tools/cpm_compiler_patch
+	./tools/cpm_compiler_patch patch.bin
+	@rm -f tools/cpm_compiler_patch
+
+test-exec-patch-bin: compile-patch-bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_patch.c -o tools/cpm_exec_patch
+	./tools/cpm_exec_patch patch.bin
+	@rm -f tools/cpm_exec_patch
+
 compile-unpack-bin:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_unpack.c -o tools/cpm_compiler_unpack
 	./tools/cpm_compiler_unpack unpack.bin
