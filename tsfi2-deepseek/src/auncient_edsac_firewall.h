@@ -930,6 +930,35 @@ bool auncient_glm_secondary_accumulator_synthesis_prover(
     AuncientSecondaryAccumulatorMetrics *metrics_out
 );
 
+// Transitive Secondary Chain & Multi-Depth Rollback Metrics
+typedef struct {
+    uint64_t root_charge_mu0;
+    uint64_t s1_rms;
+    uint64_t s2_valve;
+    uint64_t s3_svdag;
+    uint64_t comm_s1;
+    uint64_t comm_s2;
+    uint64_t comm_s3;
+    uint32_t displacement_wrap_mod;
+    bool root_preserved_sound;
+    bool s1_sound;
+    bool s2_sound;
+    bool s3_sound;
+    bool multi_depth_rollback_sound;
+    bool overall_chain_sound;
+} AuncientTransitiveSecondaryMetrics;
+
+// Formal Transitive Secondary Chain Prover
+bool auncient_glm_transitive_secondary_chain_prover(
+    uint64_t root_charge_mu0,
+    uint64_t staged_act_x0,
+    uint64_t staged_act_x1,
+    uint32_t svdag_voxel_count,
+    uint32_t fault_at_depth_k,
+    uint32_t k_param,
+    AuncientTransitiveSecondaryMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

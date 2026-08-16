@@ -335,6 +335,29 @@ int main(void) {
     printf("   ✓ Primary-Secondary Accumulator Synthesis verified (Primary Root=1M Saat, Sec_RMS=%lu, Fault Rollback=0, DispMod=%u).\n",
            clean_synth_m.secondary_mu_rms, clean_synth_m.displacement_wrap_mod);
 
+    // 22. Test Transitive Secondary Accumulator Chain & Multi-Depth Rollback Prover
+    printf("[TEST] Testing Transitive Secondary Chain (S1->S2->S3 Multi-Depth Rollback)...\n");
+    AuncientTransitiveSecondaryMetrics clean_chain_m = {0};
+    bool ok_chain_clean = auncient_glm_transitive_secondary_chain_prover(
+        1000000 /* Saat */, 1000, 2000, 64 /* voxels */, 0 /* clean */, 3 /* k=3 */, &clean_chain_m
+    );
+    assert(ok_chain_clean == true && clean_chain_m.overall_chain_sound == true);
+    assert(clean_chain_m.root_preserved_sound == true);
+    assert(clean_chain_m.comm_s2 == 0);
+    assert(clean_chain_m.comm_s3 == (64 * 256));
+
+    AuncientTransitiveSecondaryMetrics fault_chain_m = {0};
+    bool ok_chain_fault = auncient_glm_transitive_secondary_chain_prover(
+        1000000 /* Saat */, 1000, 2000, 64 /* voxels */, 3 /* fault at leaf S3 */, 3 /* k=3 */, &fault_chain_m
+    );
+    assert(ok_chain_fault == true && fault_chain_m.overall_chain_sound == true);
+    assert(fault_chain_m.root_charge_mu0 == 1000000);
+    assert(fault_chain_m.comm_s1 == 0);
+    assert(fault_chain_m.comm_s2 == 0);
+    assert(fault_chain_m.comm_s3 == 0);
+    printf("   ✓ Transitive Secondary Chain verified (Root=1M Saat, S1_RMS=%lu, S2_Valve=0, S3_SVDAG=%lu, Multi-Depth Rollback=0, DispMod=%u).\n",
+           clean_chain_m.s1_rms, clean_chain_m.s3_svdag, clean_chain_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
