@@ -182,4 +182,26 @@ bool auncient_harvard_1946_biquinary_prover(
     AuncientHarvard1946BiquinaryMetrics *metrics_out
 );
 
+typedef struct {
+    uint64_t dividend_a;
+    uint64_t divisor_b;
+    uint64_t quotient_q;
+    uint64_t remainder_r;
+    uint64_t committed_output;
+    uint32_t displacement_wrap_mod;
+    bool residue_sound;
+    bool remainder_bound_sound;
+    bool shadow_isolation_sound;
+    bool rollback_sound;
+    bool overall_divider_sound;
+} AuncientHarvard1946DividerMetrics;
+
+bool auncient_harvard_1946_divider_prover(
+    uint64_t dividend_a,
+    uint64_t divisor_b,
+    bool simulate_zero_div_fault,
+    uint32_t k_param,
+    AuncientHarvard1946DividerMetrics *metrics_out
+);
+
 #endif // AUNCIENT_HARVARD_COMPUTATION_LAB_H

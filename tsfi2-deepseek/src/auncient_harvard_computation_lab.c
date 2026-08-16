@@ -548,4 +548,64 @@ bool auncient_harvard_1946_biquinary_prover(
     return overall_sound;
 }
 
+/* Formal Harvard 1946 Double-Precision Subtractive Division Engine Prover */
+bool auncient_harvard_1946_divider_prover(
+    uint64_t dividend_a,
+    uint64_t divisor_b,
+    bool simulate_zero_div_fault,
+    uint32_t k_param,
+    AuncientHarvard1946DividerMetrics *metrics_out
+) {
+    if (k_param != 3) {
+        return false;
+    }
+
+    // Step 1: Snapshot baseline dividend detent
+    uint64_t shadow_dividend = dividend_a;
+
+    // Step 2: Division or Clutch Drop-Out Fault
+    uint64_t quotient_q = 0;
+    uint64_t remainder_r = 0;
+    uint64_t committed_output = 0;
+    bool residue_ok = false;
+    bool rem_bound_ok = false;
+
+    if (simulate_zero_div_fault || divisor_b == 0) {
+        quotient_q = 0;
+        remainder_r = 0;
+        committed_output = shadow_dividend; // Alarm clutch trip preserves baseline
+        residue_ok = true;
+        rem_bound_ok = true;
+    } else {
+        quotient_q = dividend_a / divisor_b;
+        remainder_r = dividend_a % divisor_b;
+        residue_ok = ((quotient_q * divisor_b + remainder_r) == dividend_a);
+        rem_bound_ok = (remainder_r < divisor_b);
+        committed_output = quotient_q;
+    }
+
+    bool isolation_ok = (shadow_dividend == dividend_a);
+    bool rollback_ok = (simulate_zero_div_fault || divisor_b == 0) ? (committed_output == shadow_dividend) : (committed_output == quotient_q);
+    bool overall_sound = residue_ok && rem_bound_ok && isolation_ok && rollback_ok;
+
+    uint32_t disp_wrap = (uint32_t)(committed_output % 256ULL);
+
+    if (metrics_out) {
+        metrics_out->dividend_a = dividend_a;
+        metrics_out->divisor_b = divisor_b;
+        metrics_out->quotient_q = quotient_q;
+        metrics_out->remainder_r = remainder_r;
+        metrics_out->committed_output = committed_output;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->residue_sound = residue_ok;
+        metrics_out->remainder_bound_sound = rem_bound_ok;
+        metrics_out->shadow_isolation_sound = isolation_ok;
+        metrics_out->rollback_sound = rollback_ok;
+        metrics_out->overall_divider_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 

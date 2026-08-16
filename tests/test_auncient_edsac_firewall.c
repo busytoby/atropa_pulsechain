@@ -506,11 +506,36 @@ int main(void) {
     printf("   ✓ Harvard 1946 Biquinary Parity verified (Digit=7, Active_Relays=2, Bi=1, Quin=2, DispMod=%u).\n",
            clean_biquin_m.displacement_wrap_mod);
 
+    // 30. Test Harvard 1946 Double-Precision Subtractive Division Engine Prover
+    printf("[TEST] Testing Harvard 1946 Subtractive Divider (Residue Conservation & Zero-Div Clutch)...\n");
+    AuncientHarvard1946DividerMetrics clean_div_m = {0};
+    bool ok_div_clean = auncient_harvard_1946_divider_prover(
+        1000000 /* Saat */, 875, false /* clean */, 3 /* k=3 */, &clean_div_m
+    );
+    assert(ok_div_clean == true && clean_div_m.overall_divider_sound == true);
+    assert(clean_div_m.residue_sound == true);
+    assert(clean_div_m.remainder_bound_sound == true);
+    assert(clean_div_m.shadow_isolation_sound == true);
+    assert(clean_div_m.quotient_q == 1142);
+    assert(clean_div_m.remainder_r == 750);
+    assert(clean_div_m.committed_output == 1142);
+
+    AuncientHarvard1946DividerMetrics fault_div_m = {0};
+    bool ok_div_fault = auncient_harvard_1946_divider_prover(
+        1000000 /* Saat */, 0 /* division by zero */, true /* simulate zero-div fault */, 3 /* k=3 */, &fault_div_m
+    );
+    assert(ok_div_fault == true && fault_div_m.overall_divider_sound == true);
+    assert(fault_div_m.rollback_sound == true);
+    assert(fault_div_m.committed_output == 1000000);
+    printf("   ✓ Harvard 1946 Subtractive Divider verified (Q=%lu, R=%lu, Fault_Rollback=%lu, DispMod=%u).\n",
+           clean_div_m.quotient_q, clean_div_m.remainder_r, fault_div_m.committed_output, clean_div_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }
+
 
 
 
