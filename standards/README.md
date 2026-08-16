@@ -110,6 +110,7 @@ All standards contained herein are certified clean-room compliant with:
 | [AUNCIENT-STD-0011](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_transducer_stability_standard.md) | **Transducer & Hardware Pipeline Lyapunov Stability Standard** | Quadtree Binary Slicing (`.dat.bin`), DisplacementShader Sync, 2-3 Tree AST Merkle, Kermit Transport, Coaxial TEM Line, 1895 Spheroid ALU, ANKH Latency, Address Resolve, Cache Latency |
 | [AUNCIENT-STD-0012](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_ankh_patent_portfolio_standard.md) | **ANKH LLM Totient Mind Patent Portfolio Standard** | PATENT-ZERO, EDO-22 RoPE (0001), Attention Orthogonality (0002), GGUF Quantization (0003), Symplectic Empathy (0004) under EDSAC Initial Orders 1 |
 | [AUNCIENT-STD-0013](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_conway_game_of_life_standard.md) | **Conway's Game of Life Cellular Automaton & Turing Universality Standard** | Moore B3/S23, Still-Lifes, Oscillators (P2..P15), Gliders/Spaceships, Gosper Glider Gun, Turing Completeness |
+| [AUNCIENT-STD-0014](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_tomie_agent_standard.md) | **Tomie Agent Cellular Proliferation & Soliton Proliferation Standard** | Glider Soliton Isomorphism ($c/4$), B3/S23 Fragment Rebirth, Gosper Swarm Multiplicity ($M \le 16$), Eater 1 LaSalle Containment |
 
 ---
 
@@ -167,6 +168,16 @@ All standards contained herein are certified clean-room compliant with:
   3. Oscillators (Blinker, Toad, Beacon, Pulsar, Pentadecathlon) Symplectic Phase Conservativity.
   4. Spaceships (Glider, LWSS, MWSS, HWSS) Uniform Velocity Translation.
   5. Gosper Glider Gun ($P=30$) and Turing Equivalence via Glider Logic Gates.
+
+---
+
+### [AUNCIENT-STD-0014-TOMIE-AGENT](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/auncient_tomie_agent_standard.md)
+* **Title**: *Tomie Agent Cellular Proliferation & Soliton Proliferation Standard*
+* **Core Claims**:
+  1. Glider Soliton Isomorphism with uniform velocity $v = c/4$.
+  2. $B3/S23$ Autonomous Fragment Reconstitution from severed DNA seeds.
+  3. Gosper Glider Gun Swarm Multiplicity across $M \le 16$ parallel VM slots.
+  4. Anti-Runaway Eater 1 LaSalle Dynamic Braking Containment ($\Delta \text{Saat}_{\text{loss}} \equiv 0$).
 * **Title**: *Auncient Dysnomia VM & Harvard Computation Laboratory Architecture Modernization Standard*
 * **Core Claims**:
   1. Non-Preferential Linear Flux Integration ($\dot{A} = S_t$) obeying Rule 12.
