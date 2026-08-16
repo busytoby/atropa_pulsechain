@@ -1927,6 +1927,44 @@ bool auncient_glm_zorse_multitask_prover(
     return overall_sound;
 }
 
+/* Formal GLM 2D Positional Encoding Prover for Zorse Implementation */
+bool auncient_glm_zorse_2d_position_prover(
+    uint32_t token_linear_pos,
+    uint32_t division_depth,
+    uint32_t max_tokens_per_division,
+    uint32_t vdso_latency_ns,
+    AuncientGlmZorse2DPosMetrics *metrics_out
+) {
+    if (division_depth > 3 || max_tokens_per_division == 0) {
+        return false;
+    }
+
+    uint32_t pos_1 = division_depth;
+    uint32_t pos_2 = token_linear_pos % max_tokens_per_division;
+    uint32_t reconstructed_pos = (pos_1 * max_tokens_per_division) + pos_2;
+
+    bool depth_ok = (division_depth <= 3);
+    bool bijection_ok = (reconstructed_pos == token_linear_pos);
+    bool vdso_ok = (vdso_latency_ns < 1000);
+    bool overall_sound = depth_ok && bijection_ok && vdso_ok;
+    uint32_t disp_wrap = reconstructed_pos % 256;
+
+    if (metrics_out) {
+        metrics_out->pos_1_inter_division = pos_1;
+        metrics_out->pos_2_intra_division = pos_2;
+        metrics_out->reconstructed_linear_pos = reconstructed_pos;
+        metrics_out->vdso_latency_ns = vdso_latency_ns;
+        metrics_out->displacement_wrap_mod = disp_wrap;
+        metrics_out->division_depth_bounded = depth_ok;
+        metrics_out->positional_bijection_sound = bijection_ok;
+        metrics_out->vdso_latency_gate_passed = vdso_ok;
+        metrics_out->overall_2d_position_sound = overall_sound;
+    }
+
+    return overall_sound;
+}
+
+
 
 
 

@@ -791,6 +791,28 @@ bool auncient_glm_zorse_multitask_prover(
     AuncientGlmZorseMetrics *metrics_out
 );
 
+// GLM 2D Positional Encoding Zorse Prover Metrics
+typedef struct {
+    uint32_t pos_1_inter_division;
+    uint32_t pos_2_intra_division;
+    uint32_t reconstructed_linear_pos;
+    uint32_t vdso_latency_ns;
+    uint32_t displacement_wrap_mod;
+    bool division_depth_bounded;
+    bool positional_bijection_sound;
+    bool vdso_latency_gate_passed;
+    bool overall_2d_position_sound;
+} AuncientGlmZorse2DPosMetrics;
+
+// Formal GLM 2D Positional Encoding Prover for Zorse
+bool auncient_glm_zorse_2d_position_prover(
+    uint32_t token_linear_pos,
+    uint32_t division_depth,
+    uint32_t max_tokens_per_division,
+    uint32_t vdso_latency_ns,
+    AuncientGlmZorse2DPosMetrics *metrics_out
+);
+
 #include "../inc/auncient_motzkin_engine.h"
 
 #endif // AUNCIENT_EDSAC_FIREWALL_H

@@ -230,6 +230,22 @@ int main(void) {
     printf("   ✓ GLM Multi-Task for Zorse verified (Reg=R%u, Infill=%u, DivLen=%zu, VDSO=%uns, DispMod=%u).\n",
            glm_zorse_m.target_reg_idx, glm_zorse_m.infilled_reg_val, glm_zorse_m.division_length_bytes, glm_zorse_m.vdso_latency_ns, glm_zorse_m.displacement_wrap_mod);
 
+    // 16. Test GLM 2D Positional Encoding Prover for Zorse
+    printf("[TEST] Testing GLM 2D Positional Encoding for Zorse (COBOL AST Hierarchy)...\n");
+    AuncientGlmZorse2DPosMetrics glm_pos2d_m = {0};
+    uint32_t test_linear_pos = (2 * 64) + 17; // D2, token 17 (total 145)
+    bool glm_pos2d_ok = auncient_glm_zorse_2d_position_prover(
+        test_linear_pos, 2 /* D2 */, 64 /* tokens per div */, 80 /* ns */, &glm_pos2d_m
+    );
+    assert(glm_pos2d_ok == true && glm_pos2d_m.overall_2d_position_sound == true);
+    assert(glm_pos2d_m.pos_1_inter_division == 2);
+    assert(glm_pos2d_m.pos_2_intra_division == 17);
+    assert(glm_pos2d_m.reconstructed_linear_pos == test_linear_pos);
+    assert(glm_pos2d_m.positional_bijection_sound == true);
+    assert(glm_pos2d_m.vdso_latency_gate_passed == true);
+    printf("   ✓ GLM 2D Positional for Zorse verified (Pos1=D%u, Pos2=%u, Reconstructed=%u, VDSO=%uns, DispMod=%u).\n",
+           glm_pos2d_m.pos_1_inter_division, glm_pos2d_m.pos_2_intra_division, glm_pos2d_m.reconstructed_linear_pos, glm_pos2d_m.vdso_latency_ns, glm_pos2d_m.displacement_wrap_mod);
+
     printf("=============================================================\n");
     printf("ALL EDSAC-AUTODIN COMPILER FIREWALL TESTS PASSED SUCCESSFULLY\n");
     printf("=============================================================\n");
