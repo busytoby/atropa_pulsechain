@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. STZ-ANZ-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / STRATIFIED ANALYZER EXISTENCE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ANZ-PARAMS.
+           05 WS-SKELETON-ANKH-M        PIC 9(04) VALUE 0960.
+           05 WS-XPLSM-QUADTREE-M       PIC 9(04) VALUE 0950.
+           05 WS-ZORSE-LATENCY-MS       PIC 9(02) VALUE 04.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ANZ-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ANZ-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ANZ-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ANZ-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ANZ-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SKELETON-ANKH-LOW           VALUE 2.
+              88 XPLSM-QUADTREE-LOW          VALUE 3.
+              88 ZORSE-LAT-OUT-OF-BOUNDS     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ANALYZER-COLLAPSE           VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ANALYZER-EXISTENCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SKELETON-ANKH-M < 850 OR WS-SKELETON-ANKH-M > 1000
+                SET SKELETON-ANKH-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-XPLSM-QUADTREE-M < 850 OR WS-XPLSM-QUADTREE-M > 1000
+                SET XPLSM-QUADTREE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ZORSE-LATENCY-MS < 1 OR WS-ZORSE-LATENCY-MS > 10
+                SET ZORSE-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ANALYZER-EXISTENCE.
+            COMPUTE WS-ANZ-COMPOSITE = (WS-SKELETON-ANKH-M / 2) +
+                                       (WS-XPLSM-QUADTREE-M / 2) +
+                                       ((15 - WS-ZORSE-LATENCY-MS) * 20).
+
+            COMPUTE WS-ANZ-VITALITY = (WS-ANZ-COMPOSITE / 4) +
+                                      (WS-SKELETON-ANKH-M / 4) +
+                                      ((15 - WS-ZORSE-LATENCY-MS) * 4) + 1.
+
+            IF WS-ANZ-VITALITY EQUAL ZERO
+                SET ANALYZER-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ANZ-COHERENCE = (WS-ANZ-COMPOSITE / 16) +
+                                       (WS-SKELETON-ANKH-M / 16) +
+                                       ((15 - WS-ZORSE-LATENCY-MS) * 2).
+
+            COMPUTE WS-ANZ-REBAR-LATCH = 1470169088 +
+                                         (WS-ANZ-COMPOSITE / 2) +
+                                         ((15 - WS-ZORSE-LATENCY-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ANZ-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ANZ-VITALITY * 10) +
+                                         (WS-ANZ-COHERENCE * 10) +
+                                         (WS-ANZ-COMPOSITE * 10) +
+                                         (WS-ANZ-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ANZ-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ANZ-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

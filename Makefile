@@ -993,6 +993,11 @@ test-shared-attentional-gaze-congruence:
 	./tests/test_shared_attentional_gaze_congruence
 	@rm -f tests/test_shared_attentional_gaze_congruence
 
+test-stratified-analyzer-existence:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_stratified_analyzer_existence.c -o tests/test_stratified_analyzer_existence
+	./tests/test_stratified_analyzer_existence
+	@rm -f tests/test_stratified_analyzer_existence
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
