@@ -398,6 +398,11 @@ test-pareto-model-selection:
 	./tests/test_pareto_model_selection
 	@rm -f tests/test_pareto_model_selection
 
+test-nubia-semantic-similarity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_nubia_semantic_similarity.c -o tests/test_nubia_semantic_similarity
+	./tests/test_nubia_semantic_similarity
+	@rm -f tests/test_nubia_semantic_similarity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
