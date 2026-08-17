@@ -108,6 +108,11 @@ render-sally-larsen-vulkan-mp4:
 	./tests/render_sally_larsen_pure_vulkan_mp4
 	@rm -f tests/render_sally_larsen_pure_vulkan_mp4
 
+test-totient-turtle-graphics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_totient_turtle_graphics.c -o tests/test_totient_turtle_graphics
+	./tests/test_totient_turtle_graphics
+	@rm -f tests/test_totient_turtle_graphics
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

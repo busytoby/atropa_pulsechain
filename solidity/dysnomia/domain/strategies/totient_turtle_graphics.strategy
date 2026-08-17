@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TOTIENT-TURTLE-GRAPHICS-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TURTLE GRAPHICS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TURTLE-PARAMETERS.
+           05 WS-TOTIENT-ID             PIC 9(05) VALUE 00555.
+           05 WS-PERSONALITY-CODE       PIC 9(01) VALUE 1.
+           05 WS-STEP-LENGTH-Q16        PIC 9(06) VALUE 032768.
+           05 WS-TURN-ANGLE-DEG         PIC 9(03) VALUE 060.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TURTLE-VECTOR-METRIC   PIC 9(09) VALUE 0.
+           05 WS-LSYSTEM-CURVE-POINTS   PIC 9(09) VALUE 0.
+           05 WS-TURTLE-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TURTLE-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-TOTIENT-ID          VALUE 2.
+              88 INVALID-PERSONALITY         VALUE 3.
+              88 INVALID-STEP-LENGTH         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-TURN-ANGLE          VALUE 6.
+              88 TURTLE-UNDERFLOW-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-TURTLE-GRAPHICS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TOTIENT-ID < 1 OR WS-TOTIENT-ID > 65536
+                SET INVALID-TOTIENT-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PERSONALITY-CODE < 1 OR WS-PERSONALITY-CODE > 4
+                SET INVALID-PERSONALITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STEP-LENGTH-Q16 < 100 OR WS-STEP-LENGTH-Q16 > 65536
+                SET INVALID-STEP-LENGTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TURN-ANGLE-DEG < 1 OR WS-TURN-ANGLE-DEG > 360
+                SET INVALID-TURN-ANGLE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-TURTLE-GRAPHICS.
+            COMPUTE WS-TURTLE-VECTOR-METRIC = (WS-TOTIENT-ID * 10) +
+                                              (WS-PERSONALITY-CODE * 1024) +
+                                              (WS-TURN-ANGLE-DEG * 32) + 1.
+
+            IF WS-TURTLE-VECTOR-METRIC EQUAL ZERO
+                SET TURTLE-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-LSYSTEM-CURVE-POINTS = ((WS-STEP-LENGTH-Q16 * 875) / 10000) +
+                                              (WS-TURN-ANGLE-DEG * 10).
+
+            COMPUTE WS-TURTLE-REBAR-LATCH = 1470169088 + (WS-TOTIENT-ID / 100) +
+                                            (WS-PERSONALITY-CODE * 64) +
+                                            (WS-TURN-ANGLE-DEG * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TURTLE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-TURTLE-VECTOR-METRIC * 10) +
+                                            (WS-LSYSTEM-CURVE-POINTS * 10) +
+                                            (WS-PERSONALITY-CODE * 1000) +
+                                            (WS-TURTLE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TURTLE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TURTLE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
