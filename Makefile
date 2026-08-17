@@ -1203,6 +1203,11 @@ test-user-expertise-adaptation:
 	./tests/test_user_expertise_adaptation
 	@rm -f tests/test_user_expertise_adaptation
 
+test-visual-trajectory-annotations:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_visual_trajectory_annotations.c -o tests/test_visual_trajectory_annotations
+	./tests/test_visual_trajectory_annotations
+	@rm -f tests/test_visual_trajectory_annotations
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VTA-VIS-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VISUAL TRAJECTORY ANNOTATIONS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VTA-PARAMS.
+           05 WS-RENDER-LAT-MS          PIC 9(02) VALUE 12.
+           05 WS-CONTRAST-FID-M         PIC 9(04) VALUE 0960.
+           05 WS-ALIGN-RAD-M            PIC 9(02) VALUE 04.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VTA-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-VTA-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-VTA-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-VTA-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VTA-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 RENDER-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 CONTRAST-FID-LOW            VALUE 3.
+              88 ALIGN-RAD-EXCEEDED          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 VISUAL-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VISUAL-ANNOTATE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RENDER-LAT-MS < 5 OR WS-RENDER-LAT-MS > 25
+                SET RENDER-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CONTRAST-FID-M < 850 OR WS-CONTRAST-FID-M > 1000
+                SET CONTRAST-FID-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALIGN-RAD-M < 0 OR WS-ALIGN-RAD-M > 10
+                SET ALIGN-RAD-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VISUAL-ANNOTATE.
+            COMPUTE WS-VTA-COMPOSITE = ((30 - WS-RENDER-LAT-MS) * 20) +
+                                       (WS-CONTRAST-FID-M / 2) +
+                                       ((15 - WS-ALIGN-RAD-M) * 20).
+
+            COMPUTE WS-VTA-VITALITY = (WS-VTA-COMPOSITE / 4) +
+                                      (WS-CONTRAST-FID-M / 4) +
+                                      ((30 - WS-RENDER-LAT-MS) * 4) + 1.
+
+            IF WS-VTA-VITALITY EQUAL ZERO
+                SET VISUAL-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VTA-COHERENCE = (WS-VTA-COMPOSITE / 16) +
+                                       (WS-CONTRAST-FID-M / 16) +
+                                       ((30 - WS-RENDER-LAT-MS) * 2).
+
+            COMPUTE WS-VTA-REBAR-LATCH = 1470169088 +
+                                         (WS-VTA-COMPOSITE / 2) +
+                                         ((30 - WS-RENDER-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VTA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-VTA-VITALITY * 10) +
+                                         (WS-VTA-COHERENCE * 10) +
+                                         (WS-VTA-COMPOSITE * 10) +
+                                         (WS-VTA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VTA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VTA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
