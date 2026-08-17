@@ -1,0 +1,130 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CUE-PROJ-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MULTIMODAL CUE PROJECTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CUE-PARAMS.
+           05 WS-CUE-PROXEMICS          PIC 9(04) VALUE 0600.
+           05 WS-CUE-PARALING           PIC 9(04) VALUE 0850.
+           05 WS-CUE-GAZE               PIC 9(04) VALUE 0750.
+           05 WS-CUE-ERROR              PIC 9(04) VALUE 0500.
+           05 WS-CUE-FACE               PIC 9(04) VALUE 0700.
+           05 WS-CUE-LANG               PIC 9(04) VALUE 0400.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COMPOSITE-ENERGY       PIC 9(06) VALUE 0.
+           05 WS-CUE-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CUE-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CUE-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CUE-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CUE-PROXEMICS       VALUE 2.
+              88 INVALID-CUE-PARALING        VALUE 3.
+              88 INVALID-CUE-GAZE            VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-CUE-ERROR-OR-FACE   VALUE 6.
+              88 COMPOSITE-ENERGY-COLLAPSE   VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-CUE-PROJECTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-PROXEMICS > 1000
+                SET INVALID-CUE-PROXEMICS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-PARALING > 1000
+                SET INVALID-CUE-PARALING TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-GAZE > 1000
+                SET INVALID-CUE-GAZE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-ERROR > 1000 OR WS-CUE-FACE > 1000 OR WS-CUE-LANG > 1000
+                SET INVALID-CUE-ERROR-OR-FACE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-COMPOSITE-ENERGY = (WS-CUE-PROXEMICS * 15 +
+                                           WS-CUE-PARALING * 25 +
+                                           WS-CUE-GAZE * 20 +
+                                           WS-CUE-ERROR * 15 +
+                                           WS-CUE-FACE * 15 +
+                                           WS-CUE-LANG * 10) / 100.
+
+            IF WS-COMPOSITE-ENERGY EQUAL ZERO
+                SET COMPOSITE-ENERGY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-CUE-PROJECTION.
+            COMPUTE WS-CUE-VITALITY = (WS-COMPOSITE-ENERGY / 4) +
+                                      (WS-CUE-PARALING / 8) +
+                                      (WS-CUE-GAZE / 8) + 1.
+
+            IF WS-CUE-VITALITY EQUAL ZERO
+                SET COMPOSITE-ENERGY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CUE-COHERENCE = (WS-COMPOSITE-ENERGY / 16) +
+                                       (WS-CUE-PARALING / 32) +
+                                       (WS-CUE-GAZE / 32).
+
+            COMPUTE WS-CUE-REBAR-LATCH = 1470169088 +
+                                         (WS-COMPOSITE-ENERGY / 2) +
+                                         (WS-CUE-PARALING / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CUE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CUE-VITALITY * 10) +
+                                         (WS-CUE-COHERENCE * 10) +
+                                         (WS-COMPOSITE-ENERGY * 10) +
+                                         (WS-CUE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CUE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CUE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

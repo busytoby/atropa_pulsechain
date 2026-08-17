@@ -483,6 +483,11 @@ test-emotional-accumulator-dynamics:
 	./tests/test_emotional_accumulator_dynamics
 	@rm -f tests/test_emotional_accumulator_dynamics
 
+test-multimodal-cue-projection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multimodal_cue_projection.c -o tests/test_multimodal_cue_projection
+	./tests/test_multimodal_cue_projection
+	@rm -f tests/test_multimodal_cue_projection
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
