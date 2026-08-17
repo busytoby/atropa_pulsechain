@@ -1323,6 +1323,11 @@ test-narration-pacing-regulation:
 	./tests/test_narration_pacing_regulation
 	@rm -f tests/test_narration_pacing_regulation
 
+test-bear-clan-mission-assignment:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bear_clan_mission_assignment.c -o tests/test_bear_clan_mission_assignment
+	./tests/test_bear_clan_mission_assignment
+	@rm -f tests/test_bear_clan_mission_assignment
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
