@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. WEYL-EAR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ULTRASONIC EAR CANAL WEYL CLOSURE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-WEYL-PARAMS.
+           05 WS-CANAL-LENGTH-MM        PIC 9(02) VALUE 22.
+           05 WS-SINGULAR-LOCUS-DEG     PIC 9(01) VALUE 2.
+           05 WS-SATURATION-INDEX-M     PIC 9(04) VALUE 0950.
+           05 WS-WEYL-DIMENSION-M       PIC 9(04) VALUE 1000.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-WEYL-COMPOSITE         PIC 9(04) VALUE 0.
+           05 WS-WEYL-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-WEYL-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-WEYL-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-WEYL-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CANAL-LENGTH        VALUE 2.
+              88 INVALID-SINGULAR-LOCUS-DEG  VALUE 3.
+              88 SATURATION-INDEX-LOW        VALUE 4.
+              88 WEYL-DIM-OUT-OF-BOUNDS      VALUE 5.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 6.
+              88 WEYL-VITALITY-COLLAPSE      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-WEYL-CLOSURE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CANAL-LENGTH-MM < 10 OR WS-CANAL-LENGTH-MM > 35
+                SET INVALID-CANAL-LENGTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SINGULAR-LOCUS-DEG < 1 OR WS-SINGULAR-LOCUS-DEG > 4
+                SET INVALID-SINGULAR-LOCUS-DEG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SATURATION-INDEX-M < 700 OR WS-SATURATION-INDEX-M > 1000
+                SET SATURATION-INDEX-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIMENSION-M < 800 OR WS-WEYL-DIMENSION-M > 1200
+                SET WEYL-DIM-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-WEYL-CLOSURE.
+            COMPUTE WS-WEYL-COMPOSITE = (WS-SATURATION-INDEX-M / 2) +
+                                        (WS-WEYL-DIMENSION-M / 2) +
+                                        (WS-SINGULAR-LOCUS-DEG * 50).
+
+            COMPUTE WS-WEYL-VITALITY = (WS-WEYL-COMPOSITE / 4) +
+                                       ((35 - WS-CANAL-LENGTH-MM) * 8) +
+                                       (WS-SINGULAR-LOCUS-DEG * 32) + 1.
+
+            IF WS-WEYL-VITALITY EQUAL ZERO
+                SET WEYL-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-WEYL-COHERENCE = (WS-WEYL-COMPOSITE / 16) +
+                                        ((35 - WS-CANAL-LENGTH-MM) * 2) +
+                                        (WS-SINGULAR-LOCUS-DEG * 8).
+
+            COMPUTE WS-WEYL-REBAR-LATCH = 1470169088 +
+                                          (WS-WEYL-COMPOSITE / 2) +
+                                          (WS-CANAL-LENGTH-MM * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-WEYL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-WEYL-VITALITY * 10) +
+                                          (WS-WEYL-COHERENCE * 10) +
+                                          (WS-WEYL-COMPOSITE * 10) +
+                                          (WS-WEYL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-WEYL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-WEYL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
