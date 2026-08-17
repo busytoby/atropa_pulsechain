@@ -998,6 +998,11 @@ test-stratified-analyzer-existence:
 	./tests/test_stratified_analyzer_existence
 	@rm -f tests/test_stratified_analyzer_existence
 
+test-ankh-zorse-xplsm-skeleton:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_zorse_xplsm_skeleton.c -o tests/test_ankh_zorse_xplsm_skeleton
+	./tests/test_ankh_zorse_xplsm_skeleton
+	@rm -f tests/test_ankh_zorse_xplsm_skeleton
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
