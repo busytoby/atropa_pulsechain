@@ -1523,6 +1523,11 @@ test-adult-learning-scaffolding:
 	./tests/test_adult_learning_scaffolding
 	@rm -f tests/test_adult_learning_scaffolding
 
+test-spatial-balancing-writing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_spatial_balancing_writing.c -o tests/test_spatial_balancing_writing
+	./tests/test_spatial_balancing_writing
+	@rm -f tests/test_spatial_balancing_writing
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
