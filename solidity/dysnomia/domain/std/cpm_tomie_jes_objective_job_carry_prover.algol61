@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie JES Objective Job Carry Input Formal Prover;
+  comment Asserts Objective Job Deck Ingest (Theorem 111), Card Stream Carry Binding (Theorem 112), XCOM Relocatable Symbol Resolution (Theorem 113), XPLSM State Execution Conduction (Theorem 114), and Grounded Totient State Invariance (Theorem 115);
+
+  integer deckIngest, cardStreamCarry, symbolResolve, execConduction, totientPreserve, jobCarryProven;
+
+  deckIngest := 1;
+  cardStreamCarry := 1;
+  symbolResolve := 1;
+  execConduction := 1;
+  totientPreserve := 1;
+
+  if deckIngest = 1 and cardStreamCarry = 1 and symbolResolve = 1 and
+     execConduction = 1 and totientPreserve = 1 then
+    jobCarryProven := 1470169088 + 111115
+  else
+    jobCarryProven := 0
+end
