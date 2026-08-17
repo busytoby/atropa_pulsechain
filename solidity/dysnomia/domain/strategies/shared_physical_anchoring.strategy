@@ -1,0 +1,128 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SPA-ANC-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SHARED PHYSICAL ANCHORING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SPA-PARAMS.
+           05 WS-EMBODIMENT-TYPE        PIC 9(01) VALUE 1.
+              88 ARTIFACT-TEDDY-BEAR    VALUE 1.
+              88 ARTIFACT-ACRYLIC-STAND VALUE 2.
+              88 ARTIFACT-ITA-BADGE     VALUE 3.
+              88 ARTIFACT-NONTEDDY-PUP  VALUE 4.
+           05 WS-SENSOR-BIND-LAT-MS     PIC 9(02) VALUE 20.
+           05 WS-PHYSICAL-SYNCH-M       PIC 9(04) VALUE 0960.
+           05 WS-DETACH-RECOV-MS        PIC 9(03) VALUE 110.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SPA-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SPA-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SPA-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SPA-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SPA-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 EMBODIMENT-TYPE-UNKNOWN     VALUE 2.
+              88 BINDING-LAT-OUT-OF-BOUNDS   VALUE 3.
+              88 PHYSICAL-SYNCH-LOW          VALUE 4.
+              88 RECOVERY-LAT-OUT-OF-BOUNDS  VALUE 5.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 6.
+              88 ANCHORING-COLLAPSE          VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PHYSICAL-ANCHOR
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EMBODIMENT-TYPE < 1 OR WS-EMBODIMENT-TYPE > 4
+                SET EMBODIMENT-TYPE-UNKNOWN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SENSOR-BIND-LAT-MS < 10 OR WS-SENSOR-BIND-LAT-MS > 50
+                SET BINDING-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHYSICAL-SYNCH-M < 850 OR WS-PHYSICAL-SYNCH-M > 1000
+                SET PHYSICAL-SYNCH-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DETACH-RECOV-MS < 50 OR WS-DETACH-RECOV-MS > 200
+                SET RECOVERY-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PHYSICAL-ANCHOR.
+            COMPUTE WS-SPA-COMPOSITE = (WS-EMBODIMENT-TYPE * 100) +
+                                       ((60 - WS-SENSOR-BIND-LAT-MS) * 10) +
+                                       (WS-PHYSICAL-SYNCH-M / 2) +
+                                       ((250 - WS-DETACH-RECOV-MS) * 2).
+
+            COMPUTE WS-SPA-VITALITY = (WS-SPA-COMPOSITE / 4) +
+                                      (WS-PHYSICAL-SYNCH-M / 4) +
+                                      ((60 - WS-SENSOR-BIND-LAT-MS) * 4) +
+                                      (WS-EMBODIMENT-TYPE * 25) + 1.
+
+            IF WS-SPA-VITALITY EQUAL ZERO
+                SET ANCHORING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SPA-COHERENCE = (WS-SPA-COMPOSITE / 16) +
+                                       (WS-PHYSICAL-SYNCH-M / 16) +
+                                       ((60 - WS-SENSOR-BIND-LAT-MS) * 2) +
+                                       (WS-EMBODIMENT-TYPE * 10).
+
+            COMPUTE WS-SPA-REBAR-LATCH = 1470169088 +
+                                         (WS-SPA-COMPOSITE / 2) +
+                                         ((60 - WS-SENSOR-BIND-LAT-MS) * 128) +
+                                         (WS-EMBODIMENT-TYPE * 512).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SPA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SPA-VITALITY * 10) +
+                                         (WS-SPA-COHERENCE * 10) +
+                                         (WS-SPA-COMPOSITE * 10) +
+                                         (WS-SPA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SPA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SPA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

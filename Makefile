@@ -1103,6 +1103,11 @@ test-nonhuman-subject-identity:
 	./tests/test_nonhuman_subject_identity
 	@rm -f tests/test_nonhuman_subject_identity
 
+test-shared-physical-anchoring:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_shared_physical_anchoring.c -o tests/test_shared_physical_anchoring
+	./tests/test_shared_physical_anchoring
+	@rm -f tests/test_shared_physical_anchoring
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
