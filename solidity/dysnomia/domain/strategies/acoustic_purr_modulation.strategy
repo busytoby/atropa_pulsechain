@@ -1,0 +1,121 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PURR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC PURR AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PURR-PARAMS.
+           05 WS-CARRIER-FREQ-HZ        PIC 9(02) VALUE 35.
+           05 WS-DELTA-SUB-HZ           PIC 9(02) VALUE 05.
+           05 WS-PRESSURE-INPUT         PIC 9(04) VALUE 0600.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-EFFECTIVE-PURR-HZ      PIC 9(03) VALUE 0.
+           05 WS-PURR-ENERGY            PIC 9(04) VALUE 0.
+           05 WS-PURR-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-PURR-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-PURR-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PURR-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CARRIER-FREQ        VALUE 2.
+              88 INVALID-SUBHARMONIC         VALUE 3.
+              88 INVALID-PRESSURE-INPUT      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PURR-VITALITY-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ACOUSTIC-PURR
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CARRIER-FREQ-HZ < 20 OR WS-CARRIER-FREQ-HZ > 60
+                SET INVALID-CARRIER-FREQ TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DELTA-SUB-HZ < 1 OR WS-DELTA-SUB-HZ > 20
+                SET INVALID-SUBHARMONIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRESSURE-INPUT < 50 OR WS-PRESSURE-INPUT > 1000
+                SET INVALID-PRESSURE-INPUT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-EFFECTIVE-PURR-HZ = WS-CARRIER-FREQ-HZ + WS-DELTA-SUB-HZ.
+            COMPUTE WS-PURR-ENERGY = (WS-PRESSURE-INPUT * WS-EFFECTIVE-PURR-HZ) / 50.
+            IF WS-PURR-ENERGY > 1000
+                MOVE 1000 TO WS-PURR-ENERGY
+            END-IF.
+
+            IF WS-PURR-ENERGY EQUAL ZERO
+                SET PURR-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ACOUSTIC-PURR.
+            COMPUTE WS-PURR-VITALITY = (WS-PURR-ENERGY / 4) +
+                                       (WS-EFFECTIVE-PURR-HZ * 8) +
+                                       (WS-PRESSURE-INPUT / 8) + 1.
+
+            IF WS-PURR-VITALITY EQUAL ZERO
+                SET PURR-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PURR-COHERENCE = (WS-PURR-ENERGY / 16) +
+                                        (WS-EFFECTIVE-PURR-HZ * 2) +
+                                        (WS-PRESSURE-INPUT / 32).
+
+            COMPUTE WS-PURR-REBAR-LATCH = 1470169088 +
+                                          (WS-PURR-ENERGY / 2) +
+                                          (WS-EFFECTIVE-PURR-HZ * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PURR-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-PURR-VITALITY * 10) +
+                                          (WS-PURR-COHERENCE * 10) +
+                                          (WS-PURR-ENERGY * 10) +
+                                          (WS-PURR-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PURR-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PURR-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

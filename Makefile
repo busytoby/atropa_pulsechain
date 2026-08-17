@@ -608,6 +608,11 @@ test-grand-master-unification-iii:
 	./tests/test_grand_master_unification_iii
 	@rm -f tests/test_grand_master_unification_iii
 
+test-acoustic-purr-modulation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_purr_modulation.c -o tests/test_acoustic_purr_modulation
+	./tests/test_acoustic_purr_modulation
+	@rm -f tests/test_acoustic_purr_modulation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
