@@ -1188,6 +1188,11 @@ test-occlusion-free-camera-orbit:
 	./tests/test_occlusion_free_camera_orbit
 	@rm -f tests/test_occlusion_free_camera_orbit
 
+test-cad-semantic-name-mapping:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cad_semantic_name_mapping.c -o tests/test_cad_semantic_name_mapping
+	./tests/test_cad_semantic_name_mapping
+	@rm -f tests/test_cad_semantic_name_mapping
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
