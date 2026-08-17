@@ -788,6 +788,11 @@ test-acoustic-wavefront-curvature:
 	./tests/test_acoustic_wavefront_curvature
 	@rm -f tests/test_acoustic_wavefront_curvature
 
+test-wavefront-quadtree-discretization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_wavefront_quadtree_discretization.c -o tests/test_wavefront_quadtree_discretization
+	./tests/test_wavefront_quadtree_discretization
+	@rm -f tests/test_wavefront_quadtree_discretization
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
