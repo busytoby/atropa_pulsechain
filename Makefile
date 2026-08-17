@@ -1348,6 +1348,11 @@ test-wmq-mount-coax-kermit:
 	./tests/test_wmq_mount_coax_kermit
 	@rm -f tests/test_wmq_mount_coax_kermit
 
+test-collaborative-turn-taking:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_collaborative_turn_taking.c -o tests/test_collaborative_turn_taking
+	./tests/test_collaborative_turn_taking
+	@rm -f tests/test_collaborative_turn_taking
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
