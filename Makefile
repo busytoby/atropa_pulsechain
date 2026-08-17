@@ -1013,6 +1013,11 @@ test-stanag-wmq-gaze-transport:
 	./tests/test_stanag_wmq_gaze_transport
 	@rm -f tests/test_stanag_wmq_gaze_transport
 
+test-holonomic-weyl-benchmark:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_holonomic_weyl_benchmark.c -o tests/test_holonomic_weyl_benchmark
+	./tests/test_holonomic_weyl_benchmark
+	@rm -f tests/test_holonomic_weyl_benchmark
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
