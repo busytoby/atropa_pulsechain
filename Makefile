@@ -1313,6 +1313,11 @@ test-symmetry-equivalence:
 	./tests/test_symmetry_equivalence
 	@rm -f tests/test_symmetry_equivalence
 
+test-bear-clan-assembly-dispatch:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bear_clan_assembly_dispatch.c -o tests/test_bear_clan_assembly_dispatch
+	./tests/test_bear_clan_assembly_dispatch
+	@rm -f tests/test_bear_clan_assembly_dispatch
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
