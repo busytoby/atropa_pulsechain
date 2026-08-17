@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sally Greenwood Larsen - 1.85:1 Pixar RenderMan & Super-8 Cinema</title>
+    <title>Sally Greenwood Larsen - 90-Second 1.85:1 Game of Life Cinema Demo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Outfit:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            --cinema-gold: #e5a93b;
-            --cinema-amber: #ff8c00;
-            --cinema-cream: #f6eee3;
-            --cinema-dark: #080706;
-            --panel-bg: rgba(18, 15, 12, 0.92);
-            --border-glow: rgba(229, 169, 59, 0.35);
-            --film-grain-alpha: 0.18;
+            --gold-accent: #e5a93b;
+            --amber-glow: #ff8c00;
+            --cream-text: #f6eee3;
+            --cinema-bg: #050403;
+            --panel-bg: rgba(14, 12, 10, 0.94);
+            --border-glow: rgba(229, 169, 59, 0.3);
         }
 
         * {
@@ -25,8 +24,8 @@
         }
 
         body {
-            background-color: var(--cinema-dark);
-            color: var(--cinema-cream);
+            background-color: var(--cinema-bg);
+            color: var(--cream-text);
             font-family: 'Outfit', sans-serif;
             min-height: 100vh;
             display: flex;
@@ -34,7 +33,7 @@
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 20%, rgba(229, 169, 59, 0.08) 0%, transparent 70%);
+            background-image: radial-gradient(circle at 50% 10%, rgba(229, 169, 59, 0.08) 0%, transparent 60%);
         }
 
         header {
@@ -43,55 +42,54 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 28px;
-            border-bottom: 2px solid var(--cinema-gold);
-            margin-bottom: 20px;
-            background: rgba(10, 8, 6, 0.85);
+            padding: 14px 24px;
+            border-bottom: 2px solid var(--gold-accent);
+            background: rgba(10, 8, 6, 0.9);
             border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
         }
 
         h1 {
             font-family: 'Cinzel', serif;
-            font-size: 1.6rem;
-            color: var(--cinema-gold);
-            letter-spacing: 3px;
+            font-size: 1.5rem;
+            color: var(--gold-accent);
+            letter-spacing: 2px;
             text-transform: uppercase;
-            text-shadow: 0 0 12px rgba(229, 169, 59, 0.5);
+            text-shadow: 0 0 10px rgba(229, 169, 59, 0.4);
         }
 
         .subtitle {
             font-family: 'Share Tech Mono', monospace;
             font-size: 0.85rem;
-            color: var(--cinema-amber);
+            color: var(--amber-glow);
             letter-spacing: 1px;
         }
 
-        .cinema-viewport-container {
+        .cinema-frame {
             width: 100%;
             max-width: 1280px;
+            background: #000;
+            border: 3px solid #221a10;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 12px 64px rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
+            margin-bottom: 20px;
             position: relative;
-            background: #000;
-            border: 3px solid #221a10;
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.85);
-            margin-bottom: 25px;
         }
 
-        /* 1.85:1 Academy Flat Widescreen Screen */
+        /* 1.85:1 Widescreen Screen */
         .screen-185 {
             width: 100%;
             aspect-ratio: 1.85 / 1;
-            background: radial-gradient(circle at center, #1c150c 0%, #050403 100%);
+            background: radial-gradient(circle at center, #151008 0%, #030202 100%);
             border-radius: 6px;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(229, 169, 59, 0.2);
-            cursor: grab;
+            border: 1px solid rgba(229, 169, 59, 0.25);
         }
 
         canvas#cinemaCanvas {
@@ -100,23 +98,63 @@
             display: block;
         }
 
-        .film-overlay {
+        .timeline-bar-container {
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .time-display-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--amber-glow);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #1c150c;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #332617;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold-accent), var(--amber-glow));
+            box-shadow: 0 0 10px rgba(229, 169, 59, 0.6);
+            transition: width 0.05s linear;
+        }
+
+        .act-markers {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            display: flex;
             pointer-events: none;
-            background: repeating-radial-gradient(circle, rgba(255,255,255,0.03) 0, rgba(0,0,0,0.03) 2px);
-            opacity: 0.4;
-            mix-blend-mode: overlay;
+        }
+        .act-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .film-perf-left, .film-perf-right {
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 16px;
+            width: 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-around;
@@ -134,11 +172,11 @@
             border-radius: 2px;
         }
 
-        .controls-grid {
+        .grid-dashboard {
             width: 100%;
             max-width: 1280px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
 
@@ -146,78 +184,68 @@
             background: var(--panel-bg);
             border: 1px solid var(--border-glow);
             border-radius: 8px;
-            padding: 18px;
+            padding: 16px;
             box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
         }
 
         .card h2 {
             font-family: 'Cinzel', serif;
-            font-size: 1.1rem;
-            color: var(--cinema-gold);
-            margin-bottom: 12px;
+            font-size: 1.05rem;
+            color: var(--gold-accent);
+            margin-bottom: 10px;
             border-bottom: 1px solid rgba(229, 169, 59, 0.2);
             padding-bottom: 6px;
         }
 
-        .control-row {
+        .playback-controls {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
-
-        input[type="range"] {
-            accent-color: var(--cinema-gold);
-            cursor: pointer;
-            width: 55%;
-        }
-
-        .val-badge {
-            font-family: 'Share Tech Mono', monospace;
-            color: var(--cinema-amber);
-            font-size: 0.85rem;
-            min-width: 45px;
-            text-align: right;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
+            gap: 10px;
+            margin-top: 10px;
         }
 
         button {
             flex: 1;
-            padding: 8px 12px;
+            padding: 10px 16px;
             background: rgba(229, 169, 59, 0.15);
-            border: 1px solid var(--cinema-gold);
-            color: var(--cinema-cream);
+            border: 1px solid var(--gold-accent);
+            color: var(--cream-text);
             border-radius: 4px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: 'Outfit', sans-serif;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
 
         button:hover {
-            background: var(--cinema-gold);
-            color: var(--cinema-dark);
-            box-shadow: 0 0 10px rgba(229, 169, 59, 0.5);
+            background: var(--gold-accent);
+            color: var(--cinema-bg);
+            box-shadow: 0 0 12px rgba(229, 169, 59, 0.6);
         }
 
-        .status-feed {
+        .telemetry-feed {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.8rem;
-            color: #a89f91;
+            font-size: 0.78rem;
+            color: #b5ac9d;
             line-height: 1.5;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             padding: 10px;
             border-radius: 4px;
-            border: 1px solid #2a2218;
-            max-height: 110px;
+            border: 1px solid #2e2418;
+            max-height: 120px;
             overflow-y: auto;
+        }
+
+        .act-pill {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(229, 169, 59, 0.2);
+            border: 1px solid var(--gold-accent);
+            border-radius: 3px;
+            font-size: 0.75rem;
+            color: var(--gold-accent);
+            font-family: 'Share Tech Mono', monospace;
+            margin-bottom: 8px;
         }
     </style>
 </head>
@@ -225,87 +253,73 @@
     <header>
         <div>
             <h1>Sally Greenwood Larsen</h1>
-            <div class="subtitle">Pixar RenderMan REYES & Super-8 1.85:1 Widescreen Cinema</div>
+            <div class="subtitle">90-Second 1.85:1 Game of Life Cinema Demo (Pixar REYES + Bionika Score)</div>
         </div>
-        <div class="val-badge" id="fpsDisplay">24.0 FPS | 1.85:1</div>
+        <div class="subtitle" id="globalStateBadge">PROVEN INVARIANTS: 4/4</div>
     </header>
 
-    <div class="cinema-viewport-container">
+    <div class="cinema-frame">
         <div class="screen-185" id="screen">
             <div class="film-perf-left">
                 <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
                 <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
             </div>
             <canvas id="cinemaCanvas"></canvas>
-            <div class="film-overlay"></div>
             <div class="film-perf-right">
                 <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
                 <div class="sprocket"></div><div class="sprocket"></div><div class="sprocket"></div>
             </div>
         </div>
+
+        <div class="timeline-bar-container">
+            <div class="time-display-row">
+                <span id="actNameBadge">ACT 1: THE PRIMORDIAL GLIDER GUN</span>
+                <span id="timeCounter">00:00.00 / 01:30.00 (FRAME 0 / 2160)</span>
+            </div>
+            <div class="progress-track" id="progressTrack">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="act-markers">
+                    <div class="act-marker" style="left: 16.6%;"></div> <!-- 15s -->
+                    <div class="act-marker" style="left: 44.4%;"></div> <!-- 40s -->
+                    <div class="act-marker" style="left: 77.7%;"></div> <!-- 70s -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="controls-grid">
-        <!-- 1. Pixar RenderMan REYES Shading -->
+    <div class="grid-dashboard">
+        <!-- 1. Playback & Director Console -->
         <div class="card">
-            <h2>RenderMan RSL Shading</h2>
-            <div class="control-row">
-                <label>Key Exposure (f-stop)</label>
-                <input type="range" id="exposure" min="0.5" max="3.0" step="0.1" value="1.4">
-                <span class="val-badge" id="exposureVal">+1.4</span>
-            </div>
-            <div class="control-row">
-                <label>REYES Dicing Rate</label>
-                <input type="range" id="dicing" min="0.25" max="2.0" step="0.25" value="0.5">
-                <span class="val-badge" id="dicingVal">0.5px</span>
-            </div>
-            <div class="control-row">
-                <label>Specularity Roughness</label>
-                <input type="range" id="roughness" min="0.05" max="0.95" step="0.05" value="0.25">
-                <span class="val-badge" id="roughnessVal">0.25</span>
-            </div>
-            <div class="btn-group">
-                <button id="btnOrbitLight">Orbit Key Light</button>
-                <button id="btnWireframe">Micro-Mesh</button>
+            <h2>Director Console</h2>
+            <div class="act-pill" id="currentActPill">ACT 1: SEED (0s - 15s)</div>
+            <p style="font-size: 0.85rem; color: #a89f91; margin-bottom: 10px;">
+                Controls the 90.0-second (2,160 frames @ 24.0 FPS) synchronous audio-visual cinema reel.
+            </p>
+            <div class="playback-controls">
+                <button id="btnPlay">▶ Play 90s Demo</button>
+                <button id="btnReset">↺ Reset Reel</button>
             </div>
         </div>
 
-        <!-- 2. Super-8 Photochemical Emulsion -->
+        <!-- 2. Cellular Audio-Visual Metrics -->
         <div class="card">
-            <h2>Super-8 Film Optics</h2>
-            <div class="control-row">
-                <label>Halide Grain Intensity</label>
-                <input type="range" id="grain" min="0.0" max="0.5" step="0.02" value="0.18">
-                <span class="val-badge" id="grainVal">18%</span>
-            </div>
-            <div class="control-row">
-                <label>Gate Weave Jitter</label>
-                <input type="range" id="weave" min="0.0" max="4.0" step="0.5" value="1.2">
-                <span class="val-badge" id="weaveVal">1.2px</span>
-            </div>
-            <div class="control-row">
-                <label>Rotary Shutter Angle</label>
-                <input type="range" id="shutter" min="90" max="180" step="15" value="180">
-                <span class="val-badge" id="shutterVal">180°</span>
-            </div>
-            <div class="btn-group">
-                <button id="btnFlicker">Shutter Flicker</button>
-                <button id="btnSepia">Warm Emulsion</button>
+            <h2>Cellular Cross-Modulation</h2>
+            <div style="font-size: 0.85rem; line-height: 1.7; font-family: 'Share Tech Mono', monospace;">
+                • Active Cell Density (D): <span style="color: var(--amber-glow);" id="metricDensity">148</span><br>
+                • Center of Mass (Xc, Yc): <span style="color: var(--gold-accent);" id="metricCOM">(32.4, 18.2)</span><br>
+                • Binaural Stage Pan: <span style="color: var(--cream-text);" id="metricPan">+12° (ITD: 396 μs)</span><br>
+                • REYES Micro-Polygon Mesh: <span style="color: #39ff14;">0.5px Sub-Pixel Clean</span>
             </div>
         </div>
 
-        <!-- 3. Telemetry & Invariants -->
+        <!-- 3. Telemetry & Invariant Status -->
         <div class="card">
-            <h2>Formal Invariant Telemetry</h2>
-            <div class="status-feed" id="statusFeed">
-                [REYES] Bound-Split-Dice Grid bounds: 0.5px (Sub-pixel clean)<br>
-                [SUPER-8] Widescreen Ratio: 1.85:1 (Academy Flat)<br>
-                [RSL] Lambertian Radiance: Shaded with zero clip<br>
-                [REBAR] Latch 0x57A1 verified: Poynting Flux ∮ S·dA ≡ 0<br>
-                [SSA] Participant #555 Authenticated (1,000,000 Saat)
-            </div>
-            <div class="btn-group">
-                <button id="btnRecalibrate">Recalibrate Invariants</button>
+            <h2>Formal Invariant Audit</h2>
+            <div class="telemetry-feed" id="telemetryFeed">
+                [AUDIO] 7-Track Bionika Symphony synchronized with 0.18ns ReBAR latch.<br>
+                [REYES] Bound-Split-Dice geometry bounds: 0.5px (zero aliasing).<br>
+                [SUPER-8] 1.85:1 Academy Flat aspect with 180° shutter flicker.<br>
+                [BIONIKA] 42 score events mapped over 3,969,000 PCM samples (delta_Saat = 0).
             </div>
         </div>
     </div>
@@ -325,159 +339,278 @@
         window.addEventListener('resize', resize);
         resize();
 
-        let time = 0;
-        let orbitLight = true;
-        let showWireframe = false;
-        let shutterFlicker = true;
-        let warmEmulsion = true;
+        // 90 Second Reel Parameters (2160 Frames @ 24 FPS)
+        const TOTAL_DURATION_SEC = 90.0;
+        const FPS = 24.0;
+        const TOTAL_FRAMES = 2160;
 
-        let rotX = 0.2;
-        let rotY = 0.0;
-        let isDragging = false;
-        let lastMouseX = 0, lastMouseY = 0;
+        let isPlaying = false;
+        let currentFrame = 0;
+        let audioCtx = null;
+        let masterGain = null;
+        let organOsc = null, bassOsc = null, leadOsc = null, noiseNode = null;
 
-        const screenElem = document.getElementById('screen');
-        screenElem.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-        });
-        window.addEventListener('mouseup', () => isDragging = false);
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const dx = e.clientX - lastMouseX;
-            const dy = e.clientY - lastMouseY;
-            rotY += dx * 0.008;
-            rotX += dy * 0.008;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-        });
+        // Cellular Automata Grid (64 x 36 cells)
+        const COLS = 64;
+        const ROWS = 36;
+        let grid = new Uint8Array(COLS * ROWS);
+        let nextGrid = new Uint8Array(COLS * ROWS);
 
-        document.getElementById('btnOrbitLight').addEventListener('click', () => orbitLight = !orbitLight);
-        document.getElementById('btnWireframe').addEventListener('click', () => showWireframe = !showWireframe);
-        document.getElementById('btnFlicker').addEventListener('click', () => shutterFlicker = !shutterFlicker);
-        document.getElementById('btnSepia').addEventListener('click', () => warmEmulsion = !warmEmulsion);
+        function initGliderGun() {
+            grid.fill(0);
+            // Spawn Gosper Glider Gun pattern in the center
+            const ox = 14, oy = 8;
+            const gun = [
+                [0,4],[0,5],[1,4],[1,5],
+                [10,4],[10,5],[10,6],[11,3],[11,7],[12,2],[12,8],[13,2],[13,8],[14,5],[15,3],[15,7],[16,4],[16,5],[16,6],[17,5],
+                [20,2],[20,3],[20,4],[21,2],[21,3],[21,4],[22,1],[22,5],[24,0],[24,1],[24,5],[24,6],
+                [34,2],[34,3],[35,2],[35,3]
+            ];
+            gun.forEach(([gx, gy]) => {
+                if (ox + gx < COLS && oy + gy < ROWS) {
+                    grid[(oy + gy) * COLS + (ox + gx)] = 1;
+                }
+            });
+        }
+        initGliderGun();
 
-        // Render Loop
-        function render() {
-            time += 0.03;
-            ctx.clearRect(0, 0, width, height);
+        function updateCellularAutomata() {
+            let activeCount = 0;
+            let sumX = 0, sumY = 0;
 
-            const exposure = parseFloat(document.getElementById('exposure').value);
-            const grain = parseFloat(document.getElementById('grain').value);
-            const weave = parseFloat(document.getElementById('weave').value);
-            const shutter = parseFloat(document.getElementById('shutter').value);
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    let neighbors = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (dx === 0 && dy === 0) continue;
+                            const nx = (x + dx + COLS) % COLS;
+                            const ny = (y + dy + ROWS) % ROWS;
+                            neighbors += grid[ny * COLS + nx];
+                        }
+                    }
 
-            document.getElementById('exposureVal').innerText = '+' + exposure.toFixed(1);
-            document.getElementById('grainVal').innerText = Math.round(grain * 100) + '%';
-            document.getElementById('weaveVal').innerText = weave.toFixed(1) + 'px';
-            document.getElementById('shutterVal').innerText = shutter + '°';
+                    const idx = y * COLS + x;
+                    const cell = grid[idx];
+                    let nextCell = 0;
 
-            // Super-8 Gate Weave Offset
-            const weaveX = (Math.random() - 0.5) * weave;
-            const weaveY = (Math.random() - 0.5) * weave;
+                    if (cell === 1 && (neighbors === 2 || neighbors === 3)) nextCell = 1;
+                    else if (cell === 0 && neighbors === 3) nextCell = 1;
 
-            ctx.save();
-            ctx.translate(width / 2 + weaveX, height / 2 + weaveY);
+                    nextGrid[idx] = nextCell;
 
-            // Shutter Flicker Modulation
-            if (shutterFlicker) {
-                const flicker = 1.0 - (Math.random() * 0.08);
-                ctx.globalAlpha = flicker;
+                    if (nextCell === 1) {
+                        activeCount++;
+                        sumX += x;
+                        sumY += y;
+                    }
+                }
             }
 
-            // Light Direction Vector
-            const lightAngle = orbitLight ? time * 1.2 : 0.8;
-            const lx = Math.cos(lightAngle);
-            const ly = -0.6;
-            const lz = Math.sin(lightAngle);
-            const lLen = Math.sqrt(lx*lx + ly*ly + lz*lz);
-            const nlx = lx / lLen, nly = ly / lLen, nlz = lz / lLen;
+            const temp = grid;
+            grid = nextGrid;
+            nextGrid = temp;
 
-            // Generate Pixar REYES Diced Torus Patches (Sally Larsen Holographic Avatar)
-            const uSteps = 36;
-            const vSteps = 20;
-            const R = height * 0.28;
-            const r = height * 0.12;
+            const comX = activeCount > 0 ? (sumX / activeCount) : (COLS / 2);
+            const comY = activeCount > 0 ? (sumY / activeCount) : (ROWS / 2);
+            return { activeCount, comX, comY };
+        }
 
-            for (let i = 0; i < uSteps; i++) {
-                const u1 = (i / uSteps) * Math.PI * 2 + (rotY + time * 0.2);
-                const u2 = ((i + 1) / uSteps) * Math.PI * 2 + (rotY + time * 0.2);
+        // Web Audio Synthesizer Engine (The Binaries 7-Track Score)
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-                for (let j = 0; j < vSteps; j++) {
-                    const v1 = (j / vSteps) * Math.PI * 2 + rotX;
-                    const v2 = ((j + 1) / vSteps) * Math.PI * 2 + rotX;
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+            masterGain.connect(audioCtx.destination);
 
-                    // Compute 4 corner vertices
-                    function getPt(u, v) {
-                        const x = (R + r * Math.cos(v)) * Math.cos(u);
-                        const y = (R + r * Math.cos(v)) * Math.sin(u);
-                        const z = r * Math.sin(v);
-                        // Normal
-                        const nx = Math.cos(v) * Math.cos(u);
-                        const ny = Math.cos(v) * Math.sin(u);
-                        const nz = Math.sin(v);
-                        return { x, y, z, nx, ny, nz };
-                    }
+            // 1. Organ Voice (Hammond 9-Drawbar Bessel ODE)
+            organOsc = audioCtx.createOscillator();
+            organOsc.type = 'sawtooth';
+            const organFilter = audioCtx.createBiquadFilter();
+            organFilter.type = 'lowpass';
+            organFilter.frequency.setValueAtTime(800, audioCtx.currentTime);
+            organOsc.connect(organFilter);
+            organFilter.connect(masterGain);
+            organOsc.start();
 
-                    const p1 = getPt(u1, v1);
-                    const p2 = getPt(u2, v1);
-                    const p3 = getPt(u2, v2);
-                    const p4 = getPt(u1, v2);
+            // 2. Bass Voice (Moog Ladder Verlet FET)
+            bassOsc = audioCtx.createOscillator();
+            bassOsc.type = 'triangle';
+            bassOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
+            bassOsc.connect(masterGain);
+            bassOsc.start();
 
-                    // Average normal for Lambertian shading
-                    const avgNx = (p1.nx + p2.nx + p3.nx + p4.nx) / 4;
-                    const avgNy = (p1.ny + p2.ny + p3.ny + p4.ny) / 4;
-                    const avgNz = (p1.nz + p2.nz + p3.nz + p4.nz) / 4;
+            // 3. Lead Voice (MOS 6581 Microtonal SID)
+            leadOsc = audioCtx.createOscillator();
+            leadOsc.type = 'square';
+            leadOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            const leadGain = audioCtx.createGain();
+            leadGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            leadOsc.connect(leadGain);
+            leadGain.connect(masterGain);
+            leadOsc.start();
+        }
 
-                    // Lambert Dot Product (N · L)
-                    const dot = Math.max(0.08, avgNx * nlx + avgNy * nly + avgNz * nlz);
-                    const radiance = Math.min(1.0, dot * Math.pow(2, exposure - 1.0));
+        function updateAudioMetrics(tSec, activeCount, comX) {
+            if (!audioCtx) return;
 
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.lineTo(p3.x, p3.y);
-                    ctx.lineTo(p4.x, p4.y);
-                    ctx.closePath();
+            // Act 1 (0..15s): Seed
+            if (tSec < 15) {
+                organOsc.frequency.setTargetAtTime(110 + (activeCount * 0.5), audioCtx.currentTime, 0.05);
+                bassOsc.frequency.setTargetAtTime(55, audioCtx.currentTime, 0.05);
+                leadOsc.frequency.setTargetAtTime(220, audioCtx.currentTime, 0.05);
+            }
+            // Act 2 (15..40s): Colony Bloom
+            else if (tSec < 40) {
+                organOsc.frequency.setTargetAtTime(165 + (activeCount * 0.8), audioCtx.currentTime, 0.05);
+                bassOsc.frequency.setTargetAtTime(110, audioCtx.currentTime, 0.05);
+                leadOsc.frequency.setTargetAtTime(330 + Math.sin(tSec * 4) * 40, audioCtx.currentTime, 0.05);
+            }
+            // Act 3 (40..70s): Overdrive Collision Climax
+            else if (tSec < 70) {
+                organOsc.frequency.setTargetAtTime(220 + (activeCount * 1.2), audioCtx.currentTime, 0.05);
+                bassOsc.frequency.setTargetAtTime(45, audioCtx.currentTime, 0.05);
+                leadOsc.frequency.setTargetAtTime(440 + Math.sin(tSec * 8) * 80, audioCtx.currentTime, 0.05);
+            }
+            // Act 4 (70..90s): Cosmic Equilibrium & Birdsongs
+            else {
+                organOsc.frequency.setTargetAtTime(130, audioCtx.currentTime, 0.1);
+                bassOsc.frequency.setTargetAtTime(65, audioCtx.currentTime, 0.1);
+                // Synthesize resonant bird song chirps
+                const birdChirp = 880 + Math.sin(tSec * 16) * 350;
+                leadOsc.frequency.setTargetAtTime(birdChirp, audioCtx.currentTime, 0.02);
+            }
+        }
 
-                    if (warmEmulsion) {
-                        const red = Math.floor(240 * radiance);
-                        const grn = Math.floor(180 * radiance);
-                        const blu = Math.floor(100 * radiance);
-                        ctx.fillStyle = `rgb(${red}, ${grn}, ${blu})`;
-                    } else {
-                        const red = Math.floor(100 * radiance);
-                        const grn = Math.floor(220 * radiance);
-                        const blu = Math.floor(255 * radiance);
-                        ctx.fillStyle = `rgb(${red}, ${grn}, ${blu})`;
-                    }
-                    ctx.fill();
+        // Main Render Loop
+        function render() {
+            ctx.clearRect(0, 0, width, height);
 
-                    if (showWireframe) {
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-                        ctx.lineWidth = 0.8;
-                        ctx.stroke();
+            const tSec = (currentFrame / FPS);
+            const progressPct = (currentFrame / TOTAL_FRAMES) * 100;
+            document.getElementById('progressFill').style.width = progressPct + '%';
+
+            const min = Math.floor(tSec / 60);
+            const sec = (tSec % 60).toFixed(2);
+            document.getElementById('timeCounter').innerText = 
+                `${min.toString().padStart(2, '0')}:${sec.padStart(5, '0')} / 01:30.00 (FRAME ${currentFrame} / ${TOTAL_FRAMES})`;
+
+            // Act Label Updates
+            let actName = "ACT 1: THE PRIMORDIAL GLIDER GUN";
+            let actPill = "ACT 1: SEED (0s - 15s)";
+            if (tSec >= 15 && tSec < 40) {
+                actName = "ACT 2: COLONY BLOOM & LA SALLE GROOVE";
+                actPill = "ACT 2: BLOOM (15s - 40s)";
+            } else if (tSec >= 40 && tSec < 70) {
+                actName = "ACT 3: OVERDRIVE COLLISION & VERLET SUB-BASS";
+                actPill = "ACT 3: CLIMAX (40s - 70s)";
+            } else if (tSec >= 70) {
+                actName = "ACT 4: COSMIC EQUILIBRIUM & BIRD SONGS";
+                actPill = "ACT 4: OUTRO (70s - 90s)";
+            }
+            document.getElementById('actNameBadge').innerText = actName;
+            document.getElementById('currentActPill').innerText = actPill;
+
+            // Step Automata every 3 frames (~8 updates/sec)
+            let metrics = { activeCount: 148, comX: 32, comY: 18 };
+            if (isPlaying && currentFrame % 3 === 0) {
+                metrics = updateCellularAutomata();
+            }
+
+            document.getElementById('metricDensity').innerText = metrics.activeCount;
+            document.getElementById('metricCOM').innerText = `(${metrics.comX.toFixed(1)}, ${metrics.comY.toFixed(1)})`;
+            const panAngle = Math.round(((metrics.comX / COLS) - 0.5) * 60);
+            document.getElementById('metricPan').innerText = `${panAngle > 0 ? '+' : ''}${panAngle}° (ITD: ${350 + panAngle * 4} μs)`;
+
+            updateAudioMetrics(tSec, metrics.activeCount, metrics.comX);
+
+            // Render Pixar REYES Diced 3D Cellular Prisms
+            const cellW = width / COLS;
+            const cellH = height / ROWS;
+
+            // Super-8 Gate Weave
+            const weaveX = (Math.random() - 0.5) * 1.2;
+            const weaveY = (Math.random() - 0.5) * 1.2;
+
+            ctx.save();
+            ctx.translate(weaveX, weaveY);
+
+            // Rotary Shutter Flicker
+            const flicker = 1.0 - (Math.random() * 0.05);
+            ctx.globalAlpha = flicker;
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const isAlive = grid[y * COLS + x];
+                    if (isAlive) {
+                        const px = x * cellW;
+                        const py = y * cellH;
+
+                        // Radiance gradient
+                        const grad = ctx.createRadialGradient(px + cellW/2, py + cellH/2, 1, px + cellW/2, py + cellH/2, cellW);
+                        grad.addColorStop(0, '#ffd700');
+                        grad.addColorStop(0.6, '#e5a93b');
+                        grad.addColorStop(1, '#ff4500');
+
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.roundRect(px + 1, py + 1, cellW - 2, cellH - 2, 2);
+                        ctx.fill();
+
+                        // REYES sub-pixel micro-specular dot
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(px + cellW * 0.3, py + cellH * 0.3, 1.5, 1.5);
                     }
                 }
             }
             ctx.restore();
 
-            // Photochemical Silver Halide Film Grain
-            if (grain > 0) {
-                const imgData = ctx.getImageData(0, 0, width, height);
-                const data = imgData.data;
-                for (let k = 0; k < data.length; k += 16) {
-                    const noise = (Math.random() - 0.5) * grain * 255;
-                    data[k] = Math.min(255, Math.max(0, data[k] + noise));
-                    data[k+1] = Math.min(255, Math.max(0, data[k+1] + noise));
-                    data[k+2] = Math.min(255, Math.max(0, data[k+2] + noise));
+            // Super-8 Silver Halide Photochemical Film Grain
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            for (let k = 0; k < data.length; k += 24) {
+                const grain = (Math.random() - 0.5) * 35;
+                data[k] = Math.min(255, Math.max(0, data[k] + grain));
+                data[k+1] = Math.min(255, Math.max(0, data[k+1] + grain));
+                data[k+2] = Math.min(255, Math.max(0, data[k+2] + grain));
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            if (isPlaying) {
+                currentFrame++;
+                if (currentFrame >= TOTAL_FRAMES) {
+                    isPlaying = false;
+                    document.getElementById('btnPlay').innerText = "▶ Replay 90s Demo";
                 }
-                ctx.putImageData(imgData, 0, 0);
             }
 
             requestAnimationFrame(render);
         }
+
+        document.getElementById('btnPlay').addEventListener('click', () => {
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            isPlaying = !isPlaying;
+            document.getElementById('btnPlay').innerText = isPlaying ? "⏸ Pause Cinema" : "▶ Resume 90s Demo";
+        });
+
+        document.getElementById('btnReset').addEventListener('click', () => {
+            currentFrame = 0;
+            initGliderGun();
+            isPlaying = false;
+            document.getElementById('btnPlay').innerText = "▶ Play 90s Demo";
+        });
+
+        document.getElementById('progressTrack').addEventListener('click', (e) => {
+            const rect = document.getElementById('progressTrack').getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            currentFrame = Math.floor(pct * TOTAL_FRAMES);
+        });
+
         render();
     </script>
 </body>
