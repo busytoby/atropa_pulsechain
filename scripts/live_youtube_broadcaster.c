@@ -1,12 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Live YouTube Stream Broadcaster & Continuous Formal Proof Telemetry Engine
+ * High-Reliability Live YouTube Stream Broadcaster & Continuous Telemetry Engine
  * 
- * Streams real-time animated Kinematronic ClayScaped Bear Clan 3D rendering,
- * live telemetry HUD (displaying ratified formal proofs from ACM DIS '26),
- * and synchronized Bionika synthesizer music directly to YouTube RTMP.
+ * Features:
+ * 1. Paced Real-Time Wall-Clock Synchronizer (clock_gettime nanosleep) to maintain strict 30.0 FPS.
+ * 2. Continuous Phase-Accumulator Synthesizer for clickless, high-fidelity Bionika audio.
+ * 3. YouTube-Optimized RTMP muxer flags (flvflags no_duration_filesize, strict CBR, 2.0s keyframe cadence).
+ * 4. Automatic reconnection loop upon any network hiccup or pipe reset.
  */
 
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -14,10 +17,12 @@
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #define WIDTH 1280
 #define HEIGHT 720
 #define FPS 30
+#define FRAME_TIME_NS (1000000000L / FPS)
 #define SAMPLE_RATE 44100
 #define SAMPLES_PER_FRAME (SAMPLE_RATE / FPS)
 
@@ -31,6 +36,12 @@ typedef struct {
 
 static pixel_t framebuffer[WIDTH * HEIGHT];
 static int16_t audio_buffer[SAMPLES_PER_FRAME * 2];
+
+// Synthesizer Continuous Phase Accumulators
+static double bass_phase = 0.0;
+static double lead_phase = 0.0;
+static double l_5th_phase = 0.0;
+static double filter_prev = 0.0;
 
 static void clear_buffer(uint8_t r, uint8_t g, uint8_t b) {
     for (int i = 0; i < WIDTH * HEIGHT; i++) {
@@ -131,7 +142,7 @@ static float note_to_freq(const char *note) {
     return 0.0f;
 }
 
-static void generate_bionika_audio_frame(int frame, int16_t *stereo_out) {
+static void generate_smooth_bionika_audio(int frame, int16_t *stereo_out) {
     float bpm = 109.6f;
     float step_sec = (60.0f / bpm) / 4.0f;
     
@@ -161,61 +172,78 @@ static void generate_bionika_audio_frame(int frame, int16_t *stereo_out) {
     };
 
     for (int s = 0; s < SAMPLES_PER_FRAME; s++) {
-        float t = (frame * SAMPLES_PER_FRAME + s) / (float)SAMPLE_RATE;
+        float t = (float)(frame * SAMPLES_PER_FRAME + s) / (float)SAMPLE_RATE;
         int step = (int)(t / step_sec) % 32;
         float step_progress = fmodf(t, step_sec) / step_sec;
 
+        // Bass with Continuous Phase Accumulator
         float b_freq = note_to_freq(bass_notes[step]);
-        float b_env = expf(-step_progress * (bass_accents[step] ? 3.5f : 6.0f));
-        float b_saw = 2.0f * fmodf(t * b_freq, 1.0f) - 1.0f;
-        float b_pulse = (fmodf(t * b_freq * 0.5f, 1.0f) < 0.4f) ? 1.0f : -1.0f;
-        float bass_sample = (0.6f * b_saw + 0.4f * b_pulse) * b_env * (bass_accents[step] ? 0.8f : 0.45f);
+        bass_phase += (double)b_freq / (double)SAMPLE_RATE;
+        if (bass_phase >= 1.0) bass_phase -= 1.0;
 
+        float b_saw = 2.0f * (float)bass_phase - 1.0f;
+        float b_pulse = (bass_phase < 0.45) ? 1.0f : -1.0f;
+        float b_env = expf(-step_progress * (bass_accents[step] ? 3.5f : 6.0f));
+        float raw_bass = (0.55f * b_saw + 0.45f * b_pulse) * b_env * (bass_accents[step] ? 0.75f : 0.45f);
+
+        // Low-pass filter for smooth analog feel
+        filter_prev = filter_prev + 0.25 * ((double)raw_bass - filter_prev);
+        float bass_sample = (float)filter_prev;
+
+        // Lead with Continuous Phase Accumulator
         float lead_sample = 0.0f;
         if (strlen(lead_notes[step]) > 0) {
             float l_freq = note_to_freq(lead_notes[step]);
-            float l_env = expf(-step_progress * 4.0f);
-            float l_saw = 2.0f * fmodf(t * l_freq, 1.0f) - 1.0f;
-            float l_5th = sinf(2.0f * (float)M_PI * l_freq * 1.5f * t);
+            lead_phase += (double)l_freq / (double)SAMPLE_RATE;
+            if (lead_phase >= 1.0) lead_phase -= 1.0;
+
+            l_5th_phase += ((double)l_freq * 1.5) / (double)SAMPLE_RATE;
+            if (l_5th_phase >= 1.0) l_5th_phase -= 1.0;
+
+            float l_saw = 2.0f * (float)lead_phase - 1.0f;
+            float l_5th = sinf(2.0f * (float)M_PI * (float)l_5th_phase);
+            float l_env = expf(-step_progress * 4.2f);
             float l_raw = 0.7f * l_saw + 0.3f * l_5th;
-            lead_sample = tanhf(l_raw * 2.2f) * l_env * 0.65f;
+            lead_sample = tanhf(l_raw * 2.0f) * l_env * 0.6f;
         }
 
+        // Drums (Continuous Pitch Envelope Kick + Filtered Snare)
         float kick_sample = 0.0f;
         if (drum_kick[step]) {
             float k_env = expf(-step_progress * 18.0f);
-            float k_freq = 140.0f * expf(-step_progress * 24.0f) + 45.0f;
-            kick_sample = sinf(2.0f * (float)M_PI * k_freq * step_progress * step_sec) * k_env * 0.9f;
+            float k_freq = 135.0f * expf(-step_progress * 24.0f) + 48.0f;
+            kick_sample = sinf(2.0f * (float)M_PI * k_freq * step_progress * step_sec) * k_env * 0.85f;
         }
 
         float snare_sample = 0.0f;
         if (drum_snare[step]) {
             float sn_env = expf(-step_progress * 14.0f);
             float noise = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
-            snare_sample = (noise * 0.7f + sinf(2.0f * (float)M_PI * 220.0f * step_progress * step_sec) * 0.3f) * sn_env * 0.75f;
+            snare_sample = (noise * 0.7f + sinf(2.0f * (float)M_PI * 220.0f * step_progress * step_sec) * 0.3f) * sn_env * 0.7f;
         }
 
-        float hh_sample = (((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f) * expf(-step_progress * 30.0f) * 0.18f;
+        float hh_sample = (((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f) * expf(-step_progress * 30.0f) * 0.15f;
 
-        float mix_left = bass_sample * 0.7f + lead_sample * 0.85f + kick_sample * 0.8f + snare_sample * 0.7f + hh_sample * 0.5f;
-        float mix_right = bass_sample * 0.7f + lead_sample * 0.75f + kick_sample * 0.8f + snare_sample * 0.7f + hh_sample * 0.6f;
+        float mix_left = bass_sample * 0.65f + lead_sample * 0.8f + kick_sample * 0.75f + snare_sample * 0.65f + hh_sample * 0.45f;
+        float mix_right = bass_sample * 0.65f + lead_sample * 0.72f + kick_sample * 0.75f + snare_sample * 0.65f + hh_sample * 0.55f;
 
-        if (mix_left > 0.98f) mix_left = 0.98f;
-        if (mix_left < -0.98f) mix_left = -0.98f;
-        if (mix_right > 0.98f) mix_right = 0.98f;
-        if (mix_right < -0.98f) mix_right = -0.98f;
+        // Limiter
+        if (mix_left > 0.95f) mix_left = 0.95f;
+        if (mix_left < -0.95f) mix_left = -0.95f;
+        if (mix_right > 0.95f) mix_right = 0.95f;
+        if (mix_right < -0.95f) mix_right = -0.95f;
 
-        stereo_out[s * 2] = (int16_t)(mix_left * 32000.0f);
-        stereo_out[s * 2 + 1] = (int16_t)(mix_right * 32000.0f);
+        stereo_out[s * 2] = (int16_t)(mix_left * 30000.0f);
+        stereo_out[s * 2 + 1] = (int16_t)(mix_right * 30000.0f);
     }
 }
 
 static void render_live_stream_frame(int frame) {
     float t = (float)frame / (float)FPS;
-    clear_buffer(12, 16, 24);
+    clear_buffer(12, 16, 26);
 
-    float yaw = t * 0.45f;
-    float pitch = 0.22f + 0.08f * sinf(t * 0.6f);
+    float yaw = t * 0.35f;
+    float pitch = 0.20f + 0.08f * sinf(t * 0.5f);
     float cam_z = 4.2f;
 
     // Grid Floor
@@ -224,14 +252,14 @@ static void render_live_stream_frame(int frame) {
         vec3_t p2 = { (float)gx * 0.4f, -1.8f,  2.0f };
         screen_pt_t sp1 = project_point(p1, yaw, pitch, cam_z);
         screen_pt_t sp2 = project_point(p2, yaw, pitch, cam_z);
-        draw_line(sp1.u, sp1.v, sp2.u, sp2.v, 25, 40, 65);
+        draw_line(sp1.u, sp1.v, sp2.u, sp2.v, 28, 42, 68);
     }
     for (int gz = -5; gz <= 5; gz++) {
         vec3_t p1 = { -2.0f, -1.8f, (float)gz * 0.4f };
         vec3_t p2 = {  2.0f, -1.8f, (float)gz * 0.4f };
         screen_pt_t sp1 = project_point(p1, yaw, pitch, cam_z);
         screen_pt_t sp2 = project_point(p2, yaw, pitch, cam_z);
-        draw_line(sp1.u, sp1.v, sp2.u, sp2.v, 25, 40, 65);
+        draw_line(sp1.u, sp1.v, sp2.u, sp2.v, 28, 42, 68);
     }
 
     // Torso Slices (Terracotta / Glazed Gold)
@@ -257,7 +285,7 @@ static void render_live_stream_frame(int frame) {
     draw_3d_ring(right_ear, 0.18f, yaw, pitch, cam_z, 245, 185, 75, 16);
 
     // Arms & Dynamic Kinematic Wave
-    float wave_angle = sinf(t * 8.0f) * 0.5f + 0.3f;
+    float wave_angle = sinf(t * 7.0f) * 0.5f + 0.3f;
     vec3_t left_shoulder = { -0.55f, 0.0f, 0.0f };
     vec3_t left_hand = { -0.85f, -0.6f + wave_angle * 0.8f, 0.3f + wave_angle * 0.4f };
     vec3_t right_shoulder = { 0.55f, 0.0f, 0.0f };
@@ -274,7 +302,7 @@ static void render_live_stream_frame(int frame) {
     draw_3d_ring(right_hand, 0.12f, yaw, pitch, cam_z, 255, 230, 100, 12);
 
     // Legs & Dynamic Kinematic Walk
-    float walk_step = sinf(t * 6.0f) * 0.25f;
+    float walk_step = sinf(t * 5.5f) * 0.25f;
     vec3_t left_hip = { -0.3f, -1.2f, 0.0f };
     vec3_t left_foot = { -0.35f, -1.75f, 0.2f + walk_step };
     vec3_t right_hip = { 0.3f, -1.2f, 0.0f };
@@ -322,48 +350,73 @@ int main(int argc, char **argv) {
     snprintf(rtmp_url, sizeof(rtmp_url), "rtmp://a.rtmp.youtube.com/live2/%s", stream_key);
 
     printf("=============================================================\n");
-    printf("LAUNCHING TSFI2 LIVE BROADCASTER TO YOUTUBE LIVE             \n");
+    printf("LAUNCHING HIGH-STABILITY TSFI2 BROADCASTER TO YOUTUBE LIVE   \n");
     printf("=============================================================\n");
     printf("RTMP Endpoint : %s\n", rtmp_url);
-    printf("Resolution    : %dx%d @ %d fps\n", WIDTH, HEIGHT, FPS);
-    printf("Audio Score   : Eye of the Tiger (Bionika Synth)\n");
+    printf("Resolution    : %dx%d @ %d fps (Wall-Clock Paced)\n", WIDTH, HEIGHT, FPS);
+    printf("Audio Score   : Eye of the Tiger (Phase-Continuous Bionika Synth)\n");
     printf("=============================================================\n");
 
     char cmd[1024];
     snprintf(cmd, sizeof(cmd),
-             "ffmpeg -y -f rawvideo -pix_fmt rgb24 -s %dx%d -r %d -i - "
+             "ffmpeg -y -re -f rawvideo -pix_fmt rgb24 -s %dx%d -r %d -i - "
              "-f s16le -ar %d -ac 2 -i - "
-             "-c:v libx264 -pix_fmt yuv420p -preset veryfast -g %d -b:v 3000k -maxrate 3500k -bufsize 6000k "
+             "-c:v libx264 -pix_fmt yuv420p -preset veryfast -tune zerolatency "
+             "-g %d -keyint_min %d -sc_threshold 0 -b:v 2800k -minrate 2800k -maxrate 2800k -bufsize 5600k "
              "-c:a aac -b:a 160k -ar 44100 "
-             "-f flv \"%s\" > /dev/null 2>&1",
-             WIDTH, HEIGHT, FPS, SAMPLE_RATE, FPS * 2, rtmp_url);
+             "-flvflags no_duration_filesize -f flv \"%s\" > /dev/null 2>&1",
+             WIDTH, HEIGHT, FPS, SAMPLE_RATE, FPS * 2, FPS * 2, rtmp_url);
 
-    FILE *pipe = popen(cmd, "w");
-    if (!pipe) {
-        fprintf(stderr, "Error: Failed to open FFmpeg RTMP pipe!\n");
-        return 1;
-    }
-
-    int frame = 0;
     while (1) {
-        render_live_stream_frame(frame);
-        generate_bionika_audio_frame(frame, audio_buffer);
-
-        size_t v_w = fwrite(framebuffer, sizeof(pixel_t), WIDTH * HEIGHT, pipe);
-        size_t a_w = fwrite(audio_buffer, sizeof(int16_t) * 2, SAMPLES_PER_FRAME, pipe);
-
-        if (v_w == 0 || a_w == 0) {
-            fprintf(stderr, "Pipe closed or broadcast interrupted.\n");
-            break;
+        FILE *pipe = popen(cmd, "w");
+        if (!pipe) {
+            fprintf(stderr, "Error: Failed to open FFmpeg RTMP pipe, retrying in 2s...\n");
+            sleep(2);
+            continue;
         }
 
-        if (frame % 300 == 0) {
-            printf("   -> [Live Telemetry Stream] Sent frame %d (Time: %.1f sec)...\n", frame, (float)frame / (float)FPS);
-            fflush(stdout);
+        struct timespec next_frame_time;
+        clock_gettime(CLOCK_MONOTONIC, &next_frame_time);
+
+        int frame = 0;
+        while (1) {
+            render_live_stream_frame(frame);
+            generate_smooth_bionika_audio(frame, audio_buffer);
+
+            size_t v_w = fwrite(framebuffer, sizeof(pixel_t), WIDTH * HEIGHT, pipe);
+            size_t a_w = fwrite(audio_buffer, sizeof(int16_t) * 2, SAMPLES_PER_FRAME, pipe);
+            fflush(pipe);
+
+            if (v_w == 0 || a_w == 0) {
+                fprintf(stderr, "Pipe broken, restarting broadcast stream...\n");
+                break;
+            }
+
+            if (frame % 300 == 0) {
+                printf("   -> [Stable Stream] Broadcasted frame %d (Time: %.1f sec)...\n", frame, (float)frame / (float)FPS);
+                fflush(stdout);
+            }
+
+            // Realtime Pacing Delay to prevent buffer bursting
+            next_frame_time.tv_nsec += FRAME_TIME_NS;
+            if (next_frame_time.tv_nsec >= 1000000000L) {
+                next_frame_time.tv_sec += 1;
+                next_frame_time.tv_nsec -= 1000000000L;
+            }
+
+            struct timespec now;
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            long diff_ns = (next_frame_time.tv_sec - now.tv_sec) * 1000000000L + (next_frame_time.tv_nsec - now.tv_nsec);
+            if (diff_ns > 0) {
+                struct timespec sleep_time = { 0, diff_ns };
+                nanosleep(&sleep_time, NULL);
+            }
+
+            frame++;
         }
-        frame++;
+
+        pclose(pipe);
+        sleep(1);
     }
-
-    pclose(pipe);
     return 0;
 }
