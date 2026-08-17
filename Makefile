@@ -153,6 +153,11 @@ test-llm-tts-completeness:
 	./tests/test_llm_tts_completeness
 	@rm -f tests/test_llm_tts_completeness
 
+test-verifiable-human-speech:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_verifiable_human_speech.c -o tests/test_verifiable_human_speech
+	./tests/test_verifiable_human_speech
+	@rm -f tests/test_verifiable_human_speech
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

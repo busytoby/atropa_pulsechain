@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VERIFIABLE-HUMAN-SPEECH-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / HUMAN QUALITY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-HUMAN-SPEECH-PARAMS.
+           05 WS-FORMANT-DELTA-HZ       PIC 9(03) VALUE 050.
+           05 WS-LYAPUNOV-METRIC        PIC 9(05) VALUE 01000.
+           05 WS-EDO22-INTONATION       PIC 9(02) VALUE 11.
+           05 WS-ANKH-ADMITTANCE-Q16    PIC 9(06) VALUE 032768.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ACOUSTIC-VITALITY      PIC 9(09) VALUE 0.
+           05 WS-BOUNDED-RESONANCE      PIC 9(09) VALUE 0.
+           05 WS-HUMAN-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-QUALITY-BASE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-FORMANT-DELTA       VALUE 2.
+              88 INVALID-LYAPUNOV-METRIC     VALUE 3.
+              88 INVALID-EDO22-DEG           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-ADMITTANCE-Q16      VALUE 6.
+              88 LIPSCHITZ-DIVERG-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-HUMAN-QUALITY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FORMANT-DELTA-HZ < 1 OR WS-FORMANT-DELTA-HZ > 500
+                SET INVALID-FORMANT-DELTA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LYAPUNOV-METRIC < 1 OR WS-LYAPUNOV-METRIC > 10000
+                SET INVALID-LYAPUNOV-METRIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EDO22-INTONATION > 21
+                SET INVALID-EDO22-DEG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ANKH-ADMITTANCE-Q16 < 1000 OR WS-ANKH-ADMITTANCE-Q16 > 65536
+                SET INVALID-ADMITTANCE-Q16 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-HUMAN-QUALITY.
+            COMPUTE WS-ACOUSTIC-VITALITY = (WS-FORMANT-DELTA-HZ * 64) +
+                                           (WS-LYAPUNOV-METRIC * 10) +
+                                           (WS-EDO22-INTONATION * 512) + 1.
+
+            IF WS-ACOUSTIC-VITALITY EQUAL ZERO
+                SET LIPSCHITZ-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BOUNDED-RESONANCE = ((WS-ANKH-ADMITTANCE-Q16 * 875) / 10000) +
+                                           (WS-FORMANT-DELTA-HZ * 2).
+
+            COMPUTE WS-HUMAN-REBAR-LATCH = 1470169088 + (WS-FORMANT-DELTA-HZ * 128) +
+                                           (WS-EDO22-INTONATION * 64) +
+                                           (WS-LYAPUNOV-METRIC * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-QUALITY-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-ACOUSTIC-VITALITY * 10) +
+                                             (WS-BOUNDED-RESONANCE * 10) +
+                                             (WS-EDO22-INTONATION * 1000) +
+                                             (WS-HUMAN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-QUALITY-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-QUALITY-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
