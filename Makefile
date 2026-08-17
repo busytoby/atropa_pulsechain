@@ -1383,6 +1383,11 @@ test-orientation-cue-billboard:
 	./tests/test_orientation_cue_billboard
 	@rm -f tests/test_orientation_cue_billboard
 
+test-error-recovery-backtracking:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_error_recovery_backtracking.c -o tests/test_error_recovery_backtracking
+	./tests/test_error_recovery_backtracking
+	@rm -f tests/test_error_recovery_backtracking
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
