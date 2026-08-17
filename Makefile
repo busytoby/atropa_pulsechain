@@ -893,6 +893,11 @@ test-post-thinking-weyl-closure-xplsm:
 	./tests/test_post_thinking_weyl_closure_xplsm
 	@rm -f tests/test_post_thinking_weyl_closure_xplsm
 
+test-grand-master-unification-x:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_x.c -o tests/test_grand_master_unification_x
+	./tests/test_grand_master_unification_x
+	@rm -f tests/test_grand_master_unification_x
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
