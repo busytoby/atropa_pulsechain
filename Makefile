@@ -1503,6 +1503,11 @@ test-writing-ownership-dynamics:
 	./tests/test_writing_ownership_dynamics
 	@rm -f tests/test_writing_ownership_dynamics
 
+test-value-oriented-concept:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_value_oriented_concept.c -o tests/test_value_oriented_concept
+	./tests/test_value_oriented_concept
+	@rm -f tests/test_value_oriented_concept
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

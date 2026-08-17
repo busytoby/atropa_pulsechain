@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VOC-VAL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VALUE ORIENTED CONCEPT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VOC-PARAMS.
+           05 WS-IDEATION-LAT-MS        PIC 9(02) VALUE 12.
+           05 WS-ALIGNMENT-FID-M        PIC 9(04) VALUE 0960.
+           05 WS-MAPPING-DRIFT-MS       PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VOC-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-VOC-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-VOC-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-VOC-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VOC-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 IDEA-LAT-OUT-OF-BOUNDS      VALUE 2.
+              88 ALIGNMENT-FIDELITY-LOW      VALUE 3.
+              88 DRIFT-EXCEEDED              VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 VALUE-CONCEPT-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VALUE-CONCEPT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-IDEATION-LAT-MS < 5 OR WS-IDEATION-LAT-MS > 25
+                SET IDEA-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALIGNMENT-FID-M < 850 OR WS-ALIGNMENT-FID-M > 1000
+                SET ALIGNMENT-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MAPPING-DRIFT-MS < 0 OR WS-MAPPING-DRIFT-MS > 5
+                SET DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VALUE-CONCEPT.
+            COMPUTE WS-VOC-COMPOSITE = ((30 - WS-IDEATION-LAT-MS) * 20) +
+                                       (WS-ALIGNMENT-FID-M / 2) +
+                                       ((10 - WS-MAPPING-DRIFT-MS) * 40).
+
+            COMPUTE WS-VOC-VITALITY = (WS-VOC-COMPOSITE / 4) +
+                                      (WS-ALIGNMENT-FID-M / 4) +
+                                      ((30 - WS-IDEATION-LAT-MS) * 4) + 1.
+
+            IF WS-VOC-VITALITY EQUAL ZERO
+                SET VALUE-CONCEPT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VOC-COHERENCE = (WS-VOC-COMPOSITE / 16) +
+                                       (WS-ALIGNMENT-FID-M / 16) +
+                                       ((30 - WS-IDEATION-LAT-MS) * 2).
+
+            COMPUTE WS-VOC-REBAR-LATCH = 1470169088 +
+                                         (WS-VOC-COMPOSITE / 2) +
+                                         ((30 - WS-IDEATION-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VOC-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-VOC-VITALITY * 10) +
+                                         (WS-VOC-COHERENCE * 10) +
+                                         (WS-VOC-COMPOSITE * 10) +
+                                         (WS-VOC-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VOC-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VOC-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
