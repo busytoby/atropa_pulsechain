@@ -1293,6 +1293,11 @@ test-kmeans-group-attention:
 	./tests/test_kmeans_group_attention
 	@rm -f tests/test_kmeans_group_attention
 
+test-subassembly-hierarchy-chunking:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_subassembly_hierarchy_chunking.c -o tests/test_subassembly_hierarchy_chunking
+	./tests/test_subassembly_hierarchy_chunking
+	@rm -f tests/test_subassembly_hierarchy_chunking
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
