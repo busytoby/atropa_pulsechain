@@ -323,6 +323,11 @@ test-emotional-weyl-phonation:
 	./tests/test_emotional_weyl_phonation
 	@rm -f tests/test_emotional_weyl_phonation
 
+test-spmm-formant-acceleration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_spmm_formant_acceleration.c -o tests/test_spmm_formant_acceleration
+	./tests/test_spmm_formant_acceleration
+	@rm -f tests/test_spmm_formant_acceleration
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
