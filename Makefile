@@ -1443,6 +1443,11 @@ test-bear-rig-skill-mastery:
 	./tests/test_bear_rig_skill_mastery
 	@rm -f tests/test_bear_rig_skill_mastery
 
+test-cross-threading-prevention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cross_threading_prevention.c -o tests/test_cross_threading_prevention
+	./tests/test_cross_threading_prevention
+	@rm -f tests/test_cross_threading_prevention
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
