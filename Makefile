@@ -863,6 +863,11 @@ test-dynamic-lossfree-load-balancing:
 	./tests/test_dynamic_lossfree_load_balancing
 	@rm -f tests/test_dynamic_lossfree_load_balancing
 
+test-partially-shared-residual-routing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_partially_shared_residual_routing.c -o tests/test_partially_shared_residual_routing
+	./tests/test_partially_shared_residual_routing
+	@rm -f tests/test_partially_shared_residual_routing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
