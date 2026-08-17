@@ -1640,6 +1640,18 @@ test-cpm-tomie-totient-sculpt-suite:
 	./tsfi2-deepseek/src/cpm_exec_totient_sculpt /tmp/totient_sculpt.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_totient_sculpt tsfi2-deepseek/src/cpm_exec_totient_sculpt /tmp/totient_sculpt.bin
 
+test-cpm-tomie-pbx-clay-sound-shape-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_pbx_clay_sound_shape_prover.c -o tests/test_cpm_tomie_pbx_clay_sound_shape_prover
+	./tests/test_cpm_tomie_pbx_clay_sound_shape_prover
+	@rm -f tests/test_cpm_tomie_pbx_clay_sound_shape_prover
+
+test-cpm-tomie-pbx-clay-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_pbx_clay.c -o tsfi2-deepseek/src/cpm_compiler_pbx_clay
+	./tsfi2-deepseek/src/cpm_compiler_pbx_clay /tmp/pbx_clay.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_pbx_clay.c -o tsfi2-deepseek/src/cpm_exec_pbx_clay
+	./tsfi2-deepseek/src/cpm_exec_pbx_clay /tmp/pbx_clay.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_pbx_clay tsfi2-deepseek/src/cpm_exec_pbx_clay /tmp/pbx_clay.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
