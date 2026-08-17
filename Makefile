@@ -1880,6 +1880,18 @@ test-cpm-tomie-sculpting-tools-suite:
 	./tsfi2-deepseek/src/cpm_exec_sculpting_tools /tmp/sculpting_tools.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_sculpting_tools tsfi2-deepseek/src/cpm_exec_sculpting_tools /tmp/sculpting_tools.bin
 
+test-cpm-tomie-exploration-history-branching-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_exploration_history_branching_prover.c -o tests/test_cpm_tomie_exploration_history_branching_prover
+	./tests/test_cpm_tomie_exploration_history_branching_prover
+	@rm -f tests/test_cpm_tomie_exploration_history_branching_prover
+
+test-cpm-tomie-exploration-history-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_exploration_history.c -o tsfi2-deepseek/src/cpm_compiler_exploration_history
+	./tsfi2-deepseek/src/cpm_compiler_exploration_history /tmp/exploration_history.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_exploration_history.c -o tsfi2-deepseek/src/cpm_exec_exploration_history
+	./tsfi2-deepseek/src/cpm_exec_exploration_history /tmp/exploration_history.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_exploration_history tsfi2-deepseek/src/cpm_exec_exploration_history /tmp/exploration_history.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
