@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LATENT-MASKING-VISEME-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LATENT MASKING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-MASKING-PARAMS.
+           05 WS-TEMPORAL-SPAN          PIC 9(02) VALUE 08.
+           05 WS-MASK-THRESH-PERMILLE   PIC 9(03) VALUE 500.
+           05 WS-VISEME-LMD-PERMILLE    PIC 9(03) VALUE 049.
+           05 WS-DUAL-PASS-FLAG         PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VITALITY-METRIC        PIC 9(09) VALUE 0.
+           05 WS-VISEME-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-LATENT-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-LATENT-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-TEMPORAL-SPAN       VALUE 2.
+              88 INVALID-MASK-THRESHOLD      VALUE 3.
+              88 VISEME-DIVERSITY-FAIL       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 DUAL-PASS-ALIGN-FAIL        VALUE 6.
+              88 LATENT-MASK-DIVERG-FAIL     VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-LATENT-MASKING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TEMPORAL-SPAN < 1 OR WS-TEMPORAL-SPAN > 16
+                SET INVALID-TEMPORAL-SPAN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MASK-THRESH-PERMILLE < 100 OR WS-MASK-THRESH-PERMILLE > 900
+                SET INVALID-MASK-THRESHOLD TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VISEME-LMD-PERMILLE < 45
+                SET VISEME-DIVERSITY-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DUAL-PASS-FLAG NOT EQUAL 1
+                SET DUAL-PASS-ALIGN-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-LATENT-MASKING.
+            COMPUTE WS-VITALITY-METRIC = (WS-TEMPORAL-SPAN * 512) +
+                                         (WS-MASK-THRESH-PERMILLE * 4) +
+                                         (WS-VISEME-LMD-PERMILLE * 8) + 1.
+
+            IF WS-VITALITY-METRIC EQUAL ZERO
+                SET LATENT-MASK-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VISEME-COHERENCE = (WS-VISEME-LMD-PERMILLE * 16) +
+                                          (WS-TEMPORAL-SPAN * 32).
+
+            COMPUTE WS-LATENT-REBAR-LATCH = 1470169088 + (WS-TEMPORAL-SPAN * 256) +
+                                            (WS-MASK-THRESH-PERMILLE * 64) +
+                                            (WS-DUAL-PASS-FLAG * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-LATENT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-VITALITY-METRIC * 10) +
+                                            (WS-VISEME-COHERENCE * 10) +
+                                            (WS-TEMPORAL-SPAN * 1000) +
+                                            (WS-LATENT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-LATENT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-LATENT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

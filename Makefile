@@ -188,6 +188,11 @@ test-renderman-hudson-dubbing:
 	./tests/test_renderman_hudson_dubbing
 	@rm -f tests/test_renderman_hudson_dubbing
 
+test-latent-masking-viseme-diversity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_latent_masking_viseme_diversity.c -o tests/test_latent_masking_viseme_diversity
+	./tests/test_latent_masking_viseme_diversity
+	@rm -f tests/test_latent_masking_viseme_diversity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
