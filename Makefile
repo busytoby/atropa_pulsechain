@@ -183,6 +183,11 @@ test-joint-audiovisual-dubbing:
 	./tests/test_joint_audiovisual_dubbing
 	@rm -f tests/test_joint_audiovisual_dubbing
 
+test-renderman-hudson-dubbing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_renderman_hudson_dubbing.c -o tests/test_renderman_hudson_dubbing
+	./tests/test_renderman_hudson_dubbing
+	@rm -f tests/test_renderman_hudson_dubbing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

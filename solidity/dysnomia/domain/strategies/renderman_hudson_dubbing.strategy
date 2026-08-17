@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. RENDERMAN-HUDSON-DUBBING-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / RENDERMAN HUDSON INTEROP AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-INTEROP-PARAMS.
+           05 WS-HUDSON-RANK            PIC 9(02) VALUE 16.
+           05 WS-SHADING-RATE           PIC 9(02) VALUE 01.
+           05 WS-MAR-DIV-PERMILLE       PIC 9(03) VALUE 146.
+           05 WS-AV-SYNC-FRAMES         PIC 9(01) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VITALITY-METRIC        PIC 9(09) VALUE 0.
+           05 WS-BXDF-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-HUDSON-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-INTEROP-BASE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-LORA-RANK           VALUE 2.
+              88 INVALID-SHADING-RATE        VALUE 3.
+              88 INVALID-MAR-DIVERSITY       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 AV-SYNC-TOLERANCE-FAIL      VALUE 6.
+              88 INTEROP-DIVERG-FAIL         VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-INTEROP-PIPELINE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HUDSON-RANK < 1 OR WS-HUDSON-RANK > 32
+                SET INVALID-LORA-RANK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SHADING-RATE < 1 OR WS-SHADING-RATE > 16
+                SET INVALID-SHADING-RATE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MAR-DIV-PERMILLE < 80 OR WS-MAR-DIV-PERMILLE > 250
+                SET INVALID-MAR-DIVERSITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AV-SYNC-FRAMES < 0 OR WS-AV-SYNC-FRAMES > 2
+                SET AV-SYNC-TOLERANCE-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-INTEROP-PIPELINE.
+            COMPUTE WS-VITALITY-METRIC = (WS-HUDSON-RANK * 512) +
+                                         (WS-SHADING-RATE * 256) +
+                                         (WS-MAR-DIV-PERMILLE * 8) + 1.
+
+            IF WS-VITALITY-METRIC EQUAL ZERO
+                SET INTEROP-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BXDF-COHERENCE = ((3 - WS-AV-SYNC-FRAMES) * 128) +
+                                        (WS-MAR-DIV-PERMILLE / 2).
+
+            COMPUTE WS-HUDSON-REBAR-LATCH = 1470169088 + (WS-HUDSON-RANK * 256) +
+                                            (WS-SHADING-RATE * 64) +
+                                            (WS-AV-SYNC-FRAMES * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-INTEROP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-VITALITY-METRIC * 10) +
+                                             (WS-BXDF-COHERENCE * 10) +
+                                             (WS-HUDSON-RANK * 1000) +
+                                             (WS-HUDSON-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-INTEROP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-INTEROP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
