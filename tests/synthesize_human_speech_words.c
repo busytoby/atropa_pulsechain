@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0
 #define _POSIX_C_SOURCE 200809L
 /*
- * Pure C Harmonic + Stochastic Acoustic Formant Speech Synthesizer (Pitch-Synchronous PSOLA / Glottal Grain Model)
+ * Pure C Harmonic + Stochastic Acoustic Formant Speech Synthesizer with Emotional Weyl Closures
  *
  * Core Breakthroughs:
- * 1. Pitch-Synchronous Granular Windowing: Glottal cycles are synthesized as discrete pitch-synchronous grains
- *    modulated by a Blackman-Harris acoustic window, completely eliminating electronic buzzer phase-locking.
+ * 1. Pitch-Synchronous Granular Windowing: Glottal cycles are synthesized as discrete pitch-synchronous grains.
  * 2. Harmonic Overtone Decay Envelope (1/f^1.5 spectral tilt): Realistic biological vocal cord harmonic drop-off.
  * 3. 5-Formant Cascade-Parallel Hybrid Resonator bank with precise phase-cancellation-free resonance curves.
  * 4. Micro-Jitter (0.6%), Shimmer (2.5%), and 1/f Pink Aspiration Turbulence across vocal tract cavities.
- * 5. Dynamic Syllable Prosody Arc (Pitch peak at vowel nucleus with natural diphthong glide).
+ * 5. Dynamic Syllable Prosody Arc & Emotional Phonation Modulation (CALM, CATHARSIS, FOCUS, WONDER, MINDFULNESS).
  */
 
 #include <stdio.h>
@@ -44,6 +43,42 @@ typedef struct {
 } WavHeader;
 #pragma pack(pop)
 
+typedef enum {
+    EMOTION_CALM = 1,
+    EMOTION_CATHARSIS = 2,
+    EMOTION_FOCUS = 3,
+    EMOTION_WONDER = 4,
+    EMOTION_MINDFULNESS = 5
+} EmotionalPhonationState;
+
+typedef struct {
+    EmotionalPhonationState state;
+    const char *name;
+    float f0_multiplier;
+    float pitch_arc_depth;
+    float vibrato_depth;
+    float breath_gain_mult;
+    float tilt_exponent;
+    float chest_warmth;
+} EmotionalProfile;
+
+static const EmotionalProfile EMOTION_PROFILES[] = {
+    { EMOTION_CALM,        "CALM",        1.00f, 0.05f, 0.008f, 0.25f, 1.45f, 0.35f },
+    { EMOTION_CATHARSIS,   "CATHARSIS",   1.08f, 0.12f, 0.015f, 0.40f, 1.25f, 0.25f },
+    { EMOTION_FOCUS,       "FOCUS",       0.96f, 0.03f, 0.005f, 0.15f, 1.55f, 0.40f },
+    { EMOTION_WONDER,      "WONDER",      1.15f, 0.18f, 0.020f, 0.35f, 1.20f, 0.20f },
+    { EMOTION_MINDFULNESS, "MINDFULNESS", 0.92f, 0.04f, 0.010f, 0.30f, 1.60f, 0.45f }
+};
+
+static const size_t NUM_EMOTIONS = sizeof(EMOTION_PROFILES) / sizeof(EMOTION_PROFILES[0]);
+
+static const EmotionalProfile *find_emotion_profile(EmotionalPhonationState st) {
+    for (size_t i = 0; i < NUM_EMOTIONS; i++) {
+        if (EMOTION_PROFILES[i].state == st) return &EMOTION_PROFILES[i];
+    }
+    return &EMOTION_PROFILES[0];
+}
+
 typedef struct {
     char symbol[4];
     float f1, f2, f3, f4, f5;
@@ -57,29 +92,29 @@ typedef struct {
 
 static const OrganicPhoneme PHONEMES[] = {
     // Vowels (Standard human IPA formant centers & realistic biological 3dB bandwidths)
-    { "AA",  730.0f, 1090.0f, 2440.0f, 3500.0f, 4500.0f,   90.0f, 110.0f, 160.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f,  0.0f }, // "o" in "hot"
-    { "AE",  660.0f, 1720.0f, 2410.0f, 3500.0f, 4500.0f,   80.0f, 100.0f, 150.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f,  0.2f }, // "a" in "cat"
-    { "AH",  520.0f, 1190.0f, 2390.0f, 3500.0f, 4500.0f,   70.0f,  90.0f, 140.0f, 250.0f, 300.0f, 150.0f, true,  1.00f, 0.04f,  0.0f }, // "u" in "cut"
-    { "AO",  570.0f,  840.0f, 2410.0f, 3500.0f, 4500.0f,   80.0f,  90.0f, 140.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f, -0.3f }, // "aw" in "saw"
-    { "EH",  530.0f, 1840.0f, 2480.0f, 3500.0f, 4500.0f,   70.0f, 100.0f, 150.0f, 250.0f, 300.0f, 160.0f, true,  1.00f, 0.04f,  0.3f }, // "e" in "bed"
-    { "ER",  490.0f, 1350.0f, 1690.0f, 3200.0f, 4500.0f,   80.0f, 100.0f, 120.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.05f, -0.4f }, // "er" in "bird"
-    { "IH",  390.0f, 1990.0f, 2550.0f, 3500.0f, 4500.0f,   60.0f,  90.0f, 140.0f, 250.0f, 300.0f, 150.0f, true,  1.00f, 0.04f,  0.3f }, // "i" in "sit"
-    { "IY",  270.0f, 2290.0f, 3010.0f, 3600.0f, 4500.0f,   50.0f,  90.0f, 140.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f,  0.5f }, // "ee" in "feet"
-    { "OW",  500.0f,  700.0f, 2300.0f, 3500.0f, 4500.0f,   80.0f,  90.0f, 140.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f, -0.6f }, // "o" in "go"
-    { "UW",  300.0f,  870.0f, 2240.0f, 3500.0f, 4500.0f,   60.0f,  80.0f, 130.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f, -1.0f }, // "oo" in "too"
+    { "AA",  730.0f, 1090.0f, 2440.0f, 3500.0f, 4500.0f,   90.0f, 110.0f, 160.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f,  0.0f },
+    { "AE",  660.0f, 1720.0f, 2410.0f, 3500.0f, 4500.0f,   80.0f, 100.0f, 150.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f,  0.2f },
+    { "AH",  520.0f, 1190.0f, 2390.0f, 3500.0f, 4500.0f,   70.0f,  90.0f, 140.0f, 250.0f, 300.0f, 150.0f, true,  1.00f, 0.04f,  0.0f },
+    { "AO",  570.0f,  840.0f, 2410.0f, 3500.0f, 4500.0f,   80.0f,  90.0f, 140.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f, -0.3f },
+    { "EH",  530.0f, 1840.0f, 2480.0f, 3500.0f, 4500.0f,   70.0f, 100.0f, 150.0f, 250.0f, 300.0f, 160.0f, true,  1.00f, 0.04f,  0.3f },
+    { "ER",  490.0f, 1350.0f, 1690.0f, 3200.0f, 4500.0f,   80.0f, 100.0f, 120.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.05f, -0.4f },
+    { "IH",  390.0f, 1990.0f, 2550.0f, 3500.0f, 4500.0f,   60.0f,  90.0f, 140.0f, 250.0f, 300.0f, 150.0f, true,  1.00f, 0.04f,  0.3f },
+    { "IY",  270.0f, 2290.0f, 3010.0f, 3600.0f, 4500.0f,   50.0f,  90.0f, 140.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f,  0.5f },
+    { "OW",  500.0f,  700.0f, 2300.0f, 3500.0f, 4500.0f,   80.0f,  90.0f, 140.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f, -0.6f },
+    { "UW",  300.0f,  870.0f, 2240.0f, 3500.0f, 4500.0f,   60.0f,  80.0f, 130.0f, 250.0f, 300.0f, 180.0f, true,  1.00f, 0.04f, -1.0f },
     
     // Consonants
-    { "HH",  500.0f, 1500.0f, 2500.0f, 3500.0f, 4500.0f,  150.0f, 200.0f, 250.0f, 300.0f, 400.0f, 110.0f, false, 0.05f, 0.70f,  0.0f }, // "h"
-    { "LL",  380.0f, 1200.0f, 2700.0f, 3500.0f, 4500.0f,   80.0f, 110.0f, 150.0f, 250.0f, 300.0f, 150.0f, true,  0.85f, 0.02f, -0.3f }, // "l"
-    { "MM",  280.0f,  900.0f, 2200.0f, 3500.0f, 4500.0f,   90.0f, 130.0f, 170.0f, 250.0f, 300.0f, 140.0f, true,  0.80f, 0.02f, -0.5f }, // "m"
-    { "NN",  280.0f, 1700.0f, 2600.0f, 3500.0f, 4500.0f,   90.0f, 130.0f, 170.0f, 250.0f, 300.0f, 140.0f, true,  0.80f, 0.02f, -0.3f }, // "n"
-    { "SS",  400.0f, 2500.0f, 4500.0f, 6000.0f, 7500.0f,  180.0f, 250.0f, 350.0f, 500.0f, 600.0f, 130.0f, false, 0.00f, 1.10f,  0.0f }, // "s"
-    { "SH",  300.0f, 1800.0f, 3000.0f, 4500.0f, 6000.0f,  160.0f, 220.0f, 300.0f, 400.0f, 500.0f, 130.0f, false, 0.00f, 1.00f,  0.0f }, // "sh"
-    { "TT",  400.0f, 1800.0f, 2800.0f, 3800.0f, 4800.0f,  160.0f, 220.0f, 280.0f, 350.0f, 400.0f,  70.0f, false, 0.00f, 1.30f,  0.0f }, // "t"
-    { "DD",  350.0f, 1700.0f, 2600.0f, 3600.0f, 4600.0f,  130.0f, 180.0f, 230.0f, 300.0f, 350.0f,  80.0f, true,  0.60f, 0.40f,  0.0f }, // "d"
-    { "WW",  300.0f,  700.0f, 2200.0f, 3500.0f, 4500.0f,   80.0f, 100.0f, 130.0f, 250.0f, 300.0f, 150.0f, true,  0.85f, 0.02f, -0.5f }, // "w"
-    { "RR",  420.0f, 1300.0f, 1600.0f, 3200.0f, 4200.0f,   80.0f, 110.0f, 130.0f, 250.0f, 300.0f, 150.0f, true,  0.85f, 0.02f, -0.3f }, // "r"
-    { "DH",  350.0f, 1600.0f, 2500.0f, 3500.0f, 4500.0f,  100.0f, 140.0f, 190.0f, 250.0f, 300.0f,  90.0f, true,  0.70f, 0.25f, -0.3f }, // "th"
+    { "HH",  500.0f, 1500.0f, 2500.0f, 3500.0f, 4500.0f,  150.0f, 200.0f, 250.0f, 300.0f, 400.0f, 110.0f, false, 0.05f, 0.70f,  0.0f },
+    { "LL",  380.0f, 1200.0f, 2700.0f, 3500.0f, 4500.0f,   80.0f, 110.0f, 150.0f, 250.0f, 300.0f, 150.0f, true,  0.85f, 0.02f, -0.3f },
+    { "MM",  280.0f,  900.0f, 2200.0f, 3500.0f, 4500.0f,   90.0f, 130.0f, 170.0f, 250.0f, 300.0f, 140.0f, true,  0.80f, 0.02f, -0.5f },
+    { "NN",  280.0f, 1700.0f, 2600.0f, 3500.0f, 4500.0f,   90.0f, 130.0f, 170.0f, 250.0f, 300.0f, 140.0f, true,  0.80f, 0.02f, -0.3f },
+    { "SS",  400.0f, 2500.0f, 4500.0f, 6000.0f, 7500.0f,  180.0f, 250.0f, 350.0f, 500.0f, 600.0f, 130.0f, false, 0.00f, 1.10f,  0.0f },
+    { "SH",  300.0f, 1800.0f, 3000.0f, 4500.0f, 6000.0f,  160.0f, 220.0f, 300.0f, 400.0f, 500.0f, 130.0f, false, 0.00f, 1.00f,  0.0f },
+    { "TT",  400.0f, 1800.0f, 2800.0f, 3800.0f, 4800.0f,  160.0f, 220.0f, 280.0f, 350.0f, 400.0f,  70.0f, false, 0.00f, 1.30f,  0.0f },
+    { "DD",  350.0f, 1700.0f, 2600.0f, 3600.0f, 4600.0f,  130.0f, 180.0f, 230.0f, 300.0f, 350.0f,  80.0f, true,  0.60f, 0.40f,  0.0f },
+    { "WW",  300.0f,  700.0f, 2200.0f, 3500.0f, 4500.0f,   80.0f, 100.0f, 130.0f, 250.0f, 300.0f, 150.0f, true,  0.85f, 0.02f, -0.5f },
+    { "RR",  420.0f, 1300.0f, 1600.0f, 3200.0f, 4200.0f,   80.0f, 110.0f, 130.0f, 250.0f, 300.0f, 150.0f, true,  0.85f, 0.02f, -0.3f },
+    { "DH",  350.0f, 1600.0f, 2500.0f, 3500.0f, 4500.0f,  100.0f, 140.0f, 190.0f, 250.0f, 300.0f,  90.0f, true,  0.70f, 0.25f, -0.3f },
     { "SIL", 500.0f, 1500.0f, 2500.0f, 3500.0f, 4500.0f,  100.0f, 100.0f, 100.0f, 100.0f, 100.0f,  90.0f, false, 0.00f, 0.00f,  0.0f }
 };
 
@@ -108,7 +143,6 @@ static void set_resonator_gain(Resonator *r, double f, double bw, double gain, d
     double theta = 2.0 * M_PI * f / fs;
     r->a1 = -2.0 * r_val * cos(theta);
     r->a2 = r_val * r_val;
-    // Normalized peak bandpass gain
     r->b0 = gain * (1.0 - r_val) * sqrt(1.0 - 2.0 * r_val * cos(2.0 * theta) + r_val * r_val);
 }
 
@@ -168,8 +202,10 @@ static const WordLexicon *lookup_word(const char *word) {
     return NULL;
 }
 
-/* Synthesizes organic human spoken words with natural pitch-synchronous phonation */
-static void synthesize_organic_human_word(const WordLexicon *lex, float base_f0, const char *out_wav_path) {
+/* Synthesizes organic human spoken words modulated by Emotional Weyl Closure Phonation Profiles */
+static void synthesize_organic_emotional_word(const WordLexicon *lex, float base_f0, EmotionalPhonationState emo_state, const char *out_wav_path) {
+    const EmotionalProfile *prof = find_emotion_profile(emo_state);
+
     float total_ms = 0.0f;
     for (size_t i = 0; i < lex->count; i++) {
         total_ms += find_phoneme(lex->phonemes[i])->duration_ms;
@@ -217,35 +253,34 @@ static void synthesize_organic_human_word(const WordLexicon *lex, float base_f0,
             set_resonator_gain(&r4, cur_f4, cur_b4, 0.18, SAMPLE_RATE);
             set_resonator_gain(&r5, cur_f5, cur_b5, 0.08, SAMPLE_RATE);
 
-            // Natural human pitch contour (accentuation arc + micro-jitter)
-            double pitch_arc = 1.0 + (sinf(p_progress * (float)M_PI) * 0.08) - (p_progress * 0.12);
-            double micro_vibrato = sin(2.0 * M_PI * 5.2 * ((double)sample_idx / SAMPLE_RATE)) * 0.012;
+            // Natural human pitch contour with Emotional Profile Scaling
+            double pitch_arc = 1.0 + (sinf(p_progress * (float)M_PI) * prof->pitch_arc_depth) - (p_progress * prof->pitch_arc_depth * 1.5);
+            double micro_vibrato = sin(2.0 * M_PI * 5.2 * ((double)sample_idx / SAMPLE_RATE)) * prof->vibrato_depth;
             double jitter = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.006;
 
             float semitone = powf(2.0f, target->pitch_offset / 12.0f);
-            double inst_f0 = base_f0 * pitch_arc * semitone * (1.0 + micro_vibrato + jitter);
+            double inst_f0 = base_f0 * prof->f0_multiplier * pitch_arc * semitone * (1.0 + micro_vibrato + jitter);
 
-            // Natural Glottal Flow Synthesis: Multi-harmonic spectrum with physical 1/f^1.5 spectral tilt
+            // Natural Glottal Flow Synthesis: Multi-harmonic spectrum with emotional spectral tilt
             double glot_pulse = 0.0;
             if (target->is_voiced) {
                 glot_phase += inst_f0 / (double)SAMPLE_RATE;
                 if (glot_phase >= 1.0) glot_phase -= 1.0;
 
-                // 12 Harmonic overtones with biological amplitude decay (Fant voice source model)
                 for (int h = 1; h <= 12; h++) {
                     double harmonic_freq = inst_f0 * h;
                     if (harmonic_freq > 8000.0) break;
-                    double harmonic_amp = 1.0 / pow((double)h, 1.35); // Biological spectral tilt (-8dB/octave)
+                    double harmonic_amp = 1.0 / pow((double)h, (double)prof->tilt_exponent);
                     glot_pulse += sin(2.0 * M_PI * h * glot_phase) * harmonic_amp;
                 }
-                glot_pulse *= 0.28; // Normalization
+                glot_pulse *= 0.28;
             }
 
             // Organic 1/f Pink Aspiration & Breath Noise (Vocal cord shimmer)
             double pink_noise = step_pink_noise(&pink);
             double shimmer = 1.0 + (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.02;
 
-            double excitation = (glot_pulse * target->voice_gain) + (pink_noise * target->noise_gain * shimmer * 0.35);
+            double excitation = (glot_pulse * target->voice_gain) + (pink_noise * target->noise_gain * shimmer * prof->breath_gain_mult);
 
             // Resonant Formant Filtering (Parallel Formant Resonators F1..F5)
             double y1 = step_resonator(&r1, excitation);
@@ -258,7 +293,7 @@ static void synthesize_organic_human_word(const WordLexicon *lex, float base_f0,
 
             // Direct Fundamental F0 Low-End Support (Chest bottom warmth)
             if (target->is_voiced) {
-                vocal_out += sin(2.0 * M_PI * glot_phase) * 0.30 * target->voice_gain;
+                vocal_out += sin(2.0 * M_PI * glot_phase) * prof->chest_warmth * target->voice_gain;
             }
 
             raw_audio[sample_idx] = vocal_out;
@@ -314,25 +349,37 @@ static void synthesize_organic_human_word(const WordLexicon *lex, float base_f0,
 
 int main(void) {
     printf("=============================================================\n");
-    printf("NATURAL HARMONIC SPECTRUM & ORGANIC FORMANT SYNTHESIZER     \n");
+    printf("NATURAL HARMONIC & EMOTIONAL WEYL PHONATION SYNTHESIZER      \n");
     printf("=============================================================\n");
 
-    const char *test_words[] = { "HELLO", "AUNCIENT", "HUMAN", "LIFE", "SUN", "WATER", "WORLD" };
-    size_t num_words = sizeof(test_words) / sizeof(test_words[0]);
+    struct {
+        const char *word;
+        EmotionalPhonationState emotion;
+    } test_cases[] = {
+        { "HELLO",       EMOTION_CALM },
+        { "AUNCIENT",    EMOTION_MINDFULNESS },
+        { "HUMAN",       EMOTION_WONDER },
+        { "LIFE",        EMOTION_CATHARSIS },
+        { "SUN",         EMOTION_FOCUS },
+        { "WATER",       EMOTION_CALM },
+        { "WORLD",       EMOTION_MINDFULNESS }
+    };
+    size_t num_cases = sizeof(test_cases) / sizeof(test_cases[0]);
 
-    for (size_t w = 0; w < num_words; w++) {
-        const WordLexicon *lex = lookup_word(test_words[w]);
+    for (size_t c = 0; c < num_cases; c++) {
+        const WordLexicon *lex = lookup_word(test_cases[c].word);
         if (!lex) continue;
 
+        const EmotionalProfile *prof = find_emotion_profile(test_cases[c].emotion);
         char wav_path[128];
-        snprintf(wav_path, sizeof(wav_path), "assets/bionika/speech_word_%s.wav", test_words[w]);
+        snprintf(wav_path, sizeof(wav_path), "assets/bionika/speech_word_%s.wav", test_cases[c].word);
 
-        printf("Synthesizing natural word: '%s' (12-Harmonic Tilt + 5-Formant Resonators) -> %s\n", test_words[w], wav_path);
-        synthesize_organic_human_word(lex, 125.0f, wav_path);
+        printf("Synthesizing: '%s' [State: %s] -> %s\n", test_cases[c].word, prof->name, wav_path);
+        synthesize_organic_emotional_word(lex, 125.0f, test_cases[c].emotion, wav_path);
     }
 
     printf("=============================================================\n");
-    printf("ALL WORDS RE-SYNTHESIZED WITH NATURAL HARMONIC BODY (44.1kHz)\n");
+    printf("ALL EMOTIONAL PHONATION WORDS RE-SYNTHESIZED (44.1kHz STEREO)\n");
     printf("=============================================================\n");
     return 0;
 }
