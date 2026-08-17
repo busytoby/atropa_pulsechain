@@ -913,6 +913,11 @@ test-post-thinking-structured-prompt-parsing:
 	./tests/test_post_thinking_structured_prompt_parsing
 	@rm -f tests/test_post_thinking_structured_prompt_parsing
 
+test-longform-narrative-continuity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_longform_narrative_continuity.c -o tests/test_longform_narrative_continuity
+	./tests/test_longform_narrative_continuity
+	@rm -f tests/test_longform_narrative_continuity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LFN-NAR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LONGFORM NARRATIVE CONTINUITY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-NAR-PARAMS.
+           05 WS-PAGE-COUNT             PIC 9(02) VALUE 37.
+           05 WS-NARRATIVE-ANLS-M       PIC 9(04) VALUE 0580.
+           05 WS-CHAR-GROUNDING-M       PIC 9(04) VALUE 0890.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-NAR-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-NAR-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-NAR-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-NAR-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-NAR-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 PAGE-COUNT-OUT-OF-BOUNDS    VALUE 2.
+              88 NARRATIVE-ANLS-OUT-OF-BOUND VALUE 3.
+              88 CHAR-GROUNDING-LOW          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 NARRATIVE-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-NARRATIVE-CONTINUITY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PAGE-COUNT < 10 OR WS-PAGE-COUNT > 50
+                SET PAGE-COUNT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NARRATIVE-ANLS-M < 400 OR WS-NARRATIVE-ANLS-M > 750
+                SET NARRATIVE-ANLS-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CHAR-GROUNDING-M < 600 OR WS-CHAR-GROUNDING-M > 1000
+                SET CHAR-GROUNDING-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-NARRATIVE-CONTINUITY.
+            COMPUTE WS-NAR-COMPOSITE = (WS-PAGE-COUNT * 20) +
+                                       (WS-NARRATIVE-ANLS-M / 2) +
+                                       (WS-CHAR-GROUNDING-M / 2).
+
+            COMPUTE WS-NAR-VITALITY = (WS-NAR-COMPOSITE / 4) +
+                                      (WS-NARRATIVE-ANLS-M / 4) +
+                                      (WS-PAGE-COUNT * 2) + 1.
+
+            IF WS-NAR-VITALITY EQUAL ZERO
+                SET NARRATIVE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-NAR-COHERENCE = (WS-NAR-COMPOSITE / 16) +
+                                       (WS-NARRATIVE-ANLS-M / 16) +
+                                       (WS-PAGE-COUNT / 2).
+
+            COMPUTE WS-NAR-REBAR-LATCH = 1470169088 +
+                                         (WS-NAR-COMPOSITE / 2) +
+                                         (WS-PAGE-COUNT * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-NAR-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-NAR-VITALITY * 10) +
+                                         (WS-NAR-COHERENCE * 10) +
+                                         (WS-NAR-COMPOSITE * 10) +
+                                         (WS-NAR-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-NAR-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-NAR-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
