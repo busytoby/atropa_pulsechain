@@ -1724,6 +1724,18 @@ test-cpm-tomie-clay-guilford-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_guilford /tmp/clay_guilford.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_guilford tsfi2-deepseek/src/cpm_exec_clay_guilford /tmp/clay_guilford.bin
 
+test-cpm-tomie-clay-metaphor-soundness-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_metaphor_soundness_prover.c -o tests/test_cpm_tomie_clay_metaphor_soundness_prover
+	./tests/test_cpm_tomie_clay_metaphor_soundness_prover
+	@rm -f tests/test_cpm_tomie_clay_metaphor_soundness_prover
+
+test-cpm-tomie-clay-soundness-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_soundness.c -o tsfi2-deepseek/src/cpm_compiler_clay_soundness
+	./tsfi2-deepseek/src/cpm_compiler_clay_soundness /tmp/clay_soundness.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_soundness.c -o tsfi2-deepseek/src/cpm_exec_clay_soundness
+	./tsfi2-deepseek/src/cpm_exec_clay_soundness /tmp/clay_soundness.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_soundness tsfi2-deepseek/src/cpm_exec_clay_soundness /tmp/clay_soundness.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
