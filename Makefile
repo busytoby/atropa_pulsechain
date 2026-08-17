@@ -1563,6 +1563,11 @@ test-expressive-robotic-touch:
 	./tests/test_expressive_robotic_touch
 	@rm -f tests/test_expressive_robotic_touch
 
+test-heartsway-embodied-resonance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_heartsway_embodied_resonance.c -o tests/test_heartsway_embodied_resonance
+	./tests/test_heartsway_embodied_resonance
+	@rm -f tests/test_heartsway_embodied_resonance
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
