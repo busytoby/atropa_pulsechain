@@ -413,6 +413,11 @@ test-cv-stability-invariance:
 	./tests/test_cv_stability_invariance
 	@rm -f tests/test_cv_stability_invariance
 
+test-batch1-memory-bandwidth-intensity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_batch1_memory_bandwidth_intensity.c -o tests/test_batch1_memory_bandwidth_intensity
+	./tests/test_batch1_memory_bandwidth_intensity
+	@rm -f tests/test_batch1_memory_bandwidth_intensity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

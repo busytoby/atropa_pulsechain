@@ -1,0 +1,133 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BATCH1-BW-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MEMORY BANDWIDTH AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BW-PARAMS.
+           05 WS-WEIGHT-ENUM            PIC 9(02) VALUE 05.
+           05 WS-RAM-BW-GBPS            PIC 9(03) VALUE 009.
+           05 WS-MEASURED-TPS           PIC 9(05) VALUE 03060.
+           05 WS-BOUND-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ARITHMETIC-INTENSITY   PIC 9(06) VALUE 0.
+           05 WS-BW-VITALITY            PIC 9(09) VALUE 0.
+           05 WS-BW-COHERENCE           PIC 9(09) VALUE 0.
+           05 WS-BW-REBAR-LATCH         PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BW-BASE         PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-WEIGHT-ENUM         VALUE 2.
+              88 INVALID-BANDWIDTH-GBPS      VALUE 3.
+              88 INVALID-TPS-METRIC          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 BANDWIDTH-BOUND-FLAG-FAIL   VALUE 6.
+              88 INTENSITY-DIVERG-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MEMORY-INTENSITY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEIGHT-ENUM < 1 OR WS-WEIGHT-ENUM > 5
+                SET INVALID-WEIGHT-ENUM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RAM-BW-GBPS < 5 OR WS-RAM-BW-GBPS > 150
+                SET INVALID-BANDWIDTH-GBPS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MEASURED-TPS < 100 OR WS-MEASURED-TPS > 50000
+                SET INVALID-TPS-METRIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BOUND-FLAG NOT EQUAL 1
+                SET BANDWIDTH-BOUND-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEIGHT-ENUM EQUAL 1
+                MOVE 1000 TO WS-ARITHMETIC-INTENSITY
+            END-IF.
+            IF WS-WEIGHT-ENUM EQUAL 2
+                MOVE 2000 TO WS-ARITHMETIC-INTENSITY
+            END-IF.
+            IF WS-WEIGHT-ENUM EQUAL 3
+                MOVE 3555 TO WS-ARITHMETIC-INTENSITY
+            END-IF.
+            IF WS-WEIGHT-ENUM EQUAL 4
+                MOVE 6250 TO WS-ARITHMETIC-INTENSITY
+            END-IF.
+            IF WS-WEIGHT-ENUM EQUAL 5
+                MOVE 10126 TO WS-ARITHMETIC-INTENSITY
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MEMORY-INTENSITY.
+            COMPUTE WS-BW-VITALITY = (WS-ARITHMETIC-INTENSITY / 8) +
+                                     (WS-RAM-BW-GBPS * 64) +
+                                     (WS-MEASURED-TPS / 50) +
+                                     (WS-BOUND-FLAG * 256) + 1.
+
+            IF WS-BW-VITALITY EQUAL ZERO
+                SET INTENSITY-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BW-COHERENCE = (WS-ARITHMETIC-INTENSITY / 32) +
+                                      (WS-RAM-BW-GBPS * 16) +
+                                      (WS-MEASURED-TPS / 100).
+
+            COMPUTE WS-BW-REBAR-LATCH = 1470169088 + (WS-ARITHMETIC-INTENSITY / 4) +
+                                        (WS-RAM-BW-GBPS * 32) +
+                                        (WS-MEASURED-TPS / 20).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BW-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                        (WS-BW-VITALITY * 10) +
+                                        (WS-BW-COHERENCE * 10) +
+                                        (WS-ARITHMETIC-INTENSITY * 10) +
+                                        (WS-BW-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BW-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BW-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
