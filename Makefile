@@ -753,6 +753,11 @@ test-acoustic-kinematic-tracking:
 	./tests/test_acoustic_kinematic_tracking
 	@rm -f tests/test_acoustic_kinematic_tracking
 
+test-grand-master-unification-vii:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_vii.c -o tests/test_grand_master_unification_vii
+	./tests/test_grand_master_unification_vii
+	@rm -f tests/test_grand_master_unification_vii
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

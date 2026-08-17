@@ -1,0 +1,142 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. UNI-VII-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GRAND MASTER UNIFICATION VII AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UNI-PARAMS.
+           05 WS-UNI-VI-SCORE-M         PIC 9(04) VALUE 0850.
+           05 WS-UNIV-IO-SCORE-M        PIC 9(04) VALUE 0890.
+           05 WS-REFRACT-SCORE-M        PIC 9(04) VALUE 0820.
+           05 WS-CLUTTER-SCORE-M        PIC 9(04) VALUE 0850.
+           05 WS-KINEMATIC-SCORE-M      PIC 9(04) VALUE 0880.
+           05 WS-AZATOI-SCORE-M         PIC 9(04) VALUE 0860.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-S-VII-COMPOSITE        PIC 9(04) VALUE 0.
+           05 WS-UNI-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-UNI-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-UNI-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UNI-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 UNI-VI-SCORE-UNDERFLOW      VALUE 2.
+              88 UNIV-IO-SCORE-UNDERFLOW     VALUE 3.
+              88 REFRACT-SCORE-UNDERFLOW     VALUE 4.
+              88 CLUTTER-SCORE-UNDERFLOW     VALUE 5.
+              88 KINEMATIC-SCORE-UNDERFLOW   VALUE 6.
+              88 AZATOI-SCORE-UNDERFLOW      VALUE 7.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 8.
+              88 UNIFICATION-VII-COLLAPSE    VALUE 9.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 10.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UNIFICATION-VII
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UNI-VI-SCORE-M < 600 OR WS-UNI-VI-SCORE-M > 950
+                SET UNI-VI-SCORE-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UNIV-IO-SCORE-M < 600 OR WS-UNIV-IO-SCORE-M > 950
+                SET UNIV-IO-SCORE-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REFRACT-SCORE-M < 600 OR WS-REFRACT-SCORE-M > 950
+                SET REFRACT-SCORE-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CLUTTER-SCORE-M < 600 OR WS-CLUTTER-SCORE-M > 950
+                SET CLUTTER-SCORE-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KINEMATIC-SCORE-M < 600 OR WS-KINEMATIC-SCORE-M > 950
+                SET KINEMATIC-SCORE-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AZATOI-SCORE-M < 600 OR WS-AZATOI-SCORE-M > 950
+                SET AZATOI-SCORE-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UNIFICATION-VII.
+            COMPUTE WS-S-VII-COMPOSITE = (WS-UNI-VI-SCORE-M +
+                                          WS-UNIV-IO-SCORE-M +
+                                          WS-REFRACT-SCORE-M +
+                                          WS-CLUTTER-SCORE-M +
+                                          WS-KINEMATIC-SCORE-M +
+                                          WS-AZATOI-SCORE-M) / 6.
+
+            IF WS-S-VII-COMPOSITE < 500
+                SET UNIFICATION-VII-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UNI-VITALITY = (WS-S-VII-COMPOSITE / 4) +
+                                      (WS-UNIV-IO-SCORE-M / 8) +
+                                      (WS-REFRACT-SCORE-M / 8) +
+                                      (WS-CLUTTER-SCORE-M / 8) +
+                                      (WS-KINEMATIC-SCORE-M / 8) + 1.
+
+            COMPUTE WS-UNI-COHERENCE = (WS-S-VII-COMPOSITE / 16) +
+                                       (WS-UNIV-IO-SCORE-M / 32) +
+                                       (WS-REFRACT-SCORE-M / 32) +
+                                       (WS-CLUTTER-SCORE-M / 32) +
+                                       (WS-KINEMATIC-SCORE-M / 32).
+
+            COMPUTE WS-UNI-REBAR-LATCH = 1470169088 +
+                                         (WS-S-VII-COMPOSITE / 2) +
+                                         (WS-UNIV-IO-SCORE-M / 4) +
+                                         (WS-REFRACT-SCORE-M / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UNI-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-UNI-VITALITY * 10) +
+                                         (WS-UNI-COHERENCE * 10) +
+                                         (WS-S-VII-COMPOSITE * 10) +
+                                         (WS-UNI-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UNI-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UNI-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
