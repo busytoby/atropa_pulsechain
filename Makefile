@@ -773,6 +773,11 @@ test-hybrid-llm-zorse-dual-substrate:
 	./tests/test_hybrid_llm_zorse_dual_substrate
 	@rm -f tests/test_hybrid_llm_zorse_dual_substrate
 
+test-acoustic-beamsteering-array:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_beamsteering_array.c -o tests/test_acoustic_beamsteering_array
+	./tests/test_acoustic_beamsteering_array
+	@rm -f tests/test_acoustic_beamsteering_array
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BEAM-STR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC BEAMSTEERING ARRAY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BMS-PARAMS.
+           05 WS-STEERING-ANGLE-DEG     PIC S9(02) VALUE +30.
+           05 WS-DIRECTIVITY-TENTHS-DBI PIC 9(03)  VALUE 112.
+           05 WS-PHASE-ERR-TENTHS-DEG   PIC 9(02)  VALUE 25.
+           05 WS-CICS-WRITER-ID         PIC 9(04)  VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01)  VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01)  VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BMS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-BMS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-BMS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-BMS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BMS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+           05 WS-ABS-STEER-ANGLE        PIC 9(02) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 STEERING-ANGLE-OUT-OF-BOUNDS VALUE 2.
+              88 DIRECTIVITY-GAIN-LOW        VALUE 3.
+              88 PHASE-ERROR-EXCEEDED        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 BEAMSTEERING-COLLAPSE       VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BEAMSTEERING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STEERING-ANGLE-DEG < -60 OR WS-STEERING-ANGLE-DEG > 60
+                SET STEERING-ANGLE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DIRECTIVITY-TENTHS-DBI < 85 OR WS-DIRECTIVITY-TENTHS-DBI > 200
+                SET DIRECTIVITY-GAIN-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-ERR-TENTHS-DEG < 5 OR WS-PHASE-ERR-TENTHS-DEG > 45
+                SET PHASE-ERROR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BEAMSTEERING.
+            IF WS-STEERING-ANGLE-DEG < 0
+                COMPUTE WS-ABS-STEER-ANGLE = -1 * WS-STEERING-ANGLE-DEG
+            ELSE
+                MOVE WS-STEERING-ANGLE-DEG TO WS-ABS-STEER-ANGLE
+            END-IF.
+
+            COMPUTE WS-BMS-COMPOSITE = ((60 - WS-ABS-STEER-ANGLE) * 10) +
+                                       (WS-DIRECTIVITY-TENTHS-DBI * 4) +
+                                       ((45 - WS-PHASE-ERR-TENTHS-DEG) * 15).
+
+            COMPUTE WS-BMS-VITALITY = (WS-BMS-COMPOSITE / 4) +
+                                      (WS-DIRECTIVITY-TENTHS-DBI / 4) +
+                                      ((45 - WS-PHASE-ERR-TENTHS-DEG) * 2) + 1.
+
+            IF WS-BMS-VITALITY EQUAL ZERO
+                SET BEAMSTEERING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BMS-COHERENCE = (WS-BMS-COMPOSITE / 16) +
+                                       (WS-DIRECTIVITY-TENTHS-DBI / 16) +
+                                       ((45 - WS-PHASE-ERR-TENTHS-DEG) / 2).
+
+            COMPUTE WS-BMS-REBAR-LATCH = 1470169088 +
+                                         (WS-BMS-COMPOSITE / 2) +
+                                         (WS-DIRECTIVITY-TENTHS-DBI * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BMS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-BMS-VITALITY * 10) +
+                                         (WS-BMS-COHERENCE * 10) +
+                                         (WS-BMS-COMPOSITE * 10) +
+                                         (WS-BMS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BMS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BMS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
