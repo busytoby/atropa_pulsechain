@@ -1338,6 +1338,11 @@ test-tactile-insertion-detent:
 	./tests/test_tactile_insertion_detent
 	@rm -f tests/test_tactile_insertion_detent
 
+test-voice-command-intent:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_voice_command_intent.c -o tests/test_voice_command_intent
+	./tests/test_voice_command_intent
+	@rm -f tests/test_voice_command_intent
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

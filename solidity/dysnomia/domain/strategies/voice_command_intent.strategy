@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VCI-VOI-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VOICE COMMAND INTENT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VCI-PARAMS.
+           05 WS-ROUTING-LAT-MS         PIC 9(02) VALUE 12.
+           05 WS-INTENT-FIDELITY-M      PIC 9(04) VALUE 0960.
+           05 WS-ALIGN-JITTER-MS        PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VCI-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-VCI-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-VCI-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-VCI-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VCI-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INTENT-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 INTENT-FIDELITY-LOW         VALUE 3.
+              88 JITTER-EXCEEDED             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INTENT-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VOICE-INTENT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ROUTING-LAT-MS < 5 OR WS-ROUTING-LAT-MS > 25
+                SET INTENT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INTENT-FIDELITY-M < 850 OR WS-INTENT-FIDELITY-M > 1000
+                SET INTENT-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALIGN-JITTER-MS < 0 OR WS-ALIGN-JITTER-MS > 5
+                SET JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VOICE-INTENT.
+            COMPUTE WS-VCI-COMPOSITE = ((30 - WS-ROUTING-LAT-MS) * 20) +
+                                       (WS-INTENT-FIDELITY-M / 2) +
+                                       ((10 - WS-ALIGN-JITTER-MS) * 40).
+
+            COMPUTE WS-VCI-VITALITY = (WS-VCI-COMPOSITE / 4) +
+                                      (WS-INTENT-FIDELITY-M / 4) +
+                                      ((30 - WS-ROUTING-LAT-MS) * 4) + 1.
+
+            IF WS-VCI-VITALITY EQUAL ZERO
+                SET INTENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VCI-COHERENCE = (WS-VCI-COMPOSITE / 16) +
+                                       (WS-INTENT-FIDELITY-M / 16) +
+                                       ((30 - WS-ROUTING-LAT-MS) * 2).
+
+            COMPUTE WS-VCI-REBAR-LATCH = 1470169088 +
+                                         (WS-VCI-COMPOSITE / 2) +
+                                         ((30 - WS-ROUTING-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VCI-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-VCI-VITALITY * 10) +
+                                         (WS-VCI-COHERENCE * 10) +
+                                         (WS-VCI-COMPOSITE * 10) +
+                                         (WS-VCI-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VCI-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VCI-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
