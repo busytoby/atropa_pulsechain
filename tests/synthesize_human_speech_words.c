@@ -233,8 +233,8 @@ static void synthesize_organic_emotional_word(const WordLexicon *lex, float base
         for (size_t s = 0; s < phoneme_samples && sample_idx < total_samples; s++, sample_idx++) {
             float p_progress = (float)p_idx / (float)lex->count;
 
-            // Formant coarticulation (~12ms time constant)
-            double alpha = 0.008;
+            // Fast transition rate for consonants (plosives/fricatives), smooth for vowels
+            double alpha = target->is_voiced ? 0.008 : 0.040;
             cur_f1 += (float)((target->f1 - cur_f1) * alpha);
             cur_f2 += (float)((target->f2 - cur_f2) * alpha);
             cur_f3 += (float)((target->f3 - cur_f3) * alpha);
@@ -248,55 +248,71 @@ static void synthesize_organic_emotional_word(const WordLexicon *lex, float base
             cur_b5 += (float)((target->b5 - cur_b5) * alpha);
 
             set_resonator_gain(&r1, cur_f1, cur_b1, 1.00, SAMPLE_RATE);
-            set_resonator_gain(&r2, cur_f2, cur_b2, 0.60, SAMPLE_RATE);
-            set_resonator_gain(&r3, cur_f3, cur_b3, 0.35, SAMPLE_RATE);
-            set_resonator_gain(&r4, cur_f4, cur_b4, 0.18, SAMPLE_RATE);
-            set_resonator_gain(&r5, cur_f5, cur_b5, 0.08, SAMPLE_RATE);
+            set_resonator_gain(&r2, cur_f2, cur_b2, 1.00, SAMPLE_RATE);
+            set_resonator_gain(&r3, cur_f3, cur_b3, 1.00, SAMPLE_RATE);
+            set_resonator_gain(&r4, cur_f4, cur_b4, 1.00, SAMPLE_RATE);
+            set_resonator_gain(&r5, cur_f5, cur_b5, 1.00, SAMPLE_RATE);
+
+            // Frication Bypass Resonator
+            double fric_center = (strcmp(target->symbol, "SS") == 0) ? 5500.0 :
+                                 (strcmp(target->symbol, "SH") == 0) ? 3000.0 :
+                                 (strcmp(target->symbol, "TT") == 0) ? 4000.0 :
+                                 (strcmp(target->symbol, "KK") == 0) ? 2200.0 : 3500.0;
+            Resonator fric_r = {0};
+            set_resonator_gain(&fric_r, (float)fric_center, 800.0f, 1.00, SAMPLE_RATE);
 
             // Natural human pitch contour with Emotional Profile Scaling
             double pitch_arc = 1.0 + (sinf(p_progress * (float)M_PI) * prof->pitch_arc_depth) - (p_progress * prof->pitch_arc_depth * 1.5);
             double micro_vibrato = sin(2.0 * M_PI * 5.2 * ((double)sample_idx / SAMPLE_RATE)) * prof->vibrato_depth;
-            double jitter = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.006;
+            double jitter = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.003;
 
             float semitone = powf(2.0f, target->pitch_offset / 12.0f);
             double inst_f0 = base_f0 * prof->f0_multiplier * pitch_arc * semitone * (1.0 + micro_vibrato + jitter);
 
-            // Natural Glottal Flow Synthesis: Multi-harmonic spectrum with emotional spectral tilt
+            // Rosenberg / LF glottal flow excitation
             double glot_pulse = 0.0;
             if (target->is_voiced) {
                 glot_phase += inst_f0 / (double)SAMPLE_RATE;
                 if (glot_phase >= 1.0) glot_phase -= 1.0;
 
-                for (int h = 1; h <= 12; h++) {
-                    double harmonic_freq = inst_f0 * h;
-                    if (harmonic_freq > 8000.0) break;
-                    double harmonic_amp = 1.0 / pow((double)h, (double)prof->tilt_exponent);
-                    glot_pulse += sin(2.0 * M_PI * h * glot_phase) * harmonic_amp;
+                double p = glot_phase;
+                if (p < 0.40) {
+                    glot_pulse = 0.5 * (1.0 - cos(M_PI * p / 0.40));
+                } else if (p < 0.55) {
+                    glot_pulse = cos(M_PI * (p - 0.40) / 0.30);
+                } else {
+                    glot_pulse = 0.0;
                 }
-                glot_pulse *= 0.28;
+                glot_pulse += sin(M_PI * glot_phase) * prof->chest_warmth * 0.20;
             }
 
-            // Organic 1/f Pink Aspiration & Breath Noise (Vocal cord shimmer)
+            // Organic pink noise & plosive burst dynamics
             double pink_noise = step_pink_noise(&pink);
-            double shimmer = 1.0 + (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.02;
-
-            double excitation = (glot_pulse * target->voice_gain) + (pink_noise * target->noise_gain * shimmer * prof->breath_gain_mult);
-
-            // Resonant Formant Filtering (Parallel Formant Resonators F1..F5)
-            double y1 = step_resonator(&r1, excitation);
-            double y2 = step_resonator(&r2, excitation);
-            double y3 = step_resonator(&r3, excitation);
-            double y4 = step_resonator(&r4, excitation);
-            double y5 = step_resonator(&r5, excitation);
-
-            double vocal_out = y1 + y2 + y3 + y4 + y5;
-
-            // Direct Fundamental F0 Low-End Support (Chest bottom warmth)
-            if (target->is_voiced) {
-                vocal_out += sin(2.0 * M_PI * glot_phase) * prof->chest_warmth * target->voice_gain;
+            double shimmer = 1.0 + (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.015;
+            double plosive_burst = 0.0;
+            if (!target->is_voiced && s < (size_t)(0.015 * SAMPLE_RATE)) {
+                double burst_env = 1.0 - ((double)s / (0.015 * SAMPLE_RATE));
+                plosive_burst = pink_noise * burst_env * 2.0;
             }
 
-            raw_audio[sample_idx] = vocal_out;
+            double vocal_cascade = 0.0;
+            if (target->is_voiced) {
+                // Cascade Vocal Tract Transmission (Klatt Model)
+                double exc = glot_pulse * target->voice_gain;
+                exc = step_resonator(&r1, exc);
+                exc = step_resonator(&r2, exc);
+                exc = step_resonator(&r3, exc);
+                exc = step_resonator(&r4, exc);
+                exc = step_resonator(&r5, exc);
+                vocal_cascade = exc;
+            }
+
+            // Parallel Fricative & Aspiration Output
+            double noise_in = (pink_noise * target->noise_gain * shimmer * prof->breath_gain_mult * 0.6) + plosive_burst;
+            double fric_out = step_resonator(&fric_r, noise_in);
+
+            double combined = (vocal_cascade * 0.8) + (fric_out * 0.9);
+            raw_audio[sample_idx] = tanh(combined * 1.5) * 0.88;
         }
     }
 
