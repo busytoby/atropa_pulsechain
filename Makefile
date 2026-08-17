@@ -1043,6 +1043,11 @@ test-asynchronous-landmark-reminiscing:
 	./tests/test_asynchronous_landmark_reminiscing
 	@rm -f tests/test_asynchronous_landmark_reminiscing
 
+test-tactile-pressure-turn-taking:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_tactile_pressure_turn_taking.c -o tests/test_tactile_pressure_turn_taking
+	./tests/test_tactile_pressure_turn_taking
+	@rm -f tests/test_tactile_pressure_turn_taking
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

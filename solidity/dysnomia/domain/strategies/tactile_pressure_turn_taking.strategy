@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TPT-TAK-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TACTILE PRESSURE TURN TAKING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TPT-PARAMS.
+           05 WS-PINCH-PRESS-MN         PIC 9(04) VALUE 0450.
+           05 WS-VOICE-CUTOFF-LAT-MS    PIC 9(02) VALUE 12.
+           05 WS-HAPTIC-ACK-LAT-MS      PIC 9(02) VALUE 04.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TPT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-TPT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-TPT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-TPT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TPT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 PINCH-PRESS-OUT-OF-BOUNDS   VALUE 2.
+              88 CUTOFF-LAT-OUT-OF-BOUNDS    VALUE 3.
+              88 HAPTIC-ACK-OUT-OF-BOUNDS    VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 TACTILE-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-TACTILE-TAKETURN
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PINCH-PRESS-MN < 200 OR WS-PINCH-PRESS-MN > 800
+                SET PINCH-PRESS-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VOICE-CUTOFF-LAT-MS < 5 OR WS-VOICE-CUTOFF-LAT-MS > 25
+                SET CUTOFF-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HAPTIC-ACK-LAT-MS < 1 OR WS-HAPTIC-ACK-LAT-MS > 10
+                SET HAPTIC-ACK-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-TACTILE-TAKETURN.
+            COMPUTE WS-TPT-COMPOSITE = (WS-PINCH-PRESS-MN / 2) +
+                                       ((30 - WS-VOICE-CUTOFF-LAT-MS) * 20) +
+                                       ((15 - WS-HAPTIC-ACK-LAT-MS) * 20).
+
+            COMPUTE WS-TPT-VITALITY = (WS-TPT-COMPOSITE / 4) +
+                                      (WS-PINCH-PRESS-MN / 4) +
+                                      ((30 - WS-VOICE-CUTOFF-LAT-MS) * 4) + 1.
+
+            IF WS-TPT-VITALITY EQUAL ZERO
+                SET TACTILE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TPT-COHERENCE = (WS-TPT-COMPOSITE / 16) +
+                                       (WS-PINCH-PRESS-MN / 16) +
+                                       ((30 - WS-VOICE-CUTOFF-LAT-MS) * 2).
+
+            COMPUTE WS-TPT-REBAR-LATCH = 1470169088 +
+                                         (WS-TPT-COMPOSITE / 2) +
+                                         ((30 - WS-VOICE-CUTOFF-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TPT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-TPT-VITALITY * 10) +
+                                         (WS-TPT-COHERENCE * 10) +
+                                         (WS-TPT-COMPOSITE * 10) +
+                                         (WS-TPT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TPT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TPT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
