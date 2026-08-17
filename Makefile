@@ -783,6 +783,11 @@ test-in-ear-presence-registered-speaker:
 	./tests/test_in_ear_presence_registered_speaker
 	@rm -f tests/test_in_ear_presence_registered_speaker
 
+test-acoustic-wavefront-curvature:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_wavefront_curvature.c -o tests/test_acoustic_wavefront_curvature
+	./tests/test_acoustic_wavefront_curvature
+	@rm -f tests/test_acoustic_wavefront_curvature
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

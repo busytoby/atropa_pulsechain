@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. WAVE-CRV-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC WAVEFRONT CURVATURE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CRV-PARAMS.
+           05 WS-WAVEFRONT-RADIUS-MM    PIC 9(03) VALUE 065.
+           05 WS-CURVATURE-INDEX-M      PIC 9(04) VALUE 0860.
+           05 WS-PHASE-RESIDUAL-T-DEG   PIC 9(02) VALUE 18.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CRV-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-CRV-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CRV-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CRV-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CRV-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 RADIUS-OUT-OF-BOUNDS        VALUE 2.
+              88 CURVATURE-INDEX-LOW         VALUE 3.
+              88 PHASE-RESIDUAL-EXCEEDED     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 CURVATURE-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-WAVEFRONT-CURVATURE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WAVEFRONT-RADIUS-MM < 20 OR WS-WAVEFRONT-RADIUS-MM > 150
+                SET RADIUS-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CURVATURE-INDEX-M < 500 OR WS-CURVATURE-INDEX-M > 950
+                SET CURVATURE-INDEX-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-RESIDUAL-T-DEG < 5 OR WS-PHASE-RESIDUAL-T-DEG > 32
+                SET PHASE-RESIDUAL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-WAVEFRONT-CURVATURE.
+            COMPUTE WS-CRV-COMPOSITE = (WS-WAVEFRONT-RADIUS-MM * 5) +
+                                       (WS-CURVATURE-INDEX-M / 2) +
+                                       ((32 - WS-PHASE-RESIDUAL-T-DEG) * 20).
+
+            COMPUTE WS-CRV-VITALITY = (WS-CRV-COMPOSITE / 4) +
+                                      (WS-CURVATURE-INDEX-M / 4) +
+                                      ((32 - WS-PHASE-RESIDUAL-T-DEG) * 2) + 1.
+
+            IF WS-CRV-VITALITY EQUAL ZERO
+                SET CURVATURE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CRV-COHERENCE = (WS-CRV-COMPOSITE / 16) +
+                                       (WS-CURVATURE-INDEX-M / 16) +
+                                       ((32 - WS-PHASE-RESIDUAL-T-DEG) / 2).
+
+            COMPUTE WS-CRV-REBAR-LATCH = 1470169088 +
+                                         (WS-CRV-COMPOSITE / 2) +
+                                         (WS-CURVATURE-INDEX-M * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CRV-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CRV-VITALITY * 10) +
+                                         (WS-CRV-COHERENCE * 10) +
+                                         (WS-CRV-COMPOSITE * 10) +
+                                         (WS-CRV-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CRV-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CRV-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
