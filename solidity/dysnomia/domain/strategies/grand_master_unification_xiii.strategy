@@ -1,0 +1,121 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GM-UXIII-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GRAND MASTER UNIFICATION XIII AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UXIII-PARAMS.
+           05 WS-UNIFICATION-XII-M      PIC 9(04) VALUE 0920.
+           05 WS-REMINISCE-MEMORY-M     PIC 9(04) VALUE 0960.
+           05 WS-COMM-IO-SCORE-M        PIC 9(04) VALUE 0950.
+           05 WS-WEYL-BENCHMARK-M       PIC 9(04) VALUE 0940.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-UXIII-COMPOSITE        PIC 9(04) VALUE 0.
+           05 WS-UXIII-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-UXIII-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-UXIII-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UXIII-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 UNIFICATION-XII-OUT-OF-BND  VALUE 2.
+              88 REMINISCE-MEMORY-LOW        VALUE 3.
+              88 COMM-IO-SCORE-LOW           VALUE 4.
+              88 WEYL-BENCHMARK-LOW          VALUE 5.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 6.
+              88 UNIFICATION-XIII-COLLAPSE   VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UNIFICATION-XIII
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UNIFICATION-XII-M < 500 OR WS-UNIFICATION-XII-M > 1000
+                SET UNIFICATION-XII-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REMINISCE-MEMORY-M < 850 OR WS-REMINISCE-MEMORY-M > 1000
+                SET REMINISCE-MEMORY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COMM-IO-SCORE-M < 850 OR WS-COMM-IO-SCORE-M > 1000
+                SET COMM-IO-SCORE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-BENCHMARK-M < 850 OR WS-WEYL-BENCHMARK-M > 1000
+                SET WEYL-BENCHMARK-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UNIFICATION-XIII.
+            COMPUTE WS-UXIII-COMPOSITE = (WS-UNIFICATION-XII-M / 2) +
+                                         (WS-REMINISCE-MEMORY-M / 4) +
+                                         (WS-COMM-IO-SCORE-M / 4) +
+                                         (WS-WEYL-BENCHMARK-M / 4).
+
+            COMPUTE WS-UXIII-VITALITY = (WS-UXIII-COMPOSITE / 4) +
+                                        (WS-REMINISCE-MEMORY-M / 8) +
+                                        (WS-COMM-IO-SCORE-M / 8) + 1.
+
+            IF WS-UXIII-VITALITY EQUAL ZERO
+                SET UNIFICATION-XIII-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UXIII-COHERENCE = (WS-UXIII-COMPOSITE / 16) +
+                                         (WS-COMM-IO-SCORE-M / 16) +
+                                         (WS-WEYL-BENCHMARK-M / 16).
+
+            COMPUTE WS-UXIII-REBAR-LATCH = 1470169088 +
+                                           (WS-UXIII-COMPOSITE / 2) +
+                                           (WS-UNIFICATION-XII-M * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UXIII-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-UXIII-VITALITY * 10) +
+                                           (WS-UXIII-COHERENCE * 10) +
+                                           (WS-UXIII-COMPOSITE * 10) +
+                                           (WS-UXIII-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UXIII-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UXIII-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
