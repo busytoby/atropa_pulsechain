@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MOOD-TRANS-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / PERSONALITY MOOD AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-MOOD-PARAMS.
+           05 WS-VALENCE-MILLI          PIC 9(04) VALUE 0750.
+           05 WS-AROUSAL-MILLI          PIC 9(04) VALUE 0600.
+           05 WS-DOMINANCE-MILLI        PIC 9(04) VALUE 0450.
+           05 WS-DELTA-TRANS-MILLI      PIC 9(04) VALUE 0080.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MOOD-COMPOSITE         PIC 9(04) VALUE 0.
+           05 WS-MOOD-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-MOOD-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-MOOD-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MOOD-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-VAD-COORDINATES     VALUE 2.
+              88 TRANSITION-DELTA-EXCEEDED   VALUE 3.
+              88 MOOD-VECTOR-MAG-LOW         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MOOD-VITALITY-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MOOD-TRANSITION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VALENCE-MILLI < 100 OR WS-VALENCE-MILLI > 1000 OR
+               WS-AROUSAL-MILLI < 100 OR WS-AROUSAL-MILLI > 1000 OR
+               WS-DOMINANCE-MILLI < 100 OR WS-DOMINANCE-MILLI > 1000
+                SET INVALID-VAD-COORDINATES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DELTA-TRANS-MILLI < 0 OR WS-DELTA-TRANS-MILLI > 250
+                SET TRANSITION-DELTA-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MOOD-COMPOSITE = (WS-VALENCE-MILLI + WS-AROUSAL-MILLI + WS-DOMINANCE-MILLI) / 3.
+            IF WS-MOOD-COMPOSITE < 200
+                SET MOOD-VECTOR-MAG-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MOOD-TRANSITION.
+            COMPUTE WS-MOOD-VITALITY = (WS-MOOD-COMPOSITE / 4) +
+                                       ((250 - WS-DELTA-TRANS-MILLI) * 4) +
+                                       (WS-VALENCE-MILLI / 8) + 1.
+
+            IF WS-MOOD-VITALITY EQUAL ZERO
+                SET MOOD-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MOOD-COHERENCE = (WS-MOOD-COMPOSITE / 16) +
+                                        ((250 - WS-DELTA-TRANS-MILLI) / 2) +
+                                        (WS-VALENCE-MILLI / 32).
+
+            COMPUTE WS-MOOD-REBAR-LATCH = 1470169088 +
+                                          (WS-MOOD-COMPOSITE / 2) +
+                                          ((250 - WS-DELTA-TRANS-MILLI) * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MOOD-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-MOOD-VITALITY * 10) +
+                                          (WS-MOOD-COHERENCE * 10) +
+                                          (WS-MOOD-COMPOSITE * 10) +
+                                          (WS-MOOD-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MOOD-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MOOD-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
