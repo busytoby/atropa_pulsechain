@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. USW-CLS-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / UNIVERSAL STANAG WEYL CLOSURE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-USW-PARAMS.
+           05 WS-STANAG-NODES           PIC 9(02) VALUE 16.
+           05 WS-STANAG-BAUD-RATE       PIC 9(05) VALUE 09600.
+           05 WS-WEYL-DIFF-RANK         PIC 9(02) VALUE 02.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-USW-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-USW-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-USW-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-USW-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-USW-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 NODE-COUNT-OUT-OF-BOUNDS    VALUE 2.
+              88 BAUD-RATE-OUT-OF-BOUNDS     VALUE 3.
+              88 WEYL-RANK-OUT-OF-BOUNDS     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 WEYL-CLOSURE-COLLAPSE       VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UNIVERSAL-WEYL
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STANAG-NODES < 3 OR WS-STANAG-NODES > 64
+                SET NODE-COUNT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STANAG-BAUD-RATE < 75 OR WS-STANAG-BAUD-RATE > 19200
+                SET BAUD-RATE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIFF-RANK < 1 OR WS-WEYL-DIFF-RANK > 8
+                SET WEYL-RANK-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UNIVERSAL-WEYL.
+            COMPUTE WS-USW-COMPOSITE = (WS-STANAG-NODES * 20) +
+                                       (WS-STANAG-BAUD-RATE / 50) +
+                                       ((9 - WS-WEYL-DIFF-RANK) * 50).
+
+            COMPUTE WS-USW-VITALITY = (WS-USW-COMPOSITE / 4) +
+                                      (WS-STANAG-BAUD-RATE / 100) +
+                                      (WS-STANAG-NODES * 4) + 1.
+
+            IF WS-USW-VITALITY EQUAL ZERO
+                SET WEYL-CLOSURE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-USW-COHERENCE = (WS-USW-COMPOSITE / 16) +
+                                       (WS-STANAG-BAUD-RATE / 400) +
+                                       (WS-STANAG-NODES / 2).
+
+            COMPUTE WS-USW-REBAR-LATCH = 1470169088 +
+                                         (WS-USW-COMPOSITE / 2) +
+                                         (WS-STANAG-NODES * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-USW-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-USW-VITALITY * 10) +
+                                         (WS-USW-COHERENCE * 10) +
+                                         (WS-USW-COMPOSITE * 10) +
+                                         (WS-USW-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-USW-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-USW-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

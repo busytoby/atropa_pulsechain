@@ -953,6 +953,11 @@ test-teddy-protein-weyl-stanag-vote:
 	./tests/test_teddy_protein_weyl_stanag_vote
 	@rm -f tests/test_teddy_protein_weyl_stanag_vote
 
+test-universal-stanag-weyl-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_universal_stanag_weyl_closure.c -o tests/test_universal_stanag_weyl_closure
+	./tests/test_universal_stanag_weyl_closure
+	@rm -f tests/test_universal_stanag_weyl_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
