@@ -1298,6 +1298,11 @@ test-subassembly-hierarchy-chunking:
 	./tests/test_subassembly_hierarchy_chunking
 	@rm -f tests/test_subassembly_hierarchy_chunking
 
+test-tool-affordance-interop:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_tool_affordance_interop.c -o tests/test_tool_affordance_interop
+	./tests/test_tool_affordance_interop
+	@rm -f tests/test_tool_affordance_interop
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
