@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SAH-IMM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SPATIAL AUDIO HMD IMMERSION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SAH-PARAMS.
+           05 WS-HRTF-LAT-MS            PIC 9(02) VALUE 12.
+           05 WS-GAZE-FIDELITY-M        PIC 9(04) VALUE 0960.
+           05 WS-SPATIAL-ERROR-DEG      PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SAH-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SAH-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SAH-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SAH-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SAH-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 HRTF-LAT-OUT-OF-BOUNDS      VALUE 2.
+              88 GAZE-FIDELITY-LOW           VALUE 3.
+              88 SPATIAL-ERROR-EXCEEDED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 IMMERSION-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SPATIAL-IMMERSION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HRTF-LAT-MS < 5 OR WS-HRTF-LAT-MS > 25
+                SET HRTF-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GAZE-FIDELITY-M < 850 OR WS-GAZE-FIDELITY-M > 1000
+                SET GAZE-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPATIAL-ERROR-DEG < 0 OR WS-SPATIAL-ERROR-DEG > 5
+                SET SPATIAL-ERROR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SPATIAL-IMMERSION.
+            COMPUTE WS-SAH-COMPOSITE = ((30 - WS-HRTF-LAT-MS) * 20) +
+                                       (WS-GAZE-FIDELITY-M / 2) +
+                                       ((10 - WS-SPATIAL-ERROR-DEG) * 40).
+
+            COMPUTE WS-SAH-VITALITY = (WS-SAH-COMPOSITE / 4) +
+                                      (WS-GAZE-FIDELITY-M / 4) +
+                                      ((30 - WS-HRTF-LAT-MS) * 4) + 1.
+
+            IF WS-SAH-VITALITY EQUAL ZERO
+                SET IMMERSION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SAH-COHERENCE = (WS-SAH-COMPOSITE / 16) +
+                                       (WS-GAZE-FIDELITY-M / 16) +
+                                       ((30 - WS-HRTF-LAT-MS) * 2).
+
+            COMPUTE WS-SAH-REBAR-LATCH = 1470169088 +
+                                         (WS-SAH-COMPOSITE / 2) +
+                                         ((30 - WS-HRTF-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SAH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SAH-VITALITY * 10) +
+                                         (WS-SAH-COHERENCE * 10) +
+                                         (WS-SAH-COMPOSITE * 10) +
+                                         (WS-SAH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SAH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SAH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

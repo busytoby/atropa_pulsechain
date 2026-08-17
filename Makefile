@@ -1243,6 +1243,11 @@ test-deformable-part-simulation:
 	./tests/test_deformable_part_simulation
 	@rm -f tests/test_deformable_part_simulation
 
+test-spatial-audio-hmd-immersion:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_spatial_audio_hmd_immersion.c -o tests/test_spatial_audio_hmd_immersion
+	./tests/test_spatial_audio_hmd_immersion
+	@rm -f tests/test_spatial_audio_hmd_immersion
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
