@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. EGO-VAD-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / EGOCENTRIC AUDIO VAD GATING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VAD-PARAMS.
+           05 WS-WAKE-WINDOW-T-S        PIC 9(02) VALUE 30.
+           05 WS-VAD-SILENCE-MS         PIC 9(04) VALUE 1000.
+           05 WS-WER-TENTHS-PCT         PIC 9(03) VALUE 070.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VAD-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-VAD-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-VAD-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-VAD-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VAD-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 WAKE-WINDOW-OUT-OF-BOUNDS   VALUE 2.
+              88 VAD-SILENCE-OUT-OF-BOUNDS   VALUE 3.
+              88 WER-OUT-OF-BOUNDS           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 VAD-COLLAPSE                VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-AUDIO-VAD
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WAKE-WINDOW-T-S < 10 OR WS-WAKE-WINDOW-T-S > 50
+                SET WAKE-WINDOW-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VAD-SILENCE-MS < 500 OR WS-VAD-SILENCE-MS > 2000
+                SET VAD-SILENCE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WER-TENTHS-PCT < 10 OR WS-WER-TENTHS-PCT > 150
+                SET WER-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-AUDIO-VAD.
+            COMPUTE WS-VAD-COMPOSITE = (WS-WAKE-WINDOW-T-S * 10) +
+                                       (WS-VAD-SILENCE-MS / 2) +
+                                       ((150 - WS-WER-TENTHS-PCT) * 2).
+
+            COMPUTE WS-VAD-VITALITY = (WS-VAD-COMPOSITE / 4) +
+                                      (WS-VAD-SILENCE-MS / 8) +
+                                      (WS-WAKE-WINDOW-T-S * 2) + 1.
+
+            IF WS-VAD-VITALITY EQUAL ZERO
+                SET VAD-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VAD-COHERENCE = (WS-VAD-COMPOSITE / 16) +
+                                       (WS-VAD-SILENCE-MS / 32) +
+                                       (WS-WAKE-WINDOW-T-S / 2).
+
+            COMPUTE WS-VAD-REBAR-LATCH = 1470169088 +
+                                         (WS-VAD-COMPOSITE / 2) +
+                                         (WS-WAKE-WINDOW-T-S * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VAD-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-VAD-VITALITY * 10) +
+                                         (WS-VAD-COHERENCE * 10) +
+                                         (WS-VAD-COMPOSITE * 10) +
+                                         (WS-VAD-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VAD-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VAD-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

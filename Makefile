@@ -838,6 +838,11 @@ test-grand-master-unification-ix:
 	./tests/test_grand_master_unification_ix
 	@rm -f tests/test_grand_master_unification_ix
 
+test-egocentric-audio-vad-gating:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_egocentric_audio_vad_gating.c -o tests/test_egocentric_audio_vad_gating
+	./tests/test_egocentric_audio_vad_gating
+	@rm -f tests/test_egocentric_audio_vad_gating
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
