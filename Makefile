@@ -533,6 +533,11 @@ test-intentional-error-modulation:
 	./tests/test_intentional_error_modulation
 	@rm -f tests/test_intentional_error_modulation
 
+test-proxemic-distance-modulation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_proxemic_distance_modulation.c -o tests/test_proxemic_distance_modulation
+	./tests/test_proxemic_distance_modulation
+	@rm -f tests/test_proxemic_distance_modulation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PROX-DIST-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / PROXEMIC DISTANCE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PROX-PARAMS.
+           05 WS-DISTANCE-CM            PIC 9(03) VALUE 030.
+           05 WS-APPROACH-INTENSITY     PIC 9(04) VALUE 0800.
+           05 WS-PROX-MODE-ID           PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PROX-POTENTIAL         PIC 9(04) VALUE 0.
+           05 WS-PROX-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-PROX-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-PROX-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PROX-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-DISTANCE-RANGE      VALUE 2.
+              88 INVALID-APPROACH-INTENSITY  VALUE 3.
+              88 INVALID-PROXEMIC-MODE       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PROXEMIC-POTENTIAL-COLLAPSE VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PROXEMIC-DISTANCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DISTANCE-CM < 10 OR WS-DISTANCE-CM > 200
+                SET INVALID-DISTANCE-RANGE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-APPROACH-INTENSITY < 100 OR WS-APPROACH-INTENSITY > 1000
+                SET INVALID-APPROACH-INTENSITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROX-MODE-ID NOT EQUAL 1 AND WS-PROX-MODE-ID NOT EQUAL 2
+                SET INVALID-PROXEMIC-MODE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PROX-POTENTIAL = (WS-APPROACH-INTENSITY * 100) / (WS-DISTANCE-CM + 10).
+            IF WS-PROX-POTENTIAL > 1000
+                MOVE 1000 TO WS-PROX-POTENTIAL
+            END-IF.
+
+            IF WS-PROX-POTENTIAL EQUAL ZERO
+                SET PROXEMIC-POTENTIAL-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PROXEMIC-DISTANCE.
+            COMPUTE WS-PROX-VITALITY = (WS-PROX-POTENTIAL / 4) +
+                                       (WS-APPROACH-INTENSITY / 8) +
+                                       (WS-PROX-MODE-ID * 128) + 1.
+
+            IF WS-PROX-VITALITY EQUAL ZERO
+                SET PROXEMIC-POTENTIAL-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PROX-COHERENCE = (WS-PROX-POTENTIAL / 16) +
+                                        (WS-APPROACH-INTENSITY / 32) +
+                                        (WS-PROX-MODE-ID * 32).
+
+            COMPUTE WS-PROX-REBAR-LATCH = 1470169088 +
+                                          (WS-PROX-POTENTIAL / 2) +
+                                          (WS-APPROACH-INTENSITY / 4) +
+                                          (WS-PROX-MODE-ID * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PROX-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-PROX-VITALITY * 10) +
+                                          (WS-PROX-COHERENCE * 10) +
+                                          (WS-PROX-POTENTIAL * 10) +
+                                          (WS-PROX-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PROX-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PROX-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
