@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. THERM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / THERMAL DISSIPATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-THERM-PARAMS.
+           05 WS-AMBIENT-TEMP-MC        PIC 9(05) VALUE 25000.
+           05 WS-DYNAMIC-POWER-MW       PIC 9(05) VALUE 08500.
+           05 WS-THERM-RESIST-MCW       PIC 9(04) VALUE 3500.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-JUNCTION-TEMP-MC       PIC 9(06) VALUE 0.
+           05 WS-THERM-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-THERM-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-THERM-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-THERM-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-AMBIENT-TEMP        VALUE 2.
+              88 DYNAMIC-POWER-EXCEEDED      VALUE 3.
+              88 JUNCTION-TEMP-EXCEEDED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 THERMAL-VITALITY-COLLAPSE   VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-THERMAL-DISSIPATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AMBIENT-TEMP-MC < 10000 OR WS-AMBIENT-TEMP-MC > 45000
+                SET INVALID-AMBIENT-TEMP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DYNAMIC-POWER-MW < 500 OR WS-DYNAMIC-POWER-MW > 12500
+                SET DYNAMIC-POWER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-THERM-RESIST-MCW < 1000 OR WS-THERM-RESIST-MCW > 6000
+                MOVE 3500 TO WS-THERM-RESIST-MCW
+            END-IF.
+
+            COMPUTE WS-JUNCTION-TEMP-MC = WS-AMBIENT-TEMP-MC +
+                ((WS-DYNAMIC-POWER-MW * WS-THERM-RESIST-MCW) / 1000).
+
+            IF WS-JUNCTION-TEMP-MC > 85000
+                SET JUNCTION-TEMP-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-THERMAL-DISSIPATION.
+            COMPUTE WS-THERM-VITALITY = ((85000 - WS-JUNCTION-TEMP-MC) / 100) +
+                                        ((12500 - WS-DYNAMIC-POWER-MW) / 50) + 1.
+
+            IF WS-THERM-VITALITY EQUAL ZERO
+                SET THERMAL-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-THERM-COHERENCE = ((85000 - WS-JUNCTION-TEMP-MC) / 400) +
+                                         ((12500 - WS-DYNAMIC-POWER-MW) / 200).
+
+            COMPUTE WS-THERM-REBAR-LATCH = 1470169088 +
+                                           ((85000 - WS-JUNCTION-TEMP-MC) / 10) +
+                                           (WS-DYNAMIC-POWER-MW / 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-THERM-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-THERM-VITALITY * 10) +
+                                           (WS-THERM-COHERENCE * 10) +
+                                           (WS-DYNAMIC-POWER-MW * 10) +
+                                           (WS-THERM-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-THERM-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-THERM-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

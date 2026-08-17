@@ -613,6 +613,11 @@ test-acoustic-purr-modulation:
 	./tests/test_acoustic_purr_modulation
 	@rm -f tests/test_acoustic_purr_modulation
 
+test-thermal-heat-dissipation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_thermal_heat_dissipation.c -o tests/test_thermal_heat_dissipation
+	./tests/test_thermal_heat_dissipation
+	@rm -f tests/test_thermal_heat_dissipation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
