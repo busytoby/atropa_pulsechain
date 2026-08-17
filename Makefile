@@ -488,6 +488,11 @@ test-multimodal-cue-projection:
 	./tests/test_multimodal_cue_projection
 	@rm -f tests/test_multimodal_cue_projection
 
+test-grand-master-vaesen-unification:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_vaesen_unification.c -o tests/test_grand_master_vaesen_unification
+	./tests/test_grand_master_vaesen_unification
+	@rm -f tests/test_grand_master_vaesen_unification
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
