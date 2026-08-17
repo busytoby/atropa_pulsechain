@@ -268,6 +268,11 @@ test-accumulator-zeroing-nullstellensatz:
 	./tests/test_accumulator_zeroing_nullstellensatz
 	@rm -f tests/test_accumulator_zeroing_nullstellensatz
 
+test-minimal-desingularization-ideal:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_minimal_desingularization_ideal.c -o tests/test_minimal_desingularization_ideal
+	./tests/test_minimal_desingularization_ideal
+	@rm -f tests/test_minimal_desingularization_ideal
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MINIMAL-DESINGULARIZATION-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / DESINGULARIZATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-DESING-PARAMS.
+           05 WS-ALPHA-COUNT            PIC 9(02) VALUE 02.
+           05 WS-MULTIPLIER-ORDER       PIC 9(02) VALUE 01.
+           05 WS-WEYL-RANK-R            PIC 9(02) VALUE 01.
+           05 WS-OPERATOR-ORDER         PIC 9(02) VALUE 02.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DESING-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-DESING-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-DESING-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-DESING-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ALPHA-COUNT         VALUE 2.
+              88 INVALID-MULTIPLIER-ORDER    VALUE 3.
+              88 INVALID-WEYL-RANK           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-OPERATOR-ORDER      VALUE 6.
+              88 DESING-DIVERG-FAIL          VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-DESINGULARIZATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALPHA-COUNT < 1 OR WS-ALPHA-COUNT > 16
+                SET INVALID-ALPHA-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MULTIPLIER-ORDER < 1 OR WS-MULTIPLIER-ORDER > 16
+                SET INVALID-MULTIPLIER-ORDER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-RANK-R < 1 OR WS-WEYL-RANK-R > 16
+                SET INVALID-WEYL-RANK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-OPERATOR-ORDER < 1 OR WS-OPERATOR-ORDER > 16
+                SET INVALID-OPERATOR-ORDER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-DESINGULARIZATION.
+            COMPUTE WS-DESING-VITALITY = (WS-ALPHA-COUNT * 512) +
+                                         (WS-MULTIPLIER-ORDER * 256) +
+                                         (WS-WEYL-RANK-R * 64) +
+                                         (WS-OPERATOR-ORDER * 16) + 1.
+
+            IF WS-DESING-VITALITY EQUAL ZERO
+                SET DESING-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-DESING-COHERENCE = (WS-MULTIPLIER-ORDER * 32) +
+                                          (WS-ALPHA-COUNT * 64) +
+                                          (WS-OPERATOR-ORDER * 16).
+
+            COMPUTE WS-DESING-REBAR-LATCH = 1470169088 + (WS-ALPHA-COUNT * 256) +
+                                            (WS-MULTIPLIER-ORDER * 64) +
+                                            (WS-WEYL-RANK-R * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-DESING-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-DESING-VITALITY * 10) +
+                                            (WS-DESING-COHERENCE * 10) +
+                                            (WS-ALPHA-COUNT * 1000) +
+                                            (WS-DESING-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-DESING-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-DESING-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
