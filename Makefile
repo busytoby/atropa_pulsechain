@@ -588,6 +588,11 @@ test-participatory-consensus-voting:
 	./tests/test_participatory_consensus_voting
 	@rm -f tests/test_participatory_consensus_voting
 
+test-realtime-av-motion-sync:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_realtime_av_motion_sync.c -o tests/test_realtime_av_motion_sync
+	./tests/test_realtime_av_motion_sync
+	@rm -f tests/test_realtime_av_motion_sync
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

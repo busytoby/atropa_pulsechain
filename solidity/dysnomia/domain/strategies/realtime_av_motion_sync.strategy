@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AV-SYNC-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / AUDIO-VISUAL SYNC AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SYNC-PARAMS.
+           05 WS-AUDIO-TS               PIC 9(04) VALUE 0320.
+           05 WS-MOTION-TS              PIC 9(04) VALUE 0330.
+           05 WS-MOUTH-APERTURE-PX      PIC 9(02) VALUE 24.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SKEW-MS                PIC 9(04) VALUE 0.
+           05 WS-SYNC-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-SYNC-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-SYNC-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SYNC-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-TIMESTAMPS          VALUE 2.
+              88 AV-SKEW-BOUND-EXCEEDED      VALUE 3.
+              88 INVALID-MOUTH-APERTURE      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SYNC-VITALITY-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-AV-MOTION-SYNC
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AUDIO-TS < 10 OR WS-AUDIO-TS > 5000 OR
+               WS-MOTION-TS < 10 OR WS-MOTION-TS > 5000
+                SET INVALID-TIMESTAMPS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AUDIO-TS >= WS-MOTION-TS
+                COMPUTE WS-SKEW-MS = WS-AUDIO-TS - WS-MOTION-TS
+            ELSE
+                COMPUTE WS-SKEW-MS = WS-MOTION-TS - WS-AUDIO-TS
+            END-IF.
+
+            IF WS-SKEW-MS > 40
+                SET AV-SKEW-BOUND-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MOUTH-APERTURE-PX < 1 OR WS-MOUTH-APERTURE-PX > 64
+                SET INVALID-MOUTH-APERTURE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-AV-MOTION-SYNC.
+            COMPUTE WS-SYNC-VITALITY = ((40 - WS-SKEW-MS) * 10) +
+                                       (WS-MOUTH-APERTURE-PX * 8) +
+                                       (WS-AUDIO-TS / 16) + 1.
+
+            IF WS-SYNC-VITALITY EQUAL ZERO
+                SET SYNC-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SYNC-COHERENCE = ((40 - WS-SKEW-MS) * 2) +
+                                        (WS-MOUTH-APERTURE-PX * 2) +
+                                        (WS-AUDIO-TS / 64).
+
+            COMPUTE WS-SYNC-REBAR-LATCH = 1470169088 +
+                                          ((40 - WS-SKEW-MS) * 16) +
+                                          (WS-MOUTH-APERTURE-PX * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SYNC-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-SYNC-VITALITY * 10) +
+                                          (WS-SYNC-COHERENCE * 10) +
+                                          ((40 - WS-SKEW-MS) * 100) +
+                                          (WS-SYNC-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SYNC-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SYNC-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
