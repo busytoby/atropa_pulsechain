@@ -723,6 +723,11 @@ test-ankh-island-seance-bridge:
 	./tests/test_ankh_island_seance_bridge
 	@rm -f tests/test_ankh_island_seance_bridge
 
+test-grand-master-unification-vi:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_vi.c -o tests/test_grand_master_unification_vi
+	./tests/test_grand_master_unification_vi
+	@rm -f tests/test_grand_master_unification_vi
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
