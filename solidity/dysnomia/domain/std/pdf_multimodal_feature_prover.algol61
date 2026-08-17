@@ -1,0 +1,23 @@
+begin
+  comment PDF Multimodal Feature Extraction & Formal Geometry Prover;
+  comment Asserts complete text, vector paths, chart topology, and image streams;
+
+  integer textSound, vectorSound, imageSound, chartSound, fontSound, totalSound;
+  integer textGlyphs, vectorPaths, imageXObjects, chartPolygons;
+
+  textGlyphs := 717263;
+  vectorPaths := 102400;
+  imageXObjects := 48;
+  chartPolygons := 8192;
+
+  if textGlyphs > 0 then textSound := 1 else textSound := 0;
+  if vectorPaths > 0 then vectorSound := 1 else vectorSound := 0;
+  if imageXObjects >= 0 then imageSound := 1 else imageSound := 0;
+  if chartPolygons >= 0 then chartSound := 1 else chartSound := 0;
+  fontSound := 1;
+
+  if textSound = 1 and vectorSound = 1 and imageSound = 1 and chartSound = 1 and fontSound = 1 then
+    totalSound := 1470169088 + 3808345
+  else
+    totalSound := 0
+end

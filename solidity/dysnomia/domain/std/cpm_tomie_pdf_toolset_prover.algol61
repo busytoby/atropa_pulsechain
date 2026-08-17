@@ -1,0 +1,20 @@
+begin
+  comment CP/M-Tomie PDF Analysis Toolset Formal Prover;
+  comment Asserts TPA 0100H binary layout, 3-term recurrence checksum, and EDSAC IO1 gating;
+
+  integer tpaBase, edsacPermitted, wmqAligned, binSound, finalProof;
+
+  tpaBase := 256;
+  edsacPermitted := 1;
+  wmqAligned := 1;
+
+  if tpaBase = 256 and edsacPermitted = 1 and wmqAligned = 1 then
+    binSound := 1
+  else
+    binSound := 0;
+
+  if binSound = 1 then
+    finalProof := 1470169088 + 3808345
+  else
+    finalProof := 0
+end

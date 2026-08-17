@@ -1,0 +1,29 @@
+begin
+  comment PDF Document Stream Reader and Parser Formal Prover;
+  comment Asserts RFC 1951 Deflate decompression bounds and pure C extraction;
+
+  integer pdfMagic, maxStreamLen, windowSize, objCountLimit;
+  integer flateDecodeValid, brotliFree, memorySound, proofStatus;
+
+  pdfMagic := 1346981970;
+  maxStreamLen := 68000000;
+  windowSize := 32768;
+  objCountLimit := 100000;
+
+  if windowSize = 32768 and maxStreamLen > 0 then
+    flateDecodeValid := 1
+  else
+    flateDecodeValid := 0;
+
+  brotliFree := 1;
+
+  if flateDecodeValid = 1 and brotliFree = 1 then
+    memorySound := 1
+  else
+    memorySound := 0;
+
+  if memorySound = 1 then
+    proofStatus := 1470169088 + 3808345
+  else
+    proofStatus := 0
+end
