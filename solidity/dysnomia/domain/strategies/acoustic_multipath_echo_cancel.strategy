@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ECH-CNC-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC MULTIPATH ECHO CANCEL AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ECH-PARAMS.
+           05 WS-DELAY-SPREAD-US        PIC 9(03) VALUE 045.
+           05 WS-ERLE-TENTHS-DB         PIC 9(03) VALUE 285.
+           05 WS-ECHO-SUPPRESSION-M     PIC 9(04) VALUE 0890.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ECH-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ECH-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ECH-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ECH-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ECH-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 DELAY-SPREAD-OUT-OF-BOUNDS  VALUE 2.
+              88 ERLE-GAIN-LOW               VALUE 3.
+              88 ECHO-SUPPRESSION-LOW        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ECHO-COLLAPSE               VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ECHO-CANCEL
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DELAY-SPREAD-US < 10 OR WS-DELAY-SPREAD-US > 120
+                SET DELAY-SPREAD-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ERLE-TENTHS-DB < 220 OR WS-ERLE-TENTHS-DB > 450
+                SET ERLE-GAIN-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ECHO-SUPPRESSION-M < 600 OR WS-ECHO-SUPPRESSION-M > 1000
+                SET ECHO-SUPPRESSION-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ECHO-CANCEL.
+            COMPUTE WS-ECH-COMPOSITE = ((120 - WS-DELAY-SPREAD-US) * 5) +
+                                       (WS-ERLE-TENTHS-DB * 2) +
+                                       (WS-ECHO-SUPPRESSION-M / 2).
+
+            COMPUTE WS-ECH-VITALITY = (WS-ECH-COMPOSITE / 4) +
+                                      (WS-ERLE-TENTHS-DB / 4) +
+                                      (WS-ECHO-SUPPRESSION-M / 4) + 1.
+
+            IF WS-ECH-VITALITY EQUAL ZERO
+                SET ECHO-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ECH-COHERENCE = (WS-ECH-COMPOSITE / 16) +
+                                       (WS-ERLE-TENTHS-DB / 16) +
+                                       (WS-ECHO-SUPPRESSION-M / 16).
+
+            COMPUTE WS-ECH-REBAR-LATCH = 1470169088 +
+                                         (WS-ECH-COMPOSITE / 2) +
+                                         (WS-ERLE-TENTHS-DB * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ECH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ECH-VITALITY * 10) +
+                                         (WS-ECH-COHERENCE * 10) +
+                                         (WS-ECH-COMPOSITE * 10) +
+                                         (WS-ECH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ECH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ECH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

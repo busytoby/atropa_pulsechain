@@ -818,6 +818,11 @@ test-skeleton-hasp-vocabulary-binaries:
 	./tests/test_skeleton_hasp_vocabulary_binaries
 	@rm -f tests/test_skeleton_hasp_vocabulary_binaries
 
+test-acoustic-multipath-echo-cancel:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_multipath_echo_cancel.c -o tests/test_acoustic_multipath_echo_cancel
+	./tests/test_acoustic_multipath_echo_cancel
+	@rm -f tests/test_acoustic_multipath_echo_cancel
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
