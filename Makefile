@@ -1073,6 +1073,11 @@ test-transient-interlocutor-privacy-mask:
 	./tests/test_transient_interlocutor_privacy_mask
 	@rm -f tests/test_transient_interlocutor_privacy_mask
 
+test-adaptive-utterance-conciseness:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_adaptive_utterance_conciseness.c -o tests/test_adaptive_utterance_conciseness
+	./tests/test_adaptive_utterance_conciseness
+	@rm -f tests/test_adaptive_utterance_conciseness
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
