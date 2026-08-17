@@ -223,6 +223,11 @@ test-zeroshot-benchmark-invariance:
 	./tests/test_zeroshot_benchmark_invariance
 	@rm -f tests/test_zeroshot_benchmark_invariance
 
+test-quad-ablation-sensitivity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_quad_ablation_sensitivity.c -o tests/test_quad_ablation_sensitivity
+	./tests/test_quad_ablation_sensitivity
+	@rm -f tests/test_quad_ablation_sensitivity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
