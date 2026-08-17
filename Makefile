@@ -303,6 +303,11 @@ test-grand-master-weyl-closure:
 	./tests/test_grand_master_weyl_closure
 	@rm -f tests/test_grand_master_weyl_closure
 
+test-bernstein-filtration-dimension:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bernstein_filtration_dimension.c -o tests/test_bernstein_filtration_dimension
+	./tests/test_bernstein_filtration_dimension
+	@rm -f tests/test_bernstein_filtration_dimension
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

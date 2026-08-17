@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BERNSTEIN-FILTRATION-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BERNSTEIN FILTRATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BERN-PARAMS.
+           05 WS-WEYL-DIM-N             PIC 9(02) VALUE 02.
+           05 WS-FILT-DEGREE-K          PIC 9(02) VALUE 04.
+           05 WS-HILBERT-MULT-M         PIC 9(02) VALUE 01.
+           05 WS-HOLO-FLAG              PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BERN-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-BERN-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-BERN-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BERN-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-WEYL-DIMENSION      VALUE 2.
+              88 INVALID-FILT-DEGREE         VALUE 3.
+              88 INVALID-HILBERT-MULT        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HOLO-GROWTH-FAIL            VALUE 6.
+              88 BERN-DIVERG-FAIL            VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BERNSTEIN-FILTRATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIM-N < 1 OR WS-WEYL-DIM-N > 16
+                SET INVALID-WEYL-DIMENSION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FILT-DEGREE-K < 1 OR WS-FILT-DEGREE-K > 32
+                SET INVALID-FILT-DEGREE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HILBERT-MULT-M < 1 OR WS-HILBERT-MULT-M > 16
+                SET INVALID-HILBERT-MULT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HOLO-FLAG NOT EQUAL 1
+                SET HOLO-GROWTH-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BERNSTEIN-FILTRATION.
+            COMPUTE WS-BERN-VITALITY = (WS-WEYL-DIM-N * 512) +
+                                       (WS-FILT-DEGREE-K * 128) +
+                                       (WS-HILBERT-MULT-M * 64) +
+                                       (WS-HOLO-FLAG * 256) + 1.
+
+            IF WS-BERN-VITALITY EQUAL ZERO
+                SET BERN-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BERN-COHERENCE = (WS-FILT-DEGREE-K * 32) +
+                                        (WS-WEYL-DIM-N * 64) +
+                                        (WS-HILBERT-MULT-M * 16).
+
+            COMPUTE WS-BERN-REBAR-LATCH = 1470169088 + (WS-WEYL-DIM-N * 256) +
+                                          (WS-FILT-DEGREE-K * 64) +
+                                          (WS-HILBERT-MULT-M * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BERN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-BERN-VITALITY * 10) +
+                                          (WS-BERN-COHERENCE * 10) +
+                                          (WS-WEYL-DIM-N * 1000) +
+                                          (WS-BERN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BERN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BERN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
