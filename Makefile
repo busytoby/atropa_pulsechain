@@ -968,6 +968,11 @@ test-in-public-calibrated-tripartite-alignment:
 	./tests/test_in_public_calibrated_tripartite_alignment
 	@rm -f tests/test_in_public_calibrated_tripartite_alignment
 
+test-periodic-visual-scene-gating:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_periodic_visual_scene_gating.c -o tests/test_periodic_visual_scene_gating
+	./tests/test_periodic_visual_scene_gating
+	@rm -f tests/test_periodic_visual_scene_gating
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PVS-GTE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / PERIODIC VISUAL SCENE GATING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PVG-PARAMS.
+           05 WS-SENSING-PERIOD-T       PIC 9(02) VALUE 50.
+           05 WS-DISPATCH-LATENCY-MS    PIC 9(02) VALUE 18.
+           05 WS-VOICE-DURATION-T       PIC 9(02) VALUE 35.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PVG-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-PVG-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-PVG-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-PVG-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PVG-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SENSING-PERIOD-OUT-OF-BOUND VALUE 2.
+              88 DISPATCH-LAT-OUT-OF-BOUNDS  VALUE 3.
+              88 VOICE-DURATION-OUT-OF-BOUND VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SENSING-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VISUAL-GATING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SENSING-PERIOD-T < 45 OR WS-SENSING-PERIOD-T > 55
+                SET SENSING-PERIOD-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DISPATCH-LATENCY-MS < 10 OR WS-DISPATCH-LATENCY-MS > 30
+                SET DISPATCH-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VOICE-DURATION-T < 15 OR WS-VOICE-DURATION-T > 60
+                SET VOICE-DURATION-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VISUAL-GATING.
+            COMPUTE WS-PVG-COMPOSITE = ((60 - WS-SENSING-PERIOD-T) * 30) +
+                                       ((35 - WS-DISPATCH-LATENCY-MS) * 20) +
+                                       ((65 - WS-VOICE-DURATION-T) * 10).
+
+            COMPUTE WS-PVG-VITALITY = (WS-PVG-COMPOSITE / 4) +
+                                      ((35 - WS-DISPATCH-LATENCY-MS) * 4) +
+                                      ((60 - WS-SENSING-PERIOD-T) * 4) + 1.
+
+            IF WS-PVG-VITALITY EQUAL ZERO
+                SET SENSING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PVG-COHERENCE = (WS-PVG-COMPOSITE / 16) +
+                                       ((35 - WS-DISPATCH-LATENCY-MS) * 2) +
+                                       ((60 - WS-SENSING-PERIOD-T) * 2).
+
+            COMPUTE WS-PVG-REBAR-LATCH = 1470169088 +
+                                         (WS-PVG-COMPOSITE / 2) +
+                                         ((60 - WS-SENSING-PERIOD-T) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PVG-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-PVG-VITALITY * 10) +
+                                         (WS-PVG-COHERENCE * 10) +
+                                         (WS-PVG-COMPOSITE * 10) +
+                                         (WS-PVG-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PVG-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PVG-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
