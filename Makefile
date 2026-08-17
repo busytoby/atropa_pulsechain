@@ -203,6 +203,11 @@ test-shared-positional-incontext-embedding:
 	./tests/test_shared_positional_incontext_embedding
 	@rm -f tests/test_shared_positional_incontext_embedding
 
+test-universal-multimodal-dubbing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_universal_multimodal_dubbing.c -o tests/test_universal_multimodal_dubbing
+	./tests/test_universal_multimodal_dubbing
+	@rm -f tests/test_universal_multimodal_dubbing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
