@@ -1138,6 +1138,11 @@ test-cultural-sacred-space-reverence:
 	./tests/test_cultural_sacred_space_reverence
 	@rm -f tests/test_cultural_sacred_space_reverence
 
+test-nonintrusive-gaze-redirection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_nonintrusive_gaze_redirection.c -o tests/test_nonintrusive_gaze_redirection
+	./tests/test_nonintrusive_gaze_redirection
+	@rm -f tests/test_nonintrusive_gaze_redirection
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

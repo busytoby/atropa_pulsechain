@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. NGR-DIR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / NON-INTRUSIVE GAZE REDIRECTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-NGR-PARAMS.
+           05 WS-STEERING-LAT-MS        PIC 9(02) VALUE 20.
+           05 WS-PACING-COHERENCE-M     PIC 9(04) VALUE 0960.
+           05 WS-REDIRECT-ANGLE-DEG     PIC 9(02) VALUE 15.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-NGR-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-NGR-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-NGR-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-NGR-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-NGR-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 STEERING-LAT-OUT-OF-BOUNDS  VALUE 2.
+              88 PACING-COHERENCE-LOW        VALUE 3.
+              88 REDIRECT-ANGLE-OUT-OF-BOUND VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 REDIRECTION-COLLAPSE        VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GAZE-REDIRECTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STEERING-LAT-MS < 10 OR WS-STEERING-LAT-MS > 40
+                SET STEERING-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PACING-COHERENCE-M < 850 OR WS-PACING-COHERENCE-M > 1000
+                SET PACING-COHERENCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REDIRECT-ANGLE-DEG < 5 OR WS-REDIRECT-ANGLE-DEG > 25
+                SET REDIRECT-ANGLE-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GAZE-REDIRECTION.
+            COMPUTE WS-NGR-COMPOSITE = ((50 - WS-STEERING-LAT-MS) * 10) +
+                                       (WS-PACING-COHERENCE-M / 2) +
+                                       ((30 - WS-REDIRECT-ANGLE-DEG) * 15).
+
+            COMPUTE WS-NGR-VITALITY = (WS-NGR-COMPOSITE / 4) +
+                                      (WS-PACING-COHERENCE-M / 4) +
+                                      ((50 - WS-STEERING-LAT-MS) * 4) + 1.
+
+            IF WS-NGR-VITALITY EQUAL ZERO
+                SET REDIRECTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-NGR-COHERENCE = (WS-NGR-COMPOSITE / 16) +
+                                       (WS-PACING-COHERENCE-M / 16) +
+                                       ((50 - WS-STEERING-LAT-MS) * 2).
+
+            COMPUTE WS-NGR-REBAR-LATCH = 1470169088 +
+                                         (WS-NGR-COMPOSITE / 2) +
+                                         ((50 - WS-STEERING-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-NGR-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-NGR-VITALITY * 10) +
+                                         (WS-NGR-COHERENCE * 10) +
+                                         (WS-NGR-COMPOSITE * 10) +
+                                         (WS-NGR-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-NGR-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-NGR-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
