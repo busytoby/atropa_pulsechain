@@ -1652,6 +1652,18 @@ test-cpm-tomie-pbx-clay-suite:
 	./tsfi2-deepseek/src/cpm_exec_pbx_clay /tmp/pbx_clay.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_pbx_clay tsfi2-deepseek/src/cpm_exec_pbx_clay /tmp/pbx_clay.bin
 
+test-cpm-tomie-bio-ringtone-yellowbox-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_bio_ringtone_yellowbox_prover.c -o tests/test_cpm_tomie_bio_ringtone_yellowbox_prover
+	./tests/test_cpm_tomie_bio_ringtone_yellowbox_prover
+	@rm -f tests/test_cpm_tomie_bio_ringtone_yellowbox_prover
+
+test-cpm-tomie-bio-yellowbox-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_bio_yellowbox.c -o tsfi2-deepseek/src/cpm_compiler_bio_yellowbox
+	./tsfi2-deepseek/src/cpm_compiler_bio_yellowbox /tmp/bio_yellowbox.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_bio_yellowbox.c -o tsfi2-deepseek/src/cpm_exec_bio_yellowbox
+	./tsfi2-deepseek/src/cpm_exec_bio_yellowbox /tmp/bio_yellowbox.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_bio_yellowbox tsfi2-deepseek/src/cpm_exec_bio_yellowbox /tmp/bio_yellowbox.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
