@@ -1513,6 +1513,11 @@ test-groupsense-biosensing:
 	./tests/test_groupsense_biosensing
 	@rm -f tests/test_groupsense_biosensing
 
+test-museum-vibe-engagement:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_museum_vibe_engagement.c -o tests/test_museum_vibe_engagement
+	./tests/test_museum_vibe_engagement
+	@rm -f tests/test_museum_vibe_engagement
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
