@@ -263,6 +263,11 @@ test-iterative-module-saturation:
 	./tests/test_iterative_module_saturation
 	@rm -f tests/test_iterative_module_saturation
 
+test-accumulator-zeroing-nullstellensatz:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_accumulator_zeroing_nullstellensatz.c -o tests/test_accumulator_zeroing_nullstellensatz
+	./tests/test_accumulator_zeroing_nullstellensatz
+	@rm -f tests/test_accumulator_zeroing_nullstellensatz
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
