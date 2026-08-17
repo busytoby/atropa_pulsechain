@@ -1238,6 +1238,11 @@ test-multimodal-audio-visual-sync:
 	./tests/test_multimodal_audio_visual_sync
 	@rm -f tests/test_multimodal_audio_visual_sync
 
+test-deformable-part-simulation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_deformable_part_simulation.c -o tests/test_deformable_part_simulation
+	./tests/test_deformable_part_simulation
+	@rm -f tests/test_deformable_part_simulation
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
