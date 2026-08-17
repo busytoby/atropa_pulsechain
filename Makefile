@@ -358,6 +358,11 @@ test-noise-throughput-semantic-bound:
 	./tests/test_noise_throughput_semantic_bound
 	@rm -f tests/test_noise_throughput_semantic_bound
 
+test-grand-master-edge-synthesis:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_edge_synthesis.c -o tests/test_grand_master_edge_synthesis
+	./tests/test_grand_master_edge_synthesis
+	@rm -f tests/test_grand_master_edge_synthesis
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

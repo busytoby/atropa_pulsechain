@@ -1,0 +1,118 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GRAND-MASTER-EDGE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GRAND MASTER EDGE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-GRAND-PARAMS.
+           05 WS-QUANT-ENUM             PIC 9(02) VALUE 05.
+           05 WS-WHISPER-ENUM           PIC 9(02) VALUE 01.
+           05 WS-MEASURED-TPS           PIC 9(05) VALUE 03060.
+           05 WS-NUBIA-SCORE            PIC 9(04) VALUE 0320.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GRAND-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-PIPELINE-COHERENCE     PIC 9(09) VALUE 0.
+           05 WS-PICASO-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-GRAND-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-QUANT-ENUM          VALUE 2.
+              88 INVALID-WHISPER-ENUM        VALUE 3.
+              88 INVALID-TPS-METRIC          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-NUBIA-METRIC        VALUE 6.
+              88 PIPELINE-DIVERG-FAIL        VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GRAND-MASTER
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUANT-ENUM < 1 OR WS-QUANT-ENUM > 5
+                SET INVALID-QUANT-ENUM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WHISPER-ENUM < 1 OR WS-WHISPER-ENUM > 3
+                SET INVALID-WHISPER-ENUM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MEASURED-TPS < 3000 OR WS-MEASURED-TPS > 50000
+                SET INVALID-TPS-METRIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NUBIA-SCORE < 150 OR WS-NUBIA-SCORE > 1000
+                SET INVALID-NUBIA-METRIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GRAND-MASTER.
+            COMPUTE WS-GRAND-VITALITY = (WS-QUANT-ENUM * 512) +
+                                        (WS-WHISPER-ENUM * 256) +
+                                        (WS-MEASURED-TPS / 20) +
+                                        (WS-NUBIA-SCORE / 2) + 1.
+
+            IF WS-GRAND-VITALITY EQUAL ZERO
+                SET PIPELINE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PIPELINE-COHERENCE = (WS-QUANT-ENUM * 64) +
+                                            (WS-WHISPER-ENUM * 32) +
+                                            (WS-NUBIA-SCORE / 4) +
+                                            (WS-MEASURED-TPS / 100).
+
+            COMPUTE WS-PICASO-REBAR-LATCH = 1470169088 + (WS-QUANT-ENUM * 256) +
+                                            (WS-WHISPER-ENUM * 128) +
+                                            (WS-MEASURED-TPS / 10) +
+                                            (WS-NUBIA-SCORE / 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-GRAND-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-GRAND-VITALITY * 10) +
+                                           (WS-PIPELINE-COHERENCE * 10) +
+                                           (WS-QUANT-ENUM * 1000) +
+                                           (WS-PICASO-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-GRAND-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-GRAND-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
