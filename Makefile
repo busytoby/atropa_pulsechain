@@ -353,6 +353,11 @@ test-whisper-fixed-cross-attention:
 	./tests/test_whisper_fixed_cross_attention
 	@rm -f tests/test_whisper_fixed_cross_attention
 
+test-noise-throughput-semantic-bound:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_noise_throughput_semantic_bound.c -o tests/test_noise_throughput_semantic_bound
+	./tests/test_noise_throughput_semantic_bound
+	@rm -f tests/test_noise_throughput_semantic_bound
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
