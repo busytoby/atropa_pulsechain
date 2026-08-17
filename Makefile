@@ -1493,6 +1493,11 @@ test-refine-mockup-iteration:
 	./tests/test_refine_mockup_iteration
 	@rm -f tests/test_refine_mockup_iteration
 
+test-mindtrellis-exploration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mindtrellis_exploration.c -o tests/test_mindtrellis_exploration
+	./tests/test_mindtrellis_exploration
+	@rm -f tests/test_mindtrellis_exploration
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
