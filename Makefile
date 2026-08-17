@@ -623,6 +623,11 @@ test-multimodal-pipeline-sync:
 	./tests/test_multimodal_pipeline_sync
 	@rm -f tests/test_multimodal_pipeline_sync
 
+test-speech-intelligibility-wer:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_speech_intelligibility_wer.c -o tests/test_speech_intelligibility_wer
+	./tests/test_speech_intelligibility_wer
+	@rm -f tests/test_speech_intelligibility_wer
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

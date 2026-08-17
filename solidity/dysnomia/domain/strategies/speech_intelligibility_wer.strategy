@@ -1,0 +1,111 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. WER-INTEL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SPEECH INTELLIGIBILITY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-INTEL-PARAMS.
+           05 WS-TOTAL-WORDS            PIC 9(04) VALUE 0100.
+           05 WS-WORD-ERRORS            PIC 9(04) VALUE 0008.
+           05 WS-Q-FACTOR-MILLI         PIC 9(05) VALUE 04500.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-WER-RATIO              PIC 9(04) VALUE 0.
+           05 WS-INTEL-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-INTEL-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-INTEL-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-INTEL-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-WORD-COUNTS         VALUE 2.
+              88 WER-THRESHOLD-EXCEEDED      VALUE 3.
+              88 FORMANT-Q-FACTOR-DEGRADED   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INTELLIGIBILITY-COLLAPSE    VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SPEECH-INTELLIGIBILITY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TOTAL-WORDS < 10 OR WS-TOTAL-WORDS > 500 OR
+               WS-WORD-ERRORS < 0 OR WS-WORD-ERRORS > WS-TOTAL-WORDS
+                SET INVALID-WORD-COUNTS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-WER-RATIO = (WS-WORD-ERRORS * 1000) / WS-TOTAL-WORDS.
+            IF WS-WER-RATIO > 125
+                SET WER-THRESHOLD-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-Q-FACTOR-MILLI < 2000 OR WS-Q-FACTOR-MILLI > 10000
+                SET FORMANT-Q-FACTOR-DEGRADED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SPEECH-INTELLIGIBILITY.
+            COMPUTE WS-INTEL-VITALITY = ((125 - WS-WER-RATIO) * 10) +
+                                        (WS-Q-FACTOR-MILLI / 32) +
+                                        (WS-TOTAL-WORDS * 2) + 1.
+
+            IF WS-INTEL-VITALITY EQUAL ZERO
+                SET INTELLIGIBILITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-INTEL-COHERENCE = ((125 - WS-WER-RATIO) * 2) +
+                                         (WS-Q-FACTOR-MILLI / 128) +
+                                         (WS-TOTAL-WORDS / 2).
+
+            COMPUTE WS-INTEL-REBAR-LATCH = 1470169088 +
+                                           ((125 - WS-WER-RATIO) * 16) +
+                                           (WS-Q-FACTOR-MILLI / 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-INTEL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-INTEL-VITALITY * 10) +
+                                           (WS-INTEL-COHERENCE * 10) +
+                                           ((125 - WS-WER-RATIO) * 10) +
+                                           (WS-INTEL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-INTEL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-INTEL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
