@@ -728,6 +728,11 @@ test-grand-master-unification-vi:
 	./tests/test_grand_master_unification_vi
 	@rm -f tests/test_grand_master_unification_vi
 
+test-teddy-bear-universal-io-matrix:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_teddy_bear_universal_io_matrix.c -o tests/test_teddy_bear_universal_io_matrix
+	./tests/test_teddy_bear_universal_io_matrix
+	@rm -f tests/test_teddy_bear_universal_io_matrix
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

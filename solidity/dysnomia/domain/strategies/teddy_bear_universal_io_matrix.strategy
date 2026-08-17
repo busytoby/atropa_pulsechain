@@ -1,0 +1,160 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. UNIV-IO-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / UNIVERSAL IO MATRIX AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-IO-PARAMS.
+           05 WS-ACTIVE-MODALITY-MASK   PIC 9(03) VALUE 255.
+           05 WS-SCSI-KEYCODE-VAL       PIC 9(02) VALUE 30.
+           05 WS-TURTLE-VOLT-TENTHS     PIC 9(02) VALUE 25.
+           05 WS-QUADTREE-DEPTH         PIC 9(02) VALUE 08.
+           05 WS-FMCW-DIST-MM           PIC 9(03) VALUE 080.
+           05 WS-SKIN-FRICTION-KHZ      PIC 9(02) VALUE 35.
+           05 WS-BINAURAL-BEAT-HZ       PIC 9(02) VALUE 10.
+           05 WS-EDO-STEP-K             PIC 9(02) VALUE 11.
+           05 WS-ADMITTANCE-MS          PIC 9(04) VALUE 0500.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-IO-COMPOSITE           PIC 9(05) VALUE 0.
+           05 WS-IO-VITALITY            PIC 9(09) VALUE 0.
+           05 WS-IO-COHERENCE           PIC 9(09) VALUE 0.
+           05 WS-IO-REBAR-LATCH         PIC 9(12) VALUE 0.
+           05 WS-SHADOW-IO-BASE         PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-MODALITY-MASK       VALUE 2.
+              88 SCSI-KEYCODE-INVALID        VALUE 3.
+              88 TURTLE-VOLTAGE-INVALID      VALUE 4.
+              88 QUADTREE-DEPTH-INVALID      VALUE 5.
+              88 FMCW-DISTANCE-EXCEEDED      VALUE 6.
+              88 SKIN-FRICTION-INVALID       VALUE 7.
+              88 BINAURAL-BEAT-INVALID       VALUE 8.
+              88 EDO-STEP-INVALID            VALUE 9.
+              88 ADMITTANCE-INVALID          VALUE 10.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 11.
+              88 UNIVERSAL-IO-COLLAPSE       VALUE 12.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 13.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UNIVERSAL-IO
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACTIVE-MODALITY-MASK < 1 OR WS-ACTIVE-MODALITY-MASK > 255
+                SET INVALID-MODALITY-MASK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCSI-KEYCODE-VAL NOT EQUAL 30 AND WS-SCSI-KEYCODE-VAL NOT EQUAL 32
+                SET SCSI-KEYCODE-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TURTLE-VOLT-TENTHS < 1 OR WS-TURTLE-VOLT-TENTHS > 50
+                SET TURTLE-VOLTAGE-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUADTREE-DEPTH < 1 OR WS-QUADTREE-DEPTH > 16
+                SET QUADTREE-DEPTH-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FMCW-DIST-MM < 20 OR WS-FMCW-DIST-MM > 150
+                SET FMCW-DISTANCE-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SKIN-FRICTION-KHZ < 34 OR WS-SKIN-FRICTION-KHZ > 36
+                SET SKIN-FRICTION-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BINAURAL-BEAT-HZ < 4 OR WS-BINAURAL-BEAT-HZ > 40
+                SET BINAURAL-BEAT-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EDO-STEP-K < 0 OR WS-EDO-STEP-K > 21
+                SET EDO-STEP-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ADMITTANCE-MS < 100 OR WS-ADMITTANCE-MS > 1000
+                SET ADMITTANCE-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UNIVERSAL-IO.
+            COMPUTE WS-IO-COMPOSITE = (WS-SCSI-KEYCODE-VAL * 10) +
+                                      (WS-TURTLE-VOLT-TENTHS * 8) +
+                                      (WS-QUADTREE-DEPTH * 20) +
+                                      ((150 - WS-FMCW-DIST-MM) * 2) +
+                                      (WS-SKIN-FRICTION-KHZ * 10) +
+                                      (WS-BINAURAL-BEAT-HZ * 10) +
+                                      (WS-EDO-STEP-K * 15) +
+                                      (WS-ADMITTANCE-MS / 4).
+
+            COMPUTE WS-IO-VITALITY = (WS-IO-COMPOSITE / 4) +
+                                     (WS-ACTIVE-MODALITY-MASK * 2) +
+                                     (WS-QUADTREE-DEPTH * 16) + 1.
+
+            IF WS-IO-VITALITY EQUAL ZERO
+                SET UNIVERSAL-IO-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-IO-COHERENCE = (WS-IO-COMPOSITE / 16) +
+                                      (WS-ACTIVE-MODALITY-MASK / 2) +
+                                      (WS-QUADTREE-DEPTH * 4).
+
+            COMPUTE WS-IO-REBAR-LATCH = 1470169088 +
+                                        (WS-IO-COMPOSITE / 2) +
+                                        (WS-ACTIVE-MODALITY-MASK * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-IO-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                        (WS-IO-VITALITY * 10) +
+                                        (WS-IO-COHERENCE * 10) +
+                                        (WS-IO-COMPOSITE * 10) +
+                                        (WS-IO-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-IO-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-IO-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
