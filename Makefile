@@ -933,6 +933,11 @@ test-autodin-unresolved-memory-targeting:
 	./tests/test_autodin_unresolved_memory_targeting
 	@rm -f tests/test_autodin_unresolved_memory_targeting
 
+test-mcp-triparty-schema-grounding:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mcp_triparty_schema_grounding.c -o tests/test_mcp_triparty_schema_grounding
+	./tests/test_mcp_triparty_schema_grounding
+	@rm -f tests/test_mcp_triparty_schema_grounding
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MCP-GND-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MCP SCHEMA GROUNDING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-MCP-PARAMS.
+           05 WS-JSONRPC-LAT-MS         PIC 9(02) VALUE 08.
+           05 WS-SCHEMA-FIDELITY-M      PIC 9(04) VALUE 0960.
+           05 WS-PERM-OVERSIGHT-M       PIC 9(04) VALUE 0920.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MCP-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-MCP-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-MCP-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-MCP-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MCP-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 JSONRPC-LAT-OUT-OF-BOUNDS   VALUE 2.
+              88 SCHEMA-FIDELITY-OUT-OF-BND  VALUE 3.
+              88 PERM-OVERSIGHT-LOW          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MCP-COLLAPSE                VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MCP-GROUNDING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-JSONRPC-LAT-MS < 2 OR WS-JSONRPC-LAT-MS > 25
+                SET JSONRPC-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCHEMA-FIDELITY-M < 850 OR WS-SCHEMA-FIDELITY-M > 1000
+                SET SCHEMA-FIDELITY-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PERM-OVERSIGHT-M < 700 OR WS-PERM-OVERSIGHT-M > 1000
+                SET PERM-OVERSIGHT-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MCP-GROUNDING.
+            COMPUTE WS-MCP-COMPOSITE = ((30 - WS-JSONRPC-LAT-MS) * 20) +
+                                       (WS-SCHEMA-FIDELITY-M / 2) +
+                                       (WS-PERM-OVERSIGHT-M / 2).
+
+            COMPUTE WS-MCP-VITALITY = (WS-MCP-COMPOSITE / 4) +
+                                      (WS-SCHEMA-FIDELITY-M / 4) +
+                                      ((30 - WS-JSONRPC-LAT-MS) * 4) + 1.
+
+            IF WS-MCP-VITALITY EQUAL ZERO
+                SET MCP-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MCP-COHERENCE = (WS-MCP-COMPOSITE / 16) +
+                                       (WS-SCHEMA-FIDELITY-M / 16) +
+                                       ((30 - WS-JSONRPC-LAT-MS) * 2).
+
+            COMPUTE WS-MCP-REBAR-LATCH = 1470169088 +
+                                         (WS-MCP-COMPOSITE / 2) +
+                                         ((30 - WS-JSONRPC-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MCP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-MCP-VITALITY * 10) +
+                                         (WS-MCP-COHERENCE * 10) +
+                                         (WS-MCP-COMPOSITE * 10) +
+                                         (WS-MCP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MCP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MCP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

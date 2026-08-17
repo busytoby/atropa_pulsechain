@@ -623,7 +623,9 @@ tests/test_bear_*
 tests/test_cloth_*
 tests/test_final_*
 tests/test_interop_*
+!tests/test_interop_*.c
 tests/test_mcp_*
+!tests/test_mcp_*.c
 tests/test_spline_*
 tests/test_stadium_*
 tests/test_timeline_*
