@@ -328,6 +328,11 @@ test-spmm-formant-acceleration:
 	./tests/test_spmm_formant_acceleration
 	@rm -f tests/test_spmm_formant_acceleration
 
+test-monotonic-spmm-attention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_monotonic_spmm_attention.c -o tests/test_monotonic_spmm_attention
+	./tests/test_monotonic_spmm_attention
+	@rm -f tests/test_monotonic_spmm_attention
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
