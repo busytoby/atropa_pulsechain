@@ -378,6 +378,11 @@ test-quantization-noise-regularization:
 	./tests/test_quantization_noise_regularization
 	@rm -f tests/test_quantization_noise_regularization
 
+test-semantic-collapse-prevention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_semantic_collapse_prevention.c -o tests/test_semantic_collapse_prevention
+	./tests/test_semantic_collapse_prevention
+	@rm -f tests/test_semantic_collapse_prevention
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

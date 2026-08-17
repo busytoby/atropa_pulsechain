@@ -1,0 +1,121 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SEM-COLLAPSE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SEMANTIC COLLAPSE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-COL-PARAMS.
+           05 WS-BITWIDTH               PIC 9(02) VALUE 04.
+           05 WS-IS-QAT                 PIC 9(01) VALUE 0.
+           05 WS-ENTROPY-BOUND          PIC 9(04) VALUE 0500.
+           05 WS-PREVENTION-FLAG        PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COL-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-COL-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-COL-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-COL-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-BITWIDTH            VALUE 2.
+              88 INVALID-QAT-FLAG            VALUE 3.
+              88 INVALID-ENTROPY-BOUND       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 COLLAPSE-PREVENTION-FAIL    VALUE 6.
+              88 SEMANTIC-COLLAPSE-DETECTED  VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-COLLAPSE-PREVENTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BITWIDTH < 1 OR WS-BITWIDTH > 8
+                SET INVALID-BITWIDTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-IS-QAT NOT EQUAL 0 AND WS-IS-QAT NOT EQUAL 1
+                SET INVALID-QAT-FLAG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ENTROPY-BOUND < 100 OR WS-ENTROPY-BOUND > 2000
+                SET INVALID-ENTROPY-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PREVENTION-FLAG NOT EQUAL 1
+                SET COLLAPSE-PREVENTION-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BITWIDTH < 4 AND WS-IS-QAT EQUAL 0
+                SET SEMANTIC-COLLAPSE-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-COLLAPSE-PREVENTION.
+            COMPUTE WS-COL-VITALITY = (WS-BITWIDTH * 512) +
+                                      (WS-IS-QAT * 256) +
+                                      (WS-ENTROPY-BOUND / 2) +
+                                      (WS-PREVENTION-FLAG * 256) + 1.
+
+            IF WS-COL-VITALITY EQUAL ZERO
+                SET SEMANTIC-COLLAPSE-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-COL-COHERENCE = (WS-BITWIDTH * 64) +
+                                       (WS-IS-QAT * 128) +
+                                       (WS-ENTROPY-BOUND / 16).
+
+            COMPUTE WS-COL-REBAR-LATCH = 1470169088 + (WS-BITWIDTH * 256) +
+                                         (WS-IS-QAT * 128) +
+                                         (WS-ENTROPY-BOUND / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-COL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-COL-VITALITY * 10) +
+                                         (WS-COL-COHERENCE * 10) +
+                                         (WS-BITWIDTH * 1000) +
+                                         (WS-COL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-COL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-COL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
