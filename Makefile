@@ -1268,6 +1268,11 @@ test-interlocking-constraint-deadlock:
 	./tests/test_interlocking_constraint_deadlock
 	@rm -f tests/test_interlocking_constraint_deadlock
 
+test-liaison-precedence-graph:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_liaison_precedence_graph.c -o tests/test_liaison_precedence_graph
+	./tests/test_liaison_precedence_graph
+	@rm -f tests/test_liaison_precedence_graph
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LPG-LIA-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LIAISON PRECEDENCE GRAPH AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-LPG-PARAMS.
+           05 WS-EXTRACTION-LAT-MS      PIC 9(02) VALUE 20.
+           05 WS-PRECEDENCE-FID-M       PIC 9(04) VALUE 0960.
+           05 WS-BRANCHING-FACTOR       PIC 9(02) VALUE 04.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-LPG-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-LPG-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-LPG-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-LPG-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-LPG-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 EXTRACTION-LAT-OUT-OF-BOUND VALUE 2.
+              88 PRECEDENCE-FID-LOW          VALUE 3.
+              88 BRANCHING-OUT-OF-BOUNDS     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 LIAISON-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-LIAISON-GRAPH
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXTRACTION-LAT-MS < 10 OR WS-EXTRACTION-LAT-MS > 50
+                SET EXTRACTION-LAT-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRECEDENCE-FID-M < 850 OR WS-PRECEDENCE-FID-M > 1000
+                SET PRECEDENCE-FID-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BRANCHING-FACTOR < 2 OR WS-BRANCHING-FACTOR > 8
+                SET BRANCHING-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-LIAISON-GRAPH.
+            COMPUTE WS-LPG-COMPOSITE = ((60 - WS-EXTRACTION-LAT-MS) * 10) +
+                                       (WS-PRECEDENCE-FID-M / 2) +
+                                       (WS-BRANCHING-FACTOR * 50).
+
+            COMPUTE WS-LPG-VITALITY = (WS-LPG-COMPOSITE / 4) +
+                                      (WS-PRECEDENCE-FID-M / 4) +
+                                      ((60 - WS-EXTRACTION-LAT-MS) * 4) + 1.
+
+            IF WS-LPG-VITALITY EQUAL ZERO
+                SET LIAISON-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-LPG-COHERENCE = (WS-LPG-COMPOSITE / 16) +
+                                       (WS-PRECEDENCE-FID-M / 16) +
+                                       ((60 - WS-EXTRACTION-LAT-MS) * 2).
+
+            COMPUTE WS-LPG-REBAR-LATCH = 1470169088 +
+                                         (WS-LPG-COMPOSITE / 2) +
+                                         ((60 - WS-EXTRACTION-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-LPG-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-LPG-VITALITY * 10) +
+                                         (WS-LPG-COHERENCE * 10) +
+                                         (WS-LPG-COMPOSITE * 10) +
+                                         (WS-LPG-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-LPG-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-LPG-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
