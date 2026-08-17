@@ -418,6 +418,11 @@ test-batch1-memory-bandwidth-intensity:
 	./tests/test_batch1_memory_bandwidth_intensity
 	@rm -f tests/test_batch1_memory_bandwidth_intensity
 
+test-thermal-energy-envelope:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_thermal_energy_envelope.c -o tests/test_thermal_energy_envelope
+	./tests/test_thermal_energy_envelope
+	@rm -f tests/test_thermal_energy_envelope
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
