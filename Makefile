@@ -1393,6 +1393,11 @@ test-bounding-box-scale-norm:
 	./tests/test_bounding_box_scale_norm
 	@rm -f tests/test_bounding_box_scale_norm
 
+test-collision-impulse-response:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_collision_impulse_response.c -o tests/test_collision_impulse_response
+	./tests/test_collision_impulse_response
+	@rm -f tests/test_collision_impulse_response
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
