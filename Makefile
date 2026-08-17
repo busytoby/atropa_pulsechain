@@ -1664,6 +1664,18 @@ test-cpm-tomie-bio-yellowbox-suite:
 	./tsfi2-deepseek/src/cpm_exec_bio_yellowbox /tmp/bio_yellowbox.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_bio_yellowbox tsfi2-deepseek/src/cpm_exec_bio_yellowbox /tmp/bio_yellowbox.bin
 
+test-cpm-tomie-clay-physicality-plasticity-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_physicality_plasticity_prover.c -o tests/test_cpm_tomie_clay_physicality_plasticity_prover
+	./tests/test_cpm_tomie_clay_physicality_plasticity_prover
+	@rm -f tests/test_cpm_tomie_clay_physicality_plasticity_prover
+
+test-cpm-tomie-clay-physicality-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_physicality.c -o tsfi2-deepseek/src/cpm_compiler_clay_physicality
+	./tsfi2-deepseek/src/cpm_compiler_clay_physicality /tmp/clay_physicality.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_physicality.c -o tsfi2-deepseek/src/cpm_exec_clay_physicality
+	./tsfi2-deepseek/src/cpm_exec_clay_physicality /tmp/clay_physicality.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_physicality tsfi2-deepseek/src/cpm_exec_clay_physicality /tmp/clay_physicality.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
