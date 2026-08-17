@@ -523,6 +523,11 @@ test-baby-schema-behavioral-cuteness:
 	./tests/test_baby_schema_behavioral_cuteness
 	@rm -f tests/test_baby_schema_behavioral_cuteness
 
+test-grand-master-physical-robot-synthesis:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_physical_robot_synthesis.c -o tests/test_grand_master_physical_robot_synthesis
+	./tests/test_grand_master_physical_robot_synthesis
+	@rm -f tests/test_grand_master_physical_robot_synthesis
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
