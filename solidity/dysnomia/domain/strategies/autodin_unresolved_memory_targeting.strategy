@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUT-UNM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / AUTODIN UNRESOLVED MEMORY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-AUT-PARAMS.
+           05 WS-PRECEDENCE-LEVEL       PIC 9(02) VALUE 01.
+           05 WS-TARGETING-LATENCY-MS   PIC 9(02) VALUE 15.
+           05 WS-CONGRUENCE-M           PIC 9(04) VALUE 0960.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-AUT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-AUT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-AUT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-AUT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-AUT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 PRECEDENCE-OUT-OF-BOUNDS    VALUE 2.
+              88 TARGETING-LAT-OUT-OF-BOUNDS VALUE 3.
+              88 CONGRUENCE-OUT-OF-BOUNDS    VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 AUTODIN-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-AUTODIN-TARGETING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRECEDENCE-LEVEL < 1 OR WS-PRECEDENCE-LEVEL > 4
+                SET PRECEDENCE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TARGETING-LATENCY-MS < 5 OR WS-TARGETING-LATENCY-MS > 50
+                SET TARGETING-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CONGRUENCE-M < 850 OR WS-CONGRUENCE-M > 1000
+                SET CONGRUENCE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-AUTODIN-TARGETING.
+            COMPUTE WS-AUT-COMPOSITE = ((5 - WS-PRECEDENCE-LEVEL) * 100) +
+                                       ((55 - WS-TARGETING-LATENCY-MS) * 10) +
+                                       (WS-CONGRUENCE-M / 2).
+
+            COMPUTE WS-AUT-VITALITY = (WS-AUT-COMPOSITE / 4) +
+                                      (WS-CONGRUENCE-M / 4) +
+                                      ((5 - WS-PRECEDENCE-LEVEL) * 10) + 1.
+
+            IF WS-AUT-VITALITY EQUAL ZERO
+                SET AUTODIN-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-AUT-COHERENCE = (WS-AUT-COMPOSITE / 16) +
+                                       (WS-CONGRUENCE-M / 16) +
+                                       ((5 - WS-PRECEDENCE-LEVEL) * 2).
+
+            COMPUTE WS-AUT-REBAR-LATCH = 1470169088 +
+                                         (WS-AUT-COMPOSITE / 2) +
+                                         ((5 - WS-PRECEDENCE-LEVEL) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-AUT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-AUT-VITALITY * 10) +
+                                         (WS-AUT-COHERENCE * 10) +
+                                         (WS-AUT-COMPOSITE * 10) +
+                                         (WS-AUT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-AUT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-AUT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

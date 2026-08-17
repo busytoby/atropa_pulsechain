@@ -928,6 +928,11 @@ test-attention-sink-unresolved-memory:
 	./tests/test_attention_sink_unresolved_memory
 	@rm -f tests/test_attention_sink_unresolved_memory
 
+test-autodin-unresolved-memory-targeting:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_autodin_unresolved_memory_targeting.c -o tests/test_autodin_unresolved_memory_targeting
+	./tests/test_autodin_unresolved_memory_targeting
+	@rm -f tests/test_autodin_unresolved_memory_targeting
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
