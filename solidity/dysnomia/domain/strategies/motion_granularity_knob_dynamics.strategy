@@ -1,0 +1,108 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. KNOB-DYN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / KNOB MOTION DYNAMICS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-KNOB-PARAMS.
+           05 WS-ROTARY-VEL-MMS         PIC 9(03) VALUE 045.
+           05 WS-DOPPLER-PHASE-MILLI    PIC 9(04) VALUE 0880.
+           05 WS-ANG-PREC-TENTHS        PIC 9(02) VALUE 20.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-KNOB-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-KNOB-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-KNOB-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-KNOB-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ROTARY-VELOCITY     VALUE 2.
+              88 DOPPLER-PHASE-NONLINEAR     VALUE 3.
+              88 ANG-PRECISION-DEGRADED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 KNOB-VITALITY-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-KNOB-DYNAMICS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ROTARY-VEL-MMS < 1 OR WS-ROTARY-VEL-MMS > 200
+                SET INVALID-ROTARY-VELOCITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DOPPLER-PHASE-MILLI < 600 OR WS-DOPPLER-PHASE-MILLI > 1000
+                SET DOPPLER-PHASE-NONLINEAR TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ANG-PREC-TENTHS < 1 OR WS-ANG-PREC-TENTHS > 50
+                SET ANG-PRECISION-DEGRADED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-KNOB-DYNAMICS.
+            COMPUTE WS-KNOB-VITALITY = (WS-DOPPLER-PHASE-MILLI / 4) +
+                                       (WS-ROTARY-VEL-MMS * 2) +
+                                       ((50 - WS-ANG-PREC-TENTHS) * 8) + 1.
+
+            IF WS-KNOB-VITALITY EQUAL ZERO
+                SET KNOB-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-KNOB-COHERENCE = (WS-DOPPLER-PHASE-MILLI / 16) +
+                                        (WS-ROTARY-VEL-MMS / 2) +
+                                        ((50 - WS-ANG-PREC-TENTHS) * 2).
+
+            COMPUTE WS-KNOB-REBAR-LATCH = 1470169088 +
+                                          (WS-DOPPLER-PHASE-MILLI / 2) +
+                                          (WS-ROTARY-VEL-MMS * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-KNOB-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-KNOB-VITALITY * 10) +
+                                          (WS-KNOB-COHERENCE * 10) +
+                                          (WS-DOPPLER-PHASE-MILLI * 10) +
+                                          (WS-KNOB-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-KNOB-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-KNOB-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

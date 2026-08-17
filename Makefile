@@ -678,6 +678,11 @@ test-fmcw-chirp-ranging-profile:
 	./tests/test_fmcw_chirp_ranging_profile
 	@rm -f tests/test_fmcw_chirp_ranging_profile
 
+test-motion-granularity-knob-dynamics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_motion_granularity_knob_dynamics.c -o tests/test_motion_granularity_knob_dynamics
+	./tests/test_motion_granularity_knob_dynamics
+	@rm -f tests/test_motion_granularity_knob_dynamics
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
