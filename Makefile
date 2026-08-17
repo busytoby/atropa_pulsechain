@@ -653,6 +653,11 @@ test-unified-input-matrix-quadtree:
 	./tests/test_unified_input_matrix_quadtree
 	@rm -f tests/test_unified_input_matrix_quadtree
 
+test-motion-aware-loss-prevention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_motion_aware_loss_prevention.c -o tests/test_motion_aware_loss_prevention
+	./tests/test_motion_aware_loss_prevention
+	@rm -f tests/test_motion_aware_loss_prevention
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
