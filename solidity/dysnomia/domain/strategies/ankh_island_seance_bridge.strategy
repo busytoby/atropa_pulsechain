@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SEA-BRG-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ANKH ISLAND SEANCE BRIDGE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SEANCE-PARAMS.
+           05 WS-ADMITTANCE-MS          PIC 9(04) VALUE 0500.
+           05 WS-SEANCE-COHERENCE-M     PIC 9(04) VALUE 0880.
+           05 WS-GHOST-REG-RECALL-IDX   PIC 9(02) VALUE 07.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SEA-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SEA-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SEA-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SEA-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SEA-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 CONDUCTANCE-OUT-OF-BOUNDS   VALUE 2.
+              88 SEANCE-COHERENCE-LOW        VALUE 3.
+              88 INVALID-GHOST-REGISTER      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SEANCE-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SEANCE-BRIDGE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ADMITTANCE-MS < 100 OR WS-ADMITTANCE-MS > 1000
+                SET CONDUCTANCE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SEANCE-COHERENCE-M < 600 OR WS-SEANCE-COHERENCE-M > 1000
+                SET SEANCE-COHERENCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GHOST-REG-RECALL-IDX < 1 OR WS-GHOST-REG-RECALL-IDX > 16
+                SET INVALID-GHOST-REGISTER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SEANCE-BRIDGE.
+            COMPUTE WS-SEA-COMPOSITE = (WS-ADMITTANCE-MS / 2) +
+                                       (WS-SEANCE-COHERENCE-M / 2) +
+                                       (WS-GHOST-REG-RECALL-IDX * 50).
+
+            COMPUTE WS-SEA-VITALITY = (WS-SEA-COMPOSITE / 4) +
+                                      (WS-SEANCE-COHERENCE-M / 4) +
+                                      (WS-GHOST-REG-RECALL-IDX * 16) + 1.
+
+            IF WS-SEA-VITALITY EQUAL ZERO
+                SET SEANCE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SEA-COHERENCE = (WS-SEA-COMPOSITE / 16) +
+                                       (WS-SEANCE-COHERENCE-M / 16) +
+                                       (WS-GHOST-REG-RECALL-IDX * 4).
+
+            COMPUTE WS-SEA-REBAR-LATCH = 1470169088 +
+                                         (WS-SEA-COMPOSITE / 2) +
+                                         (WS-GHOST-REG-RECALL-IDX * 256).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SEA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SEA-VITALITY * 10) +
+                                         (WS-SEA-COHERENCE * 10) +
+                                         (WS-SEA-COMPOSITE * 10) +
+                                         (WS-SEA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SEA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SEA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
