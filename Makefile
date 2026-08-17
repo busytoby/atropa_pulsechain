@@ -1528,6 +1528,11 @@ test-spatial-balancing-writing:
 	./tests/test_spatial_balancing_writing
 	@rm -f tests/test_spatial_balancing_writing
 
+test-profy-motor-skill:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_profy_motor_skill.c -o tests/test_profy_motor_skill
+	./tests/test_profy_motor_skill
+	@rm -f tests/test_profy_motor_skill
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
