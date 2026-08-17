@@ -1283,6 +1283,11 @@ test-osteophonic-bone-mesh:
 	./tests/test_osteophonic_bone_mesh
 	@rm -f tests/test_osteophonic_bone_mesh
 
+test-monobone-agent-mesh:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_monobone_agent_mesh.c -o tests/test_monobone_agent_mesh
+	./tests/test_monobone_agent_mesh
+	@rm -f tests/test_monobone_agent_mesh
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
