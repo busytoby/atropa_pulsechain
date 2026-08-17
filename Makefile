@@ -1213,6 +1213,11 @@ test-physical-state-synchronization:
 	./tests/test_physical_state_synchronization
 	@rm -f tests/test_physical_state_synchronization
 
+test-articulated-mechanism-motion:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_articulated_mechanism_motion.c -o tests/test_articulated_mechanism_motion
+	./tests/test_articulated_mechanism_motion
+	@rm -f tests/test_articulated_mechanism_motion
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
