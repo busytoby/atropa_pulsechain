@@ -178,6 +178,11 @@ test-organic-voice-evolution:
 	./tests/test_organic_voice_evolution
 	@rm -f tests/test_organic_voice_evolution
 
+test-joint-audiovisual-dubbing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_joint_audiovisual_dubbing.c -o tests/test_joint_audiovisual_dubbing
+	./tests/test_joint_audiovisual_dubbing
+	@rm -f tests/test_joint_audiovisual_dubbing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

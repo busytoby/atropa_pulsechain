@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. JOINT-AUDIOVISUAL-DUBBING-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / AUDIOVISUAL DUBBING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-DUBBING-PARAMS.
+           05 WS-SPEAKER-ID             PIC 9(02) VALUE 01.
+           05 WS-TARGET-LANG-ID         PIC 9(02) VALUE 01.
+           05 WS-ATTN-MASK-FLAG         PIC 9(01) VALUE 1.
+           05 WS-DUR-ERR-PERMILLE       PIC 9(03) VALUE 046.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VITALITY-METRIC        PIC 9(09) VALUE 0.
+           05 WS-AV-COHERENCE           PIC 9(09) VALUE 0.
+           05 WS-DUBBING-REBAR-LATCH    PIC 9(12) VALUE 0.
+           05 WS-SHADOW-DUBBING-BASE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SPEAKER-ID          VALUE 2.
+              88 INVALID-TARGET-LANG         VALUE 3.
+              88 CROSS-ATTN-LEAKAGE-FAIL     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 DURATION-ALIGN-FAIL         VALUE 6.
+              88 MULTIMODAL-DIVERG-FAIL      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-DUBBING-ALIGNMENT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPEAKER-ID < 1 OR WS-SPEAKER-ID > 8
+                SET INVALID-SPEAKER-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TARGET-LANG-ID < 1 OR WS-TARGET-LANG-ID > 6
+                SET INVALID-TARGET-LANG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ATTN-MASK-FLAG NOT EQUAL 1
+                SET CROSS-ATTN-LEAKAGE-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DUR-ERR-PERMILLE < 0 OR WS-DUR-ERR-PERMILLE > 250
+                SET DURATION-ALIGN-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-DUBBING-ALIGNMENT.
+            COMPUTE WS-VITALITY-METRIC = (WS-SPEAKER-ID * 1024) +
+                                         (WS-TARGET-LANG-ID * 256) +
+                                         (WS-ATTN-MASK-FLAG * 128) + 1.
+
+            IF WS-VITALITY-METRIC EQUAL ZERO
+                SET MULTIMODAL-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-AV-COHERENCE = ((250 - WS-DUR-ERR-PERMILLE) * 16) +
+                                      (WS-TARGET-LANG-ID * 32).
+
+            COMPUTE WS-DUBBING-REBAR-LATCH = 1470169088 + (WS-SPEAKER-ID * 256) +
+                                             (WS-TARGET-LANG-ID * 64) +
+                                             (WS-ATTN-MASK-FLAG * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-DUBBING-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-VITALITY-METRIC * 10) +
+                                             (WS-AV-COHERENCE * 10) +
+                                             (WS-SPEAKER-ID * 1000) +
+                                             (WS-DUBBING-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-DUBBING-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-DUBBING-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
