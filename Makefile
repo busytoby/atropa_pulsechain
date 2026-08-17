@@ -123,6 +123,11 @@ test-vaesen-morphogenetic-life:
 	./tests/test_vaesen_morphogenetic_life
 	@rm -f tests/test_vaesen_morphogenetic_life
 
+test-ankh-dynamic-compressor:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_dynamic_compressor.c -o tests/test_ankh_dynamic_compressor
+	./tests/test_ankh_dynamic_compressor
+	@rm -f tests/test_ankh_dynamic_compressor
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

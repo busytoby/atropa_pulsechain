@@ -1,0 +1,121 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ANKH-DYNAMIC-COMPRESSOR-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ANKH COMPRESSOR AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-COMPRESSOR-PARAMETERS.
+           05 WS-SIGNAL-AMP             PIC 9(07) VALUE 0050000.
+           05 WS-COMP-RATIO-Q16         PIC 9(06) VALUE 032768.
+           05 WS-ATTACK-CYCLES-N        PIC 9(02) VALUE 08.
+           05 WS-STAGE-DOMAIN-TYPE      PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COMPRESSED-LEVEL       PIC 9(09) VALUE 0.
+           05 WS-STEP-IDX               PIC 9(02) VALUE 0.
+           05 WS-G-GATE-FACTOR          PIC 9(04) VALUE 0.
+           05 WS-CONDUCTED-MAKEUP       PIC 9(09) VALUE 0.
+           05 WS-ANKH-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-COMP-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SIGNAL-AMP          VALUE 2.
+              88 INVALID-STAGE-DOMAIN        VALUE 3.
+              88 INVALID-COMP-RATIO          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-ATTACK-CYCLES       VALUE 6.
+              88 COMPRESSOR-DIVERG-FAIL      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-COMPRESSOR
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SIGNAL-AMP < 1 OR WS-SIGNAL-AMP > 1000000
+                SET INVALID-SIGNAL-AMP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STAGE-DOMAIN-TYPE < 1 OR WS-STAGE-DOMAIN-TYPE > 4
+                SET INVALID-STAGE-DOMAIN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COMP-RATIO-Q16 < 1000 OR WS-COMP-RATIO-Q16 > 65536
+                SET INVALID-COMP-RATIO TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ATTACK-CYCLES-N < 1 OR WS-ATTACK-CYCLES-N > 64
+                SET INVALID-ATTACK-CYCLES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-COMPRESSOR.
+            MOVE WS-SIGNAL-AMP TO WS-COMPRESSED-LEVEL.
+            PERFORM VARYING WS-STEP-IDX FROM 1 BY 1 UNTIL WS-STEP-IDX > WS-ATTACK-CYCLES-N
+                COMPUTE WS-COMPRESSED-LEVEL = (WS-COMPRESSED-LEVEL * 875) / 1000
+            END-PERFORM.
+
+            IF WS-COMPRESSED-LEVEL > WS-SIGNAL-AMP
+                SET COMPRESSOR-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-G-GATE-FACTOR = 875 + ((125 * (WS-STAGE-DOMAIN-TYPE * 2)) / 8).
+            IF WS-G-GATE-FACTOR > 1000
+                MOVE 1000 TO WS-G-GATE-FACTOR
+            END-IF.
+
+            COMPUTE WS-CONDUCTED-MAKEUP = (WS-COMPRESSED-LEVEL * WS-G-GATE-FACTOR) / 1000.
+
+            COMPUTE WS-ANKH-REBAR-LATCH = 1470169088 + (WS-SIGNAL-AMP / 100) +
+                                          (WS-STAGE-DOMAIN-TYPE * 64) +
+                                          (WS-ATTACK-CYCLES-N * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-COMP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-COMPRESSED-LEVEL * 10) +
+                                          (WS-CONDUCTED-MAKEUP * 10) +
+                                          (WS-STAGE-DOMAIN-TYPE * 1000) +
+                                          (WS-ANKH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-COMP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-COMP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
