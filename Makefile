@@ -873,6 +873,11 @@ test-sublinear-graph-memory-scalability:
 	./tests/test_sublinear_graph_memory_scalability
 	@rm -f tests/test_sublinear_graph_memory_scalability
 
+test-post-thinking-deadtime-reflection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_post_thinking_deadtime_reflection.c -o tests/test_post_thinking_deadtime_reflection
+	./tests/test_post_thinking_deadtime_reflection
+	@rm -f tests/test_post_thinking_deadtime_reflection
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

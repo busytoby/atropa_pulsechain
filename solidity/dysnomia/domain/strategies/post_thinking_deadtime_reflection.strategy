@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PST-THK-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / POST THINKING DEADTIME REFLECTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PST-PARAMS.
+           05 WS-DEAD-TIME-MS           PIC 9(04) VALUE 3500.
+           05 WS-REFLECTION-TOKENS      PIC 9(03) VALUE 081.
+           05 WS-CHARACTER-CONSIST-H    PIC 9(03) VALUE 461.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PST-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-PST-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-PST-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-PST-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PST-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 DEAD-TIME-OUT-OF-BOUNDS     VALUE 2.
+              88 REFLECTION-TOKENS-OUT       VALUE 3.
+              88 CHARACTER-CONSIST-LOW       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 REFLECTION-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-POST-THINKING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DEAD-TIME-MS < 1500 OR WS-DEAD-TIME-MS > 8000
+                SET DEAD-TIME-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REFLECTION-TOKENS < 30 OR WS-REFLECTION-TOKENS > 150
+                SET REFLECTION-TOKENS-OUT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CHARACTER-CONSIST-H < 400 OR WS-CHARACTER-CONSIST-H > 500
+                SET CHARACTER-CONSIST-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-POST-THINKING.
+            COMPUTE WS-PST-COMPOSITE = (WS-DEAD-TIME-MS / 10) +
+                                       (WS-REFLECTION-TOKENS * 4) +
+                                       (WS-CHARACTER-CONSIST-H * 2).
+
+            COMPUTE WS-PST-VITALITY = (WS-PST-COMPOSITE / 4) +
+                                      (WS-CHARACTER-CONSIST-H / 4) +
+                                      (WS-REFLECTION-TOKENS * 2) + 1.
+
+            IF WS-PST-VITALITY EQUAL ZERO
+                SET REFLECTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PST-COHERENCE = (WS-PST-COMPOSITE / 16) +
+                                       (WS-CHARACTER-CONSIST-H / 16) +
+                                       (WS-REFLECTION-TOKENS / 2).
+
+            COMPUTE WS-PST-REBAR-LATCH = 1470169088 +
+                                         (WS-PST-COMPOSITE / 2) +
+                                         (WS-REFLECTION-TOKENS * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PST-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-PST-VITALITY * 10) +
+                                         (WS-PST-COHERENCE * 10) +
+                                         (WS-PST-COMPOSITE * 10) +
+                                         (WS-PST-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PST-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PST-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
