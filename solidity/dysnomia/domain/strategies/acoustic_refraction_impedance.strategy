@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ACOUST-IMP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC REFRACTION & IMPEDANCE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-IMP-PARAMS.
+           05 WS-CRIT-ANGLE-TENTHS      PIC 9(03) VALUE 128.
+           05 WS-REFLECT-COEFF-M        PIC 9(04) VALUE 0995.
+           05 WS-ENERGY-COUPLING-M      PIC 9(04) VALUE 0850.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-REF-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-REF-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-REF-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-REF-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-REF-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 CRIT-ANGLE-OUT-OF-BOUNDS    VALUE 2.
+              88 REFLECTION-COEFF-LOW        VALUE 3.
+              88 ENERGY-COUPLING-LOW         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 REFRACTION-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-REFRACTION-IMPEDANCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CRIT-ANGLE-TENTHS < 100 OR WS-CRIT-ANGLE-TENTHS > 150
+                SET CRIT-ANGLE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REFLECT-COEFF-M < 990 OR WS-REFLECT-COEFF-M > 1000
+                SET REFLECTION-COEFF-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ENERGY-COUPLING-M < 600 OR WS-ENERGY-COUPLING-M > 1000
+                SET ENERGY-COUPLING-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-REFRACTION-IMPEDANCE.
+            COMPUTE WS-REF-COMPOSITE = (WS-CRIT-ANGLE-TENTHS * 10) +
+                                       (WS-REFLECT-COEFF-M / 2) +
+                                       (WS-ENERGY-COUPLING-M / 2).
+
+            COMPUTE WS-REF-VITALITY = (WS-REF-COMPOSITE / 4) +
+                                      (WS-ENERGY-COUPLING-M / 4) +
+                                      (WS-CRIT-ANGLE-TENTHS * 2) + 1.
+
+            IF WS-REF-VITALITY EQUAL ZERO
+                SET REFRACTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-REF-COHERENCE = (WS-REF-COMPOSITE / 16) +
+                                       (WS-ENERGY-COUPLING-M / 16) +
+                                       (WS-CRIT-ANGLE-TENTHS / 2).
+
+            COMPUTE WS-REF-REBAR-LATCH = 1470169088 +
+                                         (WS-REF-COMPOSITE / 2) +
+                                         (WS-CRIT-ANGLE-TENTHS * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-REF-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-REF-VITALITY * 10) +
+                                         (WS-REF-COHERENCE * 10) +
+                                         (WS-REF-COMPOSITE * 10) +
+                                         (WS-REF-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-REF-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-REF-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

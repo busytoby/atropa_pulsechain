@@ -733,6 +733,11 @@ test-teddy-bear-universal-io-matrix:
 	./tests/test_teddy_bear_universal_io_matrix
 	@rm -f tests/test_teddy_bear_universal_io_matrix
 
+test-acoustic-refraction-impedance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_refraction_impedance.c -o tests/test_acoustic_refraction_impedance
+	./tests/test_acoustic_refraction_impedance
+	@rm -f tests/test_acoustic_refraction_impedance
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
