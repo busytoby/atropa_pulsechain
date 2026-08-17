@@ -1,5 +1,8 @@
-# Ignore all files under assets/ directory
-assets/
+# Ignore all files under assets/ directory except .bio text scores
+assets/*
+!assets/bionika/
+assets/bionika/*
+!assets/bionika/*.bio
 
 # Ignore compiled binaries and native extensions in scripts/
 /scripts/mann_pixar_surd_monomial_demo
@@ -98,9 +101,7 @@ price_cache.json
 resolved_swaps.json
 unresolved_swaps.json
 
-# Ignore assets directories recursively
-assets/
-**/assets/
+# Ignore runtime address cache
 found_addresses.txt
 
 # Root tests binaries

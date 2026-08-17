@@ -1,0 +1,80 @@
+# =============================================================================
+# Auncient Bionika Score: Totient Turtle Formant Speech & EDO-22 Song Engine
+# Architecture: Dysnomia VM / ReBAR VRAM DMA (0x57A10000)
+# =============================================================================
+
+@HEADER {
+    MOTZKIN_PRIME: 953467954114363
+    REBAR_VRAM:    0x57A10000
+    TEMPO_BPM:     120
+    TUNING_SCALE:  EDO-22
+    ASPECT_RATIO:  1.85:1
+    TOTAL_ACTS:    4
+    TOTAL_FRAMES:  2160
+}
+
+# -----------------------------------------------------------------------------
+# ACT I: SEED PHONATION & GLOTTAL PULSE (0.0s - 15.0s, Frames 0..360)
+# -----------------------------------------------------------------------------
+@ACT 1 "Seed Phonation" {
+    CELLULAR_AUTOMATA: GOSPER_GLIDER_GUN { ORIGIN: [14, 8] }
+    
+    @TURTLE 1 PERSONALITY: TRUSTWORTHY COLOR: [255, 215, 0] {
+        INIT_POS:   [320.0, 173.0, 0.0]
+        INIT_ANGLE: [0.0, 0.0, 0.0]
+        
+        # Soft-body FET Discharge Mass-Spring Lattice (Rule 10)
+        VERLET_NODE 0 MASS: 0.15 POS: [320.0, 173.0, 0.0] CHARGE: 555
+        VERLET_NODE 1 MASS: 0.15 POS: [320.0, 185.0, 0.0] CHARGE: 555
+        VERLET_SPRING 0 1 STIFFNESS: 4500.0 REST: 12.0 DAMPING: 0.85
+        
+        # Vowel Trajectory: "i" -> "e" -> "a"
+        STEP  0: TURTLE_STEP 4096 YAW:   0 PITCH:  0 PEN: 1 | ANKH_FORMANT "i" F0: 220 F1:  270 F2: 2290 PRES: 32768
+        STEP  1: TURTLE_STEP 4096 YAW:  30 PITCH: 10 PEN: 1 | ANKH_FORMANT "i" F0: 247 F1:  310 F2: 2150 PRES: 32768
+        STEP  2: TURTLE_STEP 4096 YAW:  60 PITCH: 20 PEN: 1 | ANKH_FORMANT "e" F0: 278 F1:  530 F2: 1840 PRES: 34000
+        STEP  3: TURTLE_STEP 4096 YAW:  90 PITCH: 30 PEN: 1 | ANKH_FORMANT "e" F0: 312 F1:  580 F2: 1750 PRES: 34000
+        STEP  4: PUSH_STACK
+        STEP  5: TURTLE_STEP 2048 YAW: -45 PITCH:  0 PEN: 1 | ANKH_FORMANT "a" F0: 440 F1:  730 F2: 1090 PRES: 42000
+        STEP  6: POP_STACK
+    }
+}
+
+# -----------------------------------------------------------------------------
+# ACT II: COLONY HARMONIC CHANT (15.0s - 40.0s, Frames 360..960)
+# -----------------------------------------------------------------------------
+@ACT 2 "Colony Harmonic Chant" {
+    @BALLET_CHOREOGRAPHY FORMATION: TRIADIC_ORBIT RADIUS: 32768 TEMPO: 120 {
+        LEADER:    TURTLE 1 (Gold)    OFFSET_DEG:   0
+        FOLLOWER:  TURTLE 2 (Crimson) OFFSET_DEG: 120
+        COMPANION: TURTLE 3 (Violet)  OFFSET_DEG: 240
+    }
+    
+    # 3-Agent Harmonic Vowel Chord: "a" - "o" - "u"
+    STEP 0: VOCAL_CHORD {
+        VOICE 1: ANKH_FORMANT "a" F0: 220 F1: 730 F2: 1090
+        VOICE 2: ANKH_FORMANT "o" F0: 278 F1: 570 F2:  840
+        VOICE 3: ANKH_FORMANT "u" F0: 330 F1: 300 F2:  870
+    }
+}
+
+# -----------------------------------------------------------------------------
+# ACT III: OVERDRIVE COLLISION CLIMAX (40.0s - 70.0s, Frames 960..1680)
+# -----------------------------------------------------------------------------
+@ACT 3 "Overdrive Collision Climax" {
+    # Non-linear Subharmonic Vaesen Vocalization (Period-Doubling 55Hz)
+    @TURTLE 2 PERSONALITY: AGGRESSIVE COLOR: [255, 50, 60] {
+        STEP 0: TURTLE_STEP 8192 YAW: 180 PITCH: 45 PEN: 1 | ANKH_FORMANT "growl" F0: 55 F1: 180 F2: 650 PRES: 55000
+    }
+}
+
+# -----------------------------------------------------------------------------
+# ACT IV: COSMIC EQUILIBRIUM & SYRINX (70.0s - 90.0s, Frames 1680..2160)
+# -----------------------------------------------------------------------------
+@ACT 4 "Cosmic Equilibrium & Syrinx" {
+    # High-Frequency Avian Whistle / Syrinx Glissando (3500Hz - 6000Hz)
+    @TURTLE 4 PERSONALITY: SKEPTICAL COLOR: [0, 230, 255] {
+        STEP 0: TURTLE_STEP 4096 YAW: 45 PITCH: 15 PEN: 1 | ANKH_FORMANT "syrinx" F0: 3500 F1: 3500 F2: 5800 PRES: 30000
+    }
+    
+    QUADTREE_SLICE "assets/quadtrees/sally_larsen_totient_speech_act4.dat.bin"
+}
