@@ -1693,228 +1693,30 @@ test-cpm-tomie-coaxial-multiplex-inference-prover:
 	./tests/test_cpm_tomie_coaxial_multiplex_inference_prover
 	@rm -f tests/test_cpm_tomie_coaxial_multiplex_inference_prover
 
-test-cpm-tomie-coaxial-mux-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_coaxial_mux.c -o tsfi2-deepseek/src/cpm_compiler_coaxial_mux
-	./tsfi2-deepseek/src/cpm_compiler_coaxial_mux /tmp/coaxial_mux.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_coaxial_mux.c -o tsfi2-deepseek/src/cpm_exec_coaxial_mux
-	./tsfi2-deepseek/src/cpm_exec_coaxial_mux /tmp/coaxial_mux.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_coaxial_mux tsfi2-deepseek/src/cpm_exec_coaxial_mux /tmp/coaxial_mux.bin
+test-cpm-tomie-coaxial-mux-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-coaxial-scsi-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-clay-guilford-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-clay-soundness-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-3d-spatial-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-quadtree-lod-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-thin-swiglu-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-zero-bulk-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-dynamic-feedback-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-finke-geneplore-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-recursive-vm-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-kermit-stanag-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-lyapunov-boundary-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-spatial-anchor-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-feynman-point-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-sculpting-tools-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-exploration-history-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-haptic-viscosity-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-multimodal-ambig-suite: test-ankh-llm-cpm-suite
 
-test-cpm-tomie-coaxial-hardware-scsi-interop-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover.c -o tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover
-	./tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover
-	@rm -f tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover
-
-test-cpm-tomie-coaxial-scsi-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_coaxial_scsi.c -o tsfi2-deepseek/src/cpm_compiler_coaxial_scsi
-	./tsfi2-deepseek/src/cpm_compiler_coaxial_scsi /tmp/coaxial_scsi.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_coaxial_scsi.c -o tsfi2-deepseek/src/cpm_exec_coaxial_scsi
-	./tsfi2-deepseek/src/cpm_exec_coaxial_scsi /tmp/coaxial_scsi.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_coaxial_scsi tsfi2-deepseek/src/cpm_exec_coaxial_scsi /tmp/coaxial_scsi.bin
-
-test-cpm-tomie-clay-play-guilford-divergent-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_guilford_divergent_prover.c -o tests/test_cpm_tomie_clay_play_guilford_divergent_prover
-	./tests/test_cpm_tomie_clay_play_guilford_divergent_prover
-	@rm -f tests/test_cpm_tomie_clay_play_guilford_divergent_prover
-
-test-cpm-tomie-clay-guilford-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_guilford.c -o tsfi2-deepseek/src/cpm_compiler_clay_guilford
-	./tsfi2-deepseek/src/cpm_compiler_clay_guilford /tmp/clay_guilford.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_guilford.c -o tsfi2-deepseek/src/cpm_exec_clay_guilford
-	./tsfi2-deepseek/src/cpm_exec_clay_guilford /tmp/clay_guilford.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_guilford tsfi2-deepseek/src/cpm_exec_clay_guilford /tmp/clay_guilford.bin
-
-test-cpm-tomie-clay-metaphor-soundness-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_metaphor_soundness_prover.c -o tests/test_cpm_tomie_clay_metaphor_soundness_prover
-	./tests/test_cpm_tomie_clay_metaphor_soundness_prover
-	@rm -f tests/test_cpm_tomie_clay_metaphor_soundness_prover
-
-test-cpm-tomie-clay-soundness-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_soundness.c -o tsfi2-deepseek/src/cpm_compiler_clay_soundness
-	./tsfi2-deepseek/src/cpm_compiler_clay_soundness /tmp/clay_soundness.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_soundness.c -o tsfi2-deepseek/src/cpm_exec_clay_soundness
-	./tsfi2-deepseek/src/cpm_exec_clay_soundness /tmp/clay_soundness.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_soundness tsfi2-deepseek/src/cpm_exec_clay_soundness /tmp/clay_soundness.bin
-
-test-cpm-tomie-3d-spatial-clay-ideation-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_3d_spatial_clay_ideation_prover.c -o tests/test_cpm_tomie_3d_spatial_clay_ideation_prover
-	./tests/test_cpm_tomie_3d_spatial_clay_ideation_prover
-	@rm -f tests/test_cpm_tomie_3d_spatial_clay_ideation_prover
-
-test-cpm-tomie-3d-spatial-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_3d_spatial.c -o tsfi2-deepseek/src/cpm_compiler_3d_spatial
-	./tsfi2-deepseek/src/cpm_compiler_3d_spatial /tmp/3d_spatial.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_3d_spatial.c -o tsfi2-deepseek/src/cpm_exec_3d_spatial
-	./tsfi2-deepseek/src/cpm_exec_3d_spatial /tmp/3d_spatial.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_3d_spatial tsfi2-deepseek/src/cpm_exec_3d_spatial /tmp/3d_spatial.bin
-
-test-cpm-tomie-23tree-quadtree-lod-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_23tree_quadtree_lod_prover.c -o tests/test_cpm_tomie_23tree_quadtree_lod_prover
-	./tests/test_cpm_tomie_23tree_quadtree_lod_prover
-	@rm -f tests/test_cpm_tomie_23tree_quadtree_lod_prover
-
-test-cpm-tomie-quadtree-lod-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_quadtree_lod.c -o tsfi2-deepseek/src/cpm_compiler_quadtree_lod
-	./tsfi2-deepseek/src/cpm_compiler_quadtree_lod /tmp/quadtree_lod.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_quadtree_lod.c -o tsfi2-deepseek/src/cpm_exec_quadtree_lod
-	./tsfi2-deepseek/src/cpm_exec_quadtree_lod /tmp/quadtree_lod.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_quadtree_lod tsfi2-deepseek/src/cpm_exec_quadtree_lod /tmp/quadtree_lod.bin
-
-test-cpm-tomie-thin-swiglu-matrix-lut-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover.c -o tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover
-	./tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover
-	@rm -f tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover
-
-test-cpm-tomie-thin-swiglu-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_thin_swiglu.c -o tsfi2-deepseek/src/cpm_compiler_thin_swiglu
-	./tsfi2-deepseek/src/cpm_compiler_thin_swiglu /tmp/thin_swiglu.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_thin_swiglu.c -o tsfi2-deepseek/src/cpm_exec_thin_swiglu
-	./tsfi2-deepseek/src/cpm_exec_thin_swiglu /tmp/thin_swiglu.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_thin_swiglu tsfi2-deepseek/src/cpm_exec_thin_swiglu /tmp/thin_swiglu.bin
-
-test-cpm-tomie-zero-bulk-swiglu-compat-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover.c -o tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover
-	./tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover
-	@rm -f tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover
-
-test-cpm-tomie-zero-bulk-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_zero_bulk.c -o tsfi2-deepseek/src/cpm_compiler_zero_bulk
-	./tsfi2-deepseek/src/cpm_compiler_zero_bulk /tmp/zero_bulk.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_zero_bulk.c -o tsfi2-deepseek/src/cpm_exec_zero_bulk
-	./tsfi2-deepseek/src/cpm_exec_zero_bulk /tmp/zero_bulk.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_zero_bulk tsfi2-deepseek/src/cpm_exec_zero_bulk /tmp/zero_bulk.bin
-
-test-cpm-tomie-dynamic-feedback-momentum-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_dynamic_feedback_momentum_prover.c -o tests/test_cpm_tomie_dynamic_feedback_momentum_prover
-	./tests/test_cpm_tomie_dynamic_feedback_momentum_prover
-	@rm -f tests/test_cpm_tomie_dynamic_feedback_momentum_prover
-
-test-cpm-tomie-dynamic-feedback-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_dynamic_feedback.c -o tsfi2-deepseek/src/cpm_compiler_dynamic_feedback
-	./tsfi2-deepseek/src/cpm_compiler_dynamic_feedback /tmp/dynamic_feedback.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_dynamic_feedback.c -o tsfi2-deepseek/src/cpm_exec_dynamic_feedback
-	./tsfi2-deepseek/src/cpm_exec_dynamic_feedback /tmp/dynamic_feedback.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_dynamic_feedback tsfi2-deepseek/src/cpm_exec_dynamic_feedback /tmp/dynamic_feedback.bin
-
-test-cpm-tomie-finke-geneplore-ideation-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_finke_geneplore_ideation_prover.c -o tests/test_cpm_tomie_finke_geneplore_ideation_prover
-	./tests/test_cpm_tomie_finke_geneplore_ideation_prover
-	@rm -f tests/test_cpm_tomie_finke_geneplore_ideation_prover
-
-test-cpm-tomie-finke-geneplore-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_finke_geneplore.c -o tsfi2-deepseek/src/cpm_compiler_finke_geneplore
-	./tsfi2-deepseek/src/cpm_compiler_finke_geneplore /tmp/finke_geneplore.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_finke_geneplore.c -o tsfi2-deepseek/src/cpm_exec_finke_geneplore
-	./tsfi2-deepseek/src/cpm_exec_finke_geneplore /tmp/finke_geneplore.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_finke_geneplore tsfi2-deepseek/src/cpm_exec_finke_geneplore /tmp/finke_geneplore.bin
-
-test-cpm-tomie-recursive-nested-vm-lyapunov-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover.c -o tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover
-	./tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover
-	@rm -f tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover
-
-test-cpm-tomie-recursive-vm-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_recursive_vm.c -o tsfi2-deepseek/src/cpm_compiler_recursive_vm
-	./tsfi2-deepseek/src/cpm_compiler_recursive_vm /tmp/recursive_vm.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_recursive_vm.c -o tsfi2-deepseek/src/cpm_exec_recursive_vm
-	./tsfi2-deepseek/src/cpm_exec_recursive_vm /tmp/recursive_vm.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_recursive_vm tsfi2-deepseek/src/cpm_exec_recursive_vm /tmp/recursive_vm.bin
-
-test-cpm-tomie-nested-kermit-stanag-net-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_nested_kermit_stanag_net_prover.c -o tests/test_cpm_tomie_nested_kermit_stanag_net_prover
-	./tests/test_cpm_tomie_nested_kermit_stanag_net_prover
-	@rm -f tests/test_cpm_tomie_nested_kermit_stanag_net_prover
-
-test-cpm-tomie-kermit-stanag-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_kermit_stanag.c -o tsfi2-deepseek/src/cpm_compiler_kermit_stanag
-	./tsfi2-deepseek/src/cpm_compiler_kermit_stanag /tmp/kermit_stanag.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_kermit_stanag.c -o tsfi2-deepseek/src/cpm_exec_kermit_stanag
-	./tsfi2-deepseek/src/cpm_exec_kermit_stanag /tmp/kermit_stanag.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_kermit_stanag tsfi2-deepseek/src/cpm_exec_kermit_stanag /tmp/kermit_stanag.bin
-
-test-cpm-tomie-lyapunov-singularity-boundary-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_lyapunov_singularity_boundary_prover.c -o tests/test_cpm_tomie_lyapunov_singularity_boundary_prover
-	./tests/test_cpm_tomie_lyapunov_singularity_boundary_prover
-	@rm -f tests/test_cpm_tomie_lyapunov_singularity_boundary_prover
-
-test-cpm-tomie-lyapunov-boundary-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary.c -o tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary
-	./tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary /tmp/lyapunov_boundary.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_lyapunov_boundary.c -o tsfi2-deepseek/src/cpm_exec_lyapunov_boundary
-	./tsfi2-deepseek/src/cpm_exec_lyapunov_boundary /tmp/lyapunov_boundary.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary tsfi2-deepseek/src/cpm_exec_lyapunov_boundary /tmp/lyapunov_boundary.bin
-
-test-cpm-tomie-spatial-anchoring-semantics-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_spatial_anchoring_semantics_prover.c -o tests/test_cpm_tomie_spatial_anchoring_semantics_prover
-	./tests/test_cpm_tomie_spatial_anchoring_semantics_prover
-	@rm -f tests/test_cpm_tomie_spatial_anchoring_semantics_prover
-
-test-cpm-tomie-spatial-anchor-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_spatial_anchor.c -o tsfi2-deepseek/src/cpm_compiler_spatial_anchor
-	./tsfi2-deepseek/src/cpm_compiler_spatial_anchor /tmp/spatial_anchor.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_spatial_anchor.c -o tsfi2-deepseek/src/cpm_exec_spatial_anchor
-	./tsfi2-deepseek/src/cpm_exec_spatial_anchor /tmp/spatial_anchor.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_spatial_anchor tsfi2-deepseek/src/cpm_exec_spatial_anchor /tmp/spatial_anchor.bin
-
-test-cpm-tomie-feynman-point-lyapunov-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_feynman_point_lyapunov_prover.c -o tests/test_cpm_tomie_feynman_point_lyapunov_prover
-	./tests/test_cpm_tomie_feynman_point_lyapunov_prover
-	@rm -f tests/test_cpm_tomie_feynman_point_lyapunov_prover
-
-test-cpm-tomie-feynman-point-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_feynman_point.c -o tsfi2-deepseek/src/cpm_compiler_feynman_point
-	./tsfi2-deepseek/src/cpm_compiler_feynman_point /tmp/feynman_point.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_feynman_point.c -o tsfi2-deepseek/src/cpm_exec_feynman_point
-	./tsfi2-deepseek/src/cpm_exec_feynman_point /tmp/feynman_point.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_feynman_point tsfi2-deepseek/src/cpm_exec_feynman_point /tmp/feynman_point.bin
-
-test-cpm-tomie-sculpting-tool-affordances-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_sculpting_tool_affordances_prover.c -o tests/test_cpm_tomie_sculpting_tool_affordances_prover
-	./tests/test_cpm_tomie_sculpting_tool_affordances_prover
-	@rm -f tests/test_cpm_tomie_sculpting_tool_affordances_prover
-
-test-cpm-tomie-sculpting-tools-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_sculpting_tools.c -o tsfi2-deepseek/src/cpm_compiler_sculpting_tools
-	./tsfi2-deepseek/src/cpm_compiler_sculpting_tools /tmp/sculpting_tools.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_sculpting_tools.c -o tsfi2-deepseek/src/cpm_exec_sculpting_tools
-	./tsfi2-deepseek/src/cpm_exec_sculpting_tools /tmp/sculpting_tools.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_sculpting_tools tsfi2-deepseek/src/cpm_exec_sculpting_tools /tmp/sculpting_tools.bin
-
-test-cpm-tomie-exploration-history-branching-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_exploration_history_branching_prover.c -o tests/test_cpm_tomie_exploration_history_branching_prover
-	./tests/test_cpm_tomie_exploration_history_branching_prover
-	@rm -f tests/test_cpm_tomie_exploration_history_branching_prover
-
-test-cpm-tomie-exploration-history-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_exploration_history.c -o tsfi2-deepseek/src/cpm_compiler_exploration_history
-	./tsfi2-deepseek/src/cpm_compiler_exploration_history /tmp/exploration_history.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_exploration_history.c -o tsfi2-deepseek/src/cpm_exec_exploration_history
-	./tsfi2-deepseek/src/cpm_exec_exploration_history /tmp/exploration_history.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_exploration_history tsfi2-deepseek/src/cpm_exec_exploration_history /tmp/exploration_history.bin
-
-test-cpm-tomie-haptic-tactile-viscosity-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_tactile_viscosity_prover.c -o tests/test_cpm_tomie_haptic_tactile_viscosity_prover
-	./tests/test_cpm_tomie_haptic_tactile_viscosity_prover
-	@rm -f tests/test_cpm_tomie_haptic_tactile_viscosity_prover
-
-test-cpm-tomie-haptic-viscosity-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_haptic_viscosity.c -o tsfi2-deepseek/src/cpm_compiler_haptic_viscosity
-	./tsfi2-deepseek/src/cpm_compiler_haptic_viscosity /tmp/haptic_viscosity.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_haptic_viscosity.c -o tsfi2-deepseek/src/cpm_exec_haptic_viscosity
-	./tsfi2-deepseek/src/cpm_exec_haptic_viscosity /tmp/haptic_viscosity.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_haptic_viscosity tsfi2-deepseek/src/cpm_exec_haptic_viscosity /tmp/haptic_viscosity.bin
-
-test-cpm-tomie-multimodal-ambiguity-resolution-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover.c -o tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover
-	./tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover
-	@rm -f tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover
-
-test-cpm-tomie-multimodal-ambig-suite:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_multimodal_ambig.c -o tsfi2-deepseek/src/cpm_compiler_multimodal_ambig
-	./tsfi2-deepseek/src/cpm_compiler_multimodal_ambig /tmp/multimodal_ambig.bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_multimodal_ambig.c -o tsfi2-deepseek/src/cpm_exec_multimodal_ambig
-	./tsfi2-deepseek/src/cpm_exec_multimodal_ambig /tmp/multimodal_ambig.bin
-	@rm -f tsfi2-deepseek/src/cpm_compiler_multimodal_ambig tsfi2-deepseek/src/cpm_exec_multimodal_ambig /tmp/multimodal_ambig.bin
+test-ankh-llm-cpm-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_llm_cpm_suite.c tsfi2-deepseek/src/ankh_llm_cpm_runtime.c -o tests/test_ankh_llm_cpm_suite
+	./tests/test_ankh_llm_cpm_suite
+	@rm -f tests/test_ankh_llm_cpm_suite
 
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
