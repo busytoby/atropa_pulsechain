@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BOS-SUP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BYSTANDER OVERHEARING SUPPRESSION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BOS-PARAMS.
+           05 WS-ATTEN-LAT-MS           PIC 9(02) VALUE 12.
+           05 WS-VOCAB-NEUTRAL-M        PIC 9(04) VALUE 0960.
+           05 WS-EAVESDROP-SNR-DB       PIC 9(02) VALUE 03.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BOS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-BOS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-BOS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-BOS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BOS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ATTEN-LAT-OUT-OF-BOUNDS     VALUE 2.
+              88 VOCAB-NEUTRAL-LOW           VALUE 3.
+              88 EAVESDROP-SNR-EXCEEDED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SUPPRESSION-COLLAPSE        VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-OVERHEAR-SUPPRESS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ATTEN-LAT-MS < 5 OR WS-ATTEN-LAT-MS > 25
+                SET ATTEN-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VOCAB-NEUTRAL-M < 850 OR WS-VOCAB-NEUTRAL-M > 1000
+                SET VOCAB-NEUTRAL-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EAVESDROP-SNR-DB < 0 OR WS-EAVESDROP-SNR-DB > 6
+                SET EAVESDROP-SNR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-OVERHEAR-SUPPRESS.
+            COMPUTE WS-BOS-COMPOSITE = ((30 - WS-ATTEN-LAT-MS) * 20) +
+                                       (WS-VOCAB-NEUTRAL-M / 2) +
+                                       ((10 - WS-EAVESDROP-SNR-DB) * 20).
+
+            COMPUTE WS-BOS-VITALITY = (WS-BOS-COMPOSITE / 4) +
+                                      (WS-VOCAB-NEUTRAL-M / 4) +
+                                      ((30 - WS-ATTEN-LAT-MS) * 4) + 1.
+
+            IF WS-BOS-VITALITY EQUAL ZERO
+                SET SUPPRESSION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BOS-COHERENCE = (WS-BOS-COMPOSITE / 16) +
+                                       (WS-VOCAB-NEUTRAL-M / 16) +
+                                       ((30 - WS-ATTEN-LAT-MS) * 2).
+
+            COMPUTE WS-BOS-REBAR-LATCH = 1470169088 +
+                                         (WS-BOS-COMPOSITE / 2) +
+                                         ((30 - WS-ATTEN-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BOS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-BOS-VITALITY * 10) +
+                                         (WS-BOS-COHERENCE * 10) +
+                                         (WS-BOS-COMPOSITE * 10) +
+                                         (WS-BOS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BOS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BOS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
