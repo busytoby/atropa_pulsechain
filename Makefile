@@ -1368,6 +1368,11 @@ test-temporal-velocity-scaling:
 	./tests/test_temporal_velocity_scaling
 	@rm -f tests/test_temporal_velocity_scaling
 
+test-occlusion-ghosting-shader:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_occlusion_ghosting_shader.c -o tests/test_occlusion_ghosting_shader
+	./tests/test_occlusion_ghosting_shader
+	@rm -f tests/test_occlusion_ghosting_shader
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
