@@ -273,6 +273,11 @@ test-minimal-desingularization-ideal:
 	./tests/test_minimal_desingularization_ideal
 	@rm -f tests/test_minimal_desingularization_ideal
 
+test-traverso-tracer-memoization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_traverso_tracer_memoization.c -o tests/test_traverso_tracer_memoization
+	./tests/test_traverso_tracer_memoization
+	@rm -f tests/test_traverso_tracer_memoization
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

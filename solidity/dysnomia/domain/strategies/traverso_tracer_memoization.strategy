@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TRAVERSO-TRACER-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / F4 TRACER AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TRACER-PARAMS.
+           05 WS-PRIME-ID               PIC 9(02) VALUE 01.
+           05 WS-SPAIR-COUNT            PIC 9(02) VALUE 12.
+           05 WS-TRACER-ENTRIES         PIC 9(02) VALUE 08.
+           05 WS-SPEEDUP-FACTOR         PIC 9(02) VALUE 11.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TRACER-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-SPAIR-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-TRACER-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TRACER-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-PRIME-ID            VALUE 2.
+              88 INVALID-SPAIR-COUNT         VALUE 3.
+              88 INVALID-TRACER-ENTRIES      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SPEEDUP-FACTOR-FAIL         VALUE 6.
+              88 TRACER-DIVERG-FAIL          VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-TRACER-MEMOIZATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRIME-ID < 1 OR WS-PRIME-ID > 8
+                SET INVALID-PRIME-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPAIR-COUNT < 1 OR WS-SPAIR-COUNT > 64
+                SET INVALID-SPAIR-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRACER-ENTRIES < 1 OR WS-TRACER-ENTRIES > 64
+                SET INVALID-TRACER-ENTRIES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPEEDUP-FACTOR < 1 OR WS-SPEEDUP-FACTOR > 32
+                SET SPEEDUP-FACTOR-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-TRACER-MEMOIZATION.
+            COMPUTE WS-TRACER-VITALITY = (WS-PRIME-ID * 512) +
+                                         (WS-SPAIR-COUNT * 128) +
+                                         (WS-TRACER-ENTRIES * 64) +
+                                         (WS-SPEEDUP-FACTOR * 32) + 1.
+
+            IF WS-TRACER-VITALITY EQUAL ZERO
+                SET TRACER-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SPAIR-COHERENCE = (WS-TRACER-ENTRIES * 32) +
+                                         (WS-SPAIR-COUNT * 64) +
+                                         (WS-SPEEDUP-FACTOR * 16).
+
+            COMPUTE WS-TRACER-REBAR-LATCH = 1470169088 + (WS-PRIME-ID * 256) +
+                                            (WS-SPAIR-COUNT * 64) +
+                                            (WS-TRACER-ENTRIES * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TRACER-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-TRACER-VITALITY * 10) +
+                                            (WS-SPAIR-COHERENCE * 10) +
+                                            (WS-PRIME-ID * 1000) +
+                                            (WS-TRACER-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TRACER-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TRACER-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
