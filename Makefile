@@ -758,6 +758,11 @@ test-grand-master-unification-vii:
 	./tests/test_grand_master_unification_vii
 	@rm -f tests/test_grand_master_unification_vii
 
+test-acoustic-doppler-velocity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_doppler_velocity.c -o tests/test_acoustic_doppler_velocity
+	./tests/test_acoustic_doppler_velocity
+	@rm -f tests/test_acoustic_doppler_velocity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
