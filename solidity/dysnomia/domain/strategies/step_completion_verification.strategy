@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SCV-STP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / STEP COMPLETION VERIFICATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SCV-PARAMS.
+           05 WS-VERIFY-LAT-MS          PIC 9(02) VALUE 12.
+           05 WS-CONFIRM-FID-M          PIC 9(04) VALUE 0960.
+           05 WS-POSE-DRIFT-MM          PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SCV-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SCV-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SCV-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SCV-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SCV-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 VERIFY-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 CONFIRM-FIDELITY-LOW        VALUE 3.
+              88 DRIFT-EXCEEDED              VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 VERIFICATION-COLLAPSE       VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-STEP-VERIFICATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VERIFY-LAT-MS < 5 OR WS-VERIFY-LAT-MS > 25
+                SET VERIFY-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CONFIRM-FID-M < 850 OR WS-CONFIRM-FID-M > 1000
+                SET CONFIRM-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-POSE-DRIFT-MM < 0 OR WS-POSE-DRIFT-MM > 5
+                SET DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-STEP-VERIFICATION.
+            COMPUTE WS-SCV-COMPOSITE = ((30 - WS-VERIFY-LAT-MS) * 20) +
+                                       (WS-CONFIRM-FID-M / 2) +
+                                       ((10 - WS-POSE-DRIFT-MM) * 40).
+
+            COMPUTE WS-SCV-VITALITY = (WS-SCV-COMPOSITE / 4) +
+                                      (WS-CONFIRM-FID-M / 4) +
+                                      ((30 - WS-VERIFY-LAT-MS) * 4) + 1.
+
+            IF WS-SCV-VITALITY EQUAL ZERO
+                SET VERIFICATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SCV-COHERENCE = (WS-SCV-COMPOSITE / 16) +
+                                       (WS-CONFIRM-FID-M / 16) +
+                                       ((30 - WS-VERIFY-LAT-MS) * 2).
+
+            COMPUTE WS-SCV-REBAR-LATCH = 1470169088 +
+                                         (WS-SCV-COMPOSITE / 2) +
+                                         ((30 - WS-VERIFY-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SCV-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SCV-VITALITY * 10) +
+                                         (WS-SCV-COHERENCE * 10) +
+                                         (WS-SCV-COMPOSITE * 10) +
+                                         (WS-SCV-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SCV-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SCV-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

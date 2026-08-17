@@ -1373,6 +1373,11 @@ test-occlusion-ghosting-shader:
 	./tests/test_occlusion_ghosting_shader
 	@rm -f tests/test_occlusion_ghosting_shader
 
+test-step-completion-verification:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_step_completion_verification.c -o tests/test_step_completion_verification
+	./tests/test_step_completion_verification
+	@rm -f tests/test_step_completion_verification
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
