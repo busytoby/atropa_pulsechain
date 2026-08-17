@@ -1468,6 +1468,11 @@ test-datasway-animation-coordination:
 	./tests/test_datasway_animation_coordination
 	@rm -f tests/test_datasway_animation_coordination
 
+test-adept-audio-analytics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_adept_audio_analytics.c -o tests/test_adept_audio_analytics
+	./tests/test_adept_audio_analytics
+	@rm -f tests/test_adept_audio_analytics
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

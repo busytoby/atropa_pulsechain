@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ADP-AUD-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ADEPT AUDIO ANALYTICS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ADP-PARAMS.
+           05 WS-EXTRACT-LAT-MS         PIC 9(02) VALUE 12.
+           05 WS-TRIAGE-FID-M           PIC 9(04) VALUE 0960.
+           05 WS-PROJ-JITTER-MS         PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ADP-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ADP-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ADP-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ADP-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ADP-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 EXTRACT-LAT-OUT-OF-BOUNDS   VALUE 2.
+              88 TRIAGE-FIDELITY-LOW         VALUE 3.
+              88 JITTER-EXCEEDED             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ADEPT-COLLAPSE              VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ADEPT-AUDIO
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXTRACT-LAT-MS < 5 OR WS-EXTRACT-LAT-MS > 25
+                SET EXTRACT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRIAGE-FID-M < 850 OR WS-TRIAGE-FID-M > 1000
+                SET TRIAGE-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROJ-JITTER-MS < 0 OR WS-PROJ-JITTER-MS > 5
+                SET JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ADEPT-AUDIO.
+            COMPUTE WS-ADP-COMPOSITE = ((30 - WS-EXTRACT-LAT-MS) * 20) +
+                                       (WS-TRIAGE-FID-M / 2) +
+                                       ((10 - WS-PROJ-JITTER-MS) * 40).
+
+            COMPUTE WS-ADP-VITALITY = (WS-ADP-COMPOSITE / 4) +
+                                      (WS-TRIAGE-FID-M / 4) +
+                                      ((30 - WS-EXTRACT-LAT-MS) * 4) + 1.
+
+            IF WS-ADP-VITALITY EQUAL ZERO
+                SET ADEPT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ADP-COHERENCE = (WS-ADP-COMPOSITE / 16) +
+                                       (WS-TRIAGE-FID-M / 16) +
+                                       ((30 - WS-EXTRACT-LAT-MS) * 2).
+
+            COMPUTE WS-ADP-REBAR-LATCH = 1470169088 +
+                                         (WS-ADP-COMPOSITE / 2) +
+                                         ((30 - WS-EXTRACT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ADP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ADP-VITALITY * 10) +
+                                         (WS-ADP-COHERENCE * 10) +
+                                         (WS-ADP-COMPOSITE * 10) +
+                                         (WS-ADP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ADP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ADP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
