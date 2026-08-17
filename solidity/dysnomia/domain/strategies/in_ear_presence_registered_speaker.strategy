@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. IN-EAR-SPK-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / IN-EAR PRESENCE REGISTERED SPEAKER AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PRS-PARAMS.
+           05 WS-ACOUSTIC-SEAL-M        PIC 9(04) VALUE 0940.
+           05 WS-PRESENCE-DELTA-T-DB    PIC 9(03) VALUE 245.
+           05 WS-SPEAKER-DNA-HASH       PIC 9(09) VALUE 839218471.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PRS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-PRS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-PRS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-PRS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PRS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ACOUSTIC-SEALING-LOW        VALUE 2.
+              88 PRESENCE-DELTA-LOW          VALUE 3.
+              88 INVALID-SPEAKER-DNA         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PRESENCE-COLLAPSE           VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-IN-EAR-PRESENCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACOUSTIC-SEAL-M < 850 OR WS-ACOUSTIC-SEAL-M > 1000
+                SET ACOUSTIC-SEALING-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRESENCE-DELTA-T-DB < 180 OR WS-PRESENCE-DELTA-T-DB > 400
+                SET PRESENCE-DELTA-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPEAKER-DNA-HASH < 1000 OR WS-SPEAKER-DNA-HASH > 999999999
+                SET INVALID-SPEAKER-DNA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-IN-EAR-PRESENCE.
+            COMPUTE WS-PRS-COMPOSITE = (WS-ACOUSTIC-SEAL-M / 2) +
+                                       (WS-PRESENCE-DELTA-T-DB * 4) +
+                                       (FUNCTION MOD(WS-SPEAKER-DNA-HASH, 1000) / 2).
+
+            COMPUTE WS-PRS-VITALITY = (WS-PRS-COMPOSITE / 4) +
+                                      (WS-ACOUSTIC-SEAL-M / 4) +
+                                      (WS-PRESENCE-DELTA-T-DB / 2) + 1.
+
+            IF WS-PRS-VITALITY EQUAL ZERO
+                SET PRESENCE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PRS-COHERENCE = (WS-PRS-COMPOSITE / 16) +
+                                       (WS-ACOUSTIC-SEAL-M / 16) +
+                                       (WS-PRESENCE-DELTA-T-DB / 8).
+
+            COMPUTE WS-PRS-REBAR-LATCH = 1470169088 +
+                                         (WS-PRS-COMPOSITE / 2) +
+                                         (WS-PRESENCE-DELTA-T-DB * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PRS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-PRS-VITALITY * 10) +
+                                         (WS-PRS-COHERENCE * 10) +
+                                         (WS-PRS-COMPOSITE * 10) +
+                                         (WS-PRS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PRS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PRS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -778,6 +778,11 @@ test-acoustic-beamsteering-array:
 	./tests/test_acoustic_beamsteering_array
 	@rm -f tests/test_acoustic_beamsteering_array
 
+test-in-ear-presence-registered-speaker:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_in_ear_presence_registered_speaker.c -o tests/test_in_ear_presence_registered_speaker
+	./tests/test_in_ear_presence_registered_speaker
+	@rm -f tests/test_in_ear_presence_registered_speaker
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
