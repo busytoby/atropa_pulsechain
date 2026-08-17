@@ -618,6 +618,11 @@ test-thermal-heat-dissipation:
 	./tests/test_thermal_heat_dissipation
 	@rm -f tests/test_thermal_heat_dissipation
 
+test-multimodal-pipeline-sync:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multimodal_pipeline_sync.c -o tests/test_multimodal_pipeline_sync
+	./tests/test_multimodal_pipeline_sync
+	@rm -f tests/test_multimodal_pipeline_sync
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
