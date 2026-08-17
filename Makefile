@@ -1398,6 +1398,11 @@ test-collision-impulse-response:
 	./tests/test_collision_impulse_response
 	@rm -f tests/test_collision_impulse_response
 
+test-fastener-thread-clearance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_fastener_thread_clearance.c -o tests/test_fastener_thread_clearance
+	./tests/test_fastener_thread_clearance
+	@rm -f tests/test_fastener_thread_clearance
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
