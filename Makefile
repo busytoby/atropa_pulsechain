@@ -1856,6 +1856,18 @@ test-cpm-tomie-spatial-anchor-suite:
 	./tsfi2-deepseek/src/cpm_exec_spatial_anchor /tmp/spatial_anchor.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_spatial_anchor tsfi2-deepseek/src/cpm_exec_spatial_anchor /tmp/spatial_anchor.bin
 
+test-cpm-tomie-feynman-point-lyapunov-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_feynman_point_lyapunov_prover.c -o tests/test_cpm_tomie_feynman_point_lyapunov_prover
+	./tests/test_cpm_tomie_feynman_point_lyapunov_prover
+	@rm -f tests/test_cpm_tomie_feynman_point_lyapunov_prover
+
+test-cpm-tomie-feynman-point-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_feynman_point.c -o tsfi2-deepseek/src/cpm_compiler_feynman_point
+	./tsfi2-deepseek/src/cpm_compiler_feynman_point /tmp/feynman_point.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_feynman_point.c -o tsfi2-deepseek/src/cpm_exec_feynman_point
+	./tsfi2-deepseek/src/cpm_exec_feynman_point /tmp/feynman_point.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_feynman_point tsfi2-deepseek/src/cpm_exec_feynman_point /tmp/feynman_point.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
