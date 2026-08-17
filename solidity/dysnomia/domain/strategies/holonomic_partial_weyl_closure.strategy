@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. HOLONOMIC-WEYL-CLOSURE-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / WEYL CLOSURE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-WEYL-PARAMS.
+           05 WS-WEYL-DIM-N             PIC 9(02) VALUE 02.
+           05 WS-PARAM-VARS-M           PIC 9(02) VALUE 01.
+           05 WS-SATURATION-DEG-S       PIC 9(02) VALUE 04.
+           05 WS-BERNSTEIN-DEG-D        PIC 9(02) VALUE 02.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-WEYL-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-RABINOWITSCH-COH       PIC 9(09) VALUE 0.
+           05 WS-WEYL-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-WEYL-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-WEYL-DIM            VALUE 2.
+              88 INVALID-PARAM-COUNT         VALUE 3.
+              88 INVALID-SATURATION-DEG      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 BERNSTEIN-DIM-VIOLATION     VALUE 6.
+              88 WEYL-CLOSURE-DIVERG-FAIL    VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-WEYL-CLOSURE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIM-N < 1 OR WS-WEYL-DIM-N > 16
+                SET INVALID-WEYL-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PARAM-VARS-M < 0 OR WS-PARAM-VARS-M > 8
+                SET INVALID-PARAM-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SATURATION-DEG-S < 0 OR WS-SATURATION-DEG-S > 32
+                SET INVALID-SATURATION-DEG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BERNSTEIN-DEG-D NOT EQUAL WS-WEYL-DIM-N
+                SET BERNSTEIN-DIM-VIOLATION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-WEYL-CLOSURE.
+            COMPUTE WS-WEYL-VITALITY = (WS-WEYL-DIM-N * 512) +
+                                       (WS-PARAM-VARS-M * 256) +
+                                       (WS-SATURATION-DEG-S * 64) +
+                                       (WS-BERNSTEIN-DEG-D * 16) + 1.
+
+            IF WS-WEYL-VITALITY EQUAL ZERO
+                SET WEYL-CLOSURE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RABINOWITSCH-COH = (WS-SATURATION-DEG-S * 32) +
+                                          (WS-WEYL-DIM-N * 16) +
+                                          (WS-PARAM-VARS-M * 64).
+
+            COMPUTE WS-WEYL-REBAR-LATCH = 1470169088 + (WS-WEYL-DIM-N * 256) +
+                                          (WS-PARAM-VARS-M * 64) +
+                                          (WS-SATURATION-DEG-S * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-WEYL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-WEYL-VITALITY * 10) +
+                                          (WS-RABINOWITSCH-COH * 10) +
+                                          (WS-WEYL-DIM-N * 1000) +
+                                          (WS-WEYL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-WEYL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-WEYL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

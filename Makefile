@@ -233,6 +233,11 @@ test-pll-general-dub-support:
 	./tests/test_pll_general_dub_support
 	@rm -f tests/test_pll_general_dub_support
 
+test-holonomic-partial-weyl-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_holonomic_partial_weyl_closure.c -o tests/test_holonomic_partial_weyl_closure
+	./tests/test_holonomic_partial_weyl_closure
+	@rm -f tests/test_holonomic_partial_weyl_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
