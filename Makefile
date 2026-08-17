@@ -258,6 +258,11 @@ test-rational-annihilator-contraction:
 	./tests/test_rational_annihilator_contraction
 	@rm -f tests/test_rational_annihilator_contraction
 
+test-iterative-module-saturation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_iterative_module_saturation.c -o tests/test_iterative_module_saturation
+	./tests/test_iterative_module_saturation
+	@rm -f tests/test_iterative_module_saturation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

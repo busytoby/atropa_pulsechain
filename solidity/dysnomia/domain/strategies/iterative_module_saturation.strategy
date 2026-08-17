@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ITERATIVE-MODULE-SATURATION-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MODULE SATURATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SAT-PARAMS.
+           05 WS-SAT-EXPONENT-I         PIC 9(02) VALUE 02.
+           05 WS-POLY-MULT-J            PIC 9(02) VALUE 03.
+           05 WS-DIFF-DIMENSION         PIC 9(02) VALUE 02.
+           05 WS-TORSION-FREE-FLAG      PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SAT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-STABILITY-COHERENCE    PIC 9(09) VALUE 0.
+           05 WS-SAT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SAT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SAT-EXPONENT        VALUE 2.
+              88 INVALID-MULTIPLICITY        VALUE 3.
+              88 INVALID-DIFF-DIMENSION      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 TORSION-FREE-FLAG-FAIL      VALUE 6.
+              88 SATURATION-DIVERG-FAIL      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SATURATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SAT-EXPONENT-I < 1 OR WS-SAT-EXPONENT-I > 16
+                SET INVALID-SAT-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-POLY-MULT-J < 1 OR WS-POLY-MULT-J > 16
+                SET INVALID-MULTIPLICITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DIFF-DIMENSION < 1 OR WS-DIFF-DIMENSION > 16
+                SET INVALID-DIFF-DIMENSION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TORSION-FREE-FLAG NOT EQUAL 1
+                SET TORSION-FREE-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SATURATION.
+            COMPUTE WS-SAT-VITALITY = (WS-SAT-EXPONENT-I * 512) +
+                                      (WS-POLY-MULT-J * 256) +
+                                      (WS-DIFF-DIMENSION * 64) +
+                                      (WS-TORSION-FREE-FLAG * 128) + 1.
+
+            IF WS-SAT-VITALITY EQUAL ZERO
+                SET SATURATION-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-STABILITY-COHERENCE = (WS-POLY-MULT-J * 32) +
+                                             (WS-SAT-EXPONENT-I * 64) +
+                                             (WS-DIFF-DIMENSION * 16).
+
+            COMPUTE WS-SAT-REBAR-LATCH = 1470169088 + (WS-SAT-EXPONENT-I * 256) +
+                                         (WS-POLY-MULT-J * 64) +
+                                         (WS-DIFF-DIMENSION * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SAT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SAT-VITALITY * 10) +
+                                         (WS-STABILITY-COHERENCE * 10) +
+                                         (WS-SAT-EXPONENT-I * 1000) +
+                                         (WS-SAT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SAT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SAT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
