@@ -1178,6 +1178,11 @@ test-assembly-by-disassembly-dependency:
 	./tests/test_assembly_by_disassembly_dependency
 	@rm -f tests/test_assembly_by_disassembly_dependency
 
+test-query-driven-assembly-scope-gating:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_query_driven_assembly_scope_gating.c -o tests/test_query_driven_assembly_scope_gating
+	./tests/test_query_driven_assembly_scope_gating
+	@rm -f tests/test_query_driven_assembly_scope_gating
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
