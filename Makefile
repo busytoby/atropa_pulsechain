@@ -1253,6 +1253,11 @@ test-external-context-tooling:
 	./tests/test_external_context_tooling
 	@rm -f tests/test_external_context_tooling
 
+test-animation-scrubbing-replay:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_animation_scrubbing_replay.c -o tests/test_animation_scrubbing_replay
+	./tests/test_animation_scrubbing_replay
+	@rm -f tests/test_animation_scrubbing_replay
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

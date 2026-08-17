@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ASR-SCR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ANIMATION SCRUBBING REPLAY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ASR-PARAMS.
+           05 WS-SEEK-LAT-MS            PIC 9(02) VALUE 12.
+           05 WS-RESTORE-FIDELITY-M     PIC 9(04) VALUE 0960.
+           05 WS-PHASE-JITTER-M         PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ASR-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ASR-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ASR-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ASR-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ASR-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SEEK-LAT-OUT-OF-BOUNDS      VALUE 2.
+              88 RESTORE-FIDELITY-LOW        VALUE 3.
+              88 PHASE-JITTER-EXCEEDED       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PLAYBACK-COLLAPSE           VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCRUBBING-REPLAY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SEEK-LAT-MS < 5 OR WS-SEEK-LAT-MS > 25
+                SET SEEK-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RESTORE-FIDELITY-M < 850 OR WS-RESTORE-FIDELITY-M > 1000
+                SET RESTORE-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-JITTER-M < 0 OR WS-PHASE-JITTER-M > 5
+                SET PHASE-JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCRUBBING-REPLAY.
+            COMPUTE WS-ASR-COMPOSITE = ((30 - WS-SEEK-LAT-MS) * 20) +
+                                       (WS-RESTORE-FIDELITY-M / 2) +
+                                       ((10 - WS-PHASE-JITTER-M) * 40).
+
+            COMPUTE WS-ASR-VITALITY = (WS-ASR-COMPOSITE / 4) +
+                                      (WS-RESTORE-FIDELITY-M / 4) +
+                                      ((30 - WS-SEEK-LAT-MS) * 4) + 1.
+
+            IF WS-ASR-VITALITY EQUAL ZERO
+                SET PLAYBACK-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ASR-COHERENCE = (WS-ASR-COMPOSITE / 16) +
+                                       (WS-RESTORE-FIDELITY-M / 16) +
+                                       ((30 - WS-SEEK-LAT-MS) * 2).
+
+            COMPUTE WS-ASR-REBAR-LATCH = 1470169088 +
+                                         (WS-ASR-COMPOSITE / 2) +
+                                         ((30 - WS-SEEK-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ASR-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ASR-VITALITY * 10) +
+                                         (WS-ASR-COHERENCE * 10) +
+                                         (WS-ASR-COMPOSITE * 10) +
+                                         (WS-ASR-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ASR-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ASR-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
