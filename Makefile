@@ -713,6 +713,11 @@ test-lissajous-skin-current-sonar:
 	./tests/test_lissajous_skin_current_sonar
 	@rm -f tests/test_lissajous_skin_current_sonar
 
+test-edo22-ghost-echo-resonator:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_edo22_ghost_echo_resonator.c -o tests/test_edo22_ghost_echo_resonator
+	./tests/test_edo22_ghost_echo_resonator
+	@rm -f tests/test_edo22_ghost_echo_resonator
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

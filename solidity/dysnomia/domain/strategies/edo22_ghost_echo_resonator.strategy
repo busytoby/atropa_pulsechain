@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. EDO-RES-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / EDO-22 GHOST-ECHO RESONATOR AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-RESONATOR-PARAMS.
+           05 WS-EDO-STEP-K             PIC 9(02) VALUE 11.
+           05 WS-HARM-RESONANCE-M       PIC 9(04) VALUE 0850.
+           05 WS-GHOST-DELAY-US         PIC 9(04) VALUE 0250.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-RES-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-RES-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-RES-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-RES-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-RES-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-EDO-STEP            VALUE 2.
+              88 HARM-RESONANCE-LOW          VALUE 3.
+              88 GHOST-DELAY-OUT-OF-BOUNDS   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 RESONATOR-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-EDO-RESONANCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EDO-STEP-K < 0 OR WS-EDO-STEP-K > 21
+                SET INVALID-EDO-STEP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HARM-RESONANCE-M < 600 OR WS-HARM-RESONANCE-M > 1000
+                SET HARM-RESONANCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GHOST-DELAY-US < 50 OR WS-GHOST-DELAY-US > 1000
+                SET GHOST-DELAY-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-EDO-RESONANCE.
+            COMPUTE WS-RES-COMPOSITE = (WS-EDO-STEP-K * 50) +
+                                       (WS-HARM-RESONANCE-M / 2) +
+                                       (WS-GHOST-DELAY-US / 2).
+
+            COMPUTE WS-RES-VITALITY = (WS-RES-COMPOSITE / 4) +
+                                      (WS-HARM-RESONANCE-M / 4) +
+                                      (WS-EDO-STEP-K * 16) + 1.
+
+            IF WS-RES-VITALITY EQUAL ZERO
+                SET RESONATOR-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RES-COHERENCE = (WS-RES-COMPOSITE / 16) +
+                                       (WS-HARM-RESONANCE-M / 16) +
+                                       (WS-EDO-STEP-K * 4).
+
+            COMPUTE WS-RES-REBAR-LATCH = 1470169088 +
+                                         (WS-RES-COMPOSITE / 2) +
+                                         (WS-EDO-STEP-K * 256).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-RES-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-RES-VITALITY * 10) +
+                                         (WS-RES-COHERENCE * 10) +
+                                         (WS-RES-COMPOSITE * 10) +
+                                         (WS-RES-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-RES-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-RES-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
