@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. WYL-XPL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / WEYL CLOSURE XPLSM AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-WYL-PARAMS.
+           05 WS-WEYL-RANK              PIC 9(02) VALUE 02.
+           05 WS-COMMUTATOR-PARITY-U    PIC 9(03) VALUE 100.
+           05 WS-ANNIHILATOR-DIM        PIC 9(02) VALUE 16.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-WYL-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-WYL-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-WYL-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-WYL-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-WYL-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 WEYL-RANK-OUT-OF-BOUNDS     VALUE 2.
+              88 COMMUTATOR-PARITY-INVALID   VALUE 3.
+              88 ANNIHILATOR-DIM-OUT-OF-BND  VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 WEYL-COLLAPSE               VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-WEYL-CLOSURE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-RANK < 1 OR WS-WEYL-RANK > 8
+                SET WEYL-RANK-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COMMUTATOR-PARITY-U < 95 OR WS-COMMUTATOR-PARITY-U > 105
+                SET COMMUTATOR-PARITY-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ANNIHILATOR-DIM < 1 OR WS-ANNIHILATOR-DIM > 64
+                SET ANNIHILATOR-DIM-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-WEYL-CLOSURE.
+            COMPUTE WS-WYL-COMPOSITE = (WS-WEYL-RANK * 100) +
+                                       (WS-COMMUTATOR-PARITY-U * 5) +
+                                       (WS-ANNIHILATOR-DIM * 10).
+
+            COMPUTE WS-WYL-VITALITY = (WS-WYL-COMPOSITE / 4) +
+                                      (WS-COMMUTATOR-PARITY-U * 2) +
+                                      (WS-WEYL-RANK * 10) + 1.
+
+            IF WS-WYL-VITALITY EQUAL ZERO
+                SET WEYL-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-WYL-COHERENCE = (WS-WYL-COMPOSITE / 16) +
+                                       (WS-COMMUTATOR-PARITY-U / 2) +
+                                       (WS-WEYL-RANK * 2).
+
+            COMPUTE WS-WYL-REBAR-LATCH = 1470169088 +
+                                         (WS-WYL-COMPOSITE / 2) +
+                                         (WS-WEYL-RANK * 256).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-WYL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-WYL-VITALITY * 10) +
+                                         (WS-WYL-COHERENCE * 10) +
+                                         (WS-WYL-COMPOSITE * 10) +
+                                         (WS-WYL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-WYL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-WYL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

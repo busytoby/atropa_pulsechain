@@ -888,6 +888,11 @@ test-post-thinking-quality-dimensions:
 	./tests/test_post_thinking_quality_dimensions
 	@rm -f tests/test_post_thinking_quality_dimensions
 
+test-post-thinking-weyl-closure-xplsm:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_post_thinking_weyl_closure_xplsm.c -o tests/test_post_thinking_weyl_closure_xplsm
+	./tests/test_post_thinking_weyl_closure_xplsm
+	@rm -f tests/test_post_thinking_weyl_closure_xplsm
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
