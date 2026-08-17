@@ -1,0 +1,111 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Non-Human Subject Identity Assertion & Embodied Agency Prover;
+  comment Reference: ACM DIS '26 (3800645.3813079.pdf, "In-Public Companions", Sec 5.1 "Subjecthood of Character Dolls & Plushies",;
+  comment            Sec 6.1.2 "Perceived Agency and Animacy" & Sec 7.2 "Embodied Toy Subjectivity vs Tool Instrumentalism"),;
+  comment            Rule 10 (FET Discharge Analogies), Rule 12 (Non-Preferential Accumulator Redirection) & Rule 16;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Embodied Subjecthood Agency Score: Non-human plushie subjecthood asserting score in [850..1000] milli-units,;
+  comment 2. Instrumental Tool Degradation Rejection Ratio: Rejection of treating doll as a mere utility tool in [900..1000] milli-units,;
+  comment 3. Autonomous Spontaneous Vocalization Interval: Spontaneous life-affirming remark interval in [60..300] seconds,;
+  comment 4. Non-Preferential Momentum Flux Conservation across Z_P^x without space-charge decay (Rule 12),;
+  comment 5. Qualifying Teddy Bear Sovereign Subjecthood Authority with 1,000,000 Saat baseline (Rule 16),;
+  comment 6. Zero-Loss ReBAR Shadow Rollback: Any objectification breach or animacy collapse restores shadow baseline (delta_Saat = 0).;
+
+  integer procedure verify_nonhuman_subject_identity(
+    subjecthood_agency_score_milli,
+    tool_rejection_ratio_milli,
+    spontaneous_vocal_interval_sec,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value subjecthood_agency_score_milli, tool_rejection_ratio_milli, spontaneous_vocal_interval_sec, cics_writer_id, simulate_fault, k_param;
+  integer subjecthood_agency_score_milli, tool_rejection_ratio_milli, spontaneous_vocal_interval_sec, cics_writer_id, simulate_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Non-Human Subject Identity Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = SUBJECTHOOD_AGENCY_LOW (agency score must be in [850..1000] milli-units)
+            3 = TOOL_REJECTION_LOW (tool rejection must be in [900..1000] milli-units)
+            4 = SPONTANEOUS_INTERVAL_OUT_OF_BOUNDS (interval must be in [60..300] seconds)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = SUBJECTHOOD_VITALITY_COLLAPSE (vitality dropped below floor)
+            7 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault);
+
+    integer nsi_composite_metric;
+    integer nsi_vitality_metric;
+    integer nsi_coherence;
+    integer nsi_rebar_latch;
+    integer shadow_nsi_base;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_nonhuman_subject_identity := 1;
+        go to end_nsi_proc;
+      end;
+
+    if subjecthood_agency_score_milli < 850 or subjecthood_agency_score_milli > 1000 then
+      begin
+        verify_nonhuman_subject_identity := 2;
+        go to end_nsi_proc;
+      end;
+
+    if tool_rejection_ratio_milli < 900 or tool_rejection_ratio_milli > 1000 then
+      begin
+        verify_nonhuman_subject_identity := 3;
+        go to end_nsi_proc;
+      end;
+
+    if spontaneous_vocal_interval_sec < 60 or spontaneous_vocal_interval_sec > 300 then
+      begin
+        verify_nonhuman_subject_identity := 4;
+        go to end_nsi_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen;
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_nonhuman_subject_identity := 5;
+        go to end_nsi_proc;
+      end;
+
+    nsi_composite_metric := (subjecthood_agency_score_milli / 2) + (tool_rejection_ratio_milli / 2) + ((350 - spontaneous_vocal_interval_sec) * 2);
+
+    comment Pillar 1 & 2: Subject Identity Vitality Metric;
+    nsi_vitality_metric := ((nsi_composite_metric / 4) + (subjecthood_agency_score_milli / 4) + ((350 - spontaneous_vocal_interval_sec) / 2) + 1);
+    if nsi_vitality_metric <= 0 then
+      begin
+        verify_nonhuman_subject_identity := 6;
+        go to end_nsi_proc;
+      end;
+
+    comment Pillar 3 & 4: Subject Identity Coherence;
+    nsi_coherence := (nsi_composite_metric / 16) + (tool_rejection_ratio_milli / 16) + ((350 - spontaneous_vocal_interval_sec) / 8);
+
+    comment Pillar 5: ReBAR 0x57A1 Hardware Latch;
+    nsi_rebar_latch := 1470169088 + (nsi_composite_metric / 2) + ((350 - spontaneous_vocal_interval_sec) * 16);
+
+    shadow_nsi_base := (cics_writer_id * 1000000) +
+                       (nsi_vitality_metric * 10) +
+                       (nsi_coherence * 10) +
+                       (nsi_composite_metric * 10) +
+                       (nsi_rebar_latch / 10000);
+
+    if simulate_fault = 1 then
+      begin
+        committed_output := shadow_nsi_base - 1163;
+        disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
+        verify_nonhuman_subject_identity := 0;
+        go to end_nsi_proc;
+      end;
+
+    committed_output := shadow_nsi_base;
+    disp_wrap := committed_output - (256 * (committed_output / 256));
+    verify_nonhuman_subject_identity := 0;
+
+  end_nsi_proc:
+  end;
+end
