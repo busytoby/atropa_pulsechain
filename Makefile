@@ -1717,6 +1717,12 @@ test-cpm-tomie-surface-tension-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-dynamic-remeshing-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-semantic-csg-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-acoustic-resonance-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-4box-coaxial-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-4box-coaxial-utility-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_4box_coaxial_utility_prover.c -o tests/test_cpm_tomie_4box_coaxial_utility_prover
+	./tests/test_cpm_tomie_4box_coaxial_utility_prover
+	@rm -f tests/test_cpm_tomie_4box_coaxial_utility_prover
 
 test-cpm-tomie-acoustic-resonance-pbx-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_acoustic_resonance_pbx_prover.c -o tests/test_cpm_tomie_acoustic_resonance_pbx_prover

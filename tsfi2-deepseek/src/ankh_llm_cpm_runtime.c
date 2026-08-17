@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CP4B",
+        .opcode_signature = 0x43503442,
+        .title = "CPMTOMIE-4BOX-COAXIAL-UTILITY-CORPS",
+        .theorem_descriptions = {
+            "4-Box Direct Coaxial Bus Arbitrage Invariance",
+            "Multi-Tone Frequency Synthesizer Soundness",
+            "Non-Preferential Coin Pulse & Line Sink Balance",
+            "Sub-Millisecond 4-Box Coaxial Commutation Latency",
+            "Sovereign 4-Box Coaxial Utility Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAP",
         .opcode_signature = 0x43504150,
         .title = "CPMTOMIE-ACOUSTIC-RESONANCE-PBX-CORPS",
