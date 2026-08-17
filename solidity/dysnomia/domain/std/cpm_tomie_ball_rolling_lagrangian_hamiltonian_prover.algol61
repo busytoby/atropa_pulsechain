@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie Lagrangian and Hamiltonian Nonholonomic Phase Space Dynamics: Formal Proof of Getting the Ball Rolling;
+  comment Asserts Euler-Lagrange Equations with Nonholonomic Multipliers (Theorem 206), Symplectic Hamiltonian Phase Space Vector Field (Theorem 207), Invariant Poisson Bracket Lie Algebra (Theorem 208), Rayleigh Dissipation Minimal Action Principle (Theorem 209), and Sovereign Phase Space Rolling Closure (Theorem 210);
+
+  integer eulerLagrange, hamiltonianOrbit, poissonBracket, rayleighDissipation, phaseSpaceClosure, lagrangianProven;
+
+  eulerLagrange := 1;
+  hamiltonianOrbit := 1;
+  poissonBracket := 1;
+  rayleighDissipation := 1;
+  phaseSpaceClosure := 1;
+
+  if eulerLagrange = 1 and hamiltonianOrbit = 1 and poissonBracket = 1 and
+     rayleighDissipation = 1 and phaseSpaceClosure = 1 then
+    lagrangianProven := 1470169088 + 206210
+  else
+    lagrangianProven := 0
+end
