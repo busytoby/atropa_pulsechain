@@ -253,6 +253,11 @@ test-grobner-truncation-termination:
 	./tests/test_grobner_truncation_termination
 	@rm -f tests/test_grobner_truncation_termination
 
+test-rational-annihilator-contraction:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_rational_annihilator_contraction.c -o tests/test_rational_annihilator_contraction
+	./tests/test_rational_annihilator_contraction
+	@rm -f tests/test_rational_annihilator_contraction
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
