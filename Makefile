@@ -688,6 +688,11 @@ test-acoustic-attenuation-channel-budget:
 	./tests/test_acoustic_attenuation_channel_budget
 	@rm -f tests/test_acoustic_attenuation_channel_budget
 
+test-ultrasonic-earcanal-biometrics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ultrasonic_earcanal_biometrics.c -o tests/test_ultrasonic_earcanal_biometrics
+	./tests/test_ultrasonic_earcanal_biometrics
+	@rm -f tests/test_ultrasonic_earcanal_biometrics
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
