@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPBG",
+        .opcode_signature = 0x43504247,
+        .title = "CPMTOMIE-SEMANTIC-CSG-INTERSECTION-CORPS",
+        .theorem_descriptions = {
+            "CSG Boolean Regularization Invariance",
+            "Exact Boundary Ray-Casting & Parity Winding",
+            "Non-Preferential Manifold Boundary Stitching",
+            "Sub-Millisecond CSG Intersection Latency",
+            "Sovereign Semantic CSG & Boundary Intersection Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDR",
         .opcode_signature = 0x43504452,
         .title = "CPMTOMIE-DYNAMIC-REMESHING-MANIFOLD-CORPS",

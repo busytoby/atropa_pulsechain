@@ -1715,6 +1715,12 @@ test-cpm-tomie-multimodal-ambig-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-deformation-gradient-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-surface-tension-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-dynamic-remeshing-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-semantic-csg-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-semantic-csg-intersection-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_semantic_csg_intersection_prover.c -o tests/test_cpm_tomie_semantic_csg_intersection_prover
+	./tests/test_cpm_tomie_semantic_csg_intersection_prover
+	@rm -f tests/test_cpm_tomie_semantic_csg_intersection_prover
 
 test-cpm-tomie-dynamic-remeshing-manifold-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_dynamic_remeshing_manifold_prover.c -o tests/test_cpm_tomie_dynamic_remeshing_manifold_prover
