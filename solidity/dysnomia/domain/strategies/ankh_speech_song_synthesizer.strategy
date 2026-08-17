@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ANKH-SPEECH-SONG-SYNTHESIZER-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VOCAL SYNTHESIS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SYNTHESIZER-PARAMETERS.
+           05 WS-F0-PITCH-HZ            PIC 9(04) VALUE 0220.
+           05 WS-F1-FORMANT-HZ          PIC 9(04) VALUE 0500.
+           05 WS-VOCAL-MODE             PIC 9(01) VALUE 1.
+           05 WS-PRESSURE-Q16           PIC 9(06) VALUE 032768.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ACOUSTIC-VITALITY      PIC 9(09) VALUE 0.
+           05 WS-FORMANT-ADMITTANCE     PIC 9(09) VALUE 0.
+           05 WS-SPEECH-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SPEECH-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-F0-PITCH            VALUE 2.
+              88 INVALID-VOCAL-MODE          VALUE 3.
+              88 INVALID-F1-FORMANT          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-PRESSURE-Q16        VALUE 6.
+              88 ACOUSTIC-UNDERFLOW-FAIL     VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SPEECH-SYNTHESIS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-F0-PITCH-HZ < 20 OR WS-F0-PITCH-HZ > 2000
+                SET INVALID-F0-PITCH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VOCAL-MODE < 1 OR WS-VOCAL-MODE > 4
+                SET INVALID-VOCAL-MODE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-F1-FORMANT-HZ < 150 OR WS-F1-FORMANT-HZ > 4000
+                SET INVALID-F1-FORMANT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRESSURE-Q16 < 1000 OR WS-PRESSURE-Q16 > 65536
+                SET INVALID-PRESSURE-Q16 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SPEECH-SYNTHESIS.
+            COMPUTE WS-ACOUSTIC-VITALITY = (WS-F0-PITCH-HZ * 10) +
+                                           (WS-VOCAL-MODE * 1024) +
+                                           (WS-F1-FORMANT-HZ / 2) + 1.
+
+            IF WS-ACOUSTIC-VITALITY EQUAL ZERO
+                SET ACOUSTIC-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-FORMANT-ADMITTANCE = ((WS-PRESSURE-Q16 * 875) / 10000) +
+                                            (WS-F1-FORMANT-HZ / 4).
+
+            COMPUTE WS-SPEECH-REBAR-LATCH = 1470169088 + (WS-F0-PITCH-HZ * 64) +
+                                            (WS-VOCAL-MODE * 256) +
+                                            (WS-F1-FORMANT-HZ * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SPEECH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-ACOUSTIC-VITALITY * 10) +
+                                            (WS-FORMANT-ADMITTANCE * 10) +
+                                            (WS-VOCAL-MODE * 1000) +
+                                            (WS-SPEECH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SPEECH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SPEECH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

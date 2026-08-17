@@ -133,6 +133,11 @@ test-multi-vaesen-ballet-edo22:
 	./tests/test_multi_vaesen_ballet_edo22
 	@rm -f tests/test_multi_vaesen_ballet_edo22
 
+test-ankh-speech-song-synthesizer:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_speech_song_synthesizer.c -o tests/test_ankh_speech_song_synthesizer
+	./tests/test_ankh_speech_song_synthesizer
+	@rm -f tests/test_ankh_speech_song_synthesizer
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
