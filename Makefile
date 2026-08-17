@@ -1498,6 +1498,11 @@ test-mindtrellis-exploration:
 	./tests/test_mindtrellis_exploration
 	@rm -f tests/test_mindtrellis_exploration
 
+test-writing-ownership-dynamics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_writing_ownership_dynamics.c -o tests/test_writing_ownership_dynamics
+	./tests/test_writing_ownership_dynamics
+	@rm -f tests/test_writing_ownership_dynamics
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
