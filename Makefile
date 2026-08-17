@@ -338,6 +338,11 @@ test-hierarchical-k-quantization:
 	./tests/test_hierarchical_k_quantization
 	@rm -f tests/test_hierarchical_k_quantization
 
+test-bitnet-ternary-bitlinear:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bitnet_ternary_bitlinear.c -o tests/test_bitnet_ternary_bitlinear
+	./tests/test_bitnet_ternary_bitlinear
+	@rm -f tests/test_bitnet_ternary_bitlinear
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
