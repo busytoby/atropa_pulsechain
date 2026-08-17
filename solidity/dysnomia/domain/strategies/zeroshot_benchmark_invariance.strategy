@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ZEROSHOT-BENCHMARK-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BENCHMARK INVARIANCE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BENCHMARK-PARAMS.
+           05 WS-DATASET-ID             PIC 9(02) VALUE 01.
+           05 WS-COMPLEXITY-TIER        PIC 9(02) VALUE 01.
+           05 WS-FVD-PERMILLE           PIC 9(03) VALUE 131.
+           05 WS-WER-PERMILLE           PIC 9(03) VALUE 170.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BENCH-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-METRIC-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-BENCH-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BENCH-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-DATASET-ID          VALUE 2.
+              88 INVALID-COMPLEXITY-TIER     VALUE 3.
+              88 FVD-COHERENCE-FAIL          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 WER-ACCURACY-FAIL           VALUE 6.
+              88 BENCHMARK-DIVERG-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BENCHMARK-INVARIANCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DATASET-ID < 1 OR WS-DATASET-ID > 4
+                SET INVALID-DATASET-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COMPLEXITY-TIER < 1 OR WS-COMPLEXITY-TIER > 3
+                SET INVALID-COMPLEXITY-TIER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FVD-PERMILLE < 50 OR WS-FVD-PERMILLE > 400
+                SET FVD-COHERENCE-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WER-PERMILLE < 10 OR WS-WER-PERMILLE > 350
+                SET WER-ACCURACY-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BENCHMARK-INVARIANCE.
+            COMPUTE WS-BENCH-VITALITY = (WS-DATASET-ID * 512) +
+                                        (WS-COMPLEXITY-TIER * 256) +
+                                        ((400 - WS-FVD-PERMILLE) * 4) + 1.
+
+            IF WS-BENCH-VITALITY EQUAL ZERO
+                SET BENCHMARK-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-METRIC-COHERENCE = ((400 - WS-FVD-PERMILLE) * 8) +
+                                          ((350 - WS-WER-PERMILLE) * 8).
+
+            COMPUTE WS-BENCH-REBAR-LATCH = 1470169088 + (WS-DATASET-ID * 256) +
+                                           (WS-COMPLEXITY-TIER * 64) +
+                                           (WS-FVD-PERMILLE * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BENCH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-BENCH-VITALITY * 10) +
+                                           (WS-METRIC-COHERENCE * 10) +
+                                           (WS-DATASET-ID * 1000) +
+                                           (WS-BENCH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BENCH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BENCH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -218,6 +218,11 @@ test-grand-unified-dubbing-synthesis:
 	./tests/test_grand_unified_dubbing_synthesis
 	@rm -f tests/test_grand_unified_dubbing_synthesis
 
+test-zeroshot-benchmark-invariance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_zeroshot_benchmark_invariance.c -o tests/test_zeroshot_benchmark_invariance
+	./tests/test_zeroshot_benchmark_invariance
+	@rm -f tests/test_zeroshot_benchmark_invariance
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
