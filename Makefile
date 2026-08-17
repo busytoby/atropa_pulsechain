@@ -1433,6 +1433,11 @@ test-via6522-bear-skill-tree:
 	./tests/test_via6522_bear_skill_tree
 	@rm -f tests/test_via6522_bear_skill_tree
 
+test-spring-clamp-retention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_spring_clamp_retention.c -o tests/test_spring_clamp_retention
+	./tests/test_spring_clamp_retention
+	@rm -f tests/test_spring_clamp_retention
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
