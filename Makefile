@@ -853,6 +853,11 @@ test-multilingual-script-layout:
 	./tests/test_multilingual_script_layout
 	@rm -f tests/test_multilingual_script_layout
 
+test-egocentric-scene-text-anls:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_egocentric_scene_text_anls.c -o tests/test_egocentric_scene_text_anls
+	./tests/test_egocentric_scene_text_anls
+	@rm -f tests/test_egocentric_scene_text_anls
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SCN-TXT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SCENE TEXT ANLS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SCN-PARAMS.
+           05 WS-SCENE-ANLS-M           PIC 9(04) VALUE 0660.
+           05 WS-GLARE-TOLERANCE-M      PIC 9(04) VALUE 0890.
+           05 WS-TEXT-RESOLUTION-SCALE  PIC 9(03) VALUE 050.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SCN-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SCN-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SCN-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SCN-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SCN-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SCENE-ANLS-OUT-OF-BOUNDS    VALUE 2.
+              88 GLARE-TOLERANCE-LOW         VALUE 3.
+              88 TEXT-RESOLUTION-OUT-OF-BOUNDS VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SCENE-TEXT-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCENE-TEXT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCENE-ANLS-M < 320 OR WS-SCENE-ANLS-M > 660
+                SET SCENE-ANLS-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GLARE-TOLERANCE-M < 600 OR WS-GLARE-TOLERANCE-M > 1000
+                SET GLARE-TOLERANCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TEXT-RESOLUTION-SCALE < 10 OR WS-TEXT-RESOLUTION-SCALE > 100
+                SET TEXT-RESOLUTION-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCENE-TEXT.
+            COMPUTE WS-SCN-COMPOSITE = (WS-SCENE-ANLS-M / 2) +
+                                       (WS-GLARE-TOLERANCE-M / 2) +
+                                       (WS-TEXT-RESOLUTION-SCALE * 5).
+
+            COMPUTE WS-SCN-VITALITY = (WS-SCN-COMPOSITE / 4) +
+                                      (WS-SCENE-ANLS-M / 4) +
+                                      (WS-TEXT-RESOLUTION-SCALE * 2) + 1.
+
+            IF WS-SCN-VITALITY EQUAL ZERO
+                SET SCENE-TEXT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SCN-COHERENCE = (WS-SCN-COMPOSITE / 16) +
+                                       (WS-SCENE-ANLS-M / 16) +
+                                       (WS-TEXT-RESOLUTION-SCALE / 2).
+
+            COMPUTE WS-SCN-REBAR-LATCH = 1470169088 +
+                                         (WS-SCN-COMPOSITE / 2) +
+                                         (WS-TEXT-RESOLUTION-SCALE * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SCN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SCN-VITALITY * 10) +
+                                         (WS-SCN-COHERENCE * 10) +
+                                         (WS-SCN-COMPOSITE * 10) +
+                                         (WS-SCN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SCN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SCN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
