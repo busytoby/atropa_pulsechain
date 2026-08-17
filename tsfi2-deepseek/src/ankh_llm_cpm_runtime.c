@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAP",
+        .opcode_signature = 0x43504150,
+        .title = "CPMTOMIE-ACOUSTIC-RESONANCE-PBX-CORPS",
+        .theorem_descriptions = {
+            "Acoustic Resonance Frequency Invariance",
+            "SAGE PLL 2600Hz Phase-Lock Stability",
+            "Strowger PBX Dial Pulse Routing",
+            "Sub-Millisecond Switchboard Commutation Latency",
+            "Sovereign Acoustic Resonance & PBX Dialling Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPBG",
         .opcode_signature = 0x43504247,
         .title = "CPMTOMIE-SEMANTIC-CSG-INTERSECTION-CORPS",
