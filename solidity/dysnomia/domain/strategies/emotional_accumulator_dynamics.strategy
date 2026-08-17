@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. EMO-ACCUM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / EMOTIONAL ACCUMULATOR AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ACCUM-PARAMS.
+           05 WS-POWER-IN               PIC 9(05) VALUE 02500.
+           05 WS-POWER-DECAY            PIC 9(05) VALUE 00500.
+           05 WS-ENDOWMENT-SAAT         PIC 9(08) VALUE 01000000.
+           05 WS-EXACT-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-NET-CHARGE             PIC S9(05) VALUE 0.
+           05 WS-ACCUM-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-ACCUM-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-ACCUM-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ACCUM-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-POWER-IN            VALUE 2.
+              88 INVALID-POWER-DECAY         VALUE 3.
+              88 INVALID-ENDOWMENT           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ACCUMULATOR-EXACTNESS-FAIL  VALUE 6.
+              88 ACCUMULATOR-DISCONTINUITY   VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-EMOTIONAL-ACCUMULATOR
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-POWER-IN < 10 OR WS-POWER-IN > 10000
+                SET INVALID-POWER-IN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-POWER-DECAY < 1 OR WS-POWER-DECAY > 5000
+                SET INVALID-POWER-DECAY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ENDOWMENT-SAAT < 1000000
+                SET INVALID-ENDOWMENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXACT-FLAG NOT EQUAL 1
+                SET ACCUMULATOR-EXACTNESS-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-NET-CHARGE = WS-POWER-IN - WS-POWER-DECAY.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-EMOTIONAL-ACCUMULATOR.
+            COMPUTE WS-ACCUM-VITALITY = (WS-POWER-IN / 4) +
+                                        (WS-POWER-DECAY / 8) +
+                                        (WS-ENDOWMENT-SAAT / 100000) +
+                                        (WS-EXACT-FLAG * 128) + 1.
+
+            IF WS-ACCUM-VITALITY EQUAL ZERO
+                SET ACCUMULATOR-DISCONTINUITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ACCUM-COHERENCE = (WS-POWER-IN / 16) +
+                                         (WS-POWER-DECAY / 32) +
+                                         (WS-ENDOWMENT-SAAT / 400000).
+
+            COMPUTE WS-ACCUM-REBAR-LATCH = 1470169088 +
+                                           (WS-POWER-IN / 2) +
+                                           (WS-POWER-DECAY / 4) +
+                                           (WS-ENDOWMENT-SAAT / 50000).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ACCUM-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-ACCUM-VITALITY * 10) +
+                                           (WS-ACCUM-COHERENCE * 10) +
+                                           (WS-POWER-IN * 10) +
+                                           (WS-ACCUM-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ACCUM-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ACCUM-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

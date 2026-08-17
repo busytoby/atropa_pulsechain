@@ -478,6 +478,11 @@ test-vaesen-emotional-norm-invariance:
 	./tests/test_vaesen_emotional_norm_invariance
 	@rm -f tests/test_vaesen_emotional_norm_invariance
 
+test-emotional-accumulator-dynamics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_emotional_accumulator_dynamics.c -o tests/test_emotional_accumulator_dynamics
+	./tests/test_emotional_accumulator_dynamics
+	@rm -f tests/test_emotional_accumulator_dynamics
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
