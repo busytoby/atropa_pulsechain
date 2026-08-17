@@ -973,6 +973,11 @@ test-periodic-visual-scene-gating:
 	./tests/test_periodic_visual_scene_gating
 	@rm -f tests/test_periodic_visual_scene_gating
 
+test-governable-memory-trauma-suppression:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_governable_memory_trauma_suppression.c -o tests/test_governable_memory_trauma_suppression
+	./tests/test_governable_memory_trauma_suppression
+	@rm -f tests/test_governable_memory_trauma_suppression
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

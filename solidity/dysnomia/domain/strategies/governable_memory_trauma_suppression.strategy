@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GMT-SUP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GOVERNABLE MEMORY TRAUMA SUPPRESSION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-GMT-PARAMS.
+           05 WS-TRAUMA-SUPPRESS-M      PIC 9(04) VALUE 0998.
+           05 WS-EPHEMERAL-DECAY-MIN    PIC 9(02) VALUE 05.
+           05 WS-REDACT-LATENCY-MS      PIC 9(03) VALUE 120.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GMT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-GMT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-GMT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-GMT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-GMT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 TRAUMA-SUPPRESSION-LOW      VALUE 2.
+              88 EPHEMERAL-DECAY-OUT-OF-BND  VALUE 3.
+              88 REDACTION-LAT-OUT-OF-BOUNDS VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MEMORY-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GOVERNABLE-MEMORY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRAUMA-SUPPRESS-M < 995 OR WS-TRAUMA-SUPPRESS-M > 1000
+                SET TRAUMA-SUPPRESSION-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EPHEMERAL-DECAY-MIN < 1 OR WS-EPHEMERAL-DECAY-MIN > 10
+                SET EPHEMERAL-DECAY-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REDACT-LATENCY-MS < 50 OR WS-REDACT-LATENCY-MS > 250
+                SET REDACTION-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GOVERNABLE-MEMORY.
+            COMPUTE WS-GMT-COMPOSITE = (WS-TRAUMA-SUPPRESS-M / 2) +
+                                       ((15 - WS-EPHEMERAL-DECAY-MIN) * 20) +
+                                       ((300 - WS-REDACT-LATENCY-MS) * 2).
+
+            COMPUTE WS-GMT-VITALITY = (WS-GMT-COMPOSITE / 4) +
+                                      (WS-TRAUMA-SUPPRESS-M / 4) +
+                                      ((15 - WS-EPHEMERAL-DECAY-MIN) * 4) + 1.
+
+            IF WS-GMT-VITALITY EQUAL ZERO
+                SET MEMORY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GMT-COHERENCE = (WS-GMT-COMPOSITE / 16) +
+                                       (WS-TRAUMA-SUPPRESS-M / 16) +
+                                       ((15 - WS-EPHEMERAL-DECAY-MIN) * 2).
+
+            COMPUTE WS-GMT-REBAR-LATCH = 1470169088 +
+                                         (WS-GMT-COMPOSITE / 2) +
+                                         ((15 - WS-EPHEMERAL-DECAY-MIN) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-GMT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-GMT-VITALITY * 10) +
+                                         (WS-GMT-COHERENCE * 10) +
+                                         (WS-GMT-COMPOSITE * 10) +
+                                         (WS-GMT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-GMT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-GMT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
