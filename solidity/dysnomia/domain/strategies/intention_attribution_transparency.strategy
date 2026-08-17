@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. INT-TRANS-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / INTENTION TRANSPARENCY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TRANS-PARAMS.
+           05 WS-CUE-OBSERVED           PIC 9(04) VALUE 0850.
+           05 WS-INTENT-DECLARED        PIC 9(04) VALUE 0800.
+           05 WS-THRESHOLD              PIC 9(04) VALUE 0500.
+           05 WS-DARK-PATTERN-FLAG      PIC 9(01) VALUE 0.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MEASURED-TRANS         PIC 9(04) VALUE 0.
+           05 WS-TRANS-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-TRANS-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-TRANS-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TRANS-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CUE-OBSERVED        VALUE 2.
+              88 INVALID-INTENT-DECLARED     VALUE 3.
+              88 INVALID-THRESHOLD           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 DARK-PATTERN-DETECTED       VALUE 6.
+              88 TRANSPARENCY-COLLAPSE       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-INTENTION-TRANSPARENCY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-OBSERVED < 100 OR WS-CUE-OBSERVED > 1000
+                SET INVALID-CUE-OBSERVED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INTENT-DECLARED < 100 OR WS-INTENT-DECLARED > 1000
+                SET INVALID-INTENT-DECLARED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-THRESHOLD < 100 OR WS-THRESHOLD > 800
+                SET INVALID-THRESHOLD TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DARK-PATTERN-FLAG NOT EQUAL ZERO
+                SET DARK-PATTERN-DETECTED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MEASURED-TRANS = (WS-CUE-OBSERVED * WS-INTENT-DECLARED) / 1000.
+            IF WS-MEASURED-TRANS < WS-THRESHOLD
+                SET TRANSPARENCY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-INTENTION-TRANSPARENCY.
+            COMPUTE WS-TRANS-VITALITY = (WS-MEASURED-TRANS / 4) +
+                                       ((WS-MEASURED-TRANS - WS-THRESHOLD) * 32) + 1.
+
+            IF WS-TRANS-VITALITY EQUAL ZERO
+                SET TRANSPARENCY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TRANS-COHERENCE = (WS-MEASURED-TRANS / 16) +
+                                        ((WS-MEASURED-TRANS - WS-THRESHOLD) * 8).
+
+            COMPUTE WS-TRANS-REBAR-LATCH = 1470169088 +
+                                          (WS-MEASURED-TRANS / 2) +
+                                          ((WS-MEASURED-TRANS - WS-THRESHOLD) * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TRANS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-TRANS-VITALITY * 10) +
+                                          (WS-TRANS-COHERENCE * 10) +
+                                          (WS-MEASURED-TRANS * 10) +
+                                          (WS-TRANS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TRANS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TRANS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -503,6 +503,11 @@ test-cross-cultural-cue-utilization:
 	./tests/test_cross_cultural_cue_utilization
 	@rm -f tests/test_cross_cultural_cue_utilization
 
+test-intention-attribution-transparency:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_intention_attribution_transparency.c -o tests/test_intention_attribution_transparency
+	./tests/test_intention_attribution_transparency
+	@rm -f tests/test_intention_attribution_transparency
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
