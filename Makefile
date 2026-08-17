@@ -1273,6 +1273,11 @@ test-liaison-precedence-graph:
 	./tests/test_liaison_precedence_graph
 	@rm -f tests/test_liaison_precedence_graph
 
+test-weyl-stanag-mesh:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_weyl_stanag_mesh.c -o tests/test_weyl_stanag_mesh
+	./tests/test_weyl_stanag_mesh
+	@rm -f tests/test_weyl_stanag_mesh
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
