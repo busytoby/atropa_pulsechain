@@ -898,6 +898,11 @@ test-grand-master-unification-x:
 	./tests/test_grand_master_unification_x
 	@rm -f tests/test_grand_master_unification_x
 
+test-teddy-bear-x-phantom-oracle:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_teddy_bear_x_phantom_oracle.c -o tests/test_teddy_bear_x_phantom_oracle
+	./tests/test_teddy_bear_x_phantom_oracle
+	@rm -f tests/test_teddy_bear_x_phantom_oracle
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
