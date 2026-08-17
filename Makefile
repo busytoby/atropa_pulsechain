@@ -313,6 +313,11 @@ test-ozone-weyl-closure-invariant:
 	./tests/test_ozone_weyl_closure_invariant
 	@rm -f tests/test_ozone_weyl_closure_invariant
 
+test-ore-fraction-normal-form:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ore_fraction_normal_form.c -o tests/test_ore_fraction_normal_form
+	./tests/test_ore_fraction_normal_form
+	@rm -f tests/test_ore_fraction_normal_form
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ORE-FRACTION-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ORE FRACTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ORE-PARAMS.
+           05 WS-VAR-COUNT-N            PIC 9(02) VALUE 02.
+           05 WS-DENOM-DEGREE-Q         PIC 9(02) VALUE 04.
+           05 WS-NUMER-ORDER-P          PIC 9(02) VALUE 02.
+           05 WS-COPRIME-FLAG           PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ORE-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ORE-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ORE-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ORE-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-VAR-COUNT           VALUE 2.
+              88 INVALID-DENOM-DEGREE        VALUE 3.
+              88 INVALID-NUMER-ORDER         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 COPRIME-FLAG-FAIL           VALUE 6.
+              88 ORE-DIVERG-FAIL             VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ORE-FRACTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VAR-COUNT-N < 1 OR WS-VAR-COUNT-N > 16
+                SET INVALID-VAR-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DENOM-DEGREE-Q < 1 OR WS-DENOM-DEGREE-Q > 32
+                SET INVALID-DENOM-DEGREE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NUMER-ORDER-P < 1 OR WS-NUMER-ORDER-P > 16
+                SET INVALID-NUMER-ORDER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COPRIME-FLAG NOT EQUAL 1
+                SET COPRIME-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ORE-FRACTION.
+            COMPUTE WS-ORE-VITALITY = (WS-VAR-COUNT-N * 512) +
+                                      (WS-DENOM-DEGREE-Q * 128) +
+                                      (WS-NUMER-ORDER-P * 64) +
+                                      (WS-COPRIME-FLAG * 256) + 1.
+
+            IF WS-ORE-VITALITY EQUAL ZERO
+                SET ORE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ORE-COHERENCE = (WS-DENOM-DEGREE-Q * 32) +
+                                       (WS-VAR-COUNT-N * 64) +
+                                       (WS-NUMER-ORDER-P * 16).
+
+            COMPUTE WS-ORE-REBAR-LATCH = 1470169088 + (WS-VAR-COUNT-N * 256) +
+                                         (WS-DENOM-DEGREE-Q * 64) +
+                                         (WS-NUMER-ORDER-P * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ORE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ORE-VITALITY * 10) +
+                                         (WS-ORE-COHERENCE * 10) +
+                                         (WS-VAR-COUNT-N * 1000) +
+                                         (WS-ORE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ORE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ORE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
