@@ -1772,6 +1772,18 @@ test-cpm-tomie-thin-swiglu-suite:
 	./tsfi2-deepseek/src/cpm_exec_thin_swiglu /tmp/thin_swiglu.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_thin_swiglu tsfi2-deepseek/src/cpm_exec_thin_swiglu /tmp/thin_swiglu.bin
 
+test-cpm-tomie-zero-bulk-swiglu-compat-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover.c -o tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover
+	./tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover
+	@rm -f tests/test_cpm_tomie_zero_bulk_swiglu_compat_prover
+
+test-cpm-tomie-zero-bulk-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_zero_bulk.c -o tsfi2-deepseek/src/cpm_compiler_zero_bulk
+	./tsfi2-deepseek/src/cpm_compiler_zero_bulk /tmp/zero_bulk.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_zero_bulk.c -o tsfi2-deepseek/src/cpm_exec_zero_bulk
+	./tsfi2-deepseek/src/cpm_exec_zero_bulk /tmp/zero_bulk.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_zero_bulk tsfi2-deepseek/src/cpm_exec_zero_bulk /tmp/zero_bulk.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
