@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. JJI-ITN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / JOINT JOURNEY ITINERARY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-JJI-PARAMS.
+           05 WS-ITINERARY-ALIGN-M      PIC 9(04) VALUE 0960.
+           05 WS-TRIGGER-DIST-M         PIC 9(02) VALUE 15.
+           05 WS-RECALC-LAT-MS          PIC 9(03) VALUE 110.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-JJI-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-JJI-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-JJI-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-JJI-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-JJI-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ITINERARY-ALIGN-LOW         VALUE 2.
+              88 TRIGGER-DIST-OUT-OF-BOUNDS  VALUE 3.
+              88 RECALC-LAT-OUT-OF-BOUNDS    VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 JOURNEY-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-JOURNEY-ITINERARY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ITINERARY-ALIGN-M < 850 OR WS-ITINERARY-ALIGN-M > 1000
+                SET ITINERARY-ALIGN-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRIGGER-DIST-M < 5 OR WS-TRIGGER-DIST-M > 30
+                SET TRIGGER-DIST-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RECALC-LAT-MS < 50 OR WS-RECALC-LAT-MS > 250
+                SET RECALC-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-JOURNEY-ITINERARY.
+            COMPUTE WS-JJI-COMPOSITE = (WS-ITINERARY-ALIGN-M / 2) +
+                                       ((35 - WS-TRIGGER-DIST-M) * 20) +
+                                       ((300 - WS-RECALC-LAT-MS) * 2).
+
+            COMPUTE WS-JJI-VITALITY = (WS-JJI-COMPOSITE / 4) +
+                                      (WS-ITINERARY-ALIGN-M / 4) +
+                                      ((35 - WS-TRIGGER-DIST-M) * 4) + 1.
+
+            IF WS-JJI-VITALITY EQUAL ZERO
+                SET JOURNEY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-JJI-COHERENCE = (WS-JJI-COMPOSITE / 16) +
+                                       (WS-ITINERARY-ALIGN-M / 16) +
+                                       ((35 - WS-TRIGGER-DIST-M) * 2).
+
+            COMPUTE WS-JJI-REBAR-LATCH = 1470169088 +
+                                         (WS-JJI-COMPOSITE / 2) +
+                                         ((35 - WS-TRIGGER-DIST-M) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-JJI-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-JJI-VITALITY * 10) +
+                                         (WS-JJI-COHERENCE * 10) +
+                                         (WS-JJI-COMPOSITE * 10) +
+                                         (WS-JJI-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-JJI-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-JJI-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

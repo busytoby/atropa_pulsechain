@@ -1093,6 +1093,11 @@ test-dynamic-persona-calibration:
 	./tests/test_dynamic_persona_calibration
 	@rm -f tests/test_dynamic_persona_calibration
 
+test-joint-journey-itinerary:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_joint_journey_itinerary.c -o tests/test_joint_journey_itinerary
+	./tests/test_joint_journey_itinerary
+	@rm -f tests/test_joint_journey_itinerary
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

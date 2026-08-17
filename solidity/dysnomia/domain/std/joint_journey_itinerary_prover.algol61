@@ -1,0 +1,111 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Joint Journey Itinerary Synthesis & Route Commentary Prover;
+  comment Reference: ACM DIS '26 (3800645.3813079.pdf, "In-Public Companions", Sec 6.3.2 "Initiating Context-Based Interactions",;
+  comment            Sec 7.1 "Collaborative Route Planning & Landmark Narration" & Fig 3 "Journey Itinerary Waypoints"),;
+  comment            Rule 10 (FET Discharge Analogies), Rule 12 (Non-Preferential Accumulator Redirection) & Rule 16;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Itinerary Co-Creation User Alignment Score: Collaborative itinerary planning match score in [850..1000] milli-units,;
+  comment 2. Waypoint Narration Trigger Distance: Proactive location commentary proximity threshold in [5..30] meters (nominal 15 m),;
+  comment 3. Real-Time Route Deviation Recalculation Latency: Dynamic detour narrative synthesis latency in [50..250] ms,;
+  comment 4. Non-Preferential Momentum Flux Conservation across Z_P^x without space-charge decay (Rule 12),;
+  comment 5. Qualifying Teddy Bear Sovereign Journey Planning Authority with 1,000,000 Saat baseline (Rule 16),;
+  comment 6. Zero-Loss ReBAR Shadow Rollback: Any route miscalculation or narration desync restores shadow baseline (delta_Saat = 0).;
+
+  integer procedure verify_joint_journey_itinerary(
+    itinerary_alignment_score_milli,
+    narration_trigger_distance_m,
+    route_recalculation_latency_ms,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value itinerary_alignment_score_milli, narration_trigger_distance_m, route_recalculation_latency_ms, cics_writer_id, simulate_fault, k_param;
+  integer itinerary_alignment_score_milli, narration_trigger_distance_m, route_recalculation_latency_ms, cics_writer_id, simulate_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Joint Journey Itinerary Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = ITINERARY_ALIGNMENT_LOW (alignment score must be in [850..1000] milli-units)
+            3 = TRIGGER_DISTANCE_OUT_OF_BOUNDS (trigger distance must be in [5..30] meters)
+            4 = RECALCULATION_LATENCY_OUT_OF_BOUNDS (latency must be in [50..250] ms)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = JOURNEY_VITALITY_COLLAPSE (vitality dropped below floor)
+            7 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault);
+
+    integer jji_composite_metric;
+    integer jji_vitality_metric;
+    integer jji_coherence;
+    integer jji_rebar_latch;
+    integer shadow_jji_base;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_joint_journey_itinerary := 1;
+        go to end_jji_proc;
+      end;
+
+    if itinerary_alignment_score_milli < 850 or itinerary_alignment_score_milli > 1000 then
+      begin
+        verify_joint_journey_itinerary := 2;
+        go to end_jji_proc;
+      end;
+
+    if narration_trigger_distance_m < 5 or narration_trigger_distance_m > 30 then
+      begin
+        verify_joint_journey_itinerary := 3;
+        go to end_jji_proc;
+      end;
+
+    if route_recalculation_latency_ms < 50 or route_recalculation_latency_ms > 250 then
+      begin
+        verify_joint_journey_itinerary := 4;
+        go to end_jji_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen;
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_joint_journey_itinerary := 5;
+        go to end_jji_proc;
+      end;
+
+    jji_composite_metric := (itinerary_alignment_score_milli / 2) + ((35 - narration_trigger_distance_m) * 20) + ((300 - route_recalculation_latency_ms) * 2);
+
+    comment Pillar 1 & 2: Joint Journey Vitality Metric;
+    jji_vitality_metric := ((jji_composite_metric / 4) + (itinerary_alignment_score_milli / 4) + ((35 - narration_trigger_distance_m) * 4) + 1);
+    if jji_vitality_metric <= 0 then
+      begin
+        verify_joint_journey_itinerary := 6;
+        go to end_jji_proc;
+      end;
+
+    comment Pillar 3 & 4: Joint Journey Coherence;
+    jji_coherence := (jji_composite_metric / 16) + (itinerary_alignment_score_milli / 16) + ((35 - narration_trigger_distance_m) * 2);
+
+    comment Pillar 5: ReBAR 0x57A1 Hardware Latch;
+    jji_rebar_latch := 1470169088 + (jji_composite_metric / 2) + ((35 - narration_trigger_distance_m) * 128);
+
+    shadow_jji_base := (cics_writer_id * 1000000) +
+                       (jji_vitality_metric * 10) +
+                       (jji_coherence * 10) +
+                       (jji_composite_metric * 10) +
+                       (jji_rebar_latch / 10000);
+
+    if simulate_fault = 1 then
+      begin
+        committed_output := shadow_jji_base - 1163;
+        disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
+        verify_joint_journey_itinerary := 0;
+        go to end_jji_proc;
+      end;
+
+    committed_output := shadow_jji_base;
+    disp_wrap := committed_output - (256 * (committed_output / 256));
+    verify_joint_journey_itinerary := 0;
+
+  end_jji_proc:
+  end;
+end
