@@ -1163,6 +1163,11 @@ test-temporal-memory-decay:
 	./tests/test_temporal_memory_decay
 	@rm -f tests/test_temporal_memory_decay
 
+test-route-detour-negotiation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_route_detour_negotiation.c -o tests/test_route_detour_negotiation
+	./tests/test_route_detour_negotiation
+	@rm -f tests/test_route_detour_negotiation
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
