@@ -468,6 +468,11 @@ test-rmsnorm-invariance:
 	./tests/test_rmsnorm_invariance
 	@rm -f tests/test_rmsnorm_invariance
 
+test-activation-distribution-clipping:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_activation_distribution_clipping.c -o tests/test_activation_distribution_clipping
+	./tests/test_activation_distribution_clipping
+	@rm -f tests/test_activation_distribution_clipping
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

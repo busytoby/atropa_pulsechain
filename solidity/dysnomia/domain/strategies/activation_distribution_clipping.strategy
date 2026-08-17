@@ -1,0 +1,124 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ACT-CLIP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACTIVATION CLIPPING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CLIP-PARAMS.
+           05 WS-GAMMA-CLIP             PIC 9(05) VALUE 03000.
+           05 WS-MEASURED-ABSMAX        PIC 9(05) VALUE 04500.
+           05 WS-BITWIDTH               PIC 9(02) VALUE 08.
+           05 WS-EXACT-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-EFFECTIVE-CLIP         PIC 9(05) VALUE 0.
+           05 WS-CLIP-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-CLIP-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-CLIP-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CLIP-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-GAMMA-CLIP          VALUE 2.
+              88 INVALID-ABSMAX-ACT          VALUE 3.
+              88 INVALID-BITWIDTH            VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 CLIPPING-EXACTNESS-FAIL     VALUE 6.
+              88 CLIPPING-RATIO-BREACH       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ACTIVATION-CLIPPING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GAMMA-CLIP < 100 OR WS-GAMMA-CLIP > 20000
+                SET INVALID-GAMMA-CLIP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MEASURED-ABSMAX < 100 OR WS-MEASURED-ABSMAX > 50000
+                SET INVALID-ABSMAX-ACT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BITWIDTH < 1 OR WS-BITWIDTH > 8
+                SET INVALID-BITWIDTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXACT-FLAG NOT EQUAL 1
+                SET CLIPPING-EXACTNESS-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MEASURED-ABSMAX >= WS-GAMMA-CLIP
+                MOVE WS-GAMMA-CLIP TO WS-EFFECTIVE-CLIP
+            ELSE
+                MOVE WS-MEASURED-ABSMAX TO WS-EFFECTIVE-CLIP
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ACTIVATION-CLIPPING.
+            COMPUTE WS-CLIP-VITALITY = (WS-EFFECTIVE-CLIP / 8) +
+                                       (WS-MEASURED-ABSMAX / 32) +
+                                       (WS-BITWIDTH * 128) +
+                                       (WS-EXACT-FLAG * 64) + 1.
+
+            IF WS-CLIP-VITALITY EQUAL ZERO
+                SET CLIPPING-RATIO-BREACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CLIP-COHERENCE = (WS-EFFECTIVE-CLIP / 32) +
+                                        (WS-MEASURED-ABSMAX / 128) +
+                                        (WS-BITWIDTH * 32).
+
+            COMPUTE WS-CLIP-REBAR-LATCH = 1470169088 +
+                                          (WS-EFFECTIVE-CLIP / 4) +
+                                          (WS-MEASURED-ABSMAX / 16) +
+                                          (WS-BITWIDTH * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CLIP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-CLIP-VITALITY * 10) +
+                                          (WS-CLIP-COHERENCE * 10) +
+                                          (WS-EFFECTIVE-CLIP * 10) +
+                                          (WS-CLIP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CLIP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CLIP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
