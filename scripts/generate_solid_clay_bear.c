@@ -1,14 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Pure C11 Native POSIX-Threaded (pthreads) Solid Terracotta Clay Bear 3D Raymarcher
+ * Native TSFi CCX Thread Dispatcher Solid Terracotta Clay Bear 3D Raymarcher
  * 
- * Strict Standards:
- * - NO OpenMP: Uses standard pure POSIX threads (pthread_t / pthread_create / pthread_join).
+ * Hardware-Aware Architecture:
+ * - Direct integration with TSFi CCX Pool (`tsfi_ccx_pool.h` / `tsfi_ccx_pool.c`).
+ * - Dispatches across CCX clusters with physical CPU core affinity and zero OpenMP.
  * - Fixed Studio Camera: Front-facing stationary 3/4 perspective (Zero horizontal scrolling).
- * - Solid Volumetric Clay SDF: Organic sculpted earthenware clay teddy bear on porcelain turntable.
+ * - Solid Volumetric Clay SDF: Organic sculpted earthenware clay teddy bear on porcelain pedestal.
  * - Continuous Studio Bionika Audio: Phase-continuous "Eye of the Tiger" AAC 192k.
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,6 +19,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include "../tsfi2-deepseek/inc/tsfi_ccx_pool.h"
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -25,7 +28,9 @@
 #define TOTAL_FRAMES (FPS * DURATION_SEC)
 #define SAMPLE_RATE 44100
 #define SAMPLES_PER_FRAME (SAMPLE_RATE / FPS)
-#define NUM_WORKER_THREADS 16
+#define NUM_CCX_CLUSTERS 4
+#define THREADS_PER_CCX 4
+#define TOTAL_SLICES 16
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -128,10 +133,10 @@ typedef struct {
     int start_y;
     int end_y;
     float time;
-} worker_arg_t;
+} ccx_worker_arg_t;
 
-static void *render_slice_worker(void *arg) {
-    worker_arg_t *w = (worker_arg_t *)arg;
+static void render_slice_ccx_task(void *arg) {
+    ccx_worker_arg_t *w = (ccx_worker_arg_t *)arg;
     float t = w->time;
 
     vec3 ro = (vec3){ 0.4f, 0.45f, 3.4f };
@@ -204,24 +209,23 @@ static void *render_slice_worker(void *arg) {
             }
         }
     }
-    return NULL;
 }
 
-static void render_frame_pthreads(int frame) {
+static void render_frame_ccx(TSFiCCXPool **pools, int num_pools, int frame) {
     float t = (float)frame / (float)FPS;
-    pthread_t threads[NUM_WORKER_THREADS];
-    worker_arg_t args[NUM_WORKER_THREADS];
-    int slice_h = HEIGHT / NUM_WORKER_THREADS;
+    ccx_worker_arg_t args[TOTAL_SLICES];
+    int slice_h = HEIGHT / TOTAL_SLICES;
 
-    for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+    for (int i = 0; i < TOTAL_SLICES; i++) {
         args[i].start_y = i * slice_h;
-        args[i].end_y = (i == NUM_WORKER_THREADS - 1) ? HEIGHT : (i + 1) * slice_h;
+        args[i].end_y = (i == TOTAL_SLICES - 1) ? HEIGHT : (i + 1) * slice_h;
         args[i].time = t;
-        pthread_create(&threads[i], NULL, render_slice_worker, &args[i]);
+        int pool_idx = i % num_pools;
+        tsfi_ccx_pool_enqueue(pools[pool_idx], render_slice_ccx_task, &args[i]);
     }
 
-    for (int i = 0; i < NUM_WORKER_THREADS; i++) {
-        pthread_join(threads[i], NULL);
+    for (int p = 0; p < num_pools; p++) {
+        tsfi_ccx_pool_wait(pools[p]);
     }
 }
 
@@ -337,8 +341,18 @@ static void generate_audio(int frame, int16_t *stereo_out) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("RENDERING NATIVE PTHREAD SOLID CLAY BEAR MP4 (90 SEC)        \n");
+    printf("RENDERING TSFI CCX THREAD DISPATCHED SOLID CLAY BEAR MP4     \n");
     printf("=============================================================\n");
+
+    TSFiCCXPool pools[NUM_CCX_CLUSTERS];
+    TSFiCCXPool *pool_ptrs[NUM_CCX_CLUSTERS];
+
+    for (int c = 0; c < NUM_CCX_CLUSTERS; c++) {
+        tsfi_ccx_pool_init(&pools[c], c, THREADS_PER_CCX);
+        pool_ptrs[c] = &pools[c];
+    }
+    printf("   ✓ Initialized %d CCX Pools (%d threads per cluster, %d threads total)\n",
+           NUM_CCX_CLUSTERS, THREADS_PER_CCX, NUM_CCX_CLUSTERS * THREADS_PER_CCX);
 
     const char *cmd = "ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - "
                       "-f s16le -ar 44100 -ac 2 -i - "
@@ -352,22 +366,27 @@ int main(void) {
     }
 
     for (int f = 0; f < TOTAL_FRAMES; f++) {
-        render_frame_pthreads(f);
+        render_frame_ccx(pool_ptrs, NUM_CCX_CLUSTERS, f);
         generate_audio(f, audio_buffer);
 
         fwrite(framebuffer, sizeof(pixel_t), WIDTH * HEIGHT, pipe);
         fwrite(audio_buffer, sizeof(int16_t) * 2, SAMPLES_PER_FRAME, pipe);
 
         if (f % 150 == 0) {
-            printf("   -> Native Pthread Raymarched %d/%d frames (%.1f%%, Time: %.1f sec)...\n",
+            printf("   -> TSFi CCX Raymarched %d/%d frames (%.1f%%, Time: %.1f sec)...\n",
                    f, TOTAL_FRAMES, (float)f / (float)TOTAL_FRAMES * 100.0f, (float)f / 30.0f);
             fflush(stdout);
         }
     }
 
     pclose(pipe);
+
+    for (int c = 0; c < NUM_CCX_CLUSTERS; c++) {
+        tsfi_ccx_pool_destroy(&pools[c]);
+    }
+
     printf("=============================================================\n");
-    printf("✓ PTHREAD SOLID CLAY BEAR RENDER COMPLETE: clayscape_bear_solid_demo.mp4\n");
+    printf("✓ TSFI CCX SOLID CLAY BEAR RENDER COMPLETE: clayscape_bear_solid_demo.mp4\n");
     printf("=============================================================\n");
     return 0;
 }
