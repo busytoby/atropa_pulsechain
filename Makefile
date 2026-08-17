@@ -428,6 +428,11 @@ test-context-cache-reuse:
 	./tests/test_context_cache_reuse
 	@rm -f tests/test_context_cache_reuse
 
+test-wer-acoustic-bound:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_wer_acoustic_bound.c -o tests/test_wer_acoustic_bound
+	./tests/test_wer_acoustic_bound
+	@rm -f tests/test_wer_acoustic_bound
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

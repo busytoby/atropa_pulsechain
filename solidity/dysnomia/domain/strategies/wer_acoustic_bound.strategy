@@ -1,0 +1,124 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. WER-BOUND-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / WER ACOUSTIC AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-WER-PARAMS.
+           05 WS-SUB-COUNT              PIC 9(04) VALUE 0008.
+           05 WS-DEL-COUNT              PIC 9(04) VALUE 0003.
+           05 WS-INS-COUNT              PIC 9(04) VALUE 0002.
+           05 WS-REF-COUNT              PIC 9(04) VALUE 0100.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ERROR-SUM              PIC 9(04) VALUE 0.
+           05 WS-CALCULATED-WER         PIC 9(03) VALUE 0.
+           05 WS-WER-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-WER-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-WER-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-WER-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SUB-COUNT           VALUE 2.
+              88 INVALID-DEL-COUNT           VALUE 3.
+              88 INVALID-INS-COUNT           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-REF-COUNT           VALUE 6.
+              88 WER-TRANSCRIPTION-COLLAPSE  VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-WER-ACCURACY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SUB-COUNT > 500
+                SET INVALID-SUB-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DEL-COUNT > 500
+                SET INVALID-DEL-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INS-COUNT > 500
+                SET INVALID-INS-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REF-COUNT < 1 OR WS-REF-COUNT > 1000
+                SET INVALID-REF-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ERROR-SUM = WS-SUB-COUNT + WS-DEL-COUNT + WS-INS-COUNT.
+            COMPUTE WS-CALCULATED-WER = (WS-ERROR-SUM * 100) / WS-REF-COUNT.
+            IF WS-CALCULATED-WER > 80
+                SET WER-TRANSCRIPTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-WER-ACCURACY.
+            COMPUTE WS-WER-VITALITY = ((100 - WS-CALCULATED-WER) * 64) +
+                                      (WS-REF-COUNT * 4) +
+                                      (WS-SUB-COUNT * 2) + 1.
+
+            IF WS-WER-VITALITY EQUAL ZERO
+                SET WER-TRANSCRIPTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-WER-COHERENCE = ((100 - WS-CALCULATED-WER) * 16) +
+                                       (WS-REF-COUNT * 2) +
+                                       (WS-DEL-COUNT * 2).
+
+            COMPUTE WS-WER-REBAR-LATCH = 1470169088 +
+                                         (WS-REF-COUNT * 32) +
+                                         (WS-ERROR-SUM * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-WER-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-WER-VITALITY * 10) +
+                                         (WS-WER-COHERENCE * 10) +
+                                         ((100 - WS-CALCULATED-WER) * 100) +
+                                         (WS-WER-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-WER-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-WER-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
