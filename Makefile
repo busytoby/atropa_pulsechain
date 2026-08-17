@@ -1083,6 +1083,11 @@ test-nonverbal-gaze-cueing:
 	./tests/test_nonverbal_gaze_cueing
 	@rm -f tests/test_nonverbal_gaze_cueing
 
+test-photo-spot-attentional-posing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_photo_spot_attentional_posing.c -o tests/test_photo_spot_attentional_posing
+	./tests/test_photo_spot_attentional_posing
+	@rm -f tests/test_photo_spot_attentional_posing
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
