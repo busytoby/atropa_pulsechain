@@ -1868,6 +1868,18 @@ test-cpm-tomie-feynman-point-suite:
 	./tsfi2-deepseek/src/cpm_exec_feynman_point /tmp/feynman_point.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_feynman_point tsfi2-deepseek/src/cpm_exec_feynman_point /tmp/feynman_point.bin
 
+test-cpm-tomie-sculpting-tool-affordances-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_sculpting_tool_affordances_prover.c -o tests/test_cpm_tomie_sculpting_tool_affordances_prover
+	./tests/test_cpm_tomie_sculpting_tool_affordances_prover
+	@rm -f tests/test_cpm_tomie_sculpting_tool_affordances_prover
+
+test-cpm-tomie-sculpting-tools-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_sculpting_tools.c -o tsfi2-deepseek/src/cpm_compiler_sculpting_tools
+	./tsfi2-deepseek/src/cpm_compiler_sculpting_tools /tmp/sculpting_tools.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_sculpting_tools.c -o tsfi2-deepseek/src/cpm_exec_sculpting_tools
+	./tsfi2-deepseek/src/cpm_exec_sculpting_tools /tmp/sculpting_tools.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_sculpting_tools tsfi2-deepseek/src/cpm_exec_sculpting_tools /tmp/sculpting_tools.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
