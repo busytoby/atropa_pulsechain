@@ -793,6 +793,11 @@ test-wavefront-quadtree-discretization:
 	./tests/test_wavefront_quadtree_discretization
 	@rm -f tests/test_wavefront_quadtree_discretization
 
+test-zorse-quadtree-llm-fusion:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_zorse_quadtree_llm_fusion.c -o tests/test_zorse_quadtree_llm_fusion
+	./tests/test_zorse_quadtree_llm_fusion
+	@rm -f tests/test_zorse_quadtree_llm_fusion
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
