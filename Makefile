@@ -1616,6 +1616,18 @@ test-cpm-tomie-clay-os-pipeline-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_os_pipeline /tmp/clay_os_pipeline.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_os_pipeline tsfi2-deepseek/src/cpm_exec_clay_os_pipeline /tmp/clay_os_pipeline.bin
 
+test-cpm-tomie-clay-play-cst-tangible-affordance-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_cst_tangible_affordance_prover.c -o tests/test_cpm_tomie_clay_play_cst_tangible_affordance_prover
+	./tests/test_cpm_tomie_clay_play_cst_tangible_affordance_prover
+	@rm -f tests/test_cpm_tomie_clay_play_cst_tangible_affordance_prover
+
+test-cpm-tomie-clay-cst-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_cst.c -o tsfi2-deepseek/src/cpm_compiler_clay_cst
+	./tsfi2-deepseek/src/cpm_compiler_clay_cst /tmp/clay_cst.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_cst.c -o tsfi2-deepseek/src/cpm_exec_clay_cst
+	./tsfi2-deepseek/src/cpm_exec_clay_cst /tmp/clay_cst.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_cst tsfi2-deepseek/src/cpm_exec_clay_cst /tmp/clay_cst.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
