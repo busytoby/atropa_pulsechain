@@ -963,6 +963,11 @@ test-spontaneous-shared-hallucination:
 	./tests/test_spontaneous_shared_hallucination
 	@rm -f tests/test_spontaneous_shared_hallucination
 
+test-in-public-calibrated-tripartite-alignment:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_in_public_calibrated_tripartite_alignment.c -o tests/test_in_public_calibrated_tripartite_alignment
+	./tests/test_in_public_calibrated_tripartite_alignment
+	@rm -f tests/test_in_public_calibrated_tripartite_alignment
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

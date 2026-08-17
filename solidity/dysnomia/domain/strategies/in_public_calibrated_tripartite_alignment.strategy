@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. IPC-TRP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / IN-PUBLIC TRIPARTITE ALIGNMENT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ALI-PARAMS.
+           05 WS-CROWD-DENSITY-PCT      PIC 9(03) VALUE 045.
+           05 WS-EMOTIONAL-VAL-M        PIC 9(04) VALUE 0750.
+           05 WS-PROACTIVE-INIT-PCT     PIC 9(02) VALUE 40.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ALI-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ALI-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ALI-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ALI-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ALI-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 CROWD-DENSITY-OUT-OF-BOUNDS VALUE 2.
+              88 EMOTIONAL-VAL-OUT-OF-BOUNDS VALUE 3.
+              88 PROACTIVE-INIT-OUT-OF-BOUND VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ALIGNMENT-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-TRIPARTITE-ALIGNMENT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CROWD-DENSITY-PCT < 10 OR WS-CROWD-DENSITY-PCT > 90
+                SET CROWD-DENSITY-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EMOTIONAL-VAL-M < 200 OR WS-EMOTIONAL-VAL-M > 900
+                SET EMOTIONAL-VAL-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROACTIVE-INIT-PCT < 10 OR WS-PROACTIVE-INIT-PCT > 80
+                SET PROACTIVE-INIT-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-TRIPARTITE-ALIGNMENT.
+            COMPUTE WS-ALI-COMPOSITE = ((100 - WS-CROWD-DENSITY-PCT) * 10) +
+                                       (WS-EMOTIONAL-VAL-M / 2) +
+                                       ((90 - WS-PROACTIVE-INIT-PCT) * 10).
+
+            COMPUTE WS-ALI-VITALITY = (WS-ALI-COMPOSITE / 4) +
+                                      (WS-EMOTIONAL-VAL-M / 4) +
+                                      ((100 - WS-CROWD-DENSITY-PCT) * 2) + 1.
+
+            IF WS-ALI-VITALITY EQUAL ZERO
+                SET ALIGNMENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ALI-COHERENCE = (WS-ALI-COMPOSITE / 16) +
+                                       (WS-EMOTIONAL-VAL-M / 16) +
+                                       ((100 - WS-CROWD-DENSITY-PCT) / 4).
+
+            COMPUTE WS-ALI-REBAR-LATCH = 1470169088 +
+                                         (WS-ALI-COMPOSITE / 2) +
+                                         ((100 - WS-CROWD-DENSITY-PCT) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ALI-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ALI-VITALITY * 10) +
+                                         (WS-ALI-COHERENCE * 10) +
+                                         (WS-ALI-COMPOSITE * 10) +
+                                         (WS-ALI-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ALI-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ALI-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
