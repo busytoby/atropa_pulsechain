@@ -1288,6 +1288,11 @@ test-monobone-agent-mesh:
 	./tests/test_monobone_agent_mesh
 	@rm -f tests/test_monobone_agent_mesh
 
+test-kmeans-group-attention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_kmeans_group_attention.c -o tests/test_kmeans_group_attention
+	./tests/test_kmeans_group_attention
+	@rm -f tests/test_kmeans_group_attention
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
