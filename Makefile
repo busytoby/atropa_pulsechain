@@ -988,6 +988,11 @@ test-grand-master-unification-xi:
 	./tests/test_grand_master_unification_xi
 	@rm -f tests/test_grand_master_unification_xi
 
+test-shared-attentional-gaze-congruence:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_shared_attentional_gaze_congruence.c -o tests/test_shared_attentional_gaze_congruence
+	./tests/test_shared_attentional_gaze_congruence
+	@rm -f tests/test_shared_attentional_gaze_congruence
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
