@@ -1038,6 +1038,11 @@ test-grand-master-unification-xii:
 	./tests/test_grand_master_unification_xii
 	@rm -f tests/test_grand_master_unification_xii
 
+test-asynchronous-landmark-reminiscing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_asynchronous_landmark_reminiscing.c -o tests/test_asynchronous_landmark_reminiscing
+	./tests/test_asynchronous_landmark_reminiscing
+	@rm -f tests/test_asynchronous_landmark_reminiscing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
