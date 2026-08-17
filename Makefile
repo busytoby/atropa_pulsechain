@@ -363,6 +363,11 @@ test-grand-master-edge-synthesis:
 	./tests/test_grand_master_edge_synthesis
 	@rm -f tests/test_grand_master_edge_synthesis
 
+test-ffn-projection-dominance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ffn_projection_dominance.c -o tests/test_ffn_projection_dominance
+	./tests/test_ffn_projection_dominance
+	@rm -f tests/test_ffn_projection_dominance
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

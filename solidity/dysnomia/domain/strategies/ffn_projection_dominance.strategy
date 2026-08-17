@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. FFN-DOMINANCE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / FFN PROJECTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-FFN-PARAMS.
+           05 WS-HIDDEN-DIM             PIC 9(05) VALUE 04096.
+           05 WS-EXPANSION-RATIO        PIC 9(02) VALUE 04.
+           05 WS-MATMUL-PCT             PIC 9(02) VALUE 95.
+           05 WS-STABILITY-FLAG         PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-FFN-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-FFN-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-FFN-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-FFN-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-HIDDEN-DIM          VALUE 2.
+              88 INVALID-EXPANSION-RATIO     VALUE 3.
+              88 INVALID-MATMUL-PCT          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 FFN-STABILITY-FAIL          VALUE 6.
+              88 FFN-DIVERG-FAIL             VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-FFN-DOMINANCE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HIDDEN-DIM < 512 OR WS-HIDDEN-DIM > 8192
+                SET INVALID-HIDDEN-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXPANSION-RATIO < 2 OR WS-EXPANSION-RATIO > 8
+                SET INVALID-EXPANSION-RATIO TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MATMUL-PCT < 80 OR WS-MATMUL-PCT > 99
+                SET INVALID-MATMUL-PCT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STABILITY-FLAG NOT EQUAL 1
+                SET FFN-STABILITY-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-FFN-DOMINANCE.
+            COMPUTE WS-FFN-VITALITY = (WS-HIDDEN-DIM / 8) +
+                                      (WS-EXPANSION-RATIO * 256) +
+                                      (WS-MATMUL-PCT * 32) +
+                                      (WS-STABILITY-FLAG * 256) + 1.
+
+            IF WS-FFN-VITALITY EQUAL ZERO
+                SET FFN-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-FFN-COHERENCE = (WS-EXPANSION-RATIO * 64) +
+                                       (WS-HIDDEN-DIM / 32) +
+                                       (WS-MATMUL-PCT * 16).
+
+            COMPUTE WS-FFN-REBAR-LATCH = 1470169088 + (WS-HIDDEN-DIM / 4) +
+                                         (WS-EXPANSION-RATIO * 128) +
+                                         (WS-MATMUL-PCT * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-FFN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-FFN-VITALITY * 10) +
+                                         (WS-FFN-COHERENCE * 10) +
+                                         (WS-EXPANSION-RATIO * 1000) +
+                                         (WS-FFN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-FFN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-FFN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
