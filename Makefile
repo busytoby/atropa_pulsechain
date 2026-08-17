@@ -1058,6 +1058,11 @@ test-canon-drift-epistemic-containment:
 	./tests/test_canon_drift_epistemic_containment
 	@rm -f tests/test_canon_drift_epistemic_containment
 
+test-ita-bag-orientation-imu-kinematics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ita_bag_orientation_imu_kinematics.c -o tests/test_ita_bag_orientation_imu_kinematics
+	./tests/test_ita_bag_orientation_imu_kinematics
+	@rm -f tests/test_ita_bag_orientation_imu_kinematics
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
