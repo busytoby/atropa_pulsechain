@@ -828,6 +828,11 @@ test-multiuser-acoustic-isolation:
 	./tests/test_multiuser_acoustic_isolation
 	@rm -f tests/test_multiuser_acoustic_isolation
 
+test-acoustic-diffuser-phase-mod:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_diffuser_phase_mod.c -o tests/test_acoustic_diffuser_phase_mod
+	./tests/test_acoustic_diffuser_phase_mod
+	@rm -f tests/test_acoustic_diffuser_phase_mod
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
