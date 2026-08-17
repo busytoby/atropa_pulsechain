@@ -158,10 +158,6 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
     
     // Page objects start at Object 4 (after Catalog, Pages, and Font)
     // Font Object = Object 3
-    size_t font_obj = tsfi_pdf_writer_add_object(writer);
-    const char *font_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n";
-    tsfi_pdf_writer_write_raw(writer, font_dict, strlen(font_dict));
-
     size_t start_page_obj = 4;
     for (size_t i = 0; i < writer->page_count; ++i) {
         char k_entry[32];
@@ -170,14 +166,15 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
     }
     strcat(kids_buf, "]");
 
-    int pg_len = snprintf(pgs_dict, sizeof(pgs_dict),
-                          "<< /Type /Pages /Kids %s /Count %zu >>\nendobj\n",
-                          kids_buf, writer->page_count);
-    
-    // Write pages dict into stream replacing Object 2 content
-    // Note: We write objects sequentially. We already wrote obj 1 and registered obj 2 & 3.
-    // Let's write Object 2 payload properly:
+    snprintf(pgs_dict, sizeof(pgs_dict),
+             "<< /Type /Pages /Kids %s /Count %zu >>\nendobj\n",
+             kids_buf, writer->page_count);
     tsfi_pdf_writer_write_raw(writer, pgs_dict, strlen(pgs_dict));
+
+    // Object 3: Font Object
+    size_t font_obj = tsfi_pdf_writer_add_object(writer);
+    const char *font_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, font_dict, strlen(font_dict));
 
     // Now write each Page Object and its Content Stream Object
     for (size_t i = 0; i < writer->page_count; ++i) {
@@ -213,6 +210,7 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
         tsfi_pdf_writer_write_raw(writer, "\nendstream\nendobj\n", 18);
 
         free(strm.data);
+        (void)font_obj;
         (void)p_obj;
         (void)s_obj;
     }
@@ -241,7 +239,6 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
     fwrite(writer->out.data, 1, writer->out.length, f);
     fclose(f);
 
-    (void)font_obj;
     return 0;
 }
 
