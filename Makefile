@@ -803,6 +803,11 @@ test-grand-master-unification-viii:
 	./tests/test_grand_master_unification_viii
 	@rm -f tests/test_grand_master_unification_viii
 
+test-skeleton-hasp-book-binaries:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_skeleton_hasp_book_binaries.c -o tests/test_skeleton_hasp_book_binaries
+	./tests/test_skeleton_hasp_book_binaries
+	@rm -f tests/test_skeleton_hasp_book_binaries
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
