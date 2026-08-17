@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PARA-INF-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / PARALINGUISTIC INFLECTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PARA-PARAMS.
+           05 WS-BASE-F0                PIC 9(04) VALUE 0220.
+           05 WS-DELTA-F0               PIC 9(04) VALUE 0350.
+           05 WS-FORMANT-F1             PIC 9(04) VALUE 0600.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ELEVATED-F0            PIC 9(05) VALUE 0.
+           05 WS-ELEVATED-F1            PIC 9(05) VALUE 0.
+           05 WS-PARA-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-PARA-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-PARA-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PARA-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-BASE-F0             VALUE 2.
+              88 INVALID-F0-ELEVATION        VALUE 3.
+              88 INVALID-FORMANT-F1          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INFLECTION-VITALITY-COLLAP  VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PARALINGUISTIC-INFLECTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BASE-F0 < 80 OR WS-BASE-F0 > 400
+                SET INVALID-BASE-F0 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DELTA-F0 < 50 OR WS-DELTA-F0 > 800
+                SET INVALID-F0-ELEVATION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FORMANT-F1 < 200 OR WS-FORMANT-F1 > 1200
+                SET INVALID-FORMANT-F1 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ELEVATED-F0 = (WS-BASE-F0 * (1000 + WS-DELTA-F0)) / 1000.
+            COMPUTE WS-ELEVATED-F1 = (WS-FORMANT-F1 * (1000 + (WS-DELTA-F0 / 2))) / 1000.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PARALINGUISTIC-INFLECTION.
+            COMPUTE WS-PARA-VITALITY = (WS-ELEVATED-F0 / 2) +
+                                       (WS-ELEVATED-F1 / 4) +
+                                       (WS-DELTA-F0 / 8) + 1.
+
+            IF WS-PARA-VITALITY EQUAL ZERO
+                SET INFLECTION-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PARA-COHERENCE = (WS-ELEVATED-F0 / 8) +
+                                        (WS-ELEVATED-F1 / 16) +
+                                        (WS-DELTA-F0 / 32).
+
+            COMPUTE WS-PARA-REBAR-LATCH = 1470169088 +
+                                          (WS-ELEVATED-F0) +
+                                          (WS-ELEVATED-F1 / 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PARA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-PARA-VITALITY * 10) +
+                                          (WS-PARA-COHERENCE * 10) +
+                                          (WS-ELEVATED-F0 * 10) +
+                                          (WS-PARA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PARA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PARA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

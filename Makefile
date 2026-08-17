@@ -548,6 +548,11 @@ test-vaesen-azatoi-manifestation:
 	./tests/test_vaesen_azatoi_manifestation
 	@rm -f tests/test_vaesen_azatoi_manifestation
 
+test-paralinguistic-micro-inflection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_paralinguistic_micro_inflection.c -o tests/test_paralinguistic_micro_inflection
+	./tests/test_paralinguistic_micro_inflection
+	@rm -f tests/test_paralinguistic_micro_inflection
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
