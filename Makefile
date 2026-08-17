@@ -1428,6 +1428,11 @@ test-via6522-torque-bear-xp:
 	./tests/test_via6522_torque_bear_xp
 	@rm -f tests/test_via6522_torque_bear_xp
 
+test-via6522-bear-skill-tree:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_via6522_bear_skill_tree.c -o tests/test_via6522_bear_skill_tree
+	./tests/test_via6522_bear_skill_tree
+	@rm -f tests/test_via6522_bear_skill_tree
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VST-SKL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VIA 6522 BEAR SKILL TREE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VST-PARAMS.
+           05 WS-SKILL-MINT-LAT-MS      PIC 9(02) VALUE 12.
+           05 WS-BRANCH-FID-M           PIC 9(04) VALUE 0960.
+           05 WS-ACR-PCR-JITTER-MS      PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VST-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-VST-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-VST-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-VST-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VST-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SKILL-MINT-LAT-OUT-OF-BOUND VALUE 2.
+              88 BRANCH-FIDELITY-LOW         VALUE 3.
+              88 JITTER-EXCEEDED             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SKILL-TREE-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BEAR-SKILL-TREE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SKILL-MINT-LAT-MS < 5 OR WS-SKILL-MINT-LAT-MS > 25
+                SET SKILL-MINT-LAT-OUT-OF-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BRANCH-FID-M < 850 OR WS-BRANCH-FID-M > 1000
+                SET BRANCH-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACR-PCR-JITTER-MS < 0 OR WS-ACR-PCR-JITTER-MS > 5
+                SET JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BEAR-SKILL-TREE.
+            COMPUTE WS-VST-COMPOSITE = ((30 - WS-SKILL-MINT-LAT-MS) * 20) +
+                                       (WS-BRANCH-FID-M / 2) +
+                                       ((10 - WS-ACR-PCR-JITTER-MS) * 40).
+
+            COMPUTE WS-VST-VITALITY = (WS-VST-COMPOSITE / 4) +
+                                      (WS-BRANCH-FID-M / 4) +
+                                      ((30 - WS-SKILL-MINT-LAT-MS) * 4) + 1.
+
+            IF WS-VST-VITALITY EQUAL ZERO
+                SET SKILL-TREE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VST-COHERENCE = (WS-VST-COMPOSITE / 16) +
+                                       (WS-BRANCH-FID-M / 16) +
+                                       ((30 - WS-SKILL-MINT-LAT-MS) * 2).
+
+            COMPUTE WS-VST-REBAR-LATCH = 1470169088 +
+                                         (WS-VST-COMPOSITE / 2) +
+                                         ((30 - WS-SKILL-MINT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VST-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-VST-VITALITY * 10) +
+                                         (WS-VST-COHERENCE * 10) +
+                                         (WS-VST-COMPOSITE * 10) +
+                                         (WS-VST-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VST-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VST-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
