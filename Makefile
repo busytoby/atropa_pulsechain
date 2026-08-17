@@ -308,6 +308,11 @@ test-bernstein-filtration-dimension:
 	./tests/test_bernstein_filtration_dimension
 	@rm -f tests/test_bernstein_filtration_dimension
 
+test-ozone-weyl-closure-invariant:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ozone_weyl_closure_invariant.c -o tests/test_ozone_weyl_closure_invariant
+	./tests/test_ozone_weyl_closure_invariant
+	@rm -f tests/test_ozone_weyl_closure_invariant
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

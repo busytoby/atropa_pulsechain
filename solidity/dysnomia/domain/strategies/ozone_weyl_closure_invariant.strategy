@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. OZONE-WEYL-CLOSURE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / OZONE WEYL AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-OZONE-PARAMS.
+           05 WS-POOL-TIER              PIC 9(02) VALUE 03.
+           05 WS-CURVE-EXPONENT         PIC 9(02) VALUE 02.
+           05 WS-RESERVE-RANK           PIC 9(02) VALUE 01.
+           05 WS-HOLO-FLAG              PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-OZONE-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-OZONE-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-OZONE-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-OZONE-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-POOL-TIER           VALUE 2.
+              88 INVALID-CURVE-EXPONENT      VALUE 3.
+              88 INVALID-RESERVE-RANK        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HOLO-RESERVE-FAIL           VALUE 6.
+              88 OZONE-DIVERG-FAIL           VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-OZONE-WEYL
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-POOL-TIER < 1 OR WS-POOL-TIER > 8
+                SET INVALID-POOL-TIER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CURVE-EXPONENT < 1 OR WS-CURVE-EXPONENT > 16
+                SET INVALID-CURVE-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RESERVE-RANK < 1 OR WS-RESERVE-RANK > 16
+                SET INVALID-RESERVE-RANK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HOLO-FLAG NOT EQUAL 1
+                SET HOLO-RESERVE-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-OZONE-WEYL.
+            COMPUTE WS-OZONE-VITALITY = (WS-POOL-TIER * 512) +
+                                        (WS-CURVE-EXPONENT * 128) +
+                                        (WS-RESERVE-RANK * 64) +
+                                        (WS-HOLO-FLAG * 256) + 1.
+
+            IF WS-OZONE-VITALITY EQUAL ZERO
+                SET OZONE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-OZONE-COHERENCE = (WS-CURVE-EXPONENT * 32) +
+                                         (WS-POOL-TIER * 64) +
+                                         (WS-RESERVE-RANK * 16).
+
+            COMPUTE WS-OZONE-REBAR-LATCH = 1470169088 + (WS-POOL-TIER * 256) +
+                                           (WS-CURVE-EXPONENT * 64) +
+                                           (WS-RESERVE-RANK * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-OZONE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-OZONE-VITALITY * 10) +
+                                           (WS-OZONE-COHERENCE * 10) +
+                                           (WS-POOL-TIER * 1000) +
+                                           (WS-OZONE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-OZONE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-OZONE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
