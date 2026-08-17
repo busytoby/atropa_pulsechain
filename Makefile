@@ -1358,6 +1358,11 @@ test-viewpoint-sync-anchoring:
 	./tests/test_viewpoint_sync_anchoring
 	@rm -f tests/test_viewpoint_sync_anchoring
 
+test-gaze-dwell-selection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_gaze_dwell_selection.c -o tests/test_gaze_dwell_selection
+	./tests/test_gaze_dwell_selection
+	@rm -f tests/test_gaze_dwell_selection
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
