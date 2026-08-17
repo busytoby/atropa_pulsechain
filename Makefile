@@ -278,6 +278,11 @@ test-traverso-tracer-memoization:
 	./tests/test_traverso_tracer_memoization
 	@rm -f tests/test_traverso_tracer_memoization
 
+test-block-monomial-elimination-order:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_block_monomial_elimination_order.c -o tests/test_block_monomial_elimination_order
+	./tests/test_block_monomial_elimination_order
+	@rm -f tests/test_block_monomial_elimination_order
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
