@@ -1712,6 +1712,12 @@ test-cpm-tomie-sculpting-tools-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-exploration-history-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-haptic-viscosity-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-multimodal-ambig-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-deformation-gradient-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-semantic-deformation-gradient-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_semantic_deformation_gradient_prover.c -o tests/test_cpm_tomie_semantic_deformation_gradient_prover
+	./tests/test_cpm_tomie_semantic_deformation_gradient_prover
+	@rm -f tests/test_cpm_tomie_semantic_deformation_gradient_prover
 
 test-ankh-llm-cpm-suite:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_llm_cpm_suite.c tsfi2-deepseek/src/ankh_llm_cpm_runtime.c -o tests/test_ankh_llm_cpm_suite

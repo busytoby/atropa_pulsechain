@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDG",
+        .opcode_signature = 0x43504447,
+        .title = "CPMTOMIE-SEMANTIC-DEFORMATION-GRADIENT-CORPS",
+        .theorem_descriptions = {
+            "Semantic Deformation Gradient Invariance",
+            "Cauchy Stress Tensor Semantic Equilibrium",
+            "Non-Preferential Plastic Flow Strain",
+            "Sub-Millisecond Stress Tensor Integration Latency",
+            "Sovereign Semantic Deformation Gradient Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMA",
         .opcode_signature = 0x43504D41,
         .title = "CPMTOMIE-MULTIMODAL-AMBIGUITY-RESOLUTION-CORPS",
