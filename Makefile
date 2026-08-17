@@ -1712,6 +1712,18 @@ test-cpm-tomie-coaxial-scsi-suite:
 	./tsfi2-deepseek/src/cpm_exec_coaxial_scsi /tmp/coaxial_scsi.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_coaxial_scsi tsfi2-deepseek/src/cpm_exec_coaxial_scsi /tmp/coaxial_scsi.bin
 
+test-cpm-tomie-clay-play-guilford-divergent-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_guilford_divergent_prover.c -o tests/test_cpm_tomie_clay_play_guilford_divergent_prover
+	./tests/test_cpm_tomie_clay_play_guilford_divergent_prover
+	@rm -f tests/test_cpm_tomie_clay_play_guilford_divergent_prover
+
+test-cpm-tomie-clay-guilford-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_guilford.c -o tsfi2-deepseek/src/cpm_compiler_clay_guilford
+	./tsfi2-deepseek/src/cpm_compiler_clay_guilford /tmp/clay_guilford.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_guilford.c -o tsfi2-deepseek/src/cpm_exec_clay_guilford
+	./tsfi2-deepseek/src/cpm_exec_clay_guilford /tmp/clay_guilford.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_guilford tsfi2-deepseek/src/cpm_exec_clay_guilford /tmp/clay_guilford.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
