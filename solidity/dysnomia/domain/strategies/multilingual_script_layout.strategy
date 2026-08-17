@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SCR-LAY-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MULTILINGUAL SCRIPT LAYOUT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SCR-PARAMS.
+           05 WS-SCRIPT-LANG-ID         PIC 9(02) VALUE 02.
+           05 WS-COLUMN-COUNT           PIC 9(02) VALUE 03.
+           05 WS-SCRIPT-ANLS-M          PIC 9(04) VALUE 0403.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SCR-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SCR-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SCR-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SCR-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SCR-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SCRIPT-LANGUAGE-OUT-OF-BOUNDS VALUE 2.
+              88 COLUMN-COUNT-OUT-OF-BOUNDS  VALUE 3.
+              88 SCRIPT-ANLS-OUT-OF-BOUNDS   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SCRIPT-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCRIPT-LAYOUT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCRIPT-LANG-ID < 1 OR WS-SCRIPT-LANG-ID > 3
+                SET SCRIPT-LANGUAGE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COLUMN-COUNT < 1 OR WS-COLUMN-COUNT > 6
+                SET COLUMN-COUNT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCRIPT-ANLS-M < 300 OR WS-SCRIPT-ANLS-M > 750
+                SET SCRIPT-ANLS-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCRIPT-LAYOUT.
+            COMPUTE WS-SCR-COMPOSITE = (WS-SCRIPT-LANG-ID * 100) +
+                                       (WS-COLUMN-COUNT * 50) +
+                                       (WS-SCRIPT-ANLS-M / 2).
+
+            COMPUTE WS-SCR-VITALITY = (WS-SCR-COMPOSITE / 4) +
+                                      (WS-SCRIPT-ANLS-M / 4) +
+                                      (WS-SCRIPT-LANG-ID * 20) + 1.
+
+            IF WS-SCR-VITALITY EQUAL ZERO
+                SET SCRIPT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SCR-COHERENCE = (WS-SCR-COMPOSITE / 16) +
+                                       (WS-SCRIPT-ANLS-M / 16) +
+                                       (WS-SCRIPT-LANG-ID * 5).
+
+            COMPUTE WS-SCR-REBAR-LATCH = 1470169088 +
+                                         (WS-SCR-COMPOSITE / 2) +
+                                         (WS-SCRIPT-LANG-ID * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SCR-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SCR-VITALITY * 10) +
+                                         (WS-SCR-COHERENCE * 10) +
+                                         (WS-SCR-COMPOSITE * 10) +
+                                         (WS-SCR-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SCR-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SCR-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

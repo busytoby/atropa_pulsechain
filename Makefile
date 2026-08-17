@@ -848,6 +848,11 @@ test-banknote-currency-feature:
 	./tests/test_banknote_currency_feature
 	@rm -f tests/test_banknote_currency_feature
 
+test-multilingual-script-layout:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multilingual_script_layout.c -o tests/test_multilingual_script_layout
+	./tests/test_multilingual_script_layout
+	@rm -f tests/test_multilingual_script_layout
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
