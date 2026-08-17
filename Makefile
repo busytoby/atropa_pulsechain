@@ -1023,6 +1023,11 @@ test-weyl-geometric-domain-closure:
 	./tests/test_weyl_geometric_domain_closure
 	@rm -f tests/test_weyl_geometric_domain_closure
 
+test-general-communicability:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_general_communicability.c -o tests/test_general_communicability
+	./tests/test_general_communicability
+	@rm -f tests/test_general_communicability
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

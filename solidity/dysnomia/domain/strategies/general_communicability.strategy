@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GCM-COM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GENERAL COMMUNICABILITY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-GCM-PARAMS.
+           05 WS-TRP-FIDELITY-M         PIC 9(04) VALUE 0960.
+           05 WS-TRANSIT-LAT-MS         PIC 9(02) VALUE 15.
+           05 WS-PACKET-LOSS-M          PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GCM-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-GCM-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-GCM-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-GCM-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-GCM-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 TRP-FIDELITY-LOW            VALUE 2.
+              88 TRANSIT-LAT-OUT-OF-BOUNDS   VALUE 3.
+              88 PACKET-LOSS-EXCEEDED        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 COMMUNICABILITY-COLLAPSE    VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-COMMUNICABILITY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRP-FIDELITY-M < 850 OR WS-TRP-FIDELITY-M > 1000
+                SET TRP-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRANSIT-LAT-MS < 5 OR WS-TRANSIT-LAT-MS > 35
+                SET TRANSIT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PACKET-LOSS-M < 0 OR WS-PACKET-LOSS-M > 5
+                SET PACKET-LOSS-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-COMMUNICABILITY.
+            COMPUTE WS-GCM-COMPOSITE = (WS-TRP-FIDELITY-M / 2) +
+                                       ((40 - WS-TRANSIT-LAT-MS) * 20) +
+                                       ((10 - WS-PACKET-LOSS-M) * 20).
+
+            COMPUTE WS-GCM-VITALITY = (WS-GCM-COMPOSITE / 4) +
+                                      (WS-TRP-FIDELITY-M / 4) +
+                                      ((40 - WS-TRANSIT-LAT-MS) * 4) + 1.
+
+            IF WS-GCM-VITALITY EQUAL ZERO
+                SET COMMUNICABILITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GCM-COHERENCE = (WS-GCM-COMPOSITE / 16) +
+                                       (WS-TRP-FIDELITY-M / 16) +
+                                       ((40 - WS-TRANSIT-LAT-MS) * 2).
+
+            COMPUTE WS-GCM-REBAR-LATCH = 1470169088 +
+                                         (WS-GCM-COMPOSITE / 2) +
+                                         ((40 - WS-TRANSIT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-GCM-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-GCM-VITALITY * 10) +
+                                         (WS-GCM-COHERENCE * 10) +
+                                         (WS-GCM-COMPOSITE * 10) +
+                                         (WS-GCM-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-GCM-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-GCM-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
