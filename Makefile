@@ -658,6 +658,11 @@ test-motion-aware-loss-prevention:
 	./tests/test_motion_aware_loss_prevention
 	@rm -f tests/test_motion_aware_loss_prevention
 
+test-anatomical-ik-contact-refinement:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_anatomical_ik_contact_refinement.c -o tests/test_anatomical_ik_contact_refinement
+	./tests/test_anatomical_ik_contact_refinement
+	@rm -f tests/test_anatomical_ik_contact_refinement
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

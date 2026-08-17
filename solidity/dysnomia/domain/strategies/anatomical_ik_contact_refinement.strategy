@@ -1,0 +1,108 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ANAT-IK-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ANATOMICAL IK & CONTACT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-REFINE-PARAMS.
+           05 WS-BONE-ERR-TENTHS        PIC 9(02) VALUE 15.
+           05 WS-SPEC-ENTROPY-MILLI     PIC 9(04) VALUE 0750.
+           05 WS-FINGER-GAP-TENTHS      PIC 9(02) VALUE 10.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-REFINE-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-REFINE-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-REFINE-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-REFINE-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 BONE-ERR-EXCEEDED           VALUE 2.
+              88 INVALID-SPECTRAL-ENTROPY    VALUE 3.
+              88 FINGER-GAP-EXCEEDED         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 REFINEMENT-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-IK-REFINEMENT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BONE-ERR-TENTHS < 0 OR WS-BONE-ERR-TENTHS > 50
+                SET BONE-ERR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPEC-ENTROPY-MILLI < 100 OR WS-SPEC-ENTROPY-MILLI > 1000
+                SET INVALID-SPECTRAL-ENTROPY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FINGER-GAP-TENTHS < 0 OR WS-FINGER-GAP-TENTHS > 30
+                SET FINGER-GAP-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-IK-REFINEMENT.
+            COMPUTE WS-REFINE-VITALITY = ((50 - WS-BONE-ERR-TENTHS) * 8) +
+                                         (WS-SPEC-ENTROPY-MILLI / 4) +
+                                         ((30 - WS-FINGER-GAP-TENTHS) * 16) + 1.
+
+            IF WS-REFINE-VITALITY EQUAL ZERO
+                SET REFINEMENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-REFINE-COHERENCE = ((50 - WS-BONE-ERR-TENTHS) * 2) +
+                                          (WS-SPEC-ENTROPY-MILLI / 16) +
+                                          ((30 - WS-FINGER-GAP-TENTHS) * 4).
+
+            COMPUTE WS-REFINE-REBAR-LATCH = 1470169088 +
+                                            ((50 - WS-BONE-ERR-TENTHS) * 16) +
+                                            (WS-SPEC-ENTROPY-MILLI / 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-REFINE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-REFINE-VITALITY * 10) +
+                                            (WS-REFINE-COHERENCE * 10) +
+                                            (WS-SPEC-ENTROPY-MILLI * 10) +
+                                            (WS-REFINE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-REFINE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-REFINE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
