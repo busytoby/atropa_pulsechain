@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MCF-FEL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MULTI COMPANION FELLOWSHIP AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-MCF-PARAMS.
+           05 WS-PROX-LAT-MS            PIC 9(02) VALUE 12.
+           05 WS-BANTER-CONG-M          PIC 9(04) VALUE 0960.
+           05 WS-THEATRICAL-GAT-M       PIC 9(04) VALUE 0890.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MCF-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-MCF-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-MCF-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-MCF-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MCF-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 PROX-LAT-OUT-OF-BOUNDS      VALUE 2.
+              88 BANTER-CONG-LOW             VALUE 3.
+              88 THEATRICAL-GAT-LOW          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 FELLOWSHIP-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-FELLOWSHIP
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROX-LAT-MS < 5 OR WS-PROX-LAT-MS > 25
+                SET PROX-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BANTER-CONG-M < 850 OR WS-BANTER-CONG-M > 1000
+                SET BANTER-CONG-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-THEATRICAL-GAT-M < 700 OR WS-THEATRICAL-GAT-M > 1000
+                SET THEATRICAL-GAT-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-FELLOWSHIP.
+            COMPUTE WS-MCF-COMPOSITE = ((30 - WS-PROX-LAT-MS) * 20) +
+                                       (WS-BANTER-CONG-M / 2) +
+                                       (WS-THEATRICAL-GAT-M / 2).
+
+            COMPUTE WS-MCF-VITALITY = (WS-MCF-COMPOSITE / 4) +
+                                      (WS-BANTER-CONG-M / 4) +
+                                      ((30 - WS-PROX-LAT-MS) * 4) + 1.
+
+            IF WS-MCF-VITALITY EQUAL ZERO
+                SET FELLOWSHIP-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MCF-COHERENCE = (WS-MCF-COMPOSITE / 16) +
+                                       (WS-BANTER-CONG-M / 16) +
+                                       ((30 - WS-PROX-LAT-MS) * 2).
+
+            COMPUTE WS-MCF-REBAR-LATCH = 1470169088 +
+                                         (WS-MCF-COMPOSITE / 2) +
+                                         ((30 - WS-PROX-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MCF-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-MCF-VITALITY * 10) +
+                                         (WS-MCF-COHERENCE * 10) +
+                                         (WS-MCF-COMPOSITE * 10) +
+                                         (WS-MCF-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MCF-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MCF-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

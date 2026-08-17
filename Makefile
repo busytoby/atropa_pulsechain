@@ -978,6 +978,11 @@ test-governable-memory-trauma-suppression:
 	./tests/test_governable_memory_trauma_suppression
 	@rm -f tests/test_governable_memory_trauma_suppression
 
+test-multi-companion-public-fellowship:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multi_companion_public_fellowship.c -o tests/test_multi_companion_public_fellowship
+	./tests/test_multi_companion_public_fellowship
+	@rm -f tests/test_multi_companion_public_fellowship
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
