@@ -538,6 +538,11 @@ test-proxemic-distance-modulation:
 	./tests/test_proxemic_distance_modulation
 	@rm -f tests/test_proxemic_distance_modulation
 
+test-proxemic-field-weyl-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_proxemic_field_weyl_closure.c -o tests/test_proxemic_field_weyl_closure
+	./tests/test_proxemic_field_weyl_closure
+	@rm -f tests/test_proxemic_field_weyl_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
