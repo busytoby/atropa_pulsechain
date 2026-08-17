@@ -214,13 +214,19 @@ static void synthesize_sentence_to_wav(
         const WordLexicon *lex = lookup_word(words[w]);
         if (!lex) continue;
 
+        // Cascade Formant Resonators for Voiced Vowels (Klatt Cascade Model)
+        // Eliminates artificial phase cancellations of parallel summation
         SecondOrderResonator r1 = {0}, r2 = {0}, r3 = {0}, r4 = {0}, r5 = {0};
+        // Parallel Bypass Resonators for Fricatives/Plosives (SS, SH, TT, KK)
+        SecondOrderResonator fric_r = {0};
+        
         const OrganicPhoneme *first_p = find_phoneme(lex->phonemes[0]);
         init_resonator(&r1, first_p->f1, first_p->b1, SAMPLE_RATE);
         init_resonator(&r2, first_p->f2, first_p->b2, SAMPLE_RATE);
         init_resonator(&r3, first_p->f3, first_p->b3, SAMPLE_RATE);
         init_resonator(&r4, first_p->f4, first_p->b4, SAMPLE_RATE);
         init_resonator(&r5, first_p->f5, first_p->b5, SAMPLE_RATE);
+        init_resonator(&fric_r, 4500.0, 1000.0, SAMPLE_RATE);
 
         float cur_f1 = first_p->f1, cur_f2 = first_p->f2, cur_f3 = first_p->f3, cur_f4 = first_p->f4, cur_f5 = first_p->f5;
         float cur_b1 = first_p->b1, cur_b2 = first_p->b2, cur_b3 = first_p->b3, cur_b4 = first_p->b4, cur_b5 = first_p->b5;
@@ -232,10 +238,12 @@ static void synthesize_sentence_to_wav(
 
             float word_progress = (float)p_idx / (float)lex->count;
             float prosody_arc = sinf((float)M_PI * word_progress);
-            float pitch_arc = 1.0f + (prosody_arc * prof->pitch_arc_depth) - (word_progress * 0.08f);
+            float pitch_arc = 1.0f + (prosody_arc * prof->pitch_arc_depth) - (word_progress * 0.05f);
+
+            // Fast transition rate for consonants (plosives/fricatives), smooth for vowels
+            double alpha = target->is_voiced ? 0.008 : 0.040;
 
             for (size_t s = 0; s < phoneme_samples && sample_idx < total_samples; s++, sample_idx++) {
-                double alpha = 0.015;
                 cur_f1 += (float)((target->f1 - cur_f1) * alpha);
                 cur_f2 += (float)((target->f2 - cur_f2) * alpha);
                 cur_f3 += (float)((target->f3 - cur_f3) * alpha);
@@ -254,53 +262,64 @@ static void synthesize_sentence_to_wav(
                 init_resonator(&r4, cur_f4, cur_b4, SAMPLE_RATE);
                 init_resonator(&r5, cur_f5, cur_b5, SAMPLE_RATE);
 
+                double fric_center = (strcmp(target->symbol, "SS") == 0) ? 5500.0 :
+                                     (strcmp(target->symbol, "SH") == 0) ? 3000.0 :
+                                     (strcmp(target->symbol, "TT") == 0) ? 4000.0 :
+                                     (strcmp(target->symbol, "KK") == 0) ? 2200.0 : 3500.0;
+                init_resonator(&fric_r, fric_center, 800.0, SAMPLE_RATE);
+
                 double t_sec = (double)sample_idx / (double)SAMPLE_RATE;
-                double vibrato = sin(2.0 * M_PI * 5.5 * t_sec) * prof->vibrato_depth;
-                double micro_jitter = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.006;
-                double shimmer = 1.0 + (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.025;
+                double vibrato = sin(2.0 * M_PI * 5.2 * t_sec) * prof->vibrato_depth;
+                double micro_jitter = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.003;
+                double shimmer = 1.0 + (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.015;
 
                 float semitone = powf(2.0f, target->pitch_offset / 12.0f);
                 double inst_f0 = base_pitch * prof->f0_multiplier * pitch_arc * semitone * (1.0 + vibrato + micro_jitter);
 
+                // Liljencrants-Fant (LF) / Rosenberg glottal model
                 double glot_pulse = 0.0;
                 if (target->is_voiced) {
                     glot_phase += inst_f0 / (double)SAMPLE_RATE;
                     if (glot_phase >= 1.0) glot_phase -= 1.0;
 
                     double p = glot_phase;
-                    if (p < 0.38) {
-                        glot_pulse = 0.5 * (1.0 - cos(M_PI * p / 0.38));
-                    } else if (p < 0.54) {
-                        glot_pulse = cos(M_PI * (p - 0.38) / 0.32);
+                    if (p < 0.40) {
+                        glot_pulse = 0.5 * (1.0 - cos(M_PI * p / 0.40));
+                    } else if (p < 0.55) {
+                        glot_pulse = cos(M_PI * (p - 0.40) / 0.30);
                     } else {
                         glot_pulse = 0.0;
                     }
-
-                    // Harmonic overtones with emotional spectral tilt
-                    double harmonics = 0.0;
-                    for (int h = 2; h <= 10; h++) {
-                        double h_amp = 1.0 / pow((double)h, prof->tilt_exponent);
-                        harmonics += sin(2.0 * M_PI * (double)h * glot_phase) * h_amp;
-                    }
-                    glot_pulse = (glot_pulse * 0.65) + (harmonics * 0.35);
-                    glot_pulse += sin(M_PI * glot_phase) * prof->chest_warmth * 0.15;
+                    glot_pulse += sin(M_PI * glot_phase) * prof->chest_warmth * 0.20;
                 }
 
-                double aspiration = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * prof->breath_gain_mult * shimmer;
-                double fricative = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * shimmer;
+                // Noise generation with distinct plosive burst envelope at phoneme onset
+                double white_noise = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * shimmer;
+                double plosive_burst = 0.0;
+                if (!target->is_voiced && s < (size_t)(0.015 * SAMPLE_RATE)) {
+                    // Initial 15ms high-energy transient burst
+                    double burst_env = 1.0 - ((double)s / (0.015 * SAMPLE_RATE));
+                    plosive_burst = white_noise * burst_env * 1.8;
+                }
 
-                double excitation = (glot_pulse * target->voice_gain) +
-                                    (aspiration * target->voice_gain * 0.04) +
-                                    (fricative * target->noise_gain * 0.45);
+                double vocal_out = 0.0;
+                if (target->is_voiced) {
+                    // Cascade Filter Path: Natural acoustic vocal tract transmission
+                    double cascade = glot_pulse * target->voice_gain;
+                    cascade = step_resonator(&r1, cascade);
+                    cascade = step_resonator(&r2, cascade);
+                    cascade = step_resonator(&r3, cascade);
+                    cascade = step_resonator(&r4, cascade);
+                    cascade = step_resonator(&r5, cascade);
+                    vocal_out = cascade;
+                }
 
-                double y1 = step_resonator(&r1, excitation);
-                double y2 = step_resonator(&r2, excitation);
-                double y3 = step_resonator(&r3, excitation);
-                double y4 = step_resonator(&r4, excitation);
-                double y5 = step_resonator(&r5, excitation);
+                // Parallel Frication / Aspiration Path
+                double noise_in = (white_noise * target->noise_gain * 0.6) + plosive_burst;
+                double fric_out = step_resonator(&fric_r, noise_in);
 
-                double vocal = (y1 * 1.0) + (y2 * 0.70) + (y3 * 0.40) + (y4 * 0.22) + (y5 * 0.12);
-                raw_audio[sample_idx] = tanh(vocal * 1.25) * 0.85;
+                double combined = (vocal_out * 0.8) + (fric_out * 0.9);
+                raw_audio[sample_idx] = tanh(combined * 1.5) * 0.88;
             }
         }
 
