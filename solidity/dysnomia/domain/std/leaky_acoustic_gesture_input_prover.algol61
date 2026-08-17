@@ -9,7 +9,7 @@ begin
   comment 1. FMCW Leaky Ultrasonic Ranging Accuracy: Sensing range <= 150 mm (15 cm), spatial granularity <= 2.2 mm with 48 kHz carrier,;
   comment 2. 21-Joint 3D Skeletal Motion-Aware Loss Optimization: L_final = 0.9 * L_weighted_MSE + 0.1 * L_displacement preventing static collapse,;
   comment 3. Ultrasonic Broadband Contact Sound Spectral Entropy Detection in 34-36 kHz sub-band (rubbing contact detection),;
-  comment 4. Tracking Accuracy PCK@3cm >= 850 (85.0%) across Apple Vision Pro gestures with MPJPE <= 2.71 cm,;
+  comment 4. Tracking Accuracy PCK@3cm >= 850 (85.0%) across standardized spatial gesture taxonomy with MPJPE <= 2.71 cm,;
   comment 5. Non-Preferential Acoustic Input Energy Flux Conservation across Z_P^x without space-charge empirical decay (Rule 12),;
   comment 6. Qualifying Teddy Bear Acoustic Paws & Ears Sensing with 1,000,000 Saat baseline (Rule 16),;
   comment 7. Zero-Loss ReBAR Shadow Rollback: Acoustic echo saturation/dropout restores shadow baseline (delta_Saat = 0).;
