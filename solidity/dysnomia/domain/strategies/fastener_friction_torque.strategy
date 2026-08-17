@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. FFT-TOR-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / FASTENER FRICTION TORQUE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-FFT-PARAMS.
+           05 WS-TORQUE-LAT-MS          PIC 9(02) VALUE 12.
+           05 WS-RETENTION-FID-M        PIC 9(04) VALUE 0960.
+           05 WS-TORQUE-RESIDUAL-MNM    PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-FFT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-FFT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-FFT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-FFT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-FFT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 TORQUE-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 RETENTION-FIDELITY-LOW      VALUE 3.
+              88 RESIDUAL-EXCEEDED           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 TORQUE-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-FRICTION-TORQUE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TORQUE-LAT-MS < 5 OR WS-TORQUE-LAT-MS > 25
+                SET TORQUE-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RETENTION-FID-M < 850 OR WS-RETENTION-FID-M > 1000
+                SET RETENTION-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TORQUE-RESIDUAL-MNM < 0 OR WS-TORQUE-RESIDUAL-MNM > 5
+                SET RESIDUAL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-FRICTION-TORQUE.
+            COMPUTE WS-FFT-COMPOSITE = ((30 - WS-TORQUE-LAT-MS) * 20) +
+                                       (WS-RETENTION-FID-M / 2) +
+                                       ((10 - WS-TORQUE-RESIDUAL-MNM) * 40).
+
+            COMPUTE WS-FFT-VITALITY = (WS-FFT-COMPOSITE / 4) +
+                                      (WS-RETENTION-FID-M / 4) +
+                                      ((30 - WS-TORQUE-LAT-MS) * 4) + 1.
+
+            IF WS-FFT-VITALITY EQUAL ZERO
+                SET TORQUE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-FFT-COHERENCE = (WS-FFT-COMPOSITE / 16) +
+                                       (WS-RETENTION-FID-M / 16) +
+                                       ((30 - WS-TORQUE-LAT-MS) * 2).
+
+            COMPUTE WS-FFT-REBAR-LATCH = 1470169088 +
+                                         (WS-FFT-COMPOSITE / 2) +
+                                         ((30 - WS-TORQUE-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-FFT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-FFT-VITALITY * 10) +
+                                         (WS-FFT-COHERENCE * 10) +
+                                         (WS-FFT-COMPOSITE * 10) +
+                                         (WS-FFT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-FFT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-FFT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

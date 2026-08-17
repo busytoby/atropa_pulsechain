@@ -1413,6 +1413,11 @@ test-multimodal-audio-haptic:
 	./tests/test_multimodal_audio_haptic
 	@rm -f tests/test_multimodal_audio_haptic
 
+test-fastener-friction-torque:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_fastener_friction_torque.c -o tests/test_fastener_friction_torque
+	./tests/test_fastener_friction_torque
+	@rm -f tests/test_fastener_friction_torque
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
