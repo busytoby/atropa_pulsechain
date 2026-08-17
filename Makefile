@@ -1078,6 +1078,11 @@ test-adaptive-utterance-conciseness:
 	./tests/test_adaptive_utterance_conciseness
 	@rm -f tests/test_adaptive_utterance_conciseness
 
+test-nonverbal-gaze-cueing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_nonverbal_gaze_cueing.c -o tests/test_nonverbal_gaze_cueing
+	./tests/test_nonverbal_gaze_cueing
+	@rm -f tests/test_nonverbal_gaze_cueing
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
