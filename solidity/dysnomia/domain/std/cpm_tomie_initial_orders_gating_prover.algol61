@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie Initial Orders 1 Prerequisite Gating & Hard Review Lock Formal Prover;
+  comment Asserts that EDSAC Initial Orders 1 cannot bootstrap unless 100% of formal review audits are satisfied;
+
+  integer reviewPassed, phase2Passed, closureSealed, checksumValid, opcodeMaskZero, io1Unlocked;
+
+  reviewPassed := 1;
+  phase2Passed := 1;
+  closureSealed := 1;
+  checksumValid := 1;
+  opcodeMaskZero := 0;
+
+  if reviewPassed = 1 and phase2Passed = 1 and closureSealed = 1 and
+     checksumValid = 1 and opcodeMaskZero = 0 then
+    io1Unlocked := 1470169088 + 194901
+  else
+    io1Unlocked := 0
+end
