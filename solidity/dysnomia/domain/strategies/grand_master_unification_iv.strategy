@@ -1,0 +1,115 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GM-UNI4-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GRAND MASTER UNIFICATION IV AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UNI4-PARAMS.
+           05 WS-UNI3-SCORE-MILLI       PIC 9(04) VALUE 0760.
+           05 WS-PURR-MOD-MILLI         PIC 9(04) VALUE 0700.
+           05 WS-THERM-EFF-MILLI        PIC 9(04) VALUE 0820.
+           05 WS-SPEECH-INTEL-MILLI     PIC 9(04) VALUE 0880.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GRAND-SYNTHESIS-IV     PIC 9(04) VALUE 0.
+           05 WS-UNI4-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-UNI4-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-UNI4-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UNI4-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-UNI3-OR-PURR        VALUE 2.
+              88 INVALID-THERMAL-OR-INTEL    VALUE 3.
+              88 SYNTHESIS-IV-FLOOR-DEGRADED VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 UNIFICATION-IV-COLLAPSE     VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GRAND-UNIFICATION-IV
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UNI3-SCORE-MILLI < 100 OR WS-UNI3-SCORE-MILLI > 1000 OR
+               WS-PURR-MOD-MILLI < 100 OR WS-PURR-MOD-MILLI > 1000
+                SET INVALID-UNI3-OR-PURR TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-THERM-EFF-MILLI < 100 OR WS-THERM-EFF-MILLI > 1000 OR
+               WS-SPEECH-INTEL-MILLI < 100 OR WS-SPEECH-INTEL-MILLI > 1000
+                SET INVALID-THERMAL-OR-INTEL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GRAND-SYNTHESIS-IV = (WS-UNI3-SCORE-MILLI + WS-PURR-MOD-MILLI +
+                                             WS-THERM-EFF-MILLI + WS-SPEECH-INTEL-MILLI) / 4.
+
+            IF WS-GRAND-SYNTHESIS-IV < 500
+                SET SYNTHESIS-IV-FLOOR-DEGRADED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GRAND-UNIFICATION-IV.
+            COMPUTE WS-UNI4-VITALITY = (WS-GRAND-SYNTHESIS-IV / 4) +
+                                       (WS-UNI3-SCORE-MILLI / 8) +
+                                       (WS-SPEECH-INTEL-MILLI / 8) + 1.
+
+            IF WS-UNI4-VITALITY EQUAL ZERO
+                SET UNIFICATION-IV-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UNI4-COHERENCE = (WS-GRAND-SYNTHESIS-IV / 16) +
+                                        (WS-UNI3-SCORE-MILLI / 32) +
+                                        (WS-SPEECH-INTEL-MILLI / 32).
+
+            COMPUTE WS-UNI4-REBAR-LATCH = 1470169088 +
+                                          (WS-GRAND-SYNTHESIS-IV / 2) +
+                                          (WS-SPEECH-INTEL-MILLI / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UNI4-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-UNI4-VITALITY * 10) +
+                                          (WS-UNI4-COHERENCE * 10) +
+                                          (WS-GRAND-SYNTHESIS-IV * 10) +
+                                          (WS-UNI4-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UNI4-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UNI4-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

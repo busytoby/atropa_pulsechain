@@ -628,6 +628,11 @@ test-speech-intelligibility-wer:
 	./tests/test_speech_intelligibility_wer
 	@rm -f tests/test_speech_intelligibility_wer
 
+test-grand-master-unification-iv:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_iv.c -o tests/test_grand_master_unification_iv
+	./tests/test_grand_master_unification_iv
+	@rm -f tests/test_grand_master_unification_iv
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
