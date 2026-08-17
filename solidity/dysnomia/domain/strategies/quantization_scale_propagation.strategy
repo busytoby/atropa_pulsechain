@@ -1,0 +1,123 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SCALE-PROP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / QUANT SCALE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SCALE-PARAMS.
+           05 WS-WEIGHT-SCALE           PIC 9(05) VALUE 00500.
+           05 WS-ACT-SCALE              PIC 9(05) VALUE 00250.
+           05 WS-ABSMAX-ACT             PIC 9(05) VALUE 02000.
+           05 WS-BITWIDTH               PIC 9(02) VALUE 08.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COMBINED-SCALE         PIC 9(06) VALUE 0.
+           05 WS-SCALE-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-SCALE-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-SCALE-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SCALE-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-WEIGHT-SCALE        VALUE 2.
+              88 INVALID-ACT-SCALE           VALUE 3.
+              88 INVALID-ABSMAX-ACT          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-BITWIDTH            VALUE 6.
+              88 SCALE-UNDERFLOW-OVERFLOW    VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCALE-PROPAGATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEIGHT-SCALE < 10 OR WS-WEIGHT-SCALE > 10000
+                SET INVALID-WEIGHT-SCALE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACT-SCALE < 10 OR WS-ACT-SCALE > 10000
+                SET INVALID-ACT-SCALE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ABSMAX-ACT < 100 OR WS-ABSMAX-ACT > 50000
+                SET INVALID-ABSMAX-ACT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BITWIDTH < 1 OR WS-BITWIDTH > 8
+                SET INVALID-BITWIDTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-COMBINED-SCALE = (WS-WEIGHT-SCALE * WS-ACT-SCALE) / 1000.
+            IF WS-COMBINED-SCALE EQUAL ZERO OR WS-COMBINED-SCALE > 100000
+                SET SCALE-UNDERFLOW-OVERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCALE-PROPAGATION.
+            COMPUTE WS-SCALE-VITALITY = (WS-COMBINED-SCALE / 4) +
+                                        (WS-ABSMAX-ACT / 64) +
+                                        (WS-BITWIDTH * 128) + 1.
+
+            IF WS-SCALE-VITALITY EQUAL ZERO
+                SET SCALE-UNDERFLOW-OVERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SCALE-COHERENCE = (WS-COMBINED-SCALE / 16) +
+                                         (WS-ABSMAX-ACT / 256) +
+                                         (WS-BITWIDTH * 32).
+
+            COMPUTE WS-SCALE-REBAR-LATCH = 1470169088 +
+                                           (WS-COMBINED-SCALE / 2) +
+                                           (WS-ABSMAX-ACT / 32) +
+                                           (WS-BITWIDTH * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SCALE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-SCALE-VITALITY * 10) +
+                                           (WS-SCALE-COHERENCE * 10) +
+                                           (WS-COMBINED-SCALE * 10) +
+                                           (WS-SCALE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SCALE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SCALE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

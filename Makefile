@@ -443,6 +443,11 @@ test-quant-degradation-snr:
 	./tests/test_quant_degradation_snr
 	@rm -f tests/test_quant_degradation_snr
 
+test-quantization-scale-propagation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_quantization_scale_propagation.c -o tests/test_quantization_scale_propagation
+	./tests/test_quantization_scale_propagation
+	@rm -f tests/test_quantization_scale_propagation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
