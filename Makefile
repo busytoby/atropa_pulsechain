@@ -168,6 +168,11 @@ test-usd-stage-audio-exporter:
 	./tests/test_usd_stage_audio_exporter
 	@rm -f tests/test_usd_stage_audio_exporter
 
+test-voice-character-definition:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_voice_character_definition.c -o tests/test_voice_character_definition
+	./tests/test_voice_character_definition
+	@rm -f tests/test_voice_character_definition
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
