@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ALS-ADU-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ADULT LEARNING SCAFFOLDING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ALS-PARAMS.
+           05 WS-EVAL-LAT-MS            PIC 9(02) VALUE 12.
+           05 WS-SCAFFOLD-FID-M         PIC 9(04) VALUE 0960.
+           05 WS-PROG-DRIFT-MS          PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ALS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ALS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ALS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ALS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ALS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 EVAL-LAT-OUT-OF-BOUNDS      VALUE 2.
+              88 SCAFFOLD-FIDELITY-LOW       VALUE 3.
+              88 DRIFT-EXCEEDED              VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ADULT-LEARNING-COLLAPSE     VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ADULT-LEARNING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EVAL-LAT-MS < 5 OR WS-EVAL-LAT-MS > 25
+                SET EVAL-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCAFFOLD-FID-M < 850 OR WS-SCAFFOLD-FID-M > 1000
+                SET SCAFFOLD-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROG-DRIFT-MS < 0 OR WS-PROG-DRIFT-MS > 5
+                SET DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ADULT-LEARNING.
+            COMPUTE WS-ALS-COMPOSITE = ((30 - WS-EVAL-LAT-MS) * 20) +
+                                       (WS-SCAFFOLD-FID-M / 2) +
+                                       ((10 - WS-PROG-DRIFT-MS) * 40).
+
+            COMPUTE WS-ALS-VITALITY = (WS-ALS-COMPOSITE / 4) +
+                                      (WS-SCAFFOLD-FID-M / 4) +
+                                      ((30 - WS-EVAL-LAT-MS) * 4) + 1.
+
+            IF WS-ALS-VITALITY EQUAL ZERO
+                SET ADULT-LEARNING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ALS-COHERENCE = (WS-ALS-COMPOSITE / 16) +
+                                       (WS-SCAFFOLD-FID-M / 16) +
+                                       ((30 - WS-EVAL-LAT-MS) * 2).
+
+            COMPUTE WS-ALS-REBAR-LATCH = 1470169088 +
+                                         (WS-ALS-COMPOSITE / 2) +
+                                         ((30 - WS-EVAL-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ALS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ALS-VITALITY * 10) +
+                                         (WS-ALS-COHERENCE * 10) +
+                                         (WS-ALS-COMPOSITE * 10) +
+                                         (WS-ALS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ALS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ALS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

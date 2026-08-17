@@ -1518,6 +1518,11 @@ test-museum-vibe-engagement:
 	./tests/test_museum_vibe_engagement
 	@rm -f tests/test_museum_vibe_engagement
 
+test-adult-learning-scaffolding:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_adult_learning_scaffolding.c -o tests/test_adult_learning_scaffolding
+	./tests/test_adult_learning_scaffolding
+	@rm -f tests/test_adult_learning_scaffolding
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
