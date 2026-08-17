@@ -1233,6 +1233,11 @@ test-reverse-disassembly-path:
 	./tests/test_reverse_disassembly_path
 	@rm -f tests/test_reverse_disassembly_path
 
+test-multimodal-audio-visual-sync:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multimodal_audio_visual_sync.c -o tests/test_multimodal_audio_visual_sync
+	./tests/test_multimodal_audio_visual_sync
+	@rm -f tests/test_multimodal_audio_visual_sync
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AVS-SYN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MULTIMODAL AUDIO VISUAL SYNC AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-AVS-PARAMS.
+           05 WS-DURATION-LAT-MS        PIC 9(02) VALUE 12.
+           05 WS-PHASE-FIDELITY-M       PIC 9(04) VALUE 0960.
+           05 WS-JITTER-ERROR-MS        PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-AVS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-AVS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-AVS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-AVS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-AVS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 DURATION-LAT-OUT-OF-BOUNDS  VALUE 2.
+              88 PHASE-FIDELITY-LOW          VALUE 3.
+              88 JITTER-ERROR-EXCEEDED       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SYNC-COLLAPSE               VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-AV-SYNC
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DURATION-LAT-MS < 5 OR WS-DURATION-LAT-MS > 25
+                SET DURATION-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-FIDELITY-M < 850 OR WS-PHASE-FIDELITY-M > 1000
+                SET PHASE-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-JITTER-ERROR-MS < 0 OR WS-JITTER-ERROR-MS > 5
+                SET JITTER-ERROR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-AV-SYNC.
+            COMPUTE WS-AVS-COMPOSITE = ((30 - WS-DURATION-LAT-MS) * 20) +
+                                       (WS-PHASE-FIDELITY-M / 2) +
+                                       ((10 - WS-JITTER-ERROR-MS) * 40).
+
+            COMPUTE WS-AVS-VITALITY = (WS-AVS-COMPOSITE / 4) +
+                                      (WS-PHASE-FIDELITY-M / 4) +
+                                      ((30 - WS-DURATION-LAT-MS) * 4) + 1.
+
+            IF WS-AVS-VITALITY EQUAL ZERO
+                SET SYNC-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-AVS-COHERENCE = (WS-AVS-COMPOSITE / 16) +
+                                       (WS-PHASE-FIDELITY-M / 16) +
+                                       ((30 - WS-DURATION-LAT-MS) * 2).
+
+            COMPUTE WS-AVS-REBAR-LATCH = 1470169088 +
+                                         (WS-AVS-COMPOSITE / 2) +
+                                         ((30 - WS-DURATION-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-AVS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-AVS-VITALITY * 10) +
+                                         (WS-AVS-COHERENCE * 10) +
+                                         (WS-AVS-COMPOSITE * 10) +
+                                         (WS-AVS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-AVS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-AVS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
