@@ -1,0 +1,119 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PST-QLT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / POST THINKING QUALITY DIMENSIONS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-QLT-PARAMS.
+           05 WS-CHAR-CONSIST-H         PIC 9(03) VALUE 461.
+           05 WS-EMOT-AUTH-H            PIC 9(03) VALUE 408.
+           05 WS-NARR-COHER-H           PIC 9(03) VALUE 419.
+           05 WS-WRIT-QUAL-H            PIC 9(03) VALUE 419.
+           05 WS-USE-CONTIN-H           PIC 9(03) VALUE 417.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-QLT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-QLT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-QLT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-QLT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-QLT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 CC-SCORE-OUT-OF-BOUNDS      VALUE 2.
+              88 EA-SCORE-OUT-OF-BOUNDS      VALUE 3.
+              88 NC-WQ-UC-OUT-OF-BOUNDS      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 QUALITY-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-QUALITY-METRICS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CHAR-CONSIST-H < 430 OR WS-CHAR-CONSIST-H > 500
+                SET CC-SCORE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EMOT-AUTH-H < 350 OR WS-EMOT-AUTH-H > 470
+                SET EA-SCORE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NARR-COHER-H < 380 OR WS-NARR-COHER-H > 490 OR
+               WS-WRIT-QUAL-H < 380 OR WS-WRIT-QUAL-H > 490 OR
+               WS-USE-CONTIN-H < 380 OR WS-USE-CONTIN-H > 490
+                SET NC-WQ-UC-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-QUALITY-METRICS.
+            COMPUTE WS-QLT-COMPOSITE = (WS-CHAR-CONSIST-H +
+                                       WS-EMOT-AUTH-H +
+                                       WS-NARR-COHER-H +
+                                       WS-WRIT-QUAL-H +
+                                       WS-USE-CONTIN-H) / 5.
+
+            COMPUTE WS-QLT-VITALITY = (WS-QLT-COMPOSITE / 4) +
+                                      (WS-CHAR-CONSIST-H / 4) +
+                                      (WS-EMOT-AUTH-H / 8) + 1.
+
+            IF WS-QLT-VITALITY EQUAL ZERO
+                SET QUALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-QLT-COHERENCE = (WS-QLT-COMPOSITE / 16) +
+                                       (WS-CHAR-CONSIST-H / 16) +
+                                       (WS-EMOT-AUTH-H / 32).
+
+            COMPUTE WS-QLT-REBAR-LATCH = 1470169088 +
+                                         (WS-QLT-COMPOSITE / 2) +
+                                         (WS-CHAR-CONSIST-H * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-QLT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-QLT-VITALITY * 10) +
+                                         (WS-QLT-COHERENCE * 10) +
+                                         (WS-QLT-COMPOSITE * 10) +
+                                         (WS-QLT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-QLT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-QLT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
