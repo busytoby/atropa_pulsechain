@@ -1028,6 +1028,11 @@ test-general-communicability:
 	./tests/test_general_communicability
 	@rm -f tests/test_general_communicability
 
+test-universal-io-data-communicability:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_universal_io_data_communicability.c -o tests/test_universal_io_data_communicability
+	./tests/test_universal_io_data_communicability
+	@rm -f tests/test_universal_io_data_communicability
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
