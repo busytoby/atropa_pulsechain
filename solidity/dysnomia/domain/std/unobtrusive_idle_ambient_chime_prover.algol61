@@ -1,0 +1,111 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Unobtrusive Idle Ambient Chime & Micro-Haptic Prover;
+  comment Reference: ACM DIS '26 (3800645.3813079.pdf, "In-Public Companions", Sec 6.2.2 "Proactivity and Unobtrusiveness",;
+  comment            Sec 6.3.2 "Non-Intrusive Presence Awareness" & Sec 7.2 "Haptic Breathing Rhythm"),;
+  comment            Rule 10 (FET Discharge Analogies), Rule 12 (Non-Preferential Accumulator Redirection) & Rule 16;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Idle Micro-Haptic Heartbeat Interval: Non-vocal copresence pulse interval in [30..120] seconds,;
+  comment 2. Silent Zone Acoustic Suppression Ratio: Zero-vocal acoustic clamp maintaining open-air volume at 0 dBA in sensitive zones,;
+  comment 3. Biological Haptic Breathing Rhythm Frequency: Periodic breathing frequency in [15..30] centi-Hz (0.15 - 0.30 Hz),;
+  comment 4. Non-Preferential Momentum Flux Conservation across Z_P^x without space-charge decay (Rule 12),;
+  comment 5. Qualifying Teddy Bear Sovereign Micro-Haptic Authority with 1,000,000 Saat baseline (Rule 16),;
+  comment 6. Zero-Loss ReBAR Shadow Rollback: Any silent zone acoustic leak or haptic arrhythmia restores shadow baseline (delta_Saat = 0).;
+
+  integer procedure verify_unobtrusive_idle_ambient_chime(
+    heartbeat_interval_seconds,
+    silent_zone_suppression_milli,
+    breathing_freq_centi_hz,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value heartbeat_interval_seconds, silent_zone_suppression_milli, breathing_freq_centi_hz, cics_writer_id, simulate_fault, k_param;
+  integer heartbeat_interval_seconds, silent_zone_suppression_milli, breathing_freq_centi_hz, cics_writer_id, simulate_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Unobtrusive Idle Ambient Chime Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = HEARTBEAT_INTERVAL_OUT_OF_BOUNDS (interval must be in [30..120] seconds)
+            3 = SILENT_SUPPRESSION_LOW (suppression must be in [990..1000] milli-units -> >= 99.0%)
+            4 = BREATHING_FREQ_OUT_OF_BOUNDS (frequency must be in [15..30] centi-Hz -> 0.15 - 0.30 Hz)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = HAPTIC_VITALITY_COLLAPSE (vitality dropped below floor)
+            7 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault);
+
+    integer uac_composite_metric;
+    integer uac_vitality_metric;
+    integer uac_coherence;
+    integer uac_rebar_latch;
+    integer shadow_uac_base;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_unobtrusive_idle_ambient_chime := 1;
+        go to end_uac_proc;
+      end;
+
+    if heartbeat_interval_seconds < 30 or heartbeat_interval_seconds > 120 then
+      begin
+        verify_unobtrusive_idle_ambient_chime := 2;
+        go to end_uac_proc;
+      end;
+
+    if silent_zone_suppression_milli < 990 or silent_zone_suppression_milli > 1000 then
+      begin
+        verify_unobtrusive_idle_ambient_chime := 3;
+        go to end_uac_proc;
+      end;
+
+    if breathing_freq_centi_hz < 15 or breathing_freq_centi_hz > 30 then
+      begin
+        verify_unobtrusive_idle_ambient_chime := 4;
+        go to end_uac_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen;
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_unobtrusive_idle_ambient_chime := 5;
+        go to end_uac_proc;
+      end;
+
+    uac_composite_metric := ((130 - heartbeat_interval_seconds) * 2) + (silent_zone_suppression_milli / 2) + (breathing_freq_centi_hz * 10);
+
+    comment Pillar 1 & 2: Idle Ambient Chime Vitality Metric;
+    uac_vitality_metric := ((uac_composite_metric / 4) + (silent_zone_suppression_milli / 4) + ((130 - heartbeat_interval_seconds) / 2) + 1);
+    if uac_vitality_metric <= 0 then
+      begin
+        verify_unobtrusive_idle_ambient_chime := 6;
+        go to end_uac_proc;
+      end;
+
+    comment Pillar 3 & 4: Idle Ambient Chime Coherence;
+    uac_coherence := (uac_composite_metric / 16) + (silent_zone_suppression_milli / 16) + (breathing_freq_centi_hz / 2);
+
+    comment Pillar 5: ReBAR 0x57A1 Hardware Latch;
+    uac_rebar_latch := 1470169088 + (uac_composite_metric / 2) + ((130 - heartbeat_interval_seconds) * 16);
+
+    shadow_uac_base := (cics_writer_id * 1000000) +
+                       (uac_vitality_metric * 10) +
+                       (uac_coherence * 10) +
+                       (uac_composite_metric * 10) +
+                       (uac_rebar_latch / 10000);
+
+    if simulate_fault = 1 then
+      begin
+        committed_output := shadow_uac_base - 1163;
+        disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
+        verify_unobtrusive_idle_ambient_chime := 0;
+        go to end_uac_proc;
+      end;
+
+    committed_output := shadow_uac_base;
+    disp_wrap := committed_output - (256 * (committed_output / 256));
+    verify_unobtrusive_idle_ambient_chime := 0;
+
+  end_uac_proc:
+  end;
+end

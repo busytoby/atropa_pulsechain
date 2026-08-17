@@ -1063,6 +1063,11 @@ test-ita-bag-orientation-imu-kinematics:
 	./tests/test_ita_bag_orientation_imu_kinematics
 	@rm -f tests/test_ita_bag_orientation_imu_kinematics
 
+test-unobtrusive-idle-ambient-chime:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_unobtrusive_idle_ambient_chime.c -o tests/test_unobtrusive_idle_ambient_chime
+	./tests/test_unobtrusive_idle_ambient_chime
+	@rm -f tests/test_unobtrusive_idle_ambient_chime
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

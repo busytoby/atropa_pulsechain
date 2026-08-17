@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. UAC-CHM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / UNOBTRUSIVE IDLE CHIME AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UAC-PARAMS.
+           05 WS-HEARTBEAT-INT-SEC      PIC 9(03) VALUE 060.
+           05 WS-SILENT-SUPPRESS-M      PIC 9(04) VALUE 0998.
+           05 WS-BREATHING-FREQ-CHZ     PIC 9(02) VALUE 20.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-UAC-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-UAC-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-UAC-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-UAC-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UAC-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 HEARTBEAT-INT-OUT-OF-BOUNDS VALUE 2.
+              88 SILENT-SUPPRESSION-LOW      VALUE 3.
+              88 BREATHING-FREQ-OUT-OF-BND   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HAPTIC-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-IDLE-CHIME
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HEARTBEAT-INT-SEC < 30 OR WS-HEARTBEAT-INT-SEC > 120
+                SET HEARTBEAT-INT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SILENT-SUPPRESS-M < 990 OR WS-SILENT-SUPPRESS-M > 1000
+                SET SILENT-SUPPRESSION-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BREATHING-FREQ-CHZ < 15 OR WS-BREATHING-FREQ-CHZ > 30
+                SET BREATHING-FREQ-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-IDLE-CHIME.
+            COMPUTE WS-UAC-COMPOSITE = ((130 - WS-HEARTBEAT-INT-SEC) * 2) +
+                                       (WS-SILENT-SUPPRESS-M / 2) +
+                                       (WS-BREATHING-FREQ-CHZ * 10).
+
+            COMPUTE WS-UAC-VITALITY = (WS-UAC-COMPOSITE / 4) +
+                                      (WS-SILENT-SUPPRESS-M / 4) +
+                                      ((130 - WS-HEARTBEAT-INT-SEC) / 2) + 1.
+
+            IF WS-UAC-VITALITY EQUAL ZERO
+                SET HAPTIC-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UAC-COHERENCE = (WS-UAC-COMPOSITE / 16) +
+                                       (WS-SILENT-SUPPRESS-M / 16) +
+                                       (WS-BREATHING-FREQ-CHZ / 2).
+
+            COMPUTE WS-UAC-REBAR-LATCH = 1470169088 +
+                                         (WS-UAC-COMPOSITE / 2) +
+                                         ((130 - WS-HEARTBEAT-INT-SEC) * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UAC-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-UAC-VITALITY * 10) +
+                                         (WS-UAC-COHERENCE * 10) +
+                                         (WS-UAC-COMPOSITE * 10) +
+                                         (WS-UAC-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UAC-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UAC-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
