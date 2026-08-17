@@ -668,6 +668,11 @@ test-grand-master-unification-v:
 	./tests/test_grand_master_unification_v
 	@rm -f tests/test_grand_master_unification_v
 
+test-clutter-suppression-cross-attention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_clutter_suppression_cross_attention.c -o tests/test_clutter_suppression_cross_attention
+	./tests/test_clutter_suppression_cross_attention
+	@rm -f tests/test_clutter_suppression_cross_attention
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

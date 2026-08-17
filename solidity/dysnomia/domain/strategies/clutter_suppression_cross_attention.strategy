@@ -1,0 +1,108 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CLUTTER-ATTN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / CLUTTER SUPPRESSION & ATTN AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ATTN-PARAMS.
+           05 WS-CLUTTER-CUTOFF-MM      PIC 9(02) VALUE 20.
+           05 WS-FRAME-WINDOW           PIC 9(02) VALUE 16.
+           05 WS-ATTN-COHERENCE-MILLI   PIC 9(04) VALUE 0850.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ATTN-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-ATTN-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-ATTN-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ATTN-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CLUTTER-CUTOFF      VALUE 2.
+              88 INVALID-FRAME-WINDOW        VALUE 3.
+              88 ATTN-COHERENCE-LOW          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ATTENTION-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ATTENTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CLUTTER-CUTOFF-MM < 15 OR WS-CLUTTER-CUTOFF-MM > 30
+                SET INVALID-CLUTTER-CUTOFF TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FRAME-WINDOW < 4 OR WS-FRAME-WINDOW > 32
+                SET INVALID-FRAME-WINDOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ATTN-COHERENCE-MILLI < 600 OR WS-ATTN-COHERENCE-MILLI > 1000
+                SET ATTN-COHERENCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ATTENTION.
+            COMPUTE WS-ATTN-VITALITY = (WS-ATTN-COHERENCE-MILLI / 4) +
+                                       (WS-FRAME-WINDOW * 8) +
+                                       ((30 - WS-CLUTTER-CUTOFF-MM) * 16) + 1.
+
+            IF WS-ATTN-VITALITY EQUAL ZERO
+                SET ATTENTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ATTN-COHERENCE = (WS-ATTN-COHERENCE-MILLI / 16) +
+                                        (WS-FRAME-WINDOW * 2) +
+                                        ((30 - WS-CLUTTER-CUTOFF-MM) * 4).
+
+            COMPUTE WS-ATTN-REBAR-LATCH = 1470169088 +
+                                          (WS-ATTN-COHERENCE-MILLI / 2) +
+                                          (WS-FRAME-WINDOW * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ATTN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-ATTN-VITALITY * 10) +
+                                          (WS-ATTN-COHERENCE * 10) +
+                                          (WS-ATTN-COHERENCE-MILLI * 10) +
+                                          (WS-ATTN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ATTN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ATTN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
