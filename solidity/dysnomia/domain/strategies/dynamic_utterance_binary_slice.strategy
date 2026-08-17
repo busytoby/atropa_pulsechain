@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. UTT-BIN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / DYNAMIC UTTERANCE BINARY SLICE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UTT-PARAMS.
+           05 WS-UTT-TOKEN-INDEX        PIC 9(03) VALUE 042.
+           05 WS-PHONATION-FREQ-H-HZ    PIC 9(03) VALUE 240.
+           05 WS-MORTON-KEY             PIC 9(05) VALUE 14325.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-UTT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-UTT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-UTT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-UTT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UTT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 TOKEN-INDEX-OUT-OF-BOUNDS   VALUE 2.
+              88 PHONATION-FREQ-OUT-OF-BOUNDS VALUE 3.
+              88 MORTON-KEY-INVALID          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 UTTERANCE-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UTTERANCE-SLICE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UTT-TOKEN-INDEX < 1 OR WS-UTT-TOKEN-INDEX > 256
+                SET TOKEN-INDEX-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHONATION-FREQ-H-HZ < 1 OR WS-PHONATION-FREQ-H-HZ > 480
+                SET PHONATION-FREQ-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MORTON-KEY < 1 OR WS-MORTON-KEY > 65535
+                SET MORTON-KEY-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UTTERANCE-SLICE.
+            COMPUTE WS-UTT-COMPOSITE = (WS-UTT-TOKEN-INDEX * 2) +
+                                       (WS-PHONATION-FREQ-H-HZ * 2) +
+                                       (FUNCTION MOD(WS-MORTON-KEY, 256) * 2).
+
+            COMPUTE WS-UTT-VITALITY = (WS-UTT-COMPOSITE / 4) +
+                                      (WS-PHONATION-FREQ-H-HZ / 4) +
+                                      (WS-UTT-TOKEN-INDEX / 2) + 1.
+
+            IF WS-UTT-VITALITY EQUAL ZERO
+                SET UTTERANCE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UTT-COHERENCE = (WS-UTT-COMPOSITE / 16) +
+                                       (WS-PHONATION-FREQ-H-HZ / 16) +
+                                       (WS-UTT-TOKEN-INDEX / 8).
+
+            COMPUTE WS-UTT-REBAR-LATCH = 1470169088 +
+                                         (WS-UTT-COMPOSITE / 2) +
+                                         (WS-UTT-TOKEN-INDEX * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UTT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-UTT-VITALITY * 10) +
+                                         (WS-UTT-COHERENCE * 10) +
+                                         (WS-UTT-COMPOSITE * 10) +
+                                         (WS-UTT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UTT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UTT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

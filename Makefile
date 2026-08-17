@@ -808,6 +808,11 @@ test-skeleton-hasp-book-binaries:
 	./tests/test_skeleton_hasp_book_binaries
 	@rm -f tests/test_skeleton_hasp_book_binaries
 
+test-dynamic-utterance-binary-slice:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_dynamic_utterance_binary_slice.c -o tests/test_dynamic_utterance_binary_slice
+	./tests/test_dynamic_utterance_binary_slice
+	@rm -f tests/test_dynamic_utterance_binary_slice
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
