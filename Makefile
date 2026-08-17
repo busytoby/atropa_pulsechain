@@ -1278,6 +1278,11 @@ test-weyl-stanag-mesh:
 	./tests/test_weyl_stanag_mesh
 	@rm -f tests/test_weyl_stanag_mesh
 
+test-osteophonic-bone-mesh:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_osteophonic_bone_mesh.c -o tests/test_osteophonic_bone_mesh
+	./tests/test_osteophonic_bone_mesh
+	@rm -f tests/test_osteophonic_bone_mesh
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
