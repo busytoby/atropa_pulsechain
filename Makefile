@@ -1700,6 +1700,18 @@ test-cpm-tomie-coaxial-mux-suite:
 	./tsfi2-deepseek/src/cpm_exec_coaxial_mux /tmp/coaxial_mux.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_coaxial_mux tsfi2-deepseek/src/cpm_exec_coaxial_mux /tmp/coaxial_mux.bin
 
+test-cpm-tomie-coaxial-hardware-scsi-interop-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover.c -o tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover
+	./tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover
+	@rm -f tests/test_cpm_tomie_coaxial_hardware_scsi_interop_prover
+
+test-cpm-tomie-coaxial-scsi-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_coaxial_scsi.c -o tsfi2-deepseek/src/cpm_compiler_coaxial_scsi
+	./tsfi2-deepseek/src/cpm_compiler_coaxial_scsi /tmp/coaxial_scsi.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_coaxial_scsi.c -o tsfi2-deepseek/src/cpm_exec_coaxial_scsi
+	./tsfi2-deepseek/src/cpm_exec_coaxial_scsi /tmp/coaxial_scsi.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_coaxial_scsi tsfi2-deepseek/src/cpm_exec_coaxial_scsi /tmp/coaxial_scsi.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
