@@ -833,6 +833,11 @@ test-acoustic-diffuser-phase-mod:
 	./tests/test_acoustic_diffuser_phase_mod
 	@rm -f tests/test_acoustic_diffuser_phase_mod
 
+test-grand-master-unification-ix:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_ix.c -o tests/test_grand_master_unification_ix
+	./tests/test_grand_master_unification_ix
+	@rm -f tests/test_grand_master_unification_ix
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
