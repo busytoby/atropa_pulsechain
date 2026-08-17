@@ -1053,6 +1053,11 @@ test-crowd-density-acoustic-shunting:
 	./tests/test_crowd_density_acoustic_shunting
 	@rm -f tests/test_crowd_density_acoustic_shunting
 
+test-canon-drift-epistemic-containment:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_canon_drift_epistemic_containment.c -o tests/test_canon_drift_epistemic_containment
+	./tests/test_canon_drift_epistemic_containment
+	@rm -f tests/test_canon_drift_epistemic_containment
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

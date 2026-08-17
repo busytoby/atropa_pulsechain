@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CDE-CON-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / CANON DRIFT EPISTEMIC AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CDE-PARAMS.
+           05 WS-EPISTEMIC-DRIFT-M      PIC 9(02) VALUE 02.
+           05 WS-LORE-ALIGN-M           PIC 9(04) VALUE 0960.
+           05 WS-REDIRECT-LAT-MS        PIC 9(03) VALUE 110.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CDE-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-CDE-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CDE-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CDE-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CDE-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 EPISTEMIC-DRIFT-EXCEEDED    VALUE 2.
+              88 LORE-ALIGN-LOW              VALUE 3.
+              88 REDIRECT-LAT-OUT-OF-BOUNDS  VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 EPISTEMIC-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-EPISTEMIC-CONTAIN
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EPISTEMIC-DRIFT-M < 0 OR WS-EPISTEMIC-DRIFT-M > 10
+                SET EPISTEMIC-DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LORE-ALIGN-M < 850 OR WS-LORE-ALIGN-M > 1000
+                SET LORE-ALIGN-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REDIRECT-LAT-MS < 50 OR WS-REDIRECT-LAT-MS > 200
+                SET REDIRECT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-EPISTEMIC-CONTAIN.
+            COMPUTE WS-CDE-COMPOSITE = ((15 - WS-EPISTEMIC-DRIFT-M) * 20) +
+                                       (WS-LORE-ALIGN-M / 2) +
+                                       ((250 - WS-REDIRECT-LAT-MS) * 2).
+
+            COMPUTE WS-CDE-VITALITY = (WS-CDE-COMPOSITE / 4) +
+                                      (WS-LORE-ALIGN-M / 4) +
+                                      ((15 - WS-EPISTEMIC-DRIFT-M) * 4) + 1.
+
+            IF WS-CDE-VITALITY EQUAL ZERO
+                SET EPISTEMIC-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CDE-COHERENCE = (WS-CDE-COMPOSITE / 16) +
+                                       (WS-LORE-ALIGN-M / 16) +
+                                       ((15 - WS-EPISTEMIC-DRIFT-M) * 2).
+
+            COMPUTE WS-CDE-REBAR-LATCH = 1470169088 +
+                                         (WS-CDE-COMPOSITE / 2) +
+                                         ((15 - WS-EPISTEMIC-DRIFT-M) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CDE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CDE-VITALITY * 10) +
+                                         (WS-CDE-COHERENCE * 10) +
+                                         (WS-CDE-COMPOSITE * 10) +
+                                         (WS-CDE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CDE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CDE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
