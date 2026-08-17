@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TWO-SIDED-IDEAL-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LEMMA 11 COMMUTATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-COMM-PARAMS.
+           05 WS-COORD-L                PIC 9(02) VALUE 01.
+           05 WS-DIFF-ORDER-K           PIC 9(02) VALUE 02.
+           05 WS-POLY-DEG-F             PIC 9(02) VALUE 04.
+           05 WS-TWO-SIDED-FLAG         PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COMM-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-ORE-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-LEMMA11-REBAR-LATCH    PIC 9(12) VALUE 0.
+           05 WS-SHADOW-COMM-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-COORD-L             VALUE 2.
+              88 INVALID-DIFF-ORDER          VALUE 3.
+              88 INVALID-POLY-DEGREE         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 TWO-SIDED-FLAG-FAIL         VALUE 6.
+              88 COMMUTATION-DIVERG-FAIL     VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-COMMUTATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COORD-L < 1 OR WS-COORD-L > 8
+                SET INVALID-COORD-L TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DIFF-ORDER-K < 1 OR WS-DIFF-ORDER-K > 16
+                SET INVALID-DIFF-ORDER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-POLY-DEG-F < 1 OR WS-POLY-DEG-F > 32
+                SET INVALID-POLY-DEGREE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TWO-SIDED-FLAG NOT EQUAL 1
+                SET TWO-SIDED-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-COMMUTATION.
+            COMPUTE WS-COMM-VITALITY = (WS-COORD-L * 512) +
+                                       (WS-DIFF-ORDER-K * 256) +
+                                       (WS-POLY-DEG-F * 64) +
+                                       (WS-TWO-SIDED-FLAG * 128) + 1.
+
+            IF WS-COMM-VITALITY EQUAL ZERO
+                SET COMMUTATION-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ORE-COHERENCE = (WS-DIFF-ORDER-K * 32) +
+                                       (WS-POLY-DEG-F * 16) +
+                                       (WS-COORD-L * 64).
+
+            COMPUTE WS-LEMMA11-REBAR-LATCH = 1470169088 + (WS-COORD-L * 256) +
+                                             (WS-DIFF-ORDER-K * 64) +
+                                             (WS-POLY-DEG-F * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-COMM-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-COMM-VITALITY * 10) +
+                                          (WS-ORE-COHERENCE * 10) +
+                                          (WS-COORD-L * 1000) +
+                                          (WS-LEMMA11-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-COMM-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-COMM-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -238,6 +238,11 @@ test-holonomic-partial-weyl-closure:
 	./tests/test_holonomic_partial_weyl_closure
 	@rm -f tests/test_holonomic_partial_weyl_closure
 
+test-two-sided-ideal-commutation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_two_sided_ideal_commutation.c -o tests/test_two_sided_ideal_commutation
+	./tests/test_two_sided_ideal_commutation
+	@rm -f tests/test_two_sided_ideal_commutation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
