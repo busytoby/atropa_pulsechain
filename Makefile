@@ -1258,6 +1258,11 @@ test-animation-scrubbing-replay:
 	./tests/test_animation_scrubbing_replay
 	@rm -f tests/test_animation_scrubbing_replay
 
+test-friction-torque-thread:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_friction_torque_thread.c -o tests/test_friction_torque_thread
+	./tests/test_friction_torque_thread
+	@rm -f tests/test_friction_torque_thread
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
