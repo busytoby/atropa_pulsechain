@@ -1558,6 +1558,11 @@ test-spiritual-agency-balance:
 	./tests/test_spiritual_agency_balance
 	@rm -f tests/test_spiritual_agency_balance
 
+test-expressive-robotic-touch:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_expressive_robotic_touch.c -o tests/test_expressive_robotic_touch
+	./tests/test_expressive_robotic_touch
+	@rm -f tests/test_expressive_robotic_touch
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
