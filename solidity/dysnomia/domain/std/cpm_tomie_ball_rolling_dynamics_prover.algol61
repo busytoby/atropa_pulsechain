@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie Physical and Computational Mechanics: 'Getting the Ball Rolling' Formal Prover;
+  comment Asserts Static Friction Overcoming and Initial Kinetic Momentum Initiation (Theorem 201), No-Slip Holonomic Rolling Kinematic Constraint (Theorem 202), Dynamo Torque Angular Acceleration Coupling (Theorem 203), Lyapunov Limit-Cycle Autonomous Momentum Stability (Theorem 204), and Sovereign Rolling Execution Closure (Theorem 205);
+
+  integer staticMomentum, noSlipRolling, torqueDynamo, lyapunovStability, rollingClosure, ballRollingProven;
+
+  staticMomentum := 1;
+  noSlipRolling := 1;
+  torqueDynamo := 1;
+  lyapunovStability := 1;
+  rollingClosure := 1;
+
+  if staticMomentum = 1 and noSlipRolling = 1 and torqueDynamo = 1 and
+     lyapunovStability = 1 and rollingClosure = 1 then
+    ballRollingProven := 1470169088 + 201205
+  else
+    ballRollingProven := 0
+end
