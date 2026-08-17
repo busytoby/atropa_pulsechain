@@ -603,6 +603,11 @@ test-tactile-response-feedback:
 	./tests/test_tactile_response_feedback
 	@rm -f tests/test_tactile_response_feedback
 
+test-grand-master-unification-iii:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_iii.c -o tests/test_grand_master_unification_iii
+	./tests/test_grand_master_unification_iii
+	@rm -f tests/test_grand_master_unification_iii
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
