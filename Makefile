@@ -738,6 +738,11 @@ test-acoustic-refraction-impedance:
 	./tests/test_acoustic_refraction_impedance
 	@rm -f tests/test_acoustic_refraction_impedance
 
+test-azatoi-teddy-bear-multimodal:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_azatoi_teddy_bear_multimodal.c -o tests/test_azatoi_teddy_bear_multimodal
+	./tests/test_azatoi_teddy_bear_multimodal
+	@rm -f tests/test_azatoi_teddy_bear_multimodal
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
