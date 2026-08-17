@@ -794,3 +794,6 @@ hathitrust_cache_oai_*.xml
 *.ppm
 *.wav
 
+assets/
+/scripts/generate_solid_clay_bear
+/scripts/live_youtube_broadcaster
