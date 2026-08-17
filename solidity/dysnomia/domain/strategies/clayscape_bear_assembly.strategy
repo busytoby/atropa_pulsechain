@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CBA-CLB-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / CLAYSCAPE BEAR ASSEMBLY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CBA-PARAMS.
+           05 WS-ASSEMBLY-LAT-MS        PIC 9(02) VALUE 12.
+           05 WS-INTEGRITY-FID-M        PIC 9(04) VALUE 0960.
+           05 WS-CLEARANCE-RES-UM       PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CBA-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-CBA-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CBA-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CBA-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CBA-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ASSEMB-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 INTEGRITY-FIDELITY-LOW      VALUE 3.
+              88 RESIDUAL-EXCEEDED           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 CLAY-BEAR-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-CLAY-BEAR-ASSEMBLY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ASSEMBLY-LAT-MS < 5 OR WS-ASSEMBLY-LAT-MS > 25
+                SET ASSEMB-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INTEGRITY-FID-M < 850 OR WS-INTEGRITY-FID-M > 1000
+                SET INTEGRITY-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CLEARANCE-RES-UM < 0 OR WS-CLEARANCE-RES-UM > 5
+                SET RESIDUAL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-CLAY-BEAR-ASSEMBLY.
+            COMPUTE WS-CBA-COMPOSITE = ((30 - WS-ASSEMBLY-LAT-MS) * 20) +
+                                       (WS-INTEGRITY-FID-M / 2) +
+                                       ((10 - WS-CLEARANCE-RES-UM) * 40).
+
+            COMPUTE WS-CBA-VITALITY = (WS-CBA-COMPOSITE / 4) +
+                                      (WS-INTEGRITY-FID-M / 4) +
+                                      ((30 - WS-ASSEMBLY-LAT-MS) * 4) + 1.
+
+            IF WS-CBA-VITALITY EQUAL ZERO
+                SET CLAY-BEAR-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CBA-COHERENCE = (WS-CBA-COMPOSITE / 16) +
+                                       (WS-INTEGRITY-FID-M / 16) +
+                                       ((30 - WS-ASSEMBLY-LAT-MS) * 2).
+
+            COMPUTE WS-CBA-REBAR-LATCH = 1470169088 +
+                                         (WS-CBA-COMPOSITE / 2) +
+                                         ((30 - WS-ASSEMBLY-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CBA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CBA-VITALITY * 10) +
+                                         (WS-CBA-COHERENCE * 10) +
+                                         (WS-CBA-COMPOSITE * 10) +
+                                         (WS-CBA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CBA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CBA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -1543,6 +1543,11 @@ test-clayscape-fabrication:
 	./tests/test_clayscape_fabrication
 	@rm -f tests/test_clayscape_fabrication
 
+test-clayscape-bear-assembly:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_clayscape_bear_assembly.c -o tests/test_clayscape_bear_assembly
+	./tests/test_clayscape_bear_assembly
+	@rm -f tests/test_clayscape_bear_assembly
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
