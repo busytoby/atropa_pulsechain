@@ -1248,6 +1248,11 @@ test-spatial-audio-hmd-immersion:
 	./tests/test_spatial_audio_hmd_immersion
 	@rm -f tests/test_spatial_audio_hmd_immersion
 
+test-external-context-tooling:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_external_context_tooling.c -o tests/test_external_context_tooling
+	./tests/test_external_context_tooling
+	@rm -f tests/test_external_context_tooling
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
