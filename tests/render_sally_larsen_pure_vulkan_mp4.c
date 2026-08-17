@@ -170,15 +170,13 @@ int main(void) {
         return 1;
     }
 
-    /* 1. Write 'ftyp' Box (32 bytes) */
-    write_u32(out, 32);
+    /* 1. Write 'ftyp' Box (24 bytes for QuickTime / MP4) */
+    write_u32(out, 24);
     write_fourcc(out, "ftyp");
+    write_fourcc(out, "qt  ");
+    write_u32(out, 0x00000200); /* QuickTime version */
+    write_fourcc(out, "qt  ");
     write_fourcc(out, "isom");
-    write_u32(out, 512);
-    write_fourcc(out, "isom");
-    write_fourcc(out, "iso2");
-    write_fourcc(out, "mp41");
-    write_fourcc(out, "mp42");
 
     /* 2. Write 'mdat' Container */
     long mdat_header_pos = ftell(out);
@@ -282,7 +280,7 @@ int main(void) {
     write_u32(out, 0); /* Pre-defined */
     write_fourcc(out, "vide"); /* Handler type = Video */
     write_u32(out, 0); write_u32(out, 0); write_u32(out, 0); /* Reserved */
-    fwrite("Vulkan ReBAR Video", 1, 19, out); /* Handler name null-terminated (19 bytes: 45 total) */
+    fwrite("Vulkan ReBAR Video", 1, 19, out);
 
     /* minf (Media Information Atom Container) */
     long minf_start = ftell(out);
@@ -312,31 +310,34 @@ int main(void) {
     write_u32(out, 0); /* Placeholder for stbl size */
     write_fourcc(out, "stbl");
 
-    /* stsd (Sample Description Atom with '24BG' or 'raw ' uncompressed visual sample entry, 86 bytes) */
+    /* stsd (Sample Description Atom, 86 bytes) */
     write_u32(out, 86);
     write_fourcc(out, "stsd");
     write_u32(out, 0); /* Version & Flags */
-    write_u32(out, 1); /* Entry count */
-    /* VisualSampleEntry ('24BG' - 24-bit RGB) */
+    write_u32(out, 1); /* Entry count = 1 */
+
+    /* VisualSampleEntry ('raw ' uncompressed RGB24, 70 bytes) */
     write_u32(out, 70);
-    write_fourcc(out, "24BG");
+    write_fourcc(out, "raw ");
     for (int i = 0; i < 6; i++) fputc(0, out); /* Reserved */
     write_u16(out, 1); /* Data reference index = 1 */
     write_u16(out, 0); /* Version = 0 */
     write_u16(out, 0); /* Revision level = 0 */
-    write_u32(out, 0); /* Vendor */
-    write_u32(out, 0); /* Temporal quality */
-    write_u32(out, 0); /* Spatial quality */
+    write_fourcc(out, "appl"); /* Vendor = Apple QuickTime */
+    write_u32(out, 0x00000200); /* Temporal quality */
+    write_u32(out, 0x00000200); /* Spatial quality */
     write_u16(out, WIDTH); /* Width */
     write_u16(out, HEIGHT); /* Height */
-    write_u32(out, 0x00480000); /* 72 dpi horiz */
-    write_u32(out, 0x00480000); /* 72 dpi vert */
+    write_u32(out, 0x00480000); /* 72 dpi horizontal */
+    write_u32(out, 0x00480000); /* 72 dpi vertical */
     write_u32(out, 0); /* Data size = 0 */
     write_u16(out, 1); /* Frame count = 1 */
-    fputc(0, out); /* Pascal string length = 0 */
-    for (int i = 0; i < 31; i++) fputc(0, out); /* Compressor name padding */
-    write_u16(out, 24); /* Color Depth = 24 bpp */
-    write_u16(out, 0xFFFF); /* Color table ID = -1 (no color table) */
+    /* Compressor Name (32 bytes: 1 length byte + 31 chars) */
+    fputc(11, out);
+    fwrite("Uncompressed", 1, 11, out);
+    for (int i = 0; i < 20; i++) fputc(0, out);
+    write_u16(out, 24); /* Depth: 24 bits (RGB24) */
+    write_u16(out, 0xFFFF); /* Color table ID: -1 (default color table) */
 
     /* stts (Time-to-Sample Atom, 24 bytes) */
     write_u32(out, 24);
