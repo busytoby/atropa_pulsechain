@@ -1303,6 +1303,11 @@ test-tool-affordance-interop:
 	./tests/test_tool_affordance_interop
 	@rm -f tests/test_tool_affordance_interop
 
+test-visual-salience-heatmap:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_visual_salience_heatmap.c -o tests/test_visual_salience_heatmap
+	./tests/test_visual_salience_heatmap
+	@rm -f tests/test_visual_salience_heatmap
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
