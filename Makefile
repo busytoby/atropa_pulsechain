@@ -143,6 +143,11 @@ test-totient-turtle-audio-composition:
 	./tests/test_totient_turtle_audio_composition
 	@rm -f tests/test_totient_turtle_audio_composition
 
+test-bionika-score-notation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bionika_score_notation.c -o tests/test_bionika_score_notation
+	./tests/test_bionika_score_notation
+	@rm -f tests/test_bionika_score_notation
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BIONIKA-SCORE-NOTATION-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BIONIKA NOTATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BIONIKA-PARAMS.
+           05 WS-ACT-ID                 PIC 9(02) VALUE 01.
+           05 WS-VERLET-NODES           PIC 9(03) VALUE 016.
+           05 WS-TURTLE-STEPS           PIC 9(04) VALUE 0128.
+           05 WS-STIFFNESS-Q16          PIC 9(06) VALUE 032768.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GRAMMAR-METRIC         PIC 9(09) VALUE 0.
+           05 WS-VERLET-RESONANCE       PIC 9(09) VALUE 0.
+           05 WS-BIONIKA-REBAR-LATCH    PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BIONIKA-BASE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ACT-ID              VALUE 2.
+              88 INVALID-VERLET-NODES        VALUE 3.
+              88 INVALID-TURTLE-STEPS        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-STIFFNESS-Q16       VALUE 6.
+              88 BIONIKA-UNDERFLOW-FAIL      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BIONIKA-NOTATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACT-ID < 1 OR WS-ACT-ID > 8
+                SET INVALID-ACT-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VERLET-NODES < 1 OR WS-VERLET-NODES > 128
+                SET INVALID-VERLET-NODES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TURTLE-STEPS < 1 OR WS-TURTLE-STEPS > 1024
+                SET INVALID-TURTLE-STEPS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STIFFNESS-Q16 < 1000 OR WS-STIFFNESS-Q16 > 65536
+                SET INVALID-STIFFNESS-Q16 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BIONIKA-NOTATION.
+            COMPUTE WS-GRAMMAR-METRIC = (WS-ACT-ID * 1024) +
+                                        (WS-VERLET-NODES * 64) +
+                                        (WS-TURTLE-STEPS * 16) + 1.
+
+            IF WS-GRAMMAR-METRIC EQUAL ZERO
+                SET BIONIKA-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VERLET-RESONANCE = ((WS-STIFFNESS-Q16 * 875) / 10000) +
+                                          (WS-VERLET-NODES * 10).
+
+            COMPUTE WS-BIONIKA-REBAR-LATCH = 1470169088 + (WS-ACT-ID * 256) +
+                                             (WS-VERLET-NODES * 64) +
+                                             (WS-TURTLE-STEPS * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BIONIKA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-GRAMMAR-METRIC * 10) +
+                                             (WS-VERLET-RESONANCE * 10) +
+                                             (WS-ACT-ID * 1000) +
+                                             (WS-BIONIKA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BIONIKA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BIONIKA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
