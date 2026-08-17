@@ -1573,6 +1573,11 @@ test-algorithmic-pacing-intimacy:
 	./tests/test_algorithmic_pacing_intimacy
 	@rm -f tests/test_algorithmic_pacing_intimacy
 
+test-slow-acoustic-sanctuary:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_slow_acoustic_sanctuary.c -o tests/test_slow_acoustic_sanctuary
+	./tests/test_slow_acoustic_sanctuary
+	@rm -f tests/test_slow_acoustic_sanctuary
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SAS-ACO-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SLOW ACOUSTIC SANCTUARY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SAS-PARAMS.
+           05 WS-ACOUSTIC-LAT-MS        PIC 9(02) VALUE 12.
+           05 WS-MINDFUL-FID-M          PIC 9(04) VALUE 0960.
+           05 WS-PHASE-JITTER-MS        PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SAS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SAS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SAS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SAS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SAS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ACOU-LAT-OUT-OF-BOUNDS      VALUE 2.
+              88 MINDFUL-FIDELITY-LOW        VALUE 3.
+              88 JITTER-EXCEEDED             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SANCTUARY-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ACOUSTIC-SANCTUARY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACOUSTIC-LAT-MS < 5 OR WS-ACOUSTIC-LAT-MS > 25
+                SET ACOU-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MINDFUL-FID-M < 850 OR WS-MINDFUL-FID-M > 1000
+                SET MINDFUL-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-JITTER-MS < 0 OR WS-PHASE-JITTER-MS > 5
+                SET JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ACOUSTIC-SANCTUARY.
+            COMPUTE WS-SAS-COMPOSITE = ((30 - WS-ACOUSTIC-LAT-MS) * 20) +
+                                       (WS-MINDFUL-FID-M / 2) +
+                                       ((10 - WS-PHASE-JITTER-MS) * 40).
+
+            COMPUTE WS-SAS-VITALITY = (WS-SAS-COMPOSITE / 4) +
+                                      (WS-MINDFUL-FID-M / 4) +
+                                      ((30 - WS-ACOUSTIC-LAT-MS) * 4) + 1.
+
+            IF WS-SAS-VITALITY EQUAL ZERO
+                SET SANCTUARY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SAS-COHERENCE = (WS-SAS-COMPOSITE / 16) +
+                                       (WS-MINDFUL-FID-M / 16) +
+                                       ((30 - WS-ACOUSTIC-LAT-MS) * 2).
+
+            COMPUTE WS-SAS-REBAR-LATCH = 1470169088 +
+                                         (WS-SAS-COMPOSITE / 2) +
+                                         ((30 - WS-ACOUSTIC-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SAS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SAS-VITALITY * 10) +
+                                         (WS-SAS-COHERENCE * 10) +
+                                         (WS-SAS-COMPOSITE * 10) +
+                                         (WS-SAS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SAS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SAS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
