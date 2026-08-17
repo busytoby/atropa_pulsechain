@@ -138,6 +138,11 @@ test-ankh-speech-song-synthesizer:
 	./tests/test_ankh_speech_song_synthesizer
 	@rm -f tests/test_ankh_speech_song_synthesizer
 
+test-totient-turtle-audio-composition:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_totient_turtle_audio_composition.c -o tests/test_totient_turtle_audio_composition
+	./tests/test_totient_turtle_audio_composition
+	@rm -f tests/test_totient_turtle_audio_composition
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

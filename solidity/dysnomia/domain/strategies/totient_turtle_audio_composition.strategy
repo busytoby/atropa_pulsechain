@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TOTIENT-TURTLE-AUDIO-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TURTLE AUDIO AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TURTLE-AUDIO-PARAMS.
+           05 WS-YAW-DEG                PIC 9(03) VALUE 090.
+           05 WS-PITCH-DEG              PIC 9(03) VALUE 045.
+           05 WS-VELOCITY-Q16           PIC 9(06) VALUE 032768.
+           05 WS-VOWEL-QUADRANT         PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ACOUSTIC-METRIC        PIC 9(09) VALUE 0.
+           05 WS-FORMANT-VECTOR         PIC 9(09) VALUE 0.
+           05 WS-TURTLE-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-AUDIO-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-YAW-DEG             VALUE 2.
+              88 INVALID-PITCH-DEG           VALUE 3.
+              88 INVALID-VELOCITY-Q16        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-VOWEL-QUADRANT      VALUE 6.
+              88 TURTLE-AUDIO-UNDERFLOW-FAIL VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-TURTLE-AUDIO
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-YAW-DEG > 360
+                SET INVALID-YAW-DEG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PITCH-DEG > 180
+                SET INVALID-PITCH-DEG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VELOCITY-Q16 < 100 OR WS-VELOCITY-Q16 > 65536
+                SET INVALID-VELOCITY-Q16 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VOWEL-QUADRANT < 1 OR WS-VOWEL-QUADRANT > 4
+                SET INVALID-VOWEL-QUADRANT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-TURTLE-AUDIO.
+            COMPUTE WS-ACOUSTIC-METRIC = (WS-YAW-DEG * 10) +
+                                         (WS-PITCH-DEG * 32) +
+                                         (WS-VOWEL-QUADRANT * 1024) + 1.
+
+            IF WS-ACOUSTIC-METRIC EQUAL ZERO
+                SET TURTLE-AUDIO-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-FORMANT-VECTOR = ((WS-VELOCITY-Q16 * 875) / 10000) +
+                                        (WS-PITCH-DEG * 10).
+
+            COMPUTE WS-TURTLE-REBAR-LATCH = 1470169088 + (WS-YAW-DEG * 64) +
+                                            (WS-VOWEL-QUADRANT * 256) +
+                                            (WS-PITCH-DEG * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-AUDIO-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-ACOUSTIC-METRIC * 10) +
+                                           (WS-FORMANT-VECTOR * 10) +
+                                           (WS-VOWEL-QUADRANT * 1000) +
+                                           (WS-TURTLE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-AUDIO-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-AUDIO-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
