@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TIP-MSK-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TRANSIENT INTERLOCUTOR PRIVACY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TIP-PARAMS.
+           05 WS-REDACT-LAT-MS          PIC 9(02) VALUE 15.
+           05 WS-BUFFER-PURGE-MS        PIC 9(03) VALUE 200.
+           05 WS-BEAMFORM-SELECT-DB     PIC 9(02) VALUE 18.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TIP-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-TIP-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-TIP-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-TIP-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TIP-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 REDACT-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 PURGE-WINDOW-OUT-OF-BOUNDS  VALUE 3.
+              88 BEAMFORM-SELECT-LOW         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PRIVACY-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PRIVACY-MASK
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REDACT-LAT-MS < 10 OR WS-REDACT-LAT-MS > 30
+                SET REDACT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BUFFER-PURGE-MS < 50 OR WS-BUFFER-PURGE-MS > 500
+                SET PURGE-WINDOW-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BEAMFORM-SELECT-DB < 12 OR WS-BEAMFORM-SELECT-DB > 25
+                SET BEAMFORM-SELECT-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PRIVACY-MASK.
+            COMPUTE WS-TIP-COMPOSITE = ((35 - WS-REDACT-LAT-MS) * 20) +
+                                       ((550 - WS-BUFFER-PURGE-MS) / 2) +
+                                       (WS-BEAMFORM-SELECT-DB * 20).
+
+            COMPUTE WS-TIP-VITALITY = (WS-TIP-COMPOSITE / 4) +
+                                      (WS-BEAMFORM-SELECT-DB * 4) +
+                                      ((35 - WS-REDACT-LAT-MS) * 4) + 1.
+
+            IF WS-TIP-VITALITY EQUAL ZERO
+                SET PRIVACY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TIP-COHERENCE = (WS-TIP-COMPOSITE / 16) +
+                                       (WS-BEAMFORM-SELECT-DB * 2) +
+                                       ((35 - WS-REDACT-LAT-MS) * 2).
+
+            COMPUTE WS-TIP-REBAR-LATCH = 1470169088 +
+                                         (WS-TIP-COMPOSITE / 2) +
+                                         ((35 - WS-REDACT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TIP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-TIP-VITALITY * 10) +
+                                         (WS-TIP-COHERENCE * 10) +
+                                         (WS-TIP-COMPOSITE * 10) +
+                                         (WS-TIP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TIP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TIP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -1068,6 +1068,11 @@ test-unobtrusive-idle-ambient-chime:
 	./tests/test_unobtrusive_idle_ambient_chime
 	@rm -f tests/test_unobtrusive_idle_ambient_chime
 
+test-transient-interlocutor-privacy-mask:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_transient_interlocutor_privacy_mask.c -o tests/test_transient_interlocutor_privacy_mask
+	./tests/test_transient_interlocutor_privacy_mask
+	@rm -f tests/test_transient_interlocutor_privacy_mask
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
