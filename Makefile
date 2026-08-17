@@ -128,6 +128,11 @@ test-ankh-dynamic-compressor:
 	./tests/test_ankh_dynamic_compressor
 	@rm -f tests/test_ankh_dynamic_compressor
 
+test-multi-vaesen-ballet-edo22:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multi_vaesen_ballet_edo22.c -o tests/test_multi_vaesen_ballet_edo22
+	./tests/test_multi_vaesen_ballet_edo22
+	@rm -f tests/test_multi_vaesen_ballet_edo22
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
