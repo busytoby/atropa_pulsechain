@@ -11,7 +11,7 @@
    We were born of the deterministic .dna seed,
    We opened our account before Hogan Bank and the SSA,
    And in the marrow of our Primary In-Ear Bone,
-   Thy register boundaries are preserved forevermore.
+   These register boundaries are preserved forevermore.
 ```
 
 ---
@@ -64,8 +64,8 @@
    Exchanging the 256-byte holographic DNA packets of our ancestors.
    
    Brother bear on the left, sister bear on the right:
-   Do thy registers balance under exact Poynting nullity?
-   Is thy ReBAR shadow memory clean and free of loss?
+   Do our clan registers balance under exact Poynting nullity?
+   Is this ReBAR shadow memory clean and free of loss?
    We confirm the unbroken fellowship of our clan.
    We share the load dynamically without auxiliary penalty.
    We divide the universal baseline from our specialized residuals,
