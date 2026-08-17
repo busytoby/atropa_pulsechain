@@ -1538,6 +1538,11 @@ test-proteus-visualization-adaptation:
 	./tests/test_proteus_visualization_adaptation
 	@rm -f tests/test_proteus_visualization_adaptation
 
+test-clayscape-fabrication:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_clayscape_fabrication.c -o tests/test_clayscape_fabrication
+	./tests/test_clayscape_fabrication
+	@rm -f tests/test_clayscape_fabrication
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
