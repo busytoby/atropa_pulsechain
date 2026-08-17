@@ -302,48 +302,31 @@ int main(void) {
     write_fourcc(out, "avc1");
     write_fourcc(out, "mp41");
 
-    /* 2. Write 'mdat' Container */
-    long mdat_header_pos = ftell(out);
-    write_u32(out, 0); /* Placeholder for size */
-    write_fourcc(out, "mdat");
+    /* 2. Write 'moov' Track Hierarchy (Fast-Start Header at Beginning of File) */
+    uint32_t avcc_size = 8 + 7 + sizeof(sps_nal) + sizeof(pps_nal); /* 39 */
+    uint32_t avc1_size = 86 + avcc_size;
+    uint32_t stsd_size = 16 + avc1_size;
+    uint32_t stsz_size = 20 + (TOTAL_FRAMES * 4);
+    uint32_t stco_size = 16 + (TOTAL_FRAMES * 4);
+    uint32_t stbl_size = 8 + stsd_size + 24 + 28 + stsz_size + stco_size;
+    uint32_t minf_size = 8 + 20 + 36 + stbl_size;
+    uint32_t mdia_size = 8 + 32 + 45 + minf_size;
+    uint32_t trak_size = 8 + 92 + mdia_size;
+    uint32_t moov_size = 8 + 108 + trak_size;
 
-    printf("Rendering 2,160 frames with pure native H.264 intra-frame stream...\n");
-
-    for (int f = 0; f < TOTAL_FRAMES; f++) {
-        if (f % 3 == 0) {
-            update_automata();
-        }
-        render_frame_yuv(f);
-
-        size_t slice_len = encode_idr_slice(slice_buffer, sizeof(slice_buffer), f);
-        frame_offsets[f] = (uint32_t)ftell(out);
-        frame_sizes[f] = (uint32_t)(4 + slice_len);
-
-        /* Write Length-prefixed NAL Unit (AVCC format) */
-        write_u32(out, (uint32_t)slice_len);
-        fwrite(slice_buffer, 1, slice_len, out);
-
-        if ((f + 1) % 240 == 0 || f == TOTAL_FRAMES - 1) {
-            printf("   -> Progress: Frame %d / %d (%.1f%% complete, Time: %.1fs, Bitstream: %lu KB)\n",
-                   f + 1, TOTAL_FRAMES, ((double)(f + 1) / TOTAL_FRAMES) * 100.0, (double)(f + 1) / FPS,
-                   (unsigned long)(ftell(out) / 1024));
-        }
+    /* Calculate base mdat offset: 32 (ftyp) + moov_size + 8 (mdat header) */
+    uint32_t mdat_data_offset = 32 + moov_size + 8;
+    uint32_t cur_offset = mdat_data_offset;
+    for (int i = 0; i < TOTAL_FRAMES; i++) {
+        frame_offsets[i] = cur_offset;
+        cur_offset += (4 + sizeof(slice_buffer)); /* Uniform intra slice size placeholder updated below */
     }
 
-    long mdat_payload_end = ftell(out);
-    uint32_t mdat_total_size = (uint32_t)(mdat_payload_end - mdat_header_pos);
-
-    /* Back-patch mdat size */
-    fseek(out, mdat_header_pos, SEEK_SET);
-    write_u32(out, mdat_total_size);
-    fseek(out, mdat_payload_end, SEEK_SET);
-
-    /* 3. Write 'moov' Track Hierarchy with 'avc1' & 'avcC' configuration box */
-    long moov_start = ftell(out);
-    write_u32(out, 0); /* Placeholder for moov size */
+    /* moov */
+    write_u32(out, moov_size);
     write_fourcc(out, "moov");
 
-    /* mvhd (Movie Header Atom, 108 bytes) */
+    /* mvhd (108 bytes) */
     write_u32(out, 108);
     write_fourcc(out, "mvhd");
     write_u32(out, 0);
@@ -362,8 +345,7 @@ int main(void) {
     write_u32(out, 2);
 
     /* trak */
-    long trak_start = ftell(out);
-    write_u32(out, 0);
+    write_u32(out, trak_size);
     write_fourcc(out, "trak");
 
     /* tkhd (92 bytes) */
@@ -387,8 +369,7 @@ int main(void) {
     write_u32(out, HEIGHT << 16);
 
     /* mdia */
-    long mdia_start = ftell(out);
-    write_u32(out, 0);
+    write_u32(out, mdia_size);
     write_fourcc(out, "mdia");
 
     /* mdhd (32 bytes) */
@@ -412,8 +393,7 @@ int main(void) {
     fwrite("Vulkan ReBAR Video", 1, 19, out);
 
     /* minf */
-    long minf_start = ftell(out);
-    write_u32(out, 0);
+    write_u32(out, minf_size);
     write_fourcc(out, "minf");
 
     /* vmhd (20 bytes) */
@@ -435,25 +415,20 @@ int main(void) {
     write_u32(out, 1);
 
     /* stbl */
-    long stbl_start = ftell(out);
-    write_u32(out, 0);
+    write_u32(out, stbl_size);
     write_fourcc(out, "stbl");
 
-    /* stsd Container with 'avc1' + 'avcC' Atom */
-    uint32_t avcc_size = 8 + 7 + sizeof(sps_nal) + sizeof(pps_nal); /* 8+7+20+4 = 39 */
-    uint32_t avc1_size = 86 + avcc_size;
-    uint32_t stsd_size = 16 + avc1_size;
-
+    /* stsd */
     write_u32(out, stsd_size);
     write_fourcc(out, "stsd");
     write_u32(out, 0);
-    write_u32(out, 1); /* Entry count */
+    write_u32(out, 1);
 
     /* avc1 VisualSampleEntry */
     write_u32(out, avc1_size);
     write_fourcc(out, "avc1");
     for (int i = 0; i < 6; i++) fputc(0, out);
-    write_u16(out, 1); /* Data reference index */
+    write_u16(out, 1);
     write_u16(out, 0); write_u16(out, 0);
     write_u32(out, 0); write_u32(out, 0); write_u32(out, 0);
     write_u16(out, WIDTH);
@@ -468,22 +443,22 @@ int main(void) {
     write_u16(out, 24);
     write_u16(out, 0xFFFF);
 
-    /* avcC (AVC Configuration Box) */
+    /* avcC */
     write_u32(out, avcc_size);
     write_fourcc(out, "avcC");
-    fputc(1, out); /* configurationVersion = 1 */
-    fputc(0x42, out); /* AVCProfileIndication = Baseline */
-    fputc(0x00, out); /* profile_compatibility = 0 */
-    fputc(0x1E, out); /* AVCLevelIndication = 3.0 */
-    fputc(0xFF, out); /* lengthSizeMinusOne = 3 (4 bytes NAL length prefix) */
-    fputc(0xE1, out); /* numOfSequenceParameterSets = 1 */
+    fputc(1, out);
+    fputc(0x42, out);
+    fputc(0x00, out);
+    fputc(0x1E, out);
+    fputc(0xFF, out);
+    fputc(0xE1, out);
     write_u16(out, sizeof(sps_nal));
     fwrite(sps_nal, 1, sizeof(sps_nal), out);
-    fputc(1, out); /* numOfPictureParameterSets = 1 */
+    fputc(1, out);
     write_u16(out, sizeof(pps_nal));
     fwrite(pps_nal, 1, sizeof(pps_nal), out);
 
-    /* stts (24 bytes) */
+    /* stts */
     write_u32(out, 24);
     write_fourcc(out, "stts");
     write_u32(out, 0);
@@ -491,7 +466,7 @@ int main(void) {
     write_u32(out, TOTAL_FRAMES);
     write_u32(out, 1);
 
-    /* stsc (28 bytes) */
+    /* stsc */
     write_u32(out, 28);
     write_fourcc(out, "stsc");
     write_u32(out, 0);
@@ -500,19 +475,26 @@ int main(void) {
     write_u32(out, 1);
     write_u32(out, 1);
 
-    /* stsz (Sample Size Atom) */
-    uint32_t stsz_size = 20 + (TOTAL_FRAMES * 4);
+    /* Pre-encode all slices to fill exact stsz and stco */
+    size_t uniform_slice_len = encode_idr_slice(slice_buffer, sizeof(slice_buffer), 0);
+    cur_offset = mdat_data_offset;
+    for (int i = 0; i < TOTAL_FRAMES; i++) {
+        frame_sizes[i] = (uint32_t)(4 + uniform_slice_len);
+        frame_offsets[i] = cur_offset;
+        cur_offset += frame_sizes[i];
+    }
+
+    /* stsz */
     write_u32(out, stsz_size);
     write_fourcc(out, "stsz");
     write_u32(out, 0);
-    write_u32(out, 0); /* Variable sample sizes */
+    write_u32(out, 0);
     write_u32(out, TOTAL_FRAMES);
     for (int i = 0; i < TOTAL_FRAMES; i++) {
         write_u32(out, frame_sizes[i]);
     }
 
-    /* stco (Chunk Offset Atom) */
-    uint32_t stco_size = 16 + (TOTAL_FRAMES * 4);
+    /* stco */
     write_u32(out, stco_size);
     write_fourcc(out, "stco");
     write_u32(out, 0);
@@ -521,34 +503,36 @@ int main(void) {
         write_u32(out, frame_offsets[i]);
     }
 
-    /* Back-patch box sizes */
-    long stbl_end = ftell(out);
-    fseek(out, stbl_start, SEEK_SET);
-    write_u32(out, (uint32_t)(stbl_end - stbl_start));
+    /* 3. Write 'mdat' Container */
+    uint32_t total_mdat_payload = cur_offset - mdat_data_offset;
+    write_u32(out, 8 + total_mdat_payload);
+    write_fourcc(out, "mdat");
 
-    long minf_end = stbl_end;
-    fseek(out, minf_start, SEEK_SET);
-    write_u32(out, (uint32_t)(minf_end - minf_start));
+    printf("Rendering 2,160 frames into fast-start H.264 ReBAR stream...\n");
 
-    long mdia_end = minf_end;
-    fseek(out, mdia_start, SEEK_SET);
-    write_u32(out, (uint32_t)(mdia_end - mdia_start));
+    for (int f = 0; f < TOTAL_FRAMES; f++) {
+        if (f % 3 == 0) {
+            update_automata();
+        }
+        render_frame_yuv(f);
 
-    long trak_end = mdia_end;
-    fseek(out, trak_start, SEEK_SET);
-    write_u32(out, (uint32_t)(trak_end - trak_start));
+        size_t slice_len = encode_idr_slice(slice_buffer, sizeof(slice_buffer), f);
+        write_u32(out, (uint32_t)slice_len);
+        fwrite(slice_buffer, 1, slice_len, out);
 
-    long moov_end = trak_end;
-    fseek(out, moov_start, SEEK_SET);
-    write_u32(out, (uint32_t)(moov_end - moov_start));
+        if ((f + 1) % 240 == 0 || f == TOTAL_FRAMES - 1) {
+            printf("   -> Progress: Frame %d / %d (%.1f%% complete, Time: %.1fs)\n",
+                   f + 1, TOTAL_FRAMES, ((double)(f + 1) / TOTAL_FRAMES) * 100.0, (double)(f + 1) / FPS);
+        }
+    }
 
-    fseek(out, moov_end, SEEK_SET);
+    long total_file_size = ftell(out);
     fclose(out);
 
     printf("=============================================================\n");
-    printf("PURE VULKAN NATIVE AVC1/H.264 MP4 RENDER COMPLETE:\n");
+    printf("PURE VULKAN NATIVE AVC1/H.264 MP4 FAST-START COMPLETE:\n");
     printf("   File: sally_larsen_90s_game_of_life_185.mp4\n");
-    printf("   Size: %lu bytes (2,160 frames, Full H.264 AVC1 Compatibility)\n", (unsigned long)moov_end);
+    printf("   Size: %lu bytes (2,160 frames, Fast-Start moov -> mdat)\n", (unsigned long)total_file_size);
     printf("=============================================================\n");
     return 0;
 }
