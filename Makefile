@@ -918,6 +918,11 @@ test-longform-narrative-continuity:
 	./tests/test_longform_narrative_continuity
 	@rm -f tests/test_longform_narrative_continuity
 
+test-post-thinking-attention-sink-preservation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_post_thinking_attention_sink_preservation.c -o tests/test_post_thinking_attention_sink_preservation
+	./tests/test_post_thinking_attention_sink_preservation
+	@rm -f tests/test_post_thinking_attention_sink_preservation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
