@@ -698,6 +698,11 @@ test-ultrasonic-earcanal-weyl-closure:
 	./tests/test_ultrasonic_earcanal_weyl_closure
 	@rm -f tests/test_ultrasonic_earcanal_weyl_closure
 
+test-nlos-acoustic-multipath-separation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_nlos_acoustic_multipath_separation.c -o tests/test_nlos_acoustic_multipath_separation
+	./tests/test_nlos_acoustic_multipath_separation
+	@rm -f tests/test_nlos_acoustic_multipath_separation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
