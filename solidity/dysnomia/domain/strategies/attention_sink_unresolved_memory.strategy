@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ATK-UNM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ATTENTION SINK UNRESOLVED MEMORY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UNM-PARAMS.
+           05 WS-UNRESOLVED-COUNT       PIC 9(02) VALUE 04.
+           05 WS-RESTORE-FIDELITY-M     PIC 9(04) VALUE 0960.
+           05 WS-RETENTION-SCORE-M      PIC 9(04) VALUE 0920.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-UNM-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-UNM-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-UNM-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-UNM-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UNM-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 UNRESOLVED-COUNT-OUT-OF-BND VALUE 2.
+              88 FIDELITY-OUT-OF-BOUNDS      VALUE 3.
+              88 RETENTION-SCORE-OUT-OF-BND  VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ACCUMULATOR-COLLAPSE        VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UNRESOLVED-MEMORY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UNRESOLVED-COUNT < 1 OR WS-UNRESOLVED-COUNT > 16
+                SET UNRESOLVED-COUNT-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RESTORE-FIDELITY-M < 850 OR WS-RESTORE-FIDELITY-M > 1000
+                SET FIDELITY-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RETENTION-SCORE-M < 600 OR WS-RETENTION-SCORE-M > 1000
+                SET RETENTION-SCORE-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UNRESOLVED-MEMORY.
+            COMPUTE WS-UNM-COMPOSITE = (WS-UNRESOLVED-COUNT * 50) +
+                                       (WS-RESTORE-FIDELITY-M / 2) +
+                                       (WS-RETENTION-SCORE-M / 2).
+
+            COMPUTE WS-UNM-VITALITY = (WS-UNM-COMPOSITE / 4) +
+                                      (WS-RESTORE-FIDELITY-M / 4) +
+                                      (WS-UNRESOLVED-COUNT * 10) + 1.
+
+            IF WS-UNM-VITALITY EQUAL ZERO
+                SET ACCUMULATOR-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UNM-COHERENCE = (WS-UNM-COMPOSITE / 16) +
+                                       (WS-RESTORE-FIDELITY-M / 16) +
+                                       (WS-UNRESOLVED-COUNT * 2).
+
+            COMPUTE WS-UNM-REBAR-LATCH = 1470169088 +
+                                         (WS-UNM-COMPOSITE / 2) +
+                                         (WS-UNRESOLVED-COUNT * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UNM-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-UNM-VITALITY * 10) +
+                                         (WS-UNM-COHERENCE * 10) +
+                                         (WS-UNM-COMPOSITE * 10) +
+                                         (WS-UNM-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UNM-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UNM-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -923,6 +923,11 @@ test-post-thinking-attention-sink-preservation:
 	./tests/test_post_thinking_attention_sink_preservation
 	@rm -f tests/test_post_thinking_attention_sink_preservation
 
+test-attention-sink-unresolved-memory:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_attention_sink_unresolved_memory.c -o tests/test_attention_sink_unresolved_memory
+	./tests/test_attention_sink_unresolved_memory
+	@rm -f tests/test_attention_sink_unresolved_memory
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
