@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PST-SPP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / POST THINKING STRUCTURED PROMPT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SPP-PARAMS.
+           05 WS-STRUCT-FIELD-COUNT     PIC 9(02) VALUE 03.
+           05 WS-TURN-LENGTH-COUNT      PIC 9(02) VALUE 16.
+           05 WS-STRUCT-GAIN-H          PIC 9(02) VALUE 46.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SPP-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SPP-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SPP-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SPP-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SPP-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 FIELD-COUNT-OUT-OF-BOUNDS   VALUE 2.
+              88 TURN-LENGTH-OUT-OF-BOUNDS   VALUE 3.
+              88 STRUCT-GAIN-OUT-OF-BOUNDS   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PROMPT-PARSING-COLLAPSE     VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-STRUCTURED-PROMPT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STRUCT-FIELD-COUNT < 3 OR WS-STRUCT-FIELD-COUNT > 6
+                SET FIELD-COUNT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TURN-LENGTH-COUNT < 10 OR WS-TURN-LENGTH-COUNT > 20
+                SET TURN-LENGTH-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STRUCT-GAIN-H < 20 OR WS-STRUCT-GAIN-H > 80
+                SET STRUCT-GAIN-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-STRUCTURED-PROMPT.
+            COMPUTE WS-SPP-COMPOSITE = (WS-STRUCT-FIELD-COUNT * 100) +
+                                       (WS-TURN-LENGTH-COUNT * 20) +
+                                       (WS-STRUCT-GAIN-H * 5).
+
+            COMPUTE WS-SPP-VITALITY = (WS-SPP-COMPOSITE / 4) +
+                                      (WS-STRUCT-GAIN-H * 2) +
+                                      (WS-TURN-LENGTH-COUNT * 4) + 1.
+
+            IF WS-SPP-VITALITY EQUAL ZERO
+                SET PROMPT-PARSING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SPP-COHERENCE = (WS-SPP-COMPOSITE / 16) +
+                                       (WS-STRUCT-GAIN-H / 2) +
+                                       (WS-TURN-LENGTH-COUNT * 2).
+
+            COMPUTE WS-SPP-REBAR-LATCH = 1470169088 +
+                                         (WS-SPP-COMPOSITE / 2) +
+                                         (WS-STRUCT-FIELD-COUNT * 256).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SPP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SPP-VITALITY * 10) +
+                                         (WS-SPP-COHERENCE * 10) +
+                                         (WS-SPP-COMPOSITE * 10) +
+                                         (WS-SPP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SPP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SPP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

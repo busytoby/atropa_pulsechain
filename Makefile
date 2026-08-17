@@ -908,6 +908,11 @@ test-post-thinking-quality-control:
 	./tests/test_post_thinking_quality_control
 	@rm -f tests/test_post_thinking_quality_control
 
+test-post-thinking-structured-prompt-parsing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_post_thinking_structured_prompt_parsing.c -o tests/test_post_thinking_structured_prompt_parsing
+	./tests/test_post_thinking_structured_prompt_parsing
+	@rm -f tests/test_post_thinking_structured_prompt_parsing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
