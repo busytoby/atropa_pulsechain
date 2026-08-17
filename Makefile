@@ -1198,6 +1198,11 @@ test-microadaptive-sequence-replanning:
 	./tests/test_microadaptive_sequence_replanning
 	@rm -f tests/test_microadaptive_sequence_replanning
 
+test-user-expertise-adaptation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_user_expertise_adaptation.c -o tests/test_user_expertise_adaptation
+	./tests/test_user_expertise_adaptation
+	@rm -f tests/test_user_expertise_adaptation
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

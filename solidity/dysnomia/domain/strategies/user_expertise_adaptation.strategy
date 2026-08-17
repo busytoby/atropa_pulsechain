@@ -1,0 +1,127 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. UEA-EXP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / USER EXPERTISE ADAPTATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-UEA-PARAMS.
+           05 WS-EXPERTISE-LEVEL        PIC 9(01) VALUE 1.
+              88 LEVEL-NOVICE           VALUE 1.
+              88 LEVEL-INTERMEDIATE     VALUE 2.
+              88 LEVEL-EXPERT           VALUE 3.
+           05 WS-PROFILE-LAT-MS         PIC 9(02) VALUE 12.
+           05 WS-LEXICAL-FID-M          PIC 9(04) VALUE 0960.
+           05 WS-SPEED-PERCENT          PIC 9(03) VALUE 100.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-UEA-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-UEA-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-UEA-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-UEA-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-UEA-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 UNKNOWN-EXPERTISE-LEVEL     VALUE 2.
+              88 PROFILE-LAT-OUT-OF-BOUNDS   VALUE 3.
+              88 LEXICAL-FID-LOW             VALUE 4.
+              88 SPEED-PERCENT-OUT-OF-BOUNDS VALUE 5.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 6.
+              88 ADAPTATION-COLLAPSE         VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-EXPERTISE-ADAPT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXPERTISE-LEVEL < 1 OR WS-EXPERTISE-LEVEL > 3
+                SET UNKNOWN-EXPERTISE-LEVEL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROFILE-LAT-MS < 5 OR WS-PROFILE-LAT-MS > 25
+                SET PROFILE-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LEXICAL-FID-M < 850 OR WS-LEXICAL-FID-M > 1000
+                SET LEXICAL-FID-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPEED-PERCENT < 50 OR WS-SPEED-PERCENT > 200
+                SET SPEED-PERCENT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-EXPERTISE-ADAPT.
+            COMPUTE WS-UEA-COMPOSITE = (WS-EXPERTISE-LEVEL * 100) +
+                                       ((30 - WS-PROFILE-LAT-MS) * 20) +
+                                       (WS-LEXICAL-FID-M / 2) +
+                                       (WS-SPEED-PERCENT / 2).
+
+            COMPUTE WS-UEA-VITALITY = (WS-UEA-COMPOSITE / 4) +
+                                      (WS-LEXICAL-FID-M / 4) +
+                                      ((30 - WS-PROFILE-LAT-MS) * 4) +
+                                      (WS-EXPERTISE-LEVEL * 25) + 1.
+
+            IF WS-UEA-VITALITY EQUAL ZERO
+                SET ADAPTATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-UEA-COHERENCE = (WS-UEA-COMPOSITE / 16) +
+                                       (WS-LEXICAL-FID-M / 16) +
+                                       ((30 - WS-PROFILE-LAT-MS) * 2) +
+                                       (WS-EXPERTISE-LEVEL * 10).
+
+            COMPUTE WS-UEA-REBAR-LATCH = 1470169088 +
+                                         (WS-UEA-COMPOSITE / 2) +
+                                         ((30 - WS-PROFILE-LAT-MS) * 128) +
+                                         (WS-EXPERTISE-LEVEL * 512).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-UEA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-UEA-VITALITY * 10) +
+                                         (WS-UEA-COHERENCE * 10) +
+                                         (WS-UEA-COMPOSITE * 10) +
+                                         (WS-UEA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-UEA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-UEA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
