@@ -403,6 +403,11 @@ test-nubia-semantic-similarity:
 	./tests/test_nubia_semantic_similarity
 	@rm -f tests/test_nubia_semantic_similarity
 
+test-prefill-decode-asymmetric-complexity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_prefill_decode_asymmetric_complexity.c -o tests/test_prefill_decode_asymmetric_complexity
+	./tests/test_prefill_decode_asymmetric_complexity
+	@rm -f tests/test_prefill_decode_asymmetric_complexity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
