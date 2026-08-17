@@ -593,6 +593,11 @@ test-realtime-av-motion-sync:
 	./tests/test_realtime_av_motion_sync
 	@rm -f tests/test_realtime_av_motion_sync
 
+test-multimodal-memory-footprint:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multimodal_memory_footprint.c -o tests/test_multimodal_memory_footprint
+	./tests/test_multimodal_memory_footprint
+	@rm -f tests/test_multimodal_memory_footprint
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

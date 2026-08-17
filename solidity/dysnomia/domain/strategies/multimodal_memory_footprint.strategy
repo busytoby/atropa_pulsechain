@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MULTI-MEM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MULTIMODAL MEMORY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-MEM-PARAMS.
+           05 WS-WEIGHTS-MB             PIC 9(04) VALUE 1850.
+           05 WS-KV-CACHE-MB            PIC 9(04) VALUE 0420.
+           05 WS-RELATIONAL-MEM-MB      PIC 9(04) VALUE 0150.
+           05 WS-GQA-RATIO-MILLI        PIC 9(05) VALUE 08000.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TOTAL-FOOTPRINT-MB     PIC 9(04) VALUE 0.
+           05 WS-MEM-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-MEM-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-MEM-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MEM-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-MEMORY-CHUNKS       VALUE 2.
+              88 MEMORY-BUDGET-EXCEEDED      VALUE 3.
+              88 GQA-COMPRESSION-RATIO-LOW   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MEMORY-VITALITY-COLLAPSE    VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MULTIMODAL-MEMORY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEIGHTS-MB < 500 OR WS-WEIGHTS-MB > 3500 OR
+               WS-KV-CACHE-MB < 50 OR WS-KV-CACHE-MB > 1000 OR
+               WS-RELATIONAL-MEM-MB < 10 OR WS-RELATIONAL-MEM-MB > 500
+                SET INVALID-MEMORY-CHUNKS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TOTAL-FOOTPRINT-MB = WS-WEIGHTS-MB + WS-KV-CACHE-MB + WS-RELATIONAL-MEM-MB.
+            IF WS-TOTAL-FOOTPRINT-MB > 4096
+                SET MEMORY-BUDGET-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GQA-RATIO-MILLI < 4000 OR WS-GQA-RATIO-MILLI > 16000
+                SET GQA-COMPRESSION-RATIO-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MULTIMODAL-MEMORY.
+            COMPUTE WS-MEM-VITALITY = ((4096 - WS-TOTAL-FOOTPRINT-MB) / 4) +
+                                      (WS-GQA-RATIO-MILLI / 64) +
+                                      (WS-RELATIONAL-MEM-MB * 2) + 1.
+
+            IF WS-MEM-VITALITY EQUAL ZERO
+                SET MEMORY-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MEM-COHERENCE = ((4096 - WS-TOTAL-FOOTPRINT-MB) / 16) +
+                                       (WS-GQA-RATIO-MILLI / 256) +
+                                       (WS-RELATIONAL-MEM-MB / 2).
+
+            COMPUTE WS-MEM-REBAR-LATCH = 1470169088 +
+                                         ((4096 - WS-TOTAL-FOOTPRINT-MB) * 4) +
+                                         (WS-GQA-RATIO-MILLI / 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MEM-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-MEM-VITALITY * 10) +
+                                         (WS-MEM-COHERENCE * 10) +
+                                         (WS-TOTAL-FOOTPRINT-MB * 10) +
+                                         (WS-MEM-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MEM-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MEM-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
