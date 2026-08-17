@@ -388,6 +388,11 @@ test-e2e-voice-latency-sync:
 	./tests/test_e2e_voice_latency_sync
 	@rm -f tests/test_e2e_voice_latency_sync
 
+test-memory-compression-footprint:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_memory_compression_footprint.c -o tests/test_memory_compression_footprint
+	./tests/test_memory_compression_footprint
+	@rm -f tests/test_memory_compression_footprint
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
