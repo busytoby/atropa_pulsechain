@@ -1048,6 +1048,11 @@ test-tactile-pressure-turn-taking:
 	./tests/test_tactile_pressure_turn_taking
 	@rm -f tests/test_tactile_pressure_turn_taking
 
+test-crowd-density-acoustic-shunting:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_crowd_density_acoustic_shunting.c -o tests/test_crowd_density_acoustic_shunting
+	./tests/test_crowd_density_acoustic_shunting
+	@rm -f tests/test_crowd_density_acoustic_shunting
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

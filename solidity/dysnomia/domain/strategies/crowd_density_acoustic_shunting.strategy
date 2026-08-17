@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CAS-SHT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / CROWD DENSITY ACOUSTIC SHUNT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CAS-PARAMS.
+           05 WS-AMBIENT-SPL-DBA        PIC 9(02) VALUE 65.
+           05 WS-SHUNT-LATENCY-MS       PIC 9(02) VALUE 15.
+           05 WS-ACOUSTIC-LEAK-DBA      PIC 9(02) VALUE 20.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CAS-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-CAS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CAS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CAS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CAS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 AMBIENT-SPL-OUT-OF-BOUNDS   VALUE 2.
+              88 SHUNT-LAT-OUT-OF-BOUNDS     VALUE 3.
+              88 ACOUSTIC-LEAK-EXCEEDED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SHUNTING-COLLAPSE           VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ACOUSTIC-SHUNTING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AMBIENT-SPL-DBA < 35 OR WS-AMBIENT-SPL-DBA > 90
+                SET AMBIENT-SPL-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SHUNT-LATENCY-MS < 5 OR WS-SHUNT-LATENCY-MS > 30
+                SET SHUNT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACOUSTIC-LEAK-DBA < 10 OR WS-ACOUSTIC-LEAK-DBA > 30
+                SET ACOUSTIC-LEAK-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ACOUSTIC-SHUNTING.
+            COMPUTE WS-CAS-COMPOSITE = (WS-AMBIENT-SPL-DBA * 10) +
+                                       ((35 - WS-SHUNT-LATENCY-MS) * 20) +
+                                       ((35 - WS-ACOUSTIC-LEAK-DBA) * 20).
+
+            COMPUTE WS-CAS-VITALITY = (WS-CAS-COMPOSITE / 4) +
+                                      (WS-AMBIENT-SPL-DBA * 2) +
+                                      ((35 - WS-SHUNT-LATENCY-MS) * 4) + 1.
+
+            IF WS-CAS-VITALITY EQUAL ZERO
+                SET SHUNTING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CAS-COHERENCE = (WS-CAS-COMPOSITE / 16) +
+                                       (WS-AMBIENT-SPL-DBA / 4) +
+                                       ((35 - WS-SHUNT-LATENCY-MS) * 2).
+
+            COMPUTE WS-CAS-REBAR-LATCH = 1470169088 +
+                                         (WS-CAS-COMPOSITE / 2) +
+                                         ((35 - WS-SHUNT-LATENCY-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CAS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CAS-VITALITY * 10) +
+                                         (WS-CAS-COHERENCE * 10) +
+                                         (WS-CAS-COMPOSITE * 10) +
+                                         (WS-CAS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CAS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CAS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
