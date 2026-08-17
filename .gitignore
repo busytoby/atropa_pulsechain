@@ -781,3 +781,9 @@ hathitrust_cache_oai_*.xml
 /tests/tsfi2_code_listings.tex
 /tests/tsfi2_code_review_ast.json
 /tests/tsfi2_deepseek_stochastic_cflow_report.dat.bin
+
+# Media Artifacts
+*.mp4
+*.ppm
+*.wav
+

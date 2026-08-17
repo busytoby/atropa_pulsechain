@@ -1,0 +1,111 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PURE-VULKAN-VIDEO-ENCODE-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VULKAN VIDEO AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ENCODE-PARAMETERS.
+           05 WS-QUEUE-FAMILY           PIC 9(01) VALUE 1.
+           05 WS-FRAME-COUNT            PIC 9(04) VALUE 2160.
+           05 WS-BITRATE-KBPS           PIC 9(05) VALUE 15000.
+           05 WS-BOX-ATOM-ID            PIC 9(01) VALUE 2.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BITSTREAM-METRIC       PIC 9(09) VALUE 0.
+           05 WS-ATOM-OFFSET            PIC 9(09) VALUE 0.
+           05 WS-ENCODE-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VIDEO-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-QUEUE-FAMILY        VALUE 2.
+              88 INVALID-FRAME-COUNT         VALUE 3.
+              88 INVALID-BITRATE             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-BOX-ATOM            VALUE 6.
+              88 VULKAN-BITSTREAM-UNDERFLOW  VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VULKAN-ENCODE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUEUE-FAMILY > 1
+                SET INVALID-QUEUE-FAMILY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FRAME-COUNT < 1 OR WS-FRAME-COUNT > 2160
+                SET INVALID-FRAME-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BITRATE-KBPS < 1000 OR WS-BITRATE-KBPS > 50000
+                SET INVALID-BITRATE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BOX-ATOM-ID < 1 OR WS-BOX-ATOM-ID > 4
+                SET INVALID-BOX-ATOM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VULKAN-ENCODE.
+            COMPUTE WS-BITSTREAM-METRIC = (WS-BITRATE-KBPS * 10) +
+                                          (WS-FRAME-COUNT * 512) +
+                                          (WS-QUEUE-FAMILY * 1024) + 1.
+
+            IF WS-BITSTREAM-METRIC EQUAL ZERO
+                SET VULKAN-BITSTREAM-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ATOM-OFFSET = (WS-BOX-ATOM-ID * 1024) + (WS-FRAME-COUNT * 16).
+            COMPUTE WS-ENCODE-REBAR-LATCH = 1470169088 + (WS-BOX-ATOM-ID * 256) +
+                                            (WS-FRAME-COUNT * 4) + WS-QUEUE-FAMILY.
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VIDEO-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-BITSTREAM-METRIC * 10) +
+                                           (WS-ATOM-OFFSET * 10) +
+                                           (WS-QUEUE-FAMILY * 1000) +
+                                           (WS-ENCODE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VIDEO-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VIDEO-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

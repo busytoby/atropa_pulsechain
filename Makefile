@@ -98,6 +98,11 @@ test-manifold-reaction-diffusion:
 	./tests/test_manifold_reaction_diffusion
 	@rm -f tests/test_manifold_reaction_diffusion
 
+test-pure-vulkan-video-encode:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_pure_vulkan_video_encode.c -o tests/test_pure_vulkan_video_encode
+	./tests/test_pure_vulkan_video_encode
+	@rm -f tests/test_pure_vulkan_video_encode
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
