@@ -768,6 +768,11 @@ test-bone-air-dual-conduction:
 	./tests/test_bone_air_dual_conduction
 	@rm -f tests/test_bone_air_dual_conduction
 
+test-hybrid-llm-zorse-dual-substrate:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_hybrid_llm_zorse_dual_substrate.c -o tests/test_hybrid_llm_zorse_dual_substrate
+	./tests/test_hybrid_llm_zorse_dual_substrate
+	@rm -f tests/test_hybrid_llm_zorse_dual_substrate
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
