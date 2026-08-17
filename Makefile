@@ -1760,6 +1760,18 @@ test-cpm-tomie-quadtree-lod-suite:
 	./tsfi2-deepseek/src/cpm_exec_quadtree_lod /tmp/quadtree_lod.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_quadtree_lod tsfi2-deepseek/src/cpm_exec_quadtree_lod /tmp/quadtree_lod.bin
 
+test-cpm-tomie-thin-swiglu-matrix-lut-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover.c -o tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover
+	./tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover
+	@rm -f tests/test_cpm_tomie_thin_swiglu_matrix_lut_prover
+
+test-cpm-tomie-thin-swiglu-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_thin_swiglu.c -o tsfi2-deepseek/src/cpm_compiler_thin_swiglu
+	./tsfi2-deepseek/src/cpm_compiler_thin_swiglu /tmp/thin_swiglu.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_thin_swiglu.c -o tsfi2-deepseek/src/cpm_exec_thin_swiglu
+	./tsfi2-deepseek/src/cpm_exec_thin_swiglu /tmp/thin_swiglu.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_thin_swiglu tsfi2-deepseek/src/cpm_exec_thin_swiglu /tmp/thin_swiglu.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
