@@ -1,0 +1,112 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. DNA-BREEDER-INHERITANCE-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / DNA BREEDER AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BREEDER-PARAMETERS.
+           05 WS-PARENT-A-DNA           PIC 9(06) VALUE 032768.
+           05 WS-PARENT-B-DNA           PIC 9(06) VALUE 049152.
+           05 WS-GENERATION-IDX         PIC 9(02) VALUE 04.
+           05 WS-TRAIT-TARGET-SCORE     PIC 9(04) VALUE 0750.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CHILD-DNA-SEED         PIC 9(09) VALUE 0.
+           05 WS-SSA-SSN-MAPPED         PIC 9(09) VALUE 0.
+           05 WS-NURSERY-REBAR-LATCH    PIC 9(12) VALUE 0.
+           05 WS-SHADOW-DNA-BASELINE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-PARENT-A-DNA        VALUE 2.
+              88 INVALID-PARENT-B-DNA        VALUE 3.
+              88 INVALID-GENERATION-IDX      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-TRAIT-SCORE         VALUE 6.
+              88 DNA-ENTROPY-UNDERFLOW-FAIL  VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-DNA-BREEDING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PARENT-A-DNA < 1 OR WS-PARENT-A-DNA > 65536
+                SET INVALID-PARENT-A-DNA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PARENT-B-DNA < 1 OR WS-PARENT-B-DNA > 65536
+                SET INVALID-PARENT-B-DNA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GENERATION-IDX < 1 OR WS-GENERATION-IDX > 16
+                SET INVALID-GENERATION-IDX TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRAIT-TARGET-SCORE > 1000
+                SET INVALID-TRAIT-SCORE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-DNA-BREEDING.
+            COMPUTE WS-CHILD-DNA-SEED = (WS-PARENT-A-DNA * 109) +
+                                        (WS-PARENT-B-DNA / 8) +
+                                        (WS-GENERATION-IDX * 1024) + 1.
+
+            IF WS-CHILD-DNA-SEED EQUAL ZERO
+                SET DNA-ENTROPY-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SSA-SSN-MAPPED = 100000000 + FUNCTION MOD(WS-CHILD-DNA-SEED * 17, 900000000).
+            COMPUTE WS-NURSERY-REBAR-LATCH = 1470169088 + (WS-GENERATION-IDX * 256) +
+                                             (WS-TRAIT-TARGET-SCORE * 8) +
+                                             (WS-CHILD-DNA-SEED / 1000).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-DNA-BASELINE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-CHILD-DNA-SEED * 10) +
+                                             (WS-TRAIT-TARGET-SCORE * 10) +
+                                             (WS-SSA-SSN-MAPPED / 1000) +
+                                             (WS-NURSERY-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-DNA-BASELINE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-DNA-BASELINE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

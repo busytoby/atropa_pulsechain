@@ -78,6 +78,11 @@ test-teddy-ballet-choreography:
 	./tests/test_teddy_ballet_choreography
 	@rm -f tests/test_teddy_ballet_choreography
 
+test-dna-breeder-inheritance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_dna_breeder_inheritance.c -o tests/test_dna_breeder_inheritance
+	./tests/test_dna_breeder_inheritance
+	@rm -f tests/test_dna_breeder_inheritance
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
