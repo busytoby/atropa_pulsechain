@@ -943,6 +943,11 @@ test-hbridge-lighthouse-wcag:
 	./tests/test_hbridge_lighthouse_wcag
 	@rm -f tests/test_hbridge_lighthouse_wcag
 
+test-governable-situational-wcag-accessibility:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_governable_situational_wcag_accessibility.c -o tests/test_governable_situational_wcag_accessibility
+	./tests/test_governable_situational_wcag_accessibility
+	@rm -f tests/test_governable_situational_wcag_accessibility
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

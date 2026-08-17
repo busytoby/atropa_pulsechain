@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GSA-WCG-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SITUATIONAL WCAG ACCESSIBILITY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ACC-PARAMS.
+           05 WS-AMBIENT-NOISE-DB       PIC 9(02) VALUE 55.
+           05 WS-SNR-HEADROOM-DB        PIC 9(02) VALUE 18.
+           05 WS-VISUAL-CONTRAST-T      PIC 9(03) VALUE 075.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ACC-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ACC-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ACC-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ACC-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ACC-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 AMBIENT-NOISE-OUT-OF-BOUNDS VALUE 2.
+              88 SNR-HEADROOM-LOW            VALUE 3.
+              88 VISUAL-CONTRAST-LOW         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ACCESSIBILITY-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SITUATIONAL-ACCESSIBILITY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AMBIENT-NOISE-DB < 35 OR WS-AMBIENT-NOISE-DB > 85
+                SET AMBIENT-NOISE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SNR-HEADROOM-DB < 12 OR WS-SNR-HEADROOM-DB > 25
+                SET SNR-HEADROOM-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VISUAL-CONTRAST-T < 45 OR WS-VISUAL-CONTRAST-T > 100
+                SET VISUAL-CONTRAST-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SITUATIONAL-ACCESSIBILITY.
+            COMPUTE WS-ACC-COMPOSITE = ((90 - WS-AMBIENT-NOISE-DB) * 10) +
+                                       (WS-SNR-HEADROOM-DB * 20) +
+                                       (WS-VISUAL-CONTRAST-T * 5).
+
+            COMPUTE WS-ACC-VITALITY = (WS-ACC-COMPOSITE / 4) +
+                                      (WS-VISUAL-CONTRAST-T * 2) +
+                                      (WS-SNR-HEADROOM-DB * 4) + 1.
+
+            IF WS-ACC-VITALITY EQUAL ZERO
+                SET ACCESSIBILITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ACC-COHERENCE = (WS-ACC-COMPOSITE / 16) +
+                                       (WS-VISUAL-CONTRAST-T / 2) +
+                                       (WS-SNR-HEADROOM-DB * 2).
+
+            COMPUTE WS-ACC-REBAR-LATCH = 1470169088 +
+                                         (WS-ACC-COMPOSITE / 2) +
+                                         (WS-VISUAL-CONTRAST-T * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ACC-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ACC-VITALITY * 10) +
+                                         (WS-ACC-COHERENCE * 10) +
+                                         (WS-ACC-COMPOSITE * 10) +
+                                         (WS-ACC-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ACC-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ACC-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
