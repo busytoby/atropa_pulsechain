@@ -1158,6 +1158,11 @@ test-tactile-breathing-haptics:
 	./tests/test_tactile_breathing_haptics
 	@rm -f tests/test_tactile_breathing_haptics
 
+test-temporal-memory-decay:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_temporal_memory_decay.c -o tests/test_temporal_memory_decay
+	./tests/test_temporal_memory_decay
+	@rm -f tests/test_temporal_memory_decay
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
