@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPA",
+        .opcode_signature = 0x43505041,
+        .title = "CPMTOMIE-SEMANTIC-PROJECTION-ANCHORING-CORPS",
+        .theorem_descriptions = {
+            "Spatial Merkle Coordinate Registration Invariance",
+            "Multi-Tier Semantic Projection Soundness",
+            "Non-Preferential Reference Frame Transformations",
+            "Sub-Millisecond Spatial Projection Latency",
+            "Sovereign Semantic Projection & Spatial Anchoring Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CP4B",
         .opcode_signature = 0x43503442,
         .title = "CPMTOMIE-4BOX-COAXIAL-UTILITY-CORPS",
