@@ -683,6 +683,11 @@ test-motion-granularity-knob-dynamics:
 	./tests/test_motion_granularity_knob_dynamics
 	@rm -f tests/test_motion_granularity_knob_dynamics
 
+test-acoustic-attenuation-channel-budget:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_attenuation_channel_budget.c -o tests/test_acoustic_attenuation_channel_budget
+	./tests/test_acoustic_attenuation_channel_budget
+	@rm -f tests/test_acoustic_attenuation_channel_budget
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
