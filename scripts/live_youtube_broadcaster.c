@@ -1,11 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  * High-Performance Smooth YouTube Live Broadcaster & Dynamic Telemetry Overlay
- * 
- * Pipeline:
- * - FFmpeg loops the pre-rendered high-definition animated ClayScape Bear MP4
- * - Live dynamic telemetry text overlay is updated in real time via text overlay filter
- * - Flawless 109.6 BPM AAC audio and strict Constant Bitrate (CBR) streaming to YouTube RTMP
+ * Streams the solid earthenware clay teddy bear with continuous studio AAC 192k audio.
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -22,16 +18,16 @@ int main(int argc, char **argv) {
     snprintf(rtmp_url, sizeof(rtmp_url), "rtmp://a.rtmp.youtube.com/live2/%s", stream_key);
 
     printf("=============================================================\n");
-    printf("LAUNCHING ULTRA-STABLE HIGH-DEF YOUTUBE LIVE BROADCASTER     \n");
+    printf("LAUNCHING SOLID CLAY TEDDY BEAR LIVE BROADCASTER TO YOUTUBE  \n");
     printf("=============================================================\n");
-    printf("Source Video  : clayscape_bear_demo_90s.mp4 (720p HD @ 30 FPS)\n");
+    printf("Source Video  : clayscape_bear_solid_demo.mp4 (720p 3D SDF Shaded)\n");
     printf("Audio Quality : Studio Stereo AAC 192k @ 44.1 kHz           \n");
     printf("RTMP Endpoint : %s\n", rtmp_url);
     printf("=============================================================\n");
 
     char cmd[2048];
     snprintf(cmd, sizeof(cmd),
-             "ffmpeg -y -re -stream_loop -1 -i clayscape_bear_demo_90s.mp4 "
+             "ffmpeg -y -re -stream_loop -1 -i clayscape_bear_solid_demo.mp4 "
              "-c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k "
              "-pix_fmt yuv420p -g 60 -keyint_min 60 -sc_threshold 0 "
              "-c:a aac -b:a 192k -ar 44100 "
@@ -39,7 +35,7 @@ int main(int argc, char **argv) {
              rtmp_url);
 
     while (1) {
-        printf("   -> Starting FFmpeg live broadcast stream...\n");
+        printf("   -> Starting FFmpeg solid clay live stream broadcast...\n");
         fflush(stdout);
         int ret = system(cmd);
         printf("   -> Stream disconnected (code %d), auto-reconnecting in 2 seconds...\n", ret);
