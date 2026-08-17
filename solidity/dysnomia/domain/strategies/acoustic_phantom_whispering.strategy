@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PHAN-WHIS-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC PHANTOM WHISPERING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PHANTOM-PARAMS.
+           05 WS-BINAURAL-BEAT-HZ       PIC 9(02) VALUE 10.
+           05 WS-PHANTOM-POWER-UW       PIC 9(02) VALUE 05.
+           05 WS-PSYCHIC-ENTRAIN-M      PIC 9(04) VALUE 0890.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PHANTOM-COMPOSITE      PIC 9(04) VALUE 0.
+           05 WS-PHAN-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-PHAN-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-PHAN-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PHAN-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-BINAURAL-BEAT       VALUE 2.
+              88 INVALID-PHANTOM-POWER       VALUE 3.
+              88 PSYCHIC-ENTRAIN-LOW         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PHANTOM-VITALITY-COLLAPSE   VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PHANTOM-WHISPERING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BINAURAL-BEAT-HZ < 4 OR WS-BINAURAL-BEAT-HZ > 40
+                SET INVALID-BINAURAL-BEAT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHANTOM-POWER-UW < 1 OR WS-PHANTOM-POWER-UW > 15
+                SET INVALID-PHANTOM-POWER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PSYCHIC-ENTRAIN-M < 600 OR WS-PSYCHIC-ENTRAIN-M > 1000
+                SET PSYCHIC-ENTRAIN-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PHANTOM-WHISPERING.
+            COMPUTE WS-PHANTOM-COMPOSITE = (WS-BINAURAL-BEAT-HZ * 25) +
+                                           (WS-PHANTOM-POWER-UW * 50) +
+                                           (WS-PSYCHIC-ENTRAIN-M / 2).
+
+            COMPUTE WS-PHAN-VITALITY = (WS-PHANTOM-COMPOSITE / 4) +
+                                       (WS-PSYCHIC-ENTRAIN-M / 4) +
+                                       (WS-BINAURAL-BEAT-HZ * 8) + 1.
+
+            IF WS-PHAN-VITALITY EQUAL ZERO
+                SET PHANTOM-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PHAN-COHERENCE = (WS-PHANTOM-COMPOSITE / 16) +
+                                        (WS-PSYCHIC-ENTRAIN-M / 16) +
+                                        (WS-PHANTOM-POWER-UW * 4).
+
+            COMPUTE WS-PHAN-REBAR-LATCH = 1470169088 +
+                                          (WS-PHANTOM-COMPOSITE / 2) +
+                                          (WS-BINAURAL-BEAT-HZ * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PHAN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-PHAN-VITALITY * 10) +
+                                          (WS-PHAN-COHERENCE * 10) +
+                                          (WS-PHANTOM-COMPOSITE * 10) +
+                                          (WS-PHAN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PHAN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PHAN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

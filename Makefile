@@ -703,6 +703,11 @@ test-nlos-acoustic-multipath-separation:
 	./tests/test_nlos_acoustic_multipath_separation
 	@rm -f tests/test_nlos_acoustic_multipath_separation
 
+test-acoustic-phantom-whispering:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_phantom_whispering.c -o tests/test_acoustic_phantom_whispering
+	./tests/test_acoustic_phantom_whispering
+	@rm -f tests/test_acoustic_phantom_whispering
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
