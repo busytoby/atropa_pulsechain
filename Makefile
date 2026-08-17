@@ -1018,6 +1018,11 @@ test-holonomic-weyl-benchmark:
 	./tests/test_holonomic_weyl_benchmark
 	@rm -f tests/test_holonomic_weyl_benchmark
 
+test-weyl-geometric-domain-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_weyl_geometric_domain_closure.c -o tests/test_weyl_geometric_domain_closure
+	./tests/test_weyl_geometric_domain_closure
+	@rm -f tests/test_weyl_geometric_domain_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
