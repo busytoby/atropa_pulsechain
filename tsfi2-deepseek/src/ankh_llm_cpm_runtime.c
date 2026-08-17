@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTC",
+        .opcode_signature = 0x43505443,
+        .title = "CPMTOMIE-SURFACE-TENSION-CURVATURE-CORPS",
+        .theorem_descriptions = {
+            "Laplace-Young Boundary Pressure Invariance",
+            "Mean Curvature Flow Smoothing",
+            "Minimal Surface Energy Minimization",
+            "Sub-Millisecond Curvature Relaxation Latency",
+            "Sovereign Surface Tension & Curvature Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDG",
         .opcode_signature = 0x43504447,
         .title = "CPMTOMIE-SEMANTIC-DEFORMATION-GRADIENT-CORPS",

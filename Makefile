@@ -1713,6 +1713,12 @@ test-cpm-tomie-exploration-history-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-haptic-viscosity-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-multimodal-ambig-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-deformation-gradient-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-surface-tension-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-surface-tension-curvature-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_surface_tension_curvature_prover.c -o tests/test_cpm_tomie_surface_tension_curvature_prover
+	./tests/test_cpm_tomie_surface_tension_curvature_prover
+	@rm -f tests/test_cpm_tomie_surface_tension_curvature_prover
 
 test-cpm-tomie-semantic-deformation-gradient-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_semantic_deformation_gradient_prover.c -o tests/test_cpm_tomie_semantic_deformation_gradient_prover
