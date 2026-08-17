@@ -408,6 +408,11 @@ test-prefill-decode-asymmetric-complexity:
 	./tests/test_prefill_decode_asymmetric_complexity
 	@rm -f tests/test_prefill_decode_asymmetric_complexity
 
+test-cv-stability-invariance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cv_stability_invariance.c -o tests/test_cv_stability_invariance
+	./tests/test_cv_stability_invariance
+	@rm -f tests/test_cv_stability_invariance
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
