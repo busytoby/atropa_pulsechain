@@ -158,6 +158,11 @@ test-verifiable-human-speech:
 	./tests/test_verifiable_human_speech
 	@rm -f tests/test_verifiable_human_speech
 
+export-multi-agent-usd-stage:
+	gcc -Wall -Wextra -std=c11 -O3 tests/export_multi_agent_usd_stage.c -lm -o tests/export_multi_agent_usd_stage
+	./tests/export_multi_agent_usd_stage
+	@rm -f tests/export_multi_agent_usd_stage
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
