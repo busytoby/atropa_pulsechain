@@ -458,6 +458,11 @@ test-gqa-bandwidth-reduction:
 	./tests/test_gqa_bandwidth_reduction
 	@rm -f tests/test_gqa_bandwidth_reduction
 
+test-swiglu-gated-activation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_swiglu_gated_activation.c -o tests/test_swiglu_gated_activation
+	./tests/test_swiglu_gated_activation
+	@rm -f tests/test_swiglu_gated_activation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
