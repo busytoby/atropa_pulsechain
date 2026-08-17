@@ -903,6 +903,11 @@ test-teddy-bear-x-phantom-oracle:
 	./tests/test_teddy_bear_x_phantom_oracle
 	@rm -f tests/test_teddy_bear_x_phantom_oracle
 
+test-post-thinking-quality-control:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_post_thinking_quality_control.c -o tests/test_post_thinking_quality_control
+	./tests/test_post_thinking_quality_control
+	@rm -f tests/test_post_thinking_quality_control
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
