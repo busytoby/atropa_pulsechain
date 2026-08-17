@@ -173,6 +173,11 @@ test-voice-character-definition:
 	./tests/test_voice_character_definition
 	@rm -f tests/test_voice_character_definition
 
+synthesize-human-speech-words:
+	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
+	./tests/synthesize_human_speech_words
+	@rm -f tests/synthesize_human_speech_words
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
