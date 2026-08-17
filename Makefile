@@ -513,6 +513,11 @@ test-participatory-vote-projection:
 	./tests/test_participatory_vote_projection
 	@rm -f tests/test_participatory_vote_projection
 
+test-long-term-habituation-dynamics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_long_term_habituation_dynamics.c -o tests/test_long_term_habituation_dynamics
+	./tests/test_long_term_habituation_dynamics
+	@rm -f tests/test_long_term_habituation_dynamics
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

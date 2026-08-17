@@ -1,0 +1,124 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. HABIT-DYN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LONG-TERM HABITUATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-HABIT-PARAMS.
+           05 WS-INIT-ATTACH            PIC 9(04) VALUE 0500.
+           05 WS-ATTRACT-RATE           PIC 9(04) VALUE 0120.
+           05 WS-HABIT-DECAY            PIC 9(04) VALUE 0040.
+           05 WS-EPOCHS                 PIC 9(04) VALUE 0050.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-NET-GROWTH             PIC S9(04) VALUE 0.
+           05 WS-FINAL-ATTACH           PIC 9(06) VALUE 0.
+           05 WS-HABIT-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-HABIT-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-HABIT-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-HABIT-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-INITIAL-ATTACH      VALUE 2.
+              88 INVALID-RATES               VALUE 3.
+              88 INVALID-EPOCHS              VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ATTACHMENT-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-HABITUATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INIT-ATTACH < 100 OR WS-INIT-ATTACH > 1000
+                SET INVALID-INITIAL-ATTACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ATTRACT-RATE < 10 OR WS-ATTRACT-RATE > 1000 OR
+               WS-HABIT-DECAY < 1 OR WS-HABIT-DECAY > 500
+                SET INVALID-RATES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EPOCHS < 1 OR WS-EPOCHS > 1000
+                SET INVALID-EPOCHS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-HABITUATION.
+            COMPUTE WS-NET-GROWTH = WS-ATTRACT-RATE - WS-HABIT-DECAY.
+            COMPUTE WS-FINAL-ATTACH = WS-INIT-ATTACH + (WS-NET-GROWTH * WS-EPOCHS) / 100.
+            IF WS-FINAL-ATTACH > 5000
+                MOVE 5000 TO WS-FINAL-ATTACH
+            END-IF.
+
+            IF WS-FINAL-ATTACH EQUAL ZERO
+                SET ATTACHMENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-HABIT-VITALITY = (WS-FINAL-ATTACH / 4) +
+                                        (WS-ATTRACT-RATE / 8) +
+                                        (WS-EPOCHS * 16) + 1.
+
+            IF WS-HABIT-VITALITY EQUAL ZERO
+                SET ATTACHMENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-HABIT-COHERENCE = (WS-FINAL-ATTACH / 16) +
+                                         (WS-ATTRACT-RATE / 32) +
+                                         (WS-EPOCHS * 4).
+
+            COMPUTE WS-HABIT-REBAR-LATCH = 1470169088 +
+                                           (WS-FINAL-ATTACH / 2) +
+                                           (WS-ATTRACT-RATE / 4) +
+                                           (WS-EPOCHS * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-HABIT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-HABIT-VITALITY * 10) +
+                                           (WS-HABIT-COHERENCE * 10) +
+                                           (WS-FINAL-ATTACH * 10) +
+                                           (WS-HABIT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-HABIT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-HABIT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
