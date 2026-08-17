@@ -423,6 +423,11 @@ test-thermal-energy-envelope:
 	./tests/test_thermal_energy_envelope
 	@rm -f tests/test_thermal_energy_envelope
 
+test-context-cache-reuse:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_context_cache_reuse.c -o tests/test_context_cache_reuse
+	./tests/test_context_cache_reuse
+	@rm -f tests/test_context_cache_reuse
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

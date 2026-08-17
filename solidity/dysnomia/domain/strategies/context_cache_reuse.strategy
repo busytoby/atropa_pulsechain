@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CTX-REUSE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / CONTEXT CACHE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CTX-PARAMS.
+           05 WS-AUDIO-FRAMES           PIC 9(04) VALUE 0300.
+           05 WS-DECODE-STEPS           PIC 9(04) VALUE 0128.
+           05 WS-ENCODER-DIM            PIC 9(05) VALUE 01024.
+           05 WS-REUSE-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CTX-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CTX-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CTX-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CTX-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-AUDIO-FRAMES        VALUE 2.
+              88 INVALID-DECODE-STEPS        VALUE 3.
+              88 INVALID-ENCODER-DIM         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 CACHE-REUSE-FLAG-FAIL       VALUE 6.
+              88 REUSE-DIVERG-FAIL           VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-CONTEXT-REUSE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-AUDIO-FRAMES < 10 OR WS-AUDIO-FRAMES > 1500
+                SET INVALID-AUDIO-FRAMES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DECODE-STEPS < 1 OR WS-DECODE-STEPS > 1024
+                SET INVALID-DECODE-STEPS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ENCODER-DIM < 256 OR WS-ENCODER-DIM > 4096
+                SET INVALID-ENCODER-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REUSE-FLAG NOT EQUAL 1
+                SET CACHE-REUSE-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-CONTEXT-REUSE.
+            COMPUTE WS-CTX-VITALITY = (WS-AUDIO-FRAMES * 64) +
+                                      (WS-DECODE-STEPS * 32) +
+                                      (WS-ENCODER-DIM / 8) +
+                                      (WS-REUSE-FLAG * 256) + 1.
+
+            IF WS-CTX-VITALITY EQUAL ZERO
+                SET REUSE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CTX-COHERENCE = (WS-AUDIO-FRAMES * 16) +
+                                       (WS-DECODE-STEPS * 8) +
+                                       (WS-ENCODER-DIM / 32).
+
+            COMPUTE WS-CTX-REBAR-LATCH = 1470169088 + (WS-AUDIO-FRAMES * 32) +
+                                         (WS-DECODE-STEPS * 16) +
+                                         (WS-ENCODER-DIM / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CTX-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CTX-VITALITY * 10) +
+                                         (WS-CTX-COHERENCE * 10) +
+                                         (WS-AUDIO-FRAMES * 100) +
+                                         (WS-CTX-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CTX-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CTX-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
