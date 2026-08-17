@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. FLOW-MATCHING-SYLLABLE-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / FLOW MATCHING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-FLOW-PARAMS.
+           05 WS-SOURCE-SYLLABLES       PIC 9(02) VALUE 09.
+           05 WS-SYLLABLE-DELTA         PIC S9(02) VALUE +2.
+           05 WS-FLOW-STEPS             PIC 9(03) VALUE 050.
+           05 WS-RECTIFIED-VEL-Q16      PIC 9(06) VALUE 032768.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-FLOW-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-SYLLABLE-COHERENCE     PIC 9(09) VALUE 0.
+           05 WS-FLOW-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-FLOW-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SOURCE-SYLLABLES    VALUE 2.
+              88 SYLLABLE-BOUND-VIOLATION    VALUE 3.
+              88 INVALID-FLOW-STEPS          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-RECTIFIED-VEL       VALUE 6.
+              88 FLOW-DIVERG-FAIL            VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-FLOW-MATCHING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SOURCE-SYLLABLES < 1 OR WS-SOURCE-SYLLABLES > 64
+                SET INVALID-SOURCE-SYLLABLES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SYLLABLE-DELTA < -1 OR WS-SYLLABLE-DELTA > 3
+                SET SYLLABLE-BOUND-VIOLATION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FLOW-STEPS < 10 OR WS-FLOW-STEPS > 100
+                SET INVALID-FLOW-STEPS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RECTIFIED-VEL-Q16 < 1000 OR WS-RECTIFIED-VEL-Q16 > 65536
+                SET INVALID-RECTIFIED-VEL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-FLOW-MATCHING.
+            COMPUTE WS-FLOW-VITALITY = (WS-SOURCE-SYLLABLES * 512) +
+                                       ((WS-SYLLABLE-DELTA + 2) * 256) +
+                                       (WS-FLOW-STEPS * 16) + 1.
+
+            IF WS-FLOW-VITALITY EQUAL ZERO
+                SET FLOW-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SYLLABLE-COHERENCE = ((WS-RECTIFIED-VEL-Q16 * 875) / 10000) +
+                                            ((WS-SYLLABLE-DELTA + 2) * 64).
+
+            COMPUTE WS-FLOW-REBAR-LATCH = 1470169088 + (WS-SOURCE-SYLLABLES * 256) +
+                                          ((WS-SYLLABLE-DELTA + 2) * 64) +
+                                          (WS-FLOW-STEPS * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-FLOW-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-FLOW-VITALITY * 10) +
+                                          (WS-SYLLABLE-COHERENCE * 10) +
+                                          (WS-SOURCE-SYLLABLES * 1000) +
+                                          (WS-FLOW-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-FLOW-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-FLOW-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

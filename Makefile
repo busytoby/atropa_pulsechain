@@ -193,6 +193,11 @@ test-latent-masking-viseme-diversity:
 	./tests/test_latent_masking_viseme_diversity
 	@rm -f tests/test_latent_masking_viseme_diversity
 
+test-flow-matching-syllable-bounds:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_flow_matching_syllable_bounds.c -o tests/test_flow_matching_syllable_bounds
+	./tests/test_flow_matching_syllable_bounds
+	@rm -f tests/test_flow_matching_syllable_bounds
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
