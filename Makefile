@@ -1676,6 +1676,18 @@ test-cpm-tomie-clay-physicality-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_physicality /tmp/clay_physicality.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_physicality tsfi2-deepseek/src/cpm_exec_clay_physicality /tmp/clay_physicality.bin
 
+test-cpm-tomie-4box-coaxial-inference-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_4box_coaxial_inference_prover.c -o tests/test_cpm_tomie_4box_coaxial_inference_prover
+	./tests/test_cpm_tomie_4box_coaxial_inference_prover
+	@rm -f tests/test_cpm_tomie_4box_coaxial_inference_prover
+
+test-cpm-tomie-4box-coaxial-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_4box_coaxial.c -o tsfi2-deepseek/src/cpm_compiler_4box_coaxial
+	./tsfi2-deepseek/src/cpm_compiler_4box_coaxial /tmp/4box_coaxial.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_4box_coaxial.c -o tsfi2-deepseek/src/cpm_exec_4box_coaxial
+	./tsfi2-deepseek/src/cpm_exec_4box_coaxial /tmp/4box_coaxial.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_4box_coaxial tsfi2-deepseek/src/cpm_exec_4box_coaxial /tmp/4box_coaxial.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
