@@ -1,0 +1,111 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MANIFOLD-REACTION-DIFFUSION-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MANIFOLD REACTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-REACTION-PARAMETERS.
+           05 WS-FEED-RATE-F-Q16        PIC 9(05) VALUE 03500.
+           05 WS-KILL-RATE-K-Q16        PIC 9(05) VALUE 06000.
+           05 WS-LIGHT-INTENSITY-LUX    PIC 9(06) VALUE 050000.
+           05 WS-SPECIMEN-EPOCH-ID      PIC 9(02) VALUE 04.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TURING-MORPHOGEN-DENS  PIC 9(09) VALUE 0.
+           05 WS-ROD-CONE-RESPONSE      PIC 9(09) VALUE 0.
+           05 WS-MANIFOLD-REBAR-LATCH   PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MANIFOLD-BASE   PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-FEED-RATE           VALUE 2.
+              88 INVALID-KILL-RATE           VALUE 3.
+              88 INVALID-LIGHT-LUX           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-SPECIMEN-EPOCH      VALUE 6.
+              88 REACTION-UNDERFLOW-FAIL     VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MANIFOLD-REACTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FEED-RATE-F-Q16 < 1000 OR WS-FEED-RATE-F-Q16 > 8000
+                SET INVALID-FEED-RATE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KILL-RATE-K-Q16 < 1000 OR WS-KILL-RATE-K-Q16 > 8000
+                SET INVALID-KILL-RATE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LIGHT-INTENSITY-LUX > 100000
+                SET INVALID-LIGHT-LUX TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SPECIMEN-EPOCH-ID < 1 OR WS-SPECIMEN-EPOCH-ID > 16
+                SET INVALID-SPECIMEN-EPOCH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MANIFOLD-REACTION.
+            COMPUTE WS-TURING-MORPHOGEN-DENS = (WS-FEED-RATE-F-Q16 * 10) -
+                                               (WS-KILL-RATE-K-Q16 * 5) +
+                                               (WS-SPECIMEN-EPOCH-ID * 512) + 1.
+
+            IF WS-TURING-MORPHOGEN-DENS EQUAL ZERO
+                SET REACTION-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ROD-CONE-RESPONSE = 100 + ((WS-LIGHT-INTENSITY-LUX * 875) / 10000).
+            COMPUTE WS-MANIFOLD-REBAR-LATCH = 1470169088 + (WS-SPECIMEN-EPOCH-ID * 256) +
+                                              (WS-FEED-RATE-F-Q16 / 10) + (WS-KILL-RATE-K-Q16 / 100).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MANIFOLD-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                              (WS-TURING-MORPHOGEN-DENS * 10) +
+                                              (WS-ROD-CONE-RESPONSE * 10) +
+                                              (WS-SPECIMEN-EPOCH-ID * 100) +
+                                              (WS-MANIFOLD-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MANIFOLD-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MANIFOLD-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

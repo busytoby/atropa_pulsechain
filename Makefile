@@ -93,6 +93,11 @@ test-sally-larsen-renderman-super8:
 	./tests/test_sally_larsen_renderman_super8
 	@rm -f tests/test_sally_larsen_renderman_super8
 
+test-manifold-reaction-diffusion:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_manifold_reaction_diffusion.c -o tests/test_manifold_reaction_diffusion
+	./tests/test_manifold_reaction_diffusion
+	@rm -f tests/test_manifold_reaction_diffusion
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
