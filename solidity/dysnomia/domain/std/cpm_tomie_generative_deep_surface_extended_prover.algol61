@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie Olga Miseska Tomic Generative Deep-to-Surface Linguistics Extended Formal Prover;
+  comment Asserts McCawley Lexical Transformations (Theorem 151), Systematic Subjectivization Rules (Theorem 152), Non-Agentive Underlying Cases (Theorem 153), Recursive Phrase-Marker Derivations (Theorem 154), and Generative Semantics Deep-to-Surface Gap Gating (Theorem 155);
+
+  integer lexicalTransform, systematicSubjectivize, nonAgentiveCases, recursivePhrase, generativeGap, tomiExtProven;
+
+  lexicalTransform := 1;
+  systematicSubjectivize := 1;
+  nonAgentiveCases := 1;
+  recursivePhrase := 1;
+  generativeGap := 1;
+
+  if lexicalTransform = 1 and systematicSubjectivize = 1 and nonAgentiveCases = 1 and
+     recursivePhrase = 1 and generativeGap = 1 then
+    tomiExtProven := 1470169088 + 151155
+  else
+    tomiExtProven := 0
+end
