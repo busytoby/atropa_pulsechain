@@ -1328,6 +1328,11 @@ test-bear-clan-mission-assignment:
 	./tests/test_bear_clan_mission_assignment
 	@rm -f tests/test_bear_clan_mission_assignment
 
+test-exploded-view-trajectory:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_exploded_view_trajectory.c -o tests/test_exploded_view_trajectory
+	./tests/test_exploded_view_trajectory
+	@rm -f tests/test_exploded_view_trajectory
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
