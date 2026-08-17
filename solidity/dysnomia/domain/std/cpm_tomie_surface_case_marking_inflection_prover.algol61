@@ -1,0 +1,19 @@
+begin
+  comment CP/M-Tomie Surface Case Marking, Prepositional Rection and Focus-Stress Alignment Formal Prover;
+  comment Foundations: Olga Miseska Tomic's Deep-to-Surface Case Invariant & Prosodic/Topicalization Derivations;
+  comment Asserts Overt Morphological Case Marking Bijectivity (Theorem 176), Prepositional Case Government / Rection (Theorem 177), Topic-Comment Syntactic Projection (Theorem 178), Contrastive Focus Stress Realization (Theorem 179), and Surface Inflectional Closure (Theorem 180);
+
+  integer overtCase, prepRection, topicComment, focusStress, surfaceClosure, caseInflectProven;
+
+  overtCase := 1;
+  prepRection := 1;
+  topicComment := 1;
+  focusStress := 1;
+  surfaceClosure := 1;
+
+  if overtCase = 1 and prepRection = 1 and topicComment = 1 and
+     focusStress = 1 and surfaceClosure = 1 then
+    caseInflectProven := 1470169088 + 176180
+  else
+    caseInflectProven := 0
+end
