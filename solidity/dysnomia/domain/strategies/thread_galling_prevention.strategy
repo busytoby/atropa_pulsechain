@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TGP-GAL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / THREAD GALLING PREVENTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TGP-PARAMS.
+           05 WS-GALLING-LAT-MS         PIC 9(02) VALUE 12.
+           05 WS-PREVENTION-FID-M       PIC 9(04) VALUE 0960.
+           05 WS-SHEAR-RESIDUAL-UM      PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TGP-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-TGP-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-TGP-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-TGP-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TGP-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 GALLING-LAT-OUT-OF-BOUNDS   VALUE 2.
+              88 PREVENTION-FIDELITY-LOW     VALUE 3.
+              88 RESIDUAL-EXCEEDED           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 GALLING-COLLAPSE            VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GALLING-PREVENTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GALLING-LAT-MS < 5 OR WS-GALLING-LAT-MS > 25
+                SET GALLING-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PREVENTION-FID-M < 850 OR WS-PREVENTION-FID-M > 1000
+                SET PREVENTION-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SHEAR-RESIDUAL-UM < 0 OR WS-SHEAR-RESIDUAL-UM > 5
+                SET RESIDUAL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GALLING-PREVENTION.
+            COMPUTE WS-TGP-COMPOSITE = ((30 - WS-GALLING-LAT-MS) * 20) +
+                                       (WS-PREVENTION-FID-M / 2) +
+                                       ((10 - WS-SHEAR-RESIDUAL-UM) * 40).
+
+            COMPUTE WS-TGP-VITALITY = (WS-TGP-COMPOSITE / 4) +
+                                      (WS-PREVENTION-FID-M / 4) +
+                                      ((30 - WS-GALLING-LAT-MS) * 4) + 1.
+
+            IF WS-TGP-VITALITY EQUAL ZERO
+                SET GALLING-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TGP-COHERENCE = (WS-TGP-COMPOSITE / 16) +
+                                       (WS-PREVENTION-FID-M / 16) +
+                                       ((30 - WS-GALLING-LAT-MS) * 2).
+
+            COMPUTE WS-TGP-REBAR-LATCH = 1470169088 +
+                                         (WS-TGP-COMPOSITE / 2) +
+                                         ((30 - WS-GALLING-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TGP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-TGP-VITALITY * 10) +
+                                         (WS-TGP-COHERENCE * 10) +
+                                         (WS-TGP-COMPOSITE * 10) +
+                                         (WS-TGP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TGP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TGP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
