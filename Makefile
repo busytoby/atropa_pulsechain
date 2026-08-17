@@ -1844,6 +1844,18 @@ test-cpm-tomie-lyapunov-boundary-suite:
 	./tsfi2-deepseek/src/cpm_exec_lyapunov_boundary /tmp/lyapunov_boundary.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary tsfi2-deepseek/src/cpm_exec_lyapunov_boundary /tmp/lyapunov_boundary.bin
 
+test-cpm-tomie-spatial-anchoring-semantics-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_spatial_anchoring_semantics_prover.c -o tests/test_cpm_tomie_spatial_anchoring_semantics_prover
+	./tests/test_cpm_tomie_spatial_anchoring_semantics_prover
+	@rm -f tests/test_cpm_tomie_spatial_anchoring_semantics_prover
+
+test-cpm-tomie-spatial-anchor-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_spatial_anchor.c -o tsfi2-deepseek/src/cpm_compiler_spatial_anchor
+	./tsfi2-deepseek/src/cpm_compiler_spatial_anchor /tmp/spatial_anchor.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_spatial_anchor.c -o tsfi2-deepseek/src/cpm_exec_spatial_anchor
+	./tsfi2-deepseek/src/cpm_exec_spatial_anchor /tmp/spatial_anchor.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_spatial_anchor tsfi2-deepseek/src/cpm_exec_spatial_anchor /tmp/spatial_anchor.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
