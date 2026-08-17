@@ -493,6 +493,11 @@ test-grand-master-vaesen-unification:
 	./tests/test_grand_master_vaesen_unification
 	@rm -f tests/test_grand_master_vaesen_unification
 
+test-holonomic-emotional-weyl-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_holonomic_emotional_weyl_closure.c -o tests/test_holonomic_emotional_weyl_closure
+	./tests/test_holonomic_emotional_weyl_closure
+	@rm -f tests/test_holonomic_emotional_weyl_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
