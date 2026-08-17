@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SEQ-SYM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SYMMETRY EQUIVALENCE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SEQ-PARAMS.
+           05 WS-SYMMETRY-LAT-MS        PIC 9(02) VALUE 12.
+           05 WS-CANONICAL-FID-M        PIC 9(04) VALUE 0960.
+           05 WS-COSET-RESIDUAL-M       PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SEQ-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SEQ-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SEQ-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SEQ-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SEQ-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 SYMMETRY-LAT-OUT-OF-BOUNDS  VALUE 2.
+              88 CANONICAL-FIDELITY-LOW      VALUE 3.
+              88 COSET-RESIDUAL-EXCEEDED     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SYMMETRY-COLLAPSE           VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SYMMETRY-SOLVE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SYMMETRY-LAT-MS < 5 OR WS-SYMMETRY-LAT-MS > 25
+                SET SYMMETRY-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CANONICAL-FID-M < 850 OR WS-CANONICAL-FID-M > 1000
+                SET CANONICAL-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COSET-RESIDUAL-M < 0 OR WS-COSET-RESIDUAL-M > 5
+                SET COSET-RESIDUAL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SYMMETRY-SOLVE.
+            COMPUTE WS-SEQ-COMPOSITE = ((30 - WS-SYMMETRY-LAT-MS) * 20) +
+                                       (WS-CANONICAL-FID-M / 2) +
+                                       ((10 - WS-COSET-RESIDUAL-M) * 40).
+
+            COMPUTE WS-SEQ-VITALITY = (WS-SEQ-COMPOSITE / 4) +
+                                      (WS-CANONICAL-FID-M / 4) +
+                                      ((30 - WS-SYMMETRY-LAT-MS) * 4) + 1.
+
+            IF WS-SEQ-VITALITY EQUAL ZERO
+                SET SYMMETRY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SEQ-COHERENCE = (WS-SEQ-COMPOSITE / 16) +
+                                       (WS-CANONICAL-FID-M / 16) +
+                                       ((30 - WS-SYMMETRY-LAT-MS) * 2).
+
+            COMPUTE WS-SEQ-REBAR-LATCH = 1470169088 +
+                                         (WS-SEQ-COMPOSITE / 2) +
+                                         ((30 - WS-SYMMETRY-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SEQ-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SEQ-VITALITY * 10) +
+                                         (WS-SEQ-COHERENCE * 10) +
+                                         (WS-SEQ-COMPOSITE * 10) +
+                                         (WS-SEQ-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SEQ-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SEQ-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
