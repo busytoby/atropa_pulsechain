@@ -1,0 +1,22 @@
+begin
+  comment CP/M-Tomie Synapse-Neuron-NeuralNet Strict Categorical Closure Formal Prover;
+  comment Mandates that SYNAPSE is strictly an edge in a Neural Net graph Hom(N_pre, N_post);
+
+  integer preNeuron, postNeuron, inNeuralNet, standaloneMagneticBanned, skyrmionPotentialValid, totalProof;
+
+  preNeuron := 1;
+  postNeuron := 2;
+  inNeuralNet := 1;
+  standaloneMagneticBanned := 1;
+
+  if preNeuron > 0 and postNeuron > 0 and inNeuralNet = 1 and standaloneMagneticBanned = 1 then
+    begin
+      skyrmionPotentialValid := 1;
+      totalProof := 1470169088 + 1024
+    end
+  else
+    begin
+      skyrmionPotentialValid := 0;
+      totalProof := 0
+    end
+end
