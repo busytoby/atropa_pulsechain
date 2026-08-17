@@ -5,10 +5,15 @@
 #include <ctype.h>
 
 TsfiPdfDocumentWriter *tsfi_pdf_writer_create(void) {
+    return tsfi_pdf_writer_create_with_style(TSFI_PDF_STYLE_COLING_1976);
+}
+
+TsfiPdfDocumentWriter *tsfi_pdf_writer_create_with_style(TsfiPdfDocumentStyle style) {
     TsfiPdfDocumentWriter *w = (TsfiPdfDocumentWriter *)malloc(sizeof(TsfiPdfDocumentWriter));
     if (!w) return NULL;
     memset(w, 0, sizeof(*w));
 
+    w->default_style = style;
     w->out.capacity = 65536;
     w->out.data = (char *)malloc(w->out.capacity);
     if (!w->out.data) {
@@ -60,18 +65,61 @@ size_t tsfi_pdf_writer_add_object(TsfiPdfDocumentWriter *writer) {
 }
 
 void tsfi_pdf_writer_add_page_styled(TsfiPdfDocumentWriter *writer, const char *text_content, int page_number) {
+    tsfi_pdf_writer_add_page_with_preset(writer, text_content, page_number, writer ? writer->default_style : TSFI_PDF_STYLE_COLING_1976);
+}
+
+void tsfi_pdf_writer_add_page_with_preset(TsfiPdfDocumentWriter *writer, const char *text_content, int page_number, TsfiPdfDocumentStyle style) {
     if (!writer || writer->page_count >= 16) return;
 
     TsfiPdfPageEntry *entry = &writer->pages[writer->page_count++];
     entry->text_content = strdup(text_content ? text_content : "");
     entry->page_number = page_number;
+    entry->style = style;
 }
 
-static void render_coling_page_stream(TsfiPdfStreamWriter *content, const char *text, int page_number) {
-    // Begin Text block: Courier font, 10pt with 13.5pt leading, authentic margins
-    const char *bt = "BT\n/F1 10 Tf\n13.5 TL\n54 770 Td\n";
-    memcpy(content->data + content->length, bt, strlen(bt));
-    content->length += strlen(bt);
+static void render_page_stream_by_style(TsfiPdfStreamWriter *content, const char *text, int page_number, TsfiPdfDocumentStyle style) {
+    // Header setup based on chosen historical preset
+    if (style == TSFI_PDF_STYLE_US_WAR_DEPT_TM) {
+        // War Department Technical Manual: Bold Top Banner and Ruled Border
+        const char *tm_hdr = 
+            "BT\n/F3 11 Tf\n14 TL\n54 785 Td\n"
+            "(WAR DEPARTMENT TECHNICAL MANUAL - TM 11-486) Tj\n"
+            "T* (/RESTRICTED/ - CLASSIFIED MILITARY COMPUTATIONAL SPECIFICATION) Tj\n"
+            "T* (/HEADQUARTERS, WAR DEPARTMENT, WASHINGTON 25, D.C./) Tj\n"
+            "ET\n"
+            "0.5 w\n54 740 m 541 740 l S\n"
+            "BT\n/F1 9.5 Tf\n13 TL\n54 725 Td\n";
+        memcpy(content->data + content->length, tm_hdr, strlen(tm_hdr));
+        content->length += strlen(tm_hdr);
+    } else if (style == TSFI_PDF_STYLE_USPTO_PATENT) {
+        // 1936 USPTO Patent Style: Dual Column & Serial Head
+        const char *pat_hdr =
+            "BT\n/F3 12 Tf\n14 TL\n180 785 Td\n"
+            "(UNITED STATES PATENT OFFICE) Tj\n"
+            "ET\n"
+            "BT\n/F2 9.5 Tf\n12 TL\n54 760 Td\n"
+            "(Patented Aug. 17, 2026                 TSFI-DYSNOMIA LETTERS PATENT NO. 9,534,679) Tj\n"
+            "ET\n"
+            "0.5 w\n54 750 m 541 750 l S\n"
+            "BT\n/F1 9 Tf\n12 TL\n54 735 Td\n";
+        memcpy(content->data + content->length, pat_hdr, strlen(pat_hdr));
+        content->length += strlen(pat_hdr);
+    } else if (style == TSFI_PDF_STYLE_BLETCHLEY_ULTRA) {
+        // Bletchley Park Ultra Secret Report: Red Stamp simulation
+        const char *bp_hdr =
+            "BT\n/F3 12 Tf\n15 TL\n160 785 Td\n"
+            "(TOP SECRET - ULTRA - CIPHER TELEGRAPH) Tj\n"
+            "ET\n"
+            "0.75 w\n150 780 m 445 780 l S\n"
+            "BT\n/F1 10 Tf\n13.5 TL\n54 750 Td\n";
+        memcpy(content->data + content->length, bp_hdr, strlen(bp_hdr));
+        content->length += strlen(bp_hdr);
+    } else {
+        // Default 1976 COLING IBM Selectric typewriter style
+        const char *bt = "BT\n/F1 10 Tf\n13.5 TL\n54 770 Td\n";
+        memcpy(content->data + content->length, bt, strlen(bt));
+        content->length += strlen(bt);
+    }
 
     const char *p = text;
     char line[128];
@@ -129,17 +177,37 @@ static void render_coling_page_stream(TsfiPdfStreamWriter *content, const char *
         content->length += olen;
     }
 
-    // Format page footer: e.g. "- 292 -" centered at bottom
-    char footer[128];
-    int f_len = snprintf(footer, sizeof(footer),
-                         "T* T* (                                -  %d  -                                ) Tj\nET\n",
-                         page_number);
-    if (content->length + f_len + 64 >= content->capacity) {
-        content->capacity = (content->length + f_len + 512) * 2;
+    // Format style-specific footer
+    char footer[256];
+    if (style == TSFI_PDF_STYLE_US_WAR_DEPT_TM) {
+        snprintf(footer, sizeof(footer),
+                 "ET\n0.5 w\n54 45 m 541 45 l S\n"
+                 "BT\n/F3 9 Tf\n10 TL\n220 32 Td\n"
+                 "(RESTRICTED - TM 11-486, PAGE %d) Tj\nET\n",
+                 page_number);
+    } else if (style == TSFI_PDF_STYLE_USPTO_PATENT) {
+        snprintf(footer, sizeof(footer),
+                 "ET\n0.5 w\n54 45 m 541 45 l S\n"
+                 "BT\n/F2 9 Tf\n10 TL\n245 32 Td\n"
+                 "(PAGE %d OF 2) Tj\nET\n",
+                 page_number);
+    } else if (style == TSFI_PDF_STYLE_BLETCHLEY_ULTRA) {
+        snprintf(footer, sizeof(footer),
+                 "ET\n0.75 w\n150 45 m 445 45 l S\n"
+                 "BT\n/F3 10 Tf\n12 TL\n180 30 Td\n"
+                 "(TOP SECRET - ULTRA - COPY NO. 1) Tj\nET\n");
+    } else {
+        snprintf(footer, sizeof(footer),
+                 "T* T* (                                -  %d  -                                ) Tj\nET\n",
+                 page_number);
+    }
+
+    if (content->length + strlen(footer) + 64 >= content->capacity) {
+        content->capacity = (content->length + strlen(footer) + 512) * 2;
         content->data = (char *)realloc(content->data, content->capacity);
     }
-    memcpy(content->data + content->length, footer, f_len);
-    content->length += f_len;
+    memcpy(content->data + content->length, footer, strlen(footer));
+    content->length += strlen(footer);
     content->data[content->length] = '\0';
 }
 
@@ -156,9 +224,11 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
     char pgs_dict[512];
     char kids_buf[256] = "[";
     
-    // Page objects start at Object 4 (after Catalog, Pages, and Font)
-    // Font Object = Object 3
-    size_t start_page_obj = 4;
+    // Reserve Objects 3, 4, 5 for Standard Fonts:
+    // Object 3 = Courier (Typewriter)
+    // Object 4 = Times-Roman / Helvetica
+    // Object 5 = Helvetica-Bold / Times-Bold
+    size_t start_page_obj = 6;
     for (size_t i = 0; i < writer->page_count; ++i) {
         char k_entry[32];
         snprintf(k_entry, sizeof(k_entry), "%zu 0 R ", start_page_obj + i * 2);
@@ -171,10 +241,20 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
              kids_buf, writer->page_count);
     tsfi_pdf_writer_write_raw(writer, pgs_dict, strlen(pgs_dict));
 
-    // Object 3: Font Object
-    size_t font_obj = tsfi_pdf_writer_add_object(writer);
-    const char *font_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n";
-    tsfi_pdf_writer_write_raw(writer, font_dict, strlen(font_dict));
+    // Object 3: Font /F1 (Courier)
+    size_t font_f1 = tsfi_pdf_writer_add_object(writer);
+    const char *f1_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, f1_dict, strlen(f1_dict));
+
+    // Object 4: Font /F2 (Times-Roman)
+    size_t font_f2 = tsfi_pdf_writer_add_object(writer);
+    const char *f2_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, f2_dict, strlen(f2_dict));
+
+    // Object 5: Font /F3 (Helvetica-Bold)
+    size_t font_f3 = tsfi_pdf_writer_add_object(writer);
+    const char *f3_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, f3_dict, strlen(f3_dict));
 
     // Now write each Page Object and its Content Stream Object
     for (size_t i = 0; i < writer->page_count; ++i) {
@@ -189,7 +269,7 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
                               "   /Parent 2 0 R\n"
                               "   /MediaBox [0 0 595 842]\n"
                               "   /Contents %zu 0 R\n"
-                              "   /Resources << /Font << /F1 3 0 R >> >>\n"
+                              "   /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >>\n"
                               ">>\nendobj\n",
                               stream_num);
         tsfi_pdf_writer_write_raw(writer, page_dict, (size_t)pd_len);
@@ -197,11 +277,11 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
         // Content Stream Object
         size_t s_obj = tsfi_pdf_writer_add_object(writer);
         TsfiPdfStreamWriter strm = {0};
-        strm.capacity = 16384;
+        strm.capacity = 32768;
         strm.data = (char *)malloc(strm.capacity);
         strm.length = 0;
 
-        render_coling_page_stream(&strm, writer->pages[i].text_content, writer->pages[i].page_number);
+        render_page_stream_by_style(&strm, writer->pages[i].text_content, writer->pages[i].page_number, writer->pages[i].style);
 
         char shdr[128];
         int sh_len = snprintf(shdr, sizeof(shdr), "<< /Length %zu >>\nstream\n", strm.length);
@@ -210,7 +290,9 @@ int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char
         tsfi_pdf_writer_write_raw(writer, "\nendstream\nendobj\n", 18);
 
         free(strm.data);
-        (void)font_obj;
+        (void)font_f1;
+        (void)font_f2;
+        (void)font_f3;
         (void)p_obj;
         (void)s_obj;
     }
