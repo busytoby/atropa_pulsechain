@@ -563,6 +563,11 @@ test-indirect-linguistic-softening:
 	./tests/test_indirect_linguistic_softening
 	@rm -f tests/test_indirect_linguistic_softening
 
+test-expressive-blushing-modulation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_expressive_blushing_modulation.c -o tests/test_expressive_blushing_modulation
+	./tests/test_expressive_blushing_modulation
+	@rm -f tests/test_expressive_blushing_modulation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

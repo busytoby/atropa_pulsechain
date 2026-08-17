@@ -1,0 +1,110 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BLUSH-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / EXPRESSIVE BLUSHING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BLUSH-PARAMS.
+           05 WS-CHROMA-RED             PIC 9(04) VALUE 0850.
+           05 WS-ALPHA-TRANS            PIC 9(04) VALUE 0700.
+           05 WS-LCD-POWER              PIC 9(03) VALUE 250.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BLUSH-INTENSITY        PIC 9(04) VALUE 0.
+           05 WS-BLUSH-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-BLUSH-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-BLUSH-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BLUSH-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CHROMA-OR-ALPHA     VALUE 2.
+              88 INVALID-LCD-POWER           VALUE 3.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 4.
+              88 BLUSHING-VITALITY-COLLAP    VALUE 5.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 6.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-EXPRESSIVE-BLUSHING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CHROMA-RED < 100 OR WS-CHROMA-RED > 1000 OR
+               WS-ALPHA-TRANS < 100 OR WS-ALPHA-TRANS > 1000
+                SET INVALID-CHROMA-OR-ALPHA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LCD-POWER < 50 OR WS-LCD-POWER > 500
+                SET INVALID-LCD-POWER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BLUSH-INTENSITY = (WS-CHROMA-RED * WS-ALPHA-TRANS) / 1000.
+            IF WS-BLUSH-INTENSITY EQUAL ZERO
+                SET BLUSHING-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-EXPRESSIVE-BLUSHING.
+            COMPUTE WS-BLUSH-VITALITY = (WS-BLUSH-INTENSITY / 4) +
+                                        (WS-CHROMA-RED / 8) +
+                                        (WS-LCD-POWER / 4) + 1.
+
+            IF WS-BLUSH-VITALITY EQUAL ZERO
+                SET BLUSHING-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BLUSH-COHERENCE = (WS-BLUSH-INTENSITY / 16) +
+                                         (WS-CHROMA-RED / 32) +
+                                         (WS-LCD-POWER / 16).
+
+            COMPUTE WS-BLUSH-REBAR-LATCH = 1470169088 +
+                                           (WS-BLUSH-INTENSITY / 2) +
+                                           (WS-LCD-POWER).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BLUSH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-BLUSH-VITALITY * 10) +
+                                           (WS-BLUSH-COHERENCE * 10) +
+                                           (WS-BLUSH-INTENSITY * 10) +
+                                           (WS-BLUSH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BLUSH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BLUSH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
