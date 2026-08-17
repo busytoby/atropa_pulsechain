@@ -598,6 +598,11 @@ test-multimodal-memory-footprint:
 	./tests/test_multimodal_memory_footprint
 	@rm -f tests/test_multimodal_memory_footprint
 
+test-tactile-response-feedback:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_tactile_response_feedback.c -o tests/test_tactile_response_feedback
+	./tests/test_tactile_response_feedback
+	@rm -f tests/test_tactile_response_feedback
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
