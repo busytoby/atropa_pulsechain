@@ -748,6 +748,11 @@ test-leaky-wave-clutter-filter:
 	./tests/test_leaky_wave_clutter_filter
 	@rm -f tests/test_leaky_wave_clutter_filter
 
+test-acoustic-kinematic-tracking:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_acoustic_kinematic_tracking.c -o tests/test_acoustic_kinematic_tracking
+	./tests/test_acoustic_kinematic_tracking
+	@rm -f tests/test_acoustic_kinematic_tracking
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

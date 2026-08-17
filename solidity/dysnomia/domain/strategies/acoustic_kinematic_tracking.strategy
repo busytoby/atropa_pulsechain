@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. KINEM-TRK-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ACOUSTIC KINEMATIC TRACKING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-KIN-PARAMS.
+           05 WS-JOINT-ANGLE-ERR-T      PIC 9(02) VALUE 42.
+           05 WS-JOINT-POS-ERR-T        PIC 9(02) VALUE 28.
+           05 WS-KIN-COHERENCE-M        PIC 9(04) VALUE 0890.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-KIN-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-KIN-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-KIN-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-KIN-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-KIN-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ANGLE-ERROR-EXCEEDED        VALUE 2.
+              88 POS-ERROR-EXCEEDED          VALUE 3.
+              88 KINEMATIC-COHERENCE-LOW     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 KINEMATICS-COLLAPSE         VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-KINEMATIC-TRACKING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-JOINT-ANGLE-ERR-T < 5 OR WS-JOINT-ANGLE-ERR-T > 65
+                SET ANGLE-ERROR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-JOINT-POS-ERR-T < 5 OR WS-JOINT-POS-ERR-T > 45
+                SET POS-ERROR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KIN-COHERENCE-M < 600 OR WS-KIN-COHERENCE-M > 1000
+                SET KINEMATIC-COHERENCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-KINEMATIC-TRACKING.
+            COMPUTE WS-KIN-COMPOSITE = ((65 - WS-JOINT-ANGLE-ERR-T) * 10) +
+                                       ((45 - WS-JOINT-POS-ERR-T) * 15) +
+                                       (WS-KIN-COHERENCE-M / 2).
+
+            COMPUTE WS-KIN-VITALITY = (WS-KIN-COMPOSITE / 4) +
+                                      (WS-KIN-COHERENCE-M / 4) +
+                                      ((65 - WS-JOINT-ANGLE-ERR-T) * 2) + 1.
+
+            IF WS-KIN-VITALITY EQUAL ZERO
+                SET KINEMATICS-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-KIN-COHERENCE = (WS-KIN-COMPOSITE / 16) +
+                                       (WS-KIN-COHERENCE-M / 16) +
+                                       ((65 - WS-JOINT-ANGLE-ERR-T) / 2).
+
+            COMPUTE WS-KIN-REBAR-LATCH = 1470169088 +
+                                         (WS-KIN-COMPOSITE / 2) +
+                                         ((65 - WS-JOINT-ANGLE-ERR-T) * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-KIN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-KIN-VITALITY * 10) +
+                                         (WS-KIN-COHERENCE * 10) +
+                                         (WS-KIN-COMPOSITE * 10) +
+                                         (WS-KIN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-KIN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-KIN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
