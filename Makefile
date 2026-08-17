@@ -1168,6 +1168,11 @@ test-route-detour-negotiation:
 	./tests/test_route_detour_negotiation
 	@rm -f tests/test_route_detour_negotiation
 
+test-bear-companion-collaboration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bear_companion_collaboration.c -o tests/test_bear_companion_collaboration
+	./tests/test_bear_companion_collaboration
+	@rm -f tests/test_bear_companion_collaboration
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

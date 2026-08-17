@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BCC-COL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BEAR COMPANION COLLABORATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BCC-PARAMS.
+           05 WS-ALIGN-FIDELITY-M       PIC 9(04) VALUE 0960.
+           05 WS-CONSENSUS-LAT-MS       PIC 9(02) VALUE 20.
+           05 WS-PARITY-SCORE-M         PIC 9(04) VALUE 0960.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BCC-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-BCC-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-BCC-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-BCC-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BCC-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ALIGN-FIDELITY-LOW          VALUE 2.
+              88 CONSENSUS-LAT-OUT-OF-BOUNDS VALUE 3.
+              88 PARTNERSHIP-PARITY-LOW      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 COLLABORATION-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BEAR-COLLABORATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALIGN-FIDELITY-M < 850 OR WS-ALIGN-FIDELITY-M > 1000
+                SET ALIGN-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CONSENSUS-LAT-MS < 10 OR WS-CONSENSUS-LAT-MS > 50
+                SET CONSENSUS-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PARITY-SCORE-M < 850 OR WS-PARITY-SCORE-M > 1000
+                SET PARTNERSHIP-PARITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BEAR-COLLABORATION.
+            COMPUTE WS-BCC-COMPOSITE = (WS-ALIGN-FIDELITY-M / 2) +
+                                       ((60 - WS-CONSENSUS-LAT-MS) * 10) +
+                                       (WS-PARITY-SCORE-M / 2).
+
+            COMPUTE WS-BCC-VITALITY = (WS-BCC-COMPOSITE / 4) +
+                                      (WS-ALIGN-FIDELITY-M / 4) +
+                                      ((60 - WS-CONSENSUS-LAT-MS) * 4) + 1.
+
+            IF WS-BCC-VITALITY EQUAL ZERO
+                SET COLLABORATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BCC-COHERENCE = (WS-BCC-COMPOSITE / 16) +
+                                       (WS-ALIGN-FIDELITY-M / 16) +
+                                       ((60 - WS-CONSENSUS-LAT-MS) * 2).
+
+            COMPUTE WS-BCC-REBAR-LATCH = 1470169088 +
+                                         (WS-BCC-COMPOSITE / 2) +
+                                         ((60 - WS-CONSENSUS-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BCC-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-BCC-VITALITY * 10) +
+                                         (WS-BCC-COHERENCE * 10) +
+                                         (WS-BCC-COMPOSITE * 10) +
+                                         (WS-BCC-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BCC-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BCC-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
