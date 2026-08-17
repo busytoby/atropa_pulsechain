@@ -1904,6 +1904,18 @@ test-cpm-tomie-haptic-viscosity-suite:
 	./tsfi2-deepseek/src/cpm_exec_haptic_viscosity /tmp/haptic_viscosity.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_haptic_viscosity tsfi2-deepseek/src/cpm_exec_haptic_viscosity /tmp/haptic_viscosity.bin
 
+test-cpm-tomie-multimodal-ambiguity-resolution-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover.c -o tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover
+	./tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover
+	@rm -f tests/test_cpm_tomie_multimodal_ambiguity_resolution_prover
+
+test-cpm-tomie-multimodal-ambig-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_multimodal_ambig.c -o tsfi2-deepseek/src/cpm_compiler_multimodal_ambig
+	./tsfi2-deepseek/src/cpm_compiler_multimodal_ambig /tmp/multimodal_ambig.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_multimodal_ambig.c -o tsfi2-deepseek/src/cpm_exec_multimodal_ambig
+	./tsfi2-deepseek/src/cpm_exec_multimodal_ambig /tmp/multimodal_ambig.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_multimodal_ambig tsfi2-deepseek/src/cpm_exec_multimodal_ambig /tmp/multimodal_ambig.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
