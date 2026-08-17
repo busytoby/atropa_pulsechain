@@ -638,6 +638,11 @@ test-personality-mood-transition:
 	./tests/test_personality_mood_transition
 	@rm -f tests/test_personality_mood_transition
 
+test-relational-habituation-renewal:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_relational_habituation_renewal.c -o tests/test_relational_habituation_renewal
+	./tests/test_relational_habituation_renewal
+	@rm -f tests/test_relational_habituation_renewal
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,121 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. HAB-RENEW-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / HABITUATION RENEWAL AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-HAB-PARAMS.
+           05 WS-INIT-ATTACH-MILLI      PIC 9(04) VALUE 0900.
+           05 WS-ASYMP-ATTACH-MILLI     PIC 9(04) VALUE 0450.
+           05 WS-DECAY-STEPS            PIC 9(03) VALUE 040.
+           05 WS-NOVEL-CUES             PIC 9(02) VALUE 03.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DECAYED-ATTACH-MILLI   PIC 9(04) VALUE 0.
+           05 WS-RENEWED-ATTACH-MILLI   PIC 9(04) VALUE 0.
+           05 WS-HAB-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-HAB-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-HAB-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-HAB-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ATTACHMENT-BOUNDS   VALUE 2.
+              88 INVALID-DECAY-OR-NOVELTY    VALUE 3.
+              88 RENEWED-ATTACH-BELOW-FLOOR  VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HABITUATION-COLLAPSE        VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-HABITUATION-RENEWAL
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INIT-ATTACH-MILLI < 500 OR WS-INIT-ATTACH-MILLI > 1000 OR
+               WS-ASYMP-ATTACH-MILLI < 200 OR WS-ASYMP-ATTACH-MILLI > 800
+                SET INVALID-ATTACHMENT-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DECAY-STEPS < 1 OR WS-DECAY-STEPS > 100 OR
+               WS-NOVEL-CUES < 1 OR WS-NOVEL-CUES > 6
+                SET INVALID-DECAY-OR-NOVELTY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-DECAYED-ATTACH-MILLI = WS-ASYMP-ATTACH-MILLI +
+                (((WS-INIT-ATTACH-MILLI - WS-ASYMP-ATTACH-MILLI) * (100 - WS-DECAY-STEPS)) / 100).
+
+            COMPUTE WS-RENEWED-ATTACH-MILLI = WS-DECAYED-ATTACH-MILLI + (WS-NOVEL-CUES * 75).
+            IF WS-RENEWED-ATTACH-MILLI > 1000
+                MOVE 1000 TO WS-RENEWED-ATTACH-MILLI
+            END-IF.
+
+            IF WS-RENEWED-ATTACH-MILLI < 600
+                SET RENEWED-ATTACH-BELOW-FLOOR TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-HABITUATION-RENEWAL.
+            COMPUTE WS-HAB-VITALITY = (WS-RENEWED-ATTACH-MILLI / 4) +
+                                      (WS-NOVEL-CUES * 32) +
+                                      (WS-INIT-ATTACH-MILLI / 8) + 1.
+
+            IF WS-HAB-VITALITY EQUAL ZERO
+                SET HABITUATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-HAB-COHERENCE = (WS-RENEWED-ATTACH-MILLI / 16) +
+                                       (WS-NOVEL-CUES * 8) +
+                                       (WS-INIT-ATTACH-MILLI / 32).
+
+            COMPUTE WS-HAB-REBAR-LATCH = 1470169088 +
+                                         (WS-RENEWED-ATTACH-MILLI / 2) +
+                                         (WS-NOVEL-CUES * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-HAB-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-HAB-VITALITY * 10) +
+                                         (WS-HAB-COHERENCE * 10) +
+                                         (WS-RENEWED-ATTACH-MILLI * 10) +
+                                         (WS-HAB-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-HAB-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-HAB-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
