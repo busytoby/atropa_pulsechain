@@ -1378,6 +1378,11 @@ test-step-completion-verification:
 	./tests/test_step_completion_verification
 	@rm -f tests/test_step_completion_verification
 
+test-orientation-cue-billboard:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_orientation_cue_billboard.c -o tests/test_orientation_cue_billboard
+	./tests/test_orientation_cue_billboard
+	@rm -f tests/test_orientation_cue_billboard
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
