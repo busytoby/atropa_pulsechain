@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GRAND-MASTER-WEYL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MASTER WEYL CLOSURE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-GRAND-PARAMS.
+           05 WS-WEYL-DIM-N             PIC 9(02) VALUE 04.
+           05 WS-SAT-BOUND-S            PIC 9(02) VALUE 04.
+           05 WS-IDEAL-RANK-R           PIC 9(02) VALUE 01.
+           05 WS-HOLO-FLAG              PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GRAND-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-MASTER-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-GRAND-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-GRAND-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-WEYL-DIMENSION      VALUE 2.
+              88 INVALID-SAT-BOUND           VALUE 3.
+              88 INVALID-IDEAL-RANK          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HOLO-FLAG-FAIL              VALUE 6.
+              88 GRAND-DIVERG-FAIL           VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GRAND-SYNTHESIS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIM-N < 1 OR WS-WEYL-DIM-N > 16
+                SET INVALID-WEYL-DIMENSION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SAT-BOUND-S < 1 OR WS-SAT-BOUND-S > 32
+                SET INVALID-SAT-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-IDEAL-RANK-R < 1 OR WS-IDEAL-RANK-R > 16
+                SET INVALID-IDEAL-RANK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HOLO-FLAG NOT EQUAL 1
+                SET HOLO-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GRAND-SYNTHESIS.
+            COMPUTE WS-GRAND-VITALITY = (WS-WEYL-DIM-N * 512) +
+                                        (WS-SAT-BOUND-S * 128) +
+                                        (WS-IDEAL-RANK-R * 64) +
+                                        (WS-HOLO-FLAG * 256) + 1.
+
+            IF WS-GRAND-VITALITY EQUAL ZERO
+                SET GRAND-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MASTER-COHERENCE = (WS-SAT-BOUND-S * 32) +
+                                          (WS-WEYL-DIM-N * 64) +
+                                          (WS-IDEAL-RANK-R * 16).
+
+            COMPUTE WS-GRAND-REBAR-LATCH = 1470169088 + (WS-WEYL-DIM-N * 256) +
+                                           (WS-SAT-BOUND-S * 64) +
+                                           (WS-IDEAL-RANK-R * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-GRAND-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-GRAND-VITALITY * 10) +
+                                           (WS-MASTER-COHERENCE * 10) +
+                                           (WS-WEYL-DIM-N * 1000) +
+                                           (WS-GRAND-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-GRAND-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-GRAND-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -298,6 +298,11 @@ test-nonholonomic-creative-telescoping:
 	./tests/test_nonholonomic_creative_telescoping
 	@rm -f tests/test_nonholonomic_creative_telescoping
 
+test-grand-master-weyl-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_weyl_closure.c -o tests/test_grand_master_weyl_closure
+	./tests/test_grand_master_weyl_closure
+	@rm -f tests/test_grand_master_weyl_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
