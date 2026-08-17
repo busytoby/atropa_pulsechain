@@ -1,0 +1,124 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. E2E-LATENCY-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VOICE LATENCY AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-LATENCY-PARAMS.
+           05 WS-ASR-MS                 PIC 9(03) VALUE 120.
+           05 WS-PREFILL-MS             PIC 9(03) VALUE 035.
+           05 WS-DECODE-MS              PIC 9(03) VALUE 150.
+           05 WS-TTS-MS                 PIC 9(03) VALUE 025.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TOTAL-MS               PIC 9(04) VALUE 0.
+           05 WS-E2E-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-LATENCY-COHERENCE      PIC 9(09) VALUE 0.
+           05 WS-E2E-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-E2E-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ASR-LATENCY         VALUE 2.
+              88 INVALID-PREFILL-LATENCY     VALUE 3.
+              88 INVALID-DECODE-LATENCY      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-TTS-LATENCY         VALUE 6.
+              88 LATENCY-DEADLINE-BREACH     VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-E2E-LATENCY
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ASR-MS < 10 OR WS-ASR-MS > 300
+                SET INVALID-ASR-LATENCY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PREFILL-MS < 5 OR WS-PREFILL-MS > 200
+                SET INVALID-PREFILL-LATENCY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DECODE-MS < 10 OR WS-DECODE-MS > 300
+                SET INVALID-DECODE-LATENCY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TTS-MS < 5 OR WS-TTS-MS > 100
+                SET INVALID-TTS-LATENCY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TOTAL-MS = WS-ASR-MS + WS-PREFILL-MS + WS-DECODE-MS + WS-TTS-MS.
+            IF WS-TOTAL-MS > 500
+                SET LATENCY-DEADLINE-BREACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-E2E-LATENCY.
+            COMPUTE WS-E2E-VITALITY = ((500 - WS-TOTAL-MS) * 32) +
+                                      (WS-ASR-MS * 4) +
+                                      (WS-DECODE-MS * 4) +
+                                      (WS-TTS-MS * 8) + 1.
+
+            IF WS-E2E-VITALITY EQUAL ZERO
+                SET LATENCY-DEADLINE-BREACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-LATENCY-COHERENCE = ((500 - WS-TOTAL-MS) * 8) +
+                                           (WS-ASR-MS * 2) +
+                                           (WS-DECODE-MS * 2) +
+                                           (WS-TTS-MS * 4).
+
+            COMPUTE WS-E2E-REBAR-LATCH = 1470169088 + (WS-TOTAL-MS * 128) +
+                                         (WS-ASR-MS * 32) +
+                                         (WS-DECODE-MS * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-E2E-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-E2E-VITALITY * 10) +
+                                         (WS-LATENCY-COHERENCE * 10) +
+                                         ((500 - WS-TOTAL-MS) * 100) +
+                                         (WS-E2E-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-E2E-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-E2E-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

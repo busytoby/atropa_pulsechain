@@ -383,6 +383,11 @@ test-semantic-collapse-prevention:
 	./tests/test_semantic_collapse_prevention
 	@rm -f tests/test_semantic_collapse_prevention
 
+test-e2e-voice-latency-sync:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_e2e_voice_latency_sync.c -o tests/test_e2e_voice_latency_sync
+	./tests/test_e2e_voice_latency_sync
+	@rm -f tests/test_e2e_voice_latency_sync
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
