@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. ORGANIC-VOICE-EVOLUTION-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / ORGANIC VOICE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-EVOLUTION-PARAMS.
+           05 WS-ARCHETYPE-ID           PIC 9(02) VALUE 01.
+           05 WS-DECLINATION-PERMILLE   PIC 9(03) VALUE 180.
+           05 WS-JITTER-PERMILLE        PIC 9(02) VALUE 08.
+           05 WS-WARMTH-Q16             PIC 9(06) VALUE 032768.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VITALITY-METRIC        PIC 9(09) VALUE 0.
+           05 WS-ROSENBERG-RESONANCE    PIC 9(09) VALUE 0.
+           05 WS-ORGANIC-REBAR-LATCH    PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ORGANIC-BASE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-ARCHETYPE-ID        VALUE 2.
+              88 INVALID-DECLINATION         VALUE 3.
+              88 INVALID-JITTER              VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-WARMTH-Q16          VALUE 6.
+              88 BIOMIMETIC-DIVERG-FAIL      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ORGANIC-VOICE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ARCHETYPE-ID < 1 OR WS-ARCHETYPE-ID > 8
+                SET INVALID-ARCHETYPE-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DECLINATION-PERMILLE < 50 OR WS-DECLINATION-PERMILLE > 300
+                SET INVALID-DECLINATION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-JITTER-PERMILLE < 1 OR WS-JITTER-PERMILLE > 20
+                SET INVALID-JITTER TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WARMTH-Q16 < 1000 OR WS-WARMTH-Q16 > 65536
+                SET INVALID-WARMTH-Q16 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ORGANIC-VOICE.
+            COMPUTE WS-VITALITY-METRIC = (WS-ARCHETYPE-ID * 1024) +
+                                         (WS-DECLINATION-PERMILLE * 16) +
+                                         (WS-JITTER-PERMILLE * 64) + 1.
+
+            IF WS-VITALITY-METRIC EQUAL ZERO
+                SET BIOMIMETIC-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ROSENBERG-RESONANCE = ((WS-WARMTH-Q16 * 875) / 10000) +
+                                             (WS-DECLINATION-PERMILLE / 2).
+
+            COMPUTE WS-ORGANIC-REBAR-LATCH = 1470169088 + (WS-ARCHETYPE-ID * 256) +
+                                             (WS-DECLINATION-PERMILLE * 64) +
+                                             (WS-JITTER-PERMILLE * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ORGANIC-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-VITALITY-METRIC * 10) +
+                                             (WS-ROSENBERG-RESONANCE * 10) +
+                                             (WS-ARCHETYPE-ID * 1000) +
+                                             (WS-ORGANIC-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ORGANIC-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ORGANIC-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

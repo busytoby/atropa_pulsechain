@@ -173,6 +173,11 @@ test-voice-character-definition:
 	./tests/test_voice_character_definition
 	@rm -f tests/test_voice_character_definition
 
+test-organic-voice-evolution:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_organic_voice_evolution.c -o tests/test_organic_voice_evolution
+	./tests/test_organic_voice_evolution
+	@rm -f tests/test_organic_voice_evolution
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
