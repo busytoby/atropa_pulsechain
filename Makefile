@@ -1808,6 +1808,18 @@ test-cpm-tomie-finke-geneplore-suite:
 	./tsfi2-deepseek/src/cpm_exec_finke_geneplore /tmp/finke_geneplore.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_finke_geneplore tsfi2-deepseek/src/cpm_exec_finke_geneplore /tmp/finke_geneplore.bin
 
+test-cpm-tomie-recursive-nested-vm-lyapunov-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover.c -o tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover
+	./tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover
+	@rm -f tests/test_cpm_tomie_recursive_nested_vm_lyapunov_prover
+
+test-cpm-tomie-recursive-vm-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_recursive_vm.c -o tsfi2-deepseek/src/cpm_compiler_recursive_vm
+	./tsfi2-deepseek/src/cpm_compiler_recursive_vm /tmp/recursive_vm.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_recursive_vm.c -o tsfi2-deepseek/src/cpm_exec_recursive_vm
+	./tsfi2-deepseek/src/cpm_exec_recursive_vm /tmp/recursive_vm.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_recursive_vm tsfi2-deepseek/src/cpm_exec_recursive_vm /tmp/recursive_vm.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
