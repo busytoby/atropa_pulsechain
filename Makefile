@@ -1008,6 +1008,11 @@ test-holonomic-skeleton-gaze-closure:
 	./tests/test_holonomic_skeleton_gaze_closure
 	@rm -f tests/test_holonomic_skeleton_gaze_closure
 
+test-stanag-wmq-gaze-transport:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_stanag_wmq_gaze_transport.c -o tests/test_stanag_wmq_gaze_transport
+	./tests/test_stanag_wmq_gaze_transport
+	@rm -f tests/test_stanag_wmq_gaze_transport
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

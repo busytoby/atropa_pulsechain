@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SWG-TRP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / STANAG WMQ GAZE TRANSPORT AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SWG-PARAMS.
+           05 WS-TRP-FIDELITY-M         PIC 9(04) VALUE 0960.
+           05 WS-WMQ-MOUNT-LAT-MS       PIC 9(02) VALUE 04.
+           05 WS-GAZE-JITTER-MRAD       PIC 9(02) VALUE 03.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SWG-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SWG-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SWG-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SWG-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SWG-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 TRP-FIDELITY-LOW            VALUE 2.
+              88 WMQ-LAT-OUT-OF-BOUNDS       VALUE 3.
+              88 GAZE-JITTER-EXCEEDED        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 TRANSPORT-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GAZE-TRANSPORT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRP-FIDELITY-M < 900 OR WS-TRP-FIDELITY-M > 1000
+                SET TRP-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WMQ-MOUNT-LAT-MS < 1 OR WS-WMQ-MOUNT-LAT-MS > 10
+                SET WMQ-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GAZE-JITTER-MRAD < 0 OR WS-GAZE-JITTER-MRAD > 10
+                SET GAZE-JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GAZE-TRANSPORT.
+            COMPUTE WS-SWG-COMPOSITE = (WS-TRP-FIDELITY-M / 2) +
+                                       ((15 - WS-WMQ-MOUNT-LAT-MS) * 20) +
+                                       ((15 - WS-GAZE-JITTER-MRAD) * 20).
+
+            COMPUTE WS-SWG-VITALITY = (WS-SWG-COMPOSITE / 4) +
+                                      (WS-TRP-FIDELITY-M / 4) +
+                                      ((15 - WS-WMQ-MOUNT-LAT-MS) * 4) + 1.
+
+            IF WS-SWG-VITALITY EQUAL ZERO
+                SET TRANSPORT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SWG-COHERENCE = (WS-SWG-COMPOSITE / 16) +
+                                       (WS-TRP-FIDELITY-M / 16) +
+                                       ((15 - WS-WMQ-MOUNT-LAT-MS) * 2).
+
+            COMPUTE WS-SWG-REBAR-LATCH = 1470169088 +
+                                         (WS-SWG-COMPOSITE / 2) +
+                                         ((15 - WS-WMQ-MOUNT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SWG-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SWG-VITALITY * 10) +
+                                         (WS-SWG-COHERENCE * 10) +
+                                         (WS-SWG-COMPOSITE * 10) +
+                                         (WS-SWG-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SWG-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SWG-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
