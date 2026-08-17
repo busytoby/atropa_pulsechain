@@ -1418,6 +1418,11 @@ test-fastener-friction-torque:
 	./tests/test_fastener_friction_torque
 	@rm -f tests/test_fastener_friction_torque
 
+test-chamfer-lead-in-tolerance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_chamfer_lead_in_tolerance.c -o tests/test_chamfer_lead_in_tolerance
+	./tests/test_chamfer_lead_in_tolerance
+	@rm -f tests/test_chamfer_lead_in_tolerance
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
