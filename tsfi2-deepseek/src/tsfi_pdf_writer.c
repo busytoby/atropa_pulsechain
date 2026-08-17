@@ -9,7 +9,7 @@ TsfiPdfDocumentWriter *tsfi_pdf_writer_create(void) {
     if (!w) return NULL;
     memset(w, 0, sizeof(*w));
 
-    w->out.capacity = 32768;
+    w->out.capacity = 65536;
     w->out.data = (char *)malloc(w->out.capacity);
     if (!w->out.data) {
         free(w);
@@ -17,7 +17,7 @@ TsfiPdfDocumentWriter *tsfi_pdf_writer_create(void) {
     }
     w->out.length = 0;
 
-    w->xref.capacity = 128;
+    w->xref.capacity = 256;
     w->xref.offsets = (size_t *)malloc(w->xref.capacity * sizeof(size_t));
     if (!w->xref.offsets) {
         free(w->out.data);
@@ -29,16 +29,6 @@ TsfiPdfDocumentWriter *tsfi_pdf_writer_create(void) {
     // Standard PDF 1.7 Header
     const char *hdr = "%PDF-1.7\n%\xE2\xE3\xCF\xD3\n";
     tsfi_pdf_writer_write_raw(w, hdr, strlen(hdr));
-
-    // Object 1: Catalog
-    w->catalog_obj = tsfi_pdf_writer_add_object(w);
-    const char *cat_dict = "<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
-    tsfi_pdf_writer_write_raw(w, cat_dict, strlen(cat_dict));
-
-    // Object 2: Pages Root
-    w->pages_root_obj = tsfi_pdf_writer_add_object(w);
-    const char *pgs_dict = "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
-    tsfi_pdf_writer_write_raw(w, pgs_dict, strlen(pgs_dict));
 
     return w;
 }
@@ -69,50 +59,27 @@ size_t tsfi_pdf_writer_add_object(TsfiPdfDocumentWriter *writer) {
     return writer->object_count;
 }
 
-void tsfi_pdf_writer_add_page(TsfiPdfDocumentWriter *writer, const char *text_content, size_t text_len) {
-    if (!writer) return;
+void tsfi_pdf_writer_add_page_styled(TsfiPdfDocumentWriter *writer, const char *text_content, int page_number) {
+    if (!writer || writer->page_count >= 16) return;
 
-    // Object 3: Page Object (Standard A4 / US-Letter: 595 x 842 pt)
-    writer->current_page_obj = tsfi_pdf_writer_add_object(writer);
-    const char *page_dict = 
-        "<< /Type /Page\n"
-        "   /Parent 2 0 R\n"
-        "   /MediaBox [0 0 595 842]\n"
-        "   /Contents 6 0 R\n"
-        "   /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >>\n"
-        ">>\nendobj\n";
-    tsfi_pdf_writer_write_raw(writer, page_dict, strlen(page_dict));
+    TsfiPdfPageEntry *entry = &writer->pages[writer->page_count++];
+    entry->text_content = strdup(text_content ? text_content : "");
+    entry->page_number = page_number;
+}
 
-    // Object 4: Monospace Typewriter Font (Courier / IBM Selectric Style)
-    size_t font_typewriter = tsfi_pdf_writer_add_object(writer);
-    const char *font_c_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n";
-    tsfi_pdf_writer_write_raw(writer, font_c_dict, strlen(font_c_dict));
+static void render_coling_page_stream(TsfiPdfStreamWriter *content, const char *text, int page_number) {
+    // Begin Text block: Courier font, 10pt with 13.5pt leading, authentic margins
+    const char *bt = "BT\n/F1 10 Tf\n13.5 TL\n54 770 Td\n";
+    memcpy(content->data + content->length, bt, strlen(bt));
+    content->length += strlen(bt);
 
-    // Object 5: Bold Typewriter Font (Courier-Bold)
-    size_t font_bold = tsfi_pdf_writer_add_object(writer);
-    const char *font_b_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>\nendobj\n";
-    tsfi_pdf_writer_write_raw(writer, font_b_dict, strlen(font_b_dict));
-
-    // Object 6: Stream Object with 1976 COLING Typewriter Typography & Page Numbers
-    size_t stream_obj = tsfi_pdf_writer_add_object(writer);
-    TsfiPdfStreamWriter content = {0};
-    content.capacity = 16384;
-    content.data = (char *)malloc(content.capacity);
-    content.length = 0;
-
-    // Start text block: 10pt Courier, 14pt leading, centered title layout
-    const char *bt = "BT\n/F2 10 Tf\n14 TL\n60 760 Td\n";
-    memcpy(content.data, bt, strlen(bt));
-    content.length = strlen(bt);
-
-    // Format text lines matching 1976 COLING paper style
-    const char *p = text_content;
+    const char *p = text;
     char line[128];
     size_t line_len = 0;
     bool in_body = false;
 
     while (*p) {
-        if (*p == '\n' || line_len >= 68) {
+        if (*p == '\n' || line_len >= 72) {
             if (line_len > 0) {
                 line[line_len] = '\0';
                 char op[256];
@@ -123,12 +90,12 @@ void tsfi_pdf_writer_add_page(TsfiPdfDocumentWriter *writer, const char *text_co
                 } else {
                     olen = snprintf(op, sizeof(op), "T* (%s) Tj\n", line);
                 }
-                if (content.length + olen + 512 >= content.capacity) {
-                    content.capacity = (content.length + olen + 4096) * 2;
-                    content.data = (char *)realloc(content.data, content.capacity);
+                if (content->length + olen + 512 >= content->capacity) {
+                    content->capacity = (content->length + olen + 4096) * 2;
+                    content->data = (char *)realloc(content->data, content->capacity);
                 }
-                memcpy(content.data + content.length, op, olen);
-                content.length += olen;
+                memcpy(content->data + content->length, op, olen);
+                content->length += olen;
                 line_len = 0;
             }
             if (*p == '\n') {
@@ -154,39 +121,101 @@ void tsfi_pdf_writer_add_page(TsfiPdfDocumentWriter *writer, const char *text_co
         line[line_len] = '\0';
         char op[256];
         int olen = snprintf(op, sizeof(op), "T* (%s) Tj\n", line);
-        if (content.length + olen + 512 >= content.capacity) {
-            content.capacity = (content.length + olen + 4096) * 2;
-            content.data = (char *)realloc(content.data, content.capacity);
+        if (content->length + olen + 512 >= content->capacity) {
+            content->capacity = (content->length + olen + 4096) * 2;
+            content->data = (char *)realloc(content->data, content->capacity);
         }
-        memcpy(content.data + content.length, op, olen);
-        content.length += olen;
+        memcpy(content->data + content->length, op, olen);
+        content->length += olen;
     }
 
-    // Add page number footer "- 292 -"
-    const char *footer = "T* T* T* T* (                    -  292  -                    ) Tj\nET\n";
-    if (content.length + strlen(footer) + 128 >= content.capacity) {
-        content.capacity = (content.length + strlen(footer) + 512) * 2;
-        content.data = (char *)realloc(content.data, content.capacity);
+    // Format page footer: e.g. "- 292 -" centered at bottom
+    char footer[128];
+    int f_len = snprintf(footer, sizeof(footer),
+                         "T* T* (                                -  %d  -                                ) Tj\nET\n",
+                         page_number);
+    if (content->length + f_len + 64 >= content->capacity) {
+        content->capacity = (content->length + f_len + 512) * 2;
+        content->data = (char *)realloc(content->data, content->capacity);
     }
-    memcpy(content.data + content.length, footer, strlen(footer));
-    content.length += strlen(footer);
-    content.data[content.length] = '\0';
-
-    char s_hdr[128];
-    int sh_len = snprintf(s_hdr, sizeof(s_hdr), "<< /Length %zu >>\nstream\n", content.length);
-    tsfi_pdf_writer_write_raw(writer, s_hdr, (size_t)sh_len);
-    tsfi_pdf_writer_write_raw(writer, content.data, content.length);
-    tsfi_pdf_writer_write_raw(writer, "\nendstream\nendobj\n", 18);
-
-    free(content.data);
-    (void)font_typewriter;
-    (void)font_bold;
-    (void)stream_obj;
-    (void)text_len;
+    memcpy(content->data + content->length, footer, f_len);
+    content->length += f_len;
+    content->data[content->length] = '\0';
 }
 
-int tsfi_pdf_writer_finalize_file(TsfiPdfDocumentWriter *writer, const char *output_filepath) {
-    if (!writer || !output_filepath) return -1;
+int tsfi_pdf_writer_finalize_multipage(TsfiPdfDocumentWriter *writer, const char *output_filepath) {
+    if (!writer || !output_filepath || writer->page_count == 0) return -1;
+
+    // Object 1: Catalog
+    writer->catalog_obj = tsfi_pdf_writer_add_object(writer);
+    const char *cat_dict = "<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, cat_dict, strlen(cat_dict));
+
+    // Object 2: Pages Root
+    writer->pages_root_obj = tsfi_pdf_writer_add_object(writer);
+    char pgs_dict[512];
+    char kids_buf[256] = "[";
+    
+    // Page objects start at Object 4 (after Catalog, Pages, and Font)
+    // Font Object = Object 3
+    size_t font_obj = tsfi_pdf_writer_add_object(writer);
+    const char *font_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, font_dict, strlen(font_dict));
+
+    size_t start_page_obj = 4;
+    for (size_t i = 0; i < writer->page_count; ++i) {
+        char k_entry[32];
+        snprintf(k_entry, sizeof(k_entry), "%zu 0 R ", start_page_obj + i * 2);
+        strcat(kids_buf, k_entry);
+    }
+    strcat(kids_buf, "]");
+
+    int pg_len = snprintf(pgs_dict, sizeof(pgs_dict),
+                          "<< /Type /Pages /Kids %s /Count %zu >>\nendobj\n",
+                          kids_buf, writer->page_count);
+    
+    // Write pages dict into stream replacing Object 2 content
+    // Note: We write objects sequentially. We already wrote obj 1 and registered obj 2 & 3.
+    // Let's write Object 2 payload properly:
+    tsfi_pdf_writer_write_raw(writer, pgs_dict, strlen(pgs_dict));
+
+    // Now write each Page Object and its Content Stream Object
+    for (size_t i = 0; i < writer->page_count; ++i) {
+        size_t page_num = start_page_obj + i * 2;
+        size_t stream_num = page_num + 1;
+
+        // Page Object
+        size_t p_obj = tsfi_pdf_writer_add_object(writer);
+        char page_dict[512];
+        int pd_len = snprintf(page_dict, sizeof(page_dict),
+                              "<< /Type /Page\n"
+                              "   /Parent 2 0 R\n"
+                              "   /MediaBox [0 0 595 842]\n"
+                              "   /Contents %zu 0 R\n"
+                              "   /Resources << /Font << /F1 3 0 R >> >>\n"
+                              ">>\nendobj\n",
+                              stream_num);
+        tsfi_pdf_writer_write_raw(writer, page_dict, (size_t)pd_len);
+
+        // Content Stream Object
+        size_t s_obj = tsfi_pdf_writer_add_object(writer);
+        TsfiPdfStreamWriter strm = {0};
+        strm.capacity = 16384;
+        strm.data = (char *)malloc(strm.capacity);
+        strm.length = 0;
+
+        render_coling_page_stream(&strm, writer->pages[i].text_content, writer->pages[i].page_number);
+
+        char shdr[128];
+        int sh_len = snprintf(shdr, sizeof(shdr), "<< /Length %zu >>\nstream\n", strm.length);
+        tsfi_pdf_writer_write_raw(writer, shdr, (size_t)sh_len);
+        tsfi_pdf_writer_write_raw(writer, strm.data, strm.length);
+        tsfi_pdf_writer_write_raw(writer, "\nendstream\nendobj\n", 18);
+
+        free(strm.data);
+        (void)p_obj;
+        (void)s_obj;
+    }
 
     // XREF Table
     size_t xref_start = writer->out.length;
@@ -212,11 +241,15 @@ int tsfi_pdf_writer_finalize_file(TsfiPdfDocumentWriter *writer, const char *out
     fwrite(writer->out.data, 1, writer->out.length, f);
     fclose(f);
 
+    (void)font_obj;
     return 0;
 }
 
 void tsfi_pdf_writer_free(TsfiPdfDocumentWriter *writer) {
     if (!writer) return;
+    for (size_t i = 0; i < writer->page_count; ++i) {
+        if (writer->pages[i].text_content) free(writer->pages[i].text_content);
+    }
     if (writer->out.data) free(writer->out.data);
     if (writer->xref.offsets) free(writer->xref.offsets);
     free(writer);
