@@ -293,6 +293,11 @@ test-multiprime-rational-reconstruction:
 	./tests/test_multiprime_rational_reconstruction
 	@rm -f tests/test_multiprime_rational_reconstruction
 
+test-nonholonomic-creative-telescoping:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_nonholonomic_creative_telescoping.c -o tests/test_nonholonomic_creative_telescoping
+	./tests/test_nonholonomic_creative_telescoping
+	@rm -f tests/test_nonholonomic_creative_telescoping
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
