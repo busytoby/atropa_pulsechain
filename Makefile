@@ -183,6 +183,11 @@ synthesize-human-speech-words:
 	./tests/synthesize_human_speech_words
 	@rm -f tests/synthesize_human_speech_words
 
+synthesize-connected-sentences:
+	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_connected_sentences.c -lm -o tests/synthesize_connected_sentences
+	./tests/synthesize_connected_sentences
+	@rm -f tests/synthesize_connected_sentences
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

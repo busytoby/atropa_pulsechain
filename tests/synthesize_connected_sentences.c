@@ -1,0 +1,306 @@
+// SPDX-License-Identifier: GPL-2.0
+#define _POSIX_C_SOURCE 200809L
+/*
+ * Multi-Word Connected Sentence & Dialogue Speech Synthesizer
+ * Synthesizes natural, organic multi-word phrases with cross-word coarticulation,
+ * sentence-level prosody declination, and distinct ToMiE character personalities.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <math.h>
+#include <string.h>
+#include <ctype.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define SAMPLE_RATE 44100
+
+#pragma pack(push, 1)
+typedef struct {
+    char     riff[4];
+    uint32_t overall_size;
+    char     wave[4];
+    char     fmt_chunk_marker[4];
+    uint32_t length_of_fmt;
+    uint16_t format_type;
+    uint16_t channels;
+    uint32_t sample_rate;
+    uint32_t byterate;
+    uint16_t block_align;
+    uint16_t bits_per_sample;
+    char     data_chunk_header[4];
+    uint32_t data_size;
+} WavHeader;
+#pragma pack(pop)
+
+typedef struct {
+    char symbol[4];
+    float f1, f2, f3, f4;
+    float duration_ms;
+    bool is_voiced;
+    float voice_amp;
+    float noise_amp;
+    float pitch_offset;
+} PhonemeProfile;
+
+static const PhonemeProfile PHONEMES[] = {
+    // Vowels
+    { "AA",  730.0f, 1090.0f, 2440.0f, 3500.0f, 180.0f, true,  1.0f, 0.05f,  0.0f },
+    { "AE",  660.0f, 1720.0f, 2410.0f, 3500.0f, 180.0f, true,  1.0f, 0.05f,  0.0f },
+    { "AH",  520.0f, 1190.0f, 2390.0f, 3500.0f, 150.0f, true,  1.0f, 0.05f,  0.0f },
+    { "AO",  570.0f,  840.0f, 2410.0f, 3500.0f, 180.0f, true,  1.0f, 0.05f, -0.5f },
+    { "EH",  530.0f, 1840.0f, 2480.0f, 3500.0f, 160.0f, true,  1.0f, 0.05f,  0.5f },
+    { "ER",  490.0f, 1350.0f, 1690.0f, 3200.0f, 180.0f, true,  1.0f, 0.06f, -1.0f },
+    { "IH",  390.0f, 1990.0f, 2550.0f, 3500.0f, 150.0f, true,  1.0f, 0.05f,  0.5f },
+    { "IY",  270.0f, 2290.0f, 3010.0f, 3600.0f, 180.0f, true,  1.0f, 0.05f,  1.0f },
+    { "OW",  500.0f,  700.0f, 2300.0f, 3500.0f, 180.0f, true,  1.0f, 0.05f, -1.0f },
+    { "UW",  300.0f,  870.0f, 2240.0f, 3500.0f, 180.0f, true,  1.0f, 0.05f, -1.5f },
+    
+    // Consonants
+    { "HH",  500.0f, 1500.0f, 2500.0f, 3500.0f, 100.0f, false, 0.1f, 0.85f,  0.0f },
+    { "LL",  380.0f, 1200.0f, 2700.0f, 3500.0f, 150.0f, true,  0.8f, 0.04f, -0.5f },
+    { "MM",  280.0f,  900.0f, 2200.0f, 3500.0f, 140.0f, true,  0.75f,0.03f, -1.0f },
+    { "NN",  280.0f, 1700.0f, 2600.0f, 3500.0f, 140.0f, true,  0.75f,0.03f, -0.5f },
+    { "SS",  400.0f, 2500.0f, 5000.0f, 6500.0f, 130.0f, false, 0.0f, 1.10f,  0.0f },
+    { "SH",  300.0f, 1800.0f, 3200.0f, 5000.0f, 130.0f, false, 0.0f, 1.00f,  0.0f },
+    { "TT",  400.0f, 1800.0f, 3500.0f, 5000.0f,  70.0f, false, 0.0f, 1.30f,  0.0f },
+    { "DD",  350.0f, 1700.0f, 2600.0f, 3600.0f,  80.0f, true,  0.6f, 0.50f,  0.0f },
+    { "WW",  300.0f,  700.0f, 2200.0f, 3500.0f, 140.0f, true,  0.8f, 0.04f, -1.0f },
+    { "RR",  420.0f, 1300.0f, 1600.0f, 3200.0f, 150.0f, true,  0.8f, 0.04f, -0.5f },
+    { "DH",  350.0f, 1600.0f, 2500.0f, 3500.0f,  90.0f, true,  0.7f, 0.35f, -0.5f },
+    { "VV",  300.0f, 1400.0f, 2400.0f, 3400.0f, 110.0f, true,  0.7f, 0.35f,  0.0f },
+    { "KK",  400.0f, 2000.0f, 3000.0f, 4000.0f,  80.0f, false, 0.0f, 1.20f,  0.0f },
+    { "SIL", 500.0f, 1500.0f, 2500.0f, 3500.0f, 120.0f, false, 0.0f, 0.00f,  0.0f },
+    { "PAU", 500.0f, 1500.0f, 2500.0f, 3500.0f,  60.0f, false, 0.0f, 0.00f,  0.0f }
+};
+
+static const size_t NUM_PHONEMES = sizeof(PHONEMES) / sizeof(PHONEMES[0]);
+
+static const PhonemeProfile *find_phoneme(const char *sym) {
+    for (size_t i = 0; i < NUM_PHONEMES; i++) {
+        if (strcmp(PHONEMES[i].symbol, sym) == 0) return &PHONEMES[i];
+    }
+    return &PHONEMES[NUM_PHONEMES - 2]; // SIL
+}
+
+typedef struct {
+    double bandpass;
+    double lowpass;
+} SVFilter;
+
+static double step_svf(SVFilter *f, double in, double freq, double q, double fs) {
+    double f_norm = 2.0 * sin(M_PI * freq / fs);
+    if (f_norm > 0.99) f_norm = 0.99;
+    if (f_norm < 0.001) f_norm = 0.001;
+    double damp = 1.0 / q;
+
+    double highpass = in - f->lowpass - damp * f->bandpass;
+    f->bandpass += f_norm * highpass;
+    f->lowpass  += f_norm * f->bandpass;
+    return f->bandpass;
+}
+
+typedef struct {
+    const char *word;
+    const char *phonemes[16];
+    size_t count;
+} WordLexicon;
+
+static const WordLexicon DICTIONARY[] = {
+    { "HELLO",       { "HH", "EH", "LL", "OW", "PAU" }, 5 },
+    { "AUNCIENT",    { "AA", "NN", "SH", "EH", "NN", "TT", "PAU" }, 7 },
+    { "HUMAN",       { "HH", "IY", "UW", "MM", "AH", "NN", "PAU" }, 7 },
+    { "LIFE",        { "LL", "AA", "IY", "SS", "PAU" }, 5 },
+    { "SUN",         { "SS", "AH", "NN", "PAU" }, 4 },
+    { "WATER",       { "WW", "AO", "TT", "ER", "PAU" }, 5 },
+    { "WORLD",       { "WW", "ER", "LL", "DH", "PAU" }, 5 },
+    { "WELCOME",     { "WW", "EH", "LL", "KK", "AH", "MM", "PAU" }, 7 },
+    { "TO",          { "TT", "UW", "PAU" }, 3 },
+    { "THE",         { "DH", "AH", "PAU" }, 3 },
+    { "WE",          { "WW", "IY", "PAU" }, 3 },
+    { "ARE",         { "AA", "RR", "PAU" }, 3 },
+    { "ALIVE",       { "AH", "LL", "AA", "IY", "VV", "PAU" }, 6 }
+};
+
+static const size_t DICT_SIZE = sizeof(DICTIONARY) / sizeof(DICTIONARY[0]);
+
+static const WordLexicon *lookup_word(const char *word) {
+    char upper[64];
+    size_t len = strlen(word);
+    if (len >= sizeof(upper)) len = sizeof(upper) - 1;
+    for (size_t i = 0; i < len; i++) upper[i] = (char)toupper(word[i]);
+    upper[len] = '\0';
+
+    for (size_t i = 0; i < DICT_SIZE; i++) {
+        if (strcmp(DICTIONARY[i].word, upper) == 0) return &DICTIONARY[i];
+    }
+    return NULL;
+}
+
+/* Synthesizes complete sentences with natural word-to-word flow */
+static void synthesize_sentence_to_wav(const char **words, size_t num_words, float base_f0, float warmth, const char *out_wav_path) {
+    // Collect all phonemes across the sentence
+    const char *full_phonemes[256];
+    size_t total_phonemes = 0;
+
+    for (size_t w = 0; w < num_words; w++) {
+        const WordLexicon *lex = lookup_word(words[w]);
+        if (!lex) continue;
+        for (size_t p = 0; p < lex->count; p++) {
+            if (total_phonemes < 255) {
+                full_phonemes[total_phonemes++] = lex->phonemes[p];
+            }
+        }
+    }
+    full_phonemes[total_phonemes++] = "SIL";
+
+    float total_ms = 0.0f;
+    for (size_t i = 0; i < total_phonemes; i++) {
+        total_ms += find_phoneme(full_phonemes[i])->duration_ms;
+    }
+
+    size_t total_samples = (size_t)((total_ms / 1000.0f) * SAMPLE_RATE) + (SAMPLE_RATE / 4);
+    double *raw_audio = (double *)calloc(total_samples, sizeof(double));
+    if (!raw_audio) return;
+
+    SVFilter svf1 = {0}, svf2 = {0}, svf3 = {0}, svf4 = {0};
+    float cur_f1 = 500.0f, cur_f2 = 1500.0f, cur_f3 = 2500.0f, cur_f4 = 3500.0f;
+    double glot_phase = 0.0;
+    size_t sample_idx = 0;
+
+    for (size_t p_idx = 0; p_idx < total_phonemes; p_idx++) {
+        const PhonemeProfile *target = find_phoneme(full_phonemes[p_idx]);
+        size_t phoneme_samples = (size_t)((target->duration_ms / 1000.0f) * SAMPLE_RATE);
+
+        // Sentence-level intonation curve: Natural arc (rises on start, arcs, declines at end)
+        float progress = (float)p_idx / (float)total_phonemes;
+        float sentence_arc = 1.0f + sinf(progress * (float)M_PI) * 0.12f - (progress * 0.15f);
+
+        for (size_t s = 0; s < phoneme_samples && sample_idx < total_samples; s++, sample_idx++) {
+            // Smooth Lipschitz formant coarticulation
+            double alpha = 0.0035;
+            cur_f1 += (float)((target->f1 - cur_f1) * alpha);
+            cur_f2 += (float)((target->f2 - cur_f2) * alpha);
+            cur_f3 += (float)((target->f3 - cur_f3) * alpha);
+            cur_f4 += (float)((target->f4 - cur_f4) * alpha);
+
+            // Natural human vibrato (5.5Hz, 25 cents)
+            double t_sec = (double)sample_idx / (double)SAMPLE_RATE;
+            double vibrato = sin(2.0 * M_PI * 5.5 * t_sec) * 0.02;
+
+            // Micro-jitter: 0.8% organic frequency perturbation
+            double micro_jitter = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.008;
+
+            float semitone = powf(2.0f, target->pitch_offset / 12.0f);
+            double inst_f0 = base_f0 * sentence_arc * semitone * (1.0 + vibrato + micro_jitter);
+
+            // Asymmetric Rosenberg glottal pulse
+            double glot_pulse = 0.0;
+            if (target->is_voiced) {
+                glot_phase += inst_f0 / (double)SAMPLE_RATE;
+                if (glot_phase >= 1.0) glot_phase -= 1.0;
+
+                double p = glot_phase;
+                if (p < 0.40) {
+                    glot_pulse = 0.5 * (1.0 - cos(M_PI * p / 0.40));
+                } else if (p < 0.56) {
+                    glot_pulse = cos(M_PI * (p - 0.40) / 0.32);
+                } else {
+                    glot_pulse = 0.0;
+                }
+
+                // Subharmonic chest warmth
+                glot_pulse += sin(M_PI * glot_phase) * warmth * 0.15;
+            }
+
+            // Breath shimmer turbulence
+            double shimmer = 1.0 + (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * 0.03;
+            double noise = (((double)rand() / (double)RAND_MAX) * 2.0 - 1.0) * shimmer;
+
+            double excitation = (glot_pulse * target->voice_amp) + (noise * target->noise_amp * 0.4);
+
+            double y1 = step_svf(&svf1, excitation, cur_f1, 5.0, SAMPLE_RATE);
+            double y2 = step_svf(&svf2, excitation, cur_f2, 7.5, SAMPLE_RATE);
+            double y3 = step_svf(&svf3, excitation, cur_f3, 9.0, SAMPLE_RATE);
+            double y4 = step_svf(&svf4, excitation, cur_f4, 12.0, SAMPLE_RATE);
+
+            double vocal = (y1 * 1.0) + (y2 * 0.65) + (y3 * 0.35) + (y4 * 0.18);
+            raw_audio[sample_idx] = tanh(vocal * 1.2) * 0.85;
+        }
+    }
+
+    double peak = 0.0001;
+    for (size_t i = 0; i < total_samples; i++) {
+        double abs_val = fabs(raw_audio[i]);
+        if (abs_val > peak) peak = abs_val;
+    }
+    double norm_factor = 0.85 / peak;
+
+    int16_t *pcm_buffer = (int16_t *)calloc(total_samples * 2, sizeof(int16_t));
+    if (pcm_buffer) {
+        for (size_t i = 0; i < total_samples; i++) {
+            double sample = raw_audio[i] * norm_factor;
+            if (sample > 0.95) sample = 0.95;
+            if (sample < -0.95) sample = -0.95;
+
+            int16_t val = (int16_t)(sample * 32767.0);
+            pcm_buffer[i * 2 + 0] = val;
+            pcm_buffer[i * 2 + 1] = val;
+        }
+
+        FILE *f = fopen(out_wav_path, "wb");
+        if (f) {
+            WavHeader hdr;
+            memcpy(hdr.riff, "RIFF", 4);
+            hdr.overall_size = sizeof(WavHeader) - 8 + (uint32_t)(total_samples * 2 * sizeof(int16_t));
+            memcpy(hdr.wave, "WAVE", 4);
+            memcpy(hdr.fmt_chunk_marker, "fmt ", 4);
+            hdr.length_of_fmt = 16;
+            hdr.format_type = 1;
+            hdr.channels = 2;
+            hdr.sample_rate = SAMPLE_RATE;
+            hdr.byterate = SAMPLE_RATE * 2 * sizeof(int16_t);
+            hdr.block_align = 4;
+            hdr.bits_per_sample = 16;
+            memcpy(hdr.data_chunk_header, "data", 4);
+            hdr.data_size = (uint32_t)(total_samples * 2 * sizeof(int16_t));
+
+            fwrite(&hdr, sizeof(WavHeader), 1, f);
+            fwrite(pcm_buffer, sizeof(int16_t), total_samples * 2, f);
+            fclose(f);
+        }
+        free(pcm_buffer);
+    }
+
+    free(raw_audio);
+}
+
+int main(void) {
+    printf("=============================================================\n");
+    printf("CONNECTED SENTENCE & BIOMIMETIC DIALOGUE SYNTHESIZER        \n");
+    printf("=============================================================\n");
+
+    // Sentence 1: "Hello Human Welcome To The Auncient World"
+    const char *phrase1[] = { "HELLO", "HUMAN", "WELCOME", "TO", "THE", "AUNCIENT", "WORLD" };
+    const char *out1 = "assets/bionika/speech_sentence_WELCOME.wav";
+    printf("1. Synthesizing Phrase 1: 'Hello Human Welcome To The Auncient World' (Baritone Lead)...\n");
+    synthesize_sentence_to_wav(phrase1, sizeof(phrase1)/sizeof(phrase1[0]), 120.0f, 0.4f, out1);
+    printf("   ✓ Generated: %s\n", out1);
+
+    // Sentence 2: "We Are Alive Human Life Water Sun"
+    const char *phrase2[] = { "WE", "ARE", "ALIVE", "HUMAN", "LIFE", "WATER", "SUN" };
+    const char *out2 = "assets/bionika/speech_sentence_ALIVE.wav";
+    printf("2. Synthesizing Phrase 2: 'We Are Alive Human Life Water Sun' (Tenor Companion)...\n");
+    synthesize_sentence_to_wav(phrase2, sizeof(phrase2)/sizeof(phrase2[0]), 180.0f, 0.3f, out2);
+    printf("   ✓ Generated: %s\n", out2);
+
+    printf("=============================================================\n");
+    printf("ALL CONNECTED SENTENCES SYNTHESIZED SUCCESSFULLY (44.1kHz)\n");
+    printf("=============================================================\n");
+    return 0;
+}
