@@ -1568,6 +1568,11 @@ test-heartsway-embodied-resonance:
 	./tests/test_heartsway_embodied_resonance
 	@rm -f tests/test_heartsway_embodied_resonance
 
+test-algorithmic-pacing-intimacy:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_algorithmic_pacing_intimacy.c -o tests/test_algorithmic_pacing_intimacy
+	./tests/test_algorithmic_pacing_intimacy
+	@rm -f tests/test_algorithmic_pacing_intimacy
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
