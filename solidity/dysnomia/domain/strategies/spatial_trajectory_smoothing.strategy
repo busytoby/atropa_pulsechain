@@ -1,0 +1,115 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TRAJ-SMOOTH-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TRAJECTORY SMOOTHING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TRAJ-PARAMS.
+           05 WS-LIN-VEL-MM             PIC 9(04) VALUE 0400.
+           05 WS-ANG-VEL-MRAD           PIC 9(04) VALUE 0600.
+           05 WS-ACCEL-MM               PIC 9(04) VALUE 0500.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-JERK-SMOOTH            PIC 9(04) VALUE 0.
+           05 WS-TRAJ-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-TRAJ-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-TRAJ-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TRAJ-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 LINEAR-VEL-EXCEEDED         VALUE 2.
+              88 ANGULAR-VEL-EXCEEDED        VALUE 3.
+              88 ACCELERATION-EXCEEDED       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 TRAJECTORY-VITALITY-COLLAP  VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-TRAJECTORY-SMOOTHING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-LIN-VEL-MM < 50 OR WS-LIN-VEL-MM > 800
+                SET LINEAR-VEL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ANG-VEL-MRAD < 50 OR WS-ANG-VEL-MRAD > 1500
+                SET ANGULAR-VEL-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACCEL-MM < 50 OR WS-ACCEL-MM > 1200
+                SET ACCELERATION-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-JERK-SMOOTH = (WS-LIN-VEL-MM * 500) / WS-ACCEL-MM.
+            IF WS-JERK-SMOOTH EQUAL ZERO
+                SET TRAJECTORY-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-TRAJECTORY-SMOOTHING.
+            COMPUTE WS-TRAJ-VITALITY = (WS-JERK-SMOOTH / 2) +
+                                       (WS-LIN-VEL-MM / 4) +
+                                       (WS-ANG-VEL-MRAD / 8) + 1.
+
+            IF WS-TRAJ-VITALITY EQUAL ZERO
+                SET TRAJECTORY-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TRAJ-COHERENCE = (WS-JERK-SMOOTH / 8) +
+                                        (WS-LIN-VEL-MM / 16) +
+                                        (WS-ANG-VEL-MRAD / 32).
+
+            COMPUTE WS-TRAJ-REBAR-LATCH = 1470169088 +
+                                          (WS-LIN-VEL-MM) +
+                                          (WS-ANG-VEL-MRAD / 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TRAJ-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-TRAJ-VITALITY * 10) +
+                                          (WS-TRAJ-COHERENCE * 10) +
+                                          (WS-JERK-SMOOTH * 10) +
+                                          (WS-TRAJ-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TRAJ-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TRAJ-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

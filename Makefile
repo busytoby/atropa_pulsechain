@@ -578,6 +578,11 @@ test-temporal-habituation-decay:
 	./tests/test_temporal_habituation_decay
 	@rm -f tests/test_temporal_habituation_decay
 
+test-spatial-trajectory-smoothing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_spatial_trajectory_smoothing.c -o tests/test_spatial_trajectory_smoothing
+	./tests/test_spatial_trajectory_smoothing
+	@rm -f tests/test_spatial_trajectory_smoothing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
