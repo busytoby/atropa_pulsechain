@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. BSN-SCL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BOUNDING BOX SCALE NORM AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BSN-PARAMS.
+           05 WS-NORMAL-LAT-MS          PIC 9(02) VALUE 12.
+           05 WS-ASPECT-FIDELITY-M      PIC 9(04) VALUE 0960.
+           05 WS-SCALING-ERROR-UM       PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BSN-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-BSN-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-BSN-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-BSN-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BSN-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 NORMAL-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 ASPECT-FIDELITY-LOW         VALUE 3.
+              88 SCALING-ERROR-EXCEEDED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 NORMALIZATION-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCALE-NORMALIZATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NORMAL-LAT-MS < 5 OR WS-NORMAL-LAT-MS > 25
+                SET NORMAL-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ASPECT-FIDELITY-M < 850 OR WS-ASPECT-FIDELITY-M > 1000
+                SET ASPECT-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCALING-ERROR-UM < 0 OR WS-SCALING-ERROR-UM > 5
+                SET SCALING-ERROR-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCALE-NORMALIZATION.
+            COMPUTE WS-BSN-COMPOSITE = ((30 - WS-NORMAL-LAT-MS) * 20) +
+                                       (WS-ASPECT-FIDELITY-M / 2) +
+                                       ((10 - WS-SCALING-ERROR-UM) * 40).
+
+            COMPUTE WS-BSN-VITALITY = (WS-BSN-COMPOSITE / 4) +
+                                      (WS-ASPECT-FIDELITY-M / 4) +
+                                      ((30 - WS-NORMAL-LAT-MS) * 4) + 1.
+
+            IF WS-BSN-VITALITY EQUAL ZERO
+                SET NORMALIZATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BSN-COHERENCE = (WS-BSN-COMPOSITE / 16) +
+                                       (WS-ASPECT-FIDELITY-M / 16) +
+                                       ((30 - WS-NORMAL-LAT-MS) * 2).
+
+            COMPUTE WS-BSN-REBAR-LATCH = 1470169088 +
+                                         (WS-BSN-COMPOSITE / 2) +
+                                         ((30 - WS-NORMAL-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BSN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-BSN-VITALITY * 10) +
+                                         (WS-BSN-COHERENCE * 10) +
+                                         (WS-BSN-COMPOSITE * 10) +
+                                         (WS-BSN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BSN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BSN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

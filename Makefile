@@ -1388,6 +1388,11 @@ test-error-recovery-backtracking:
 	./tests/test_error_recovery_backtracking
 	@rm -f tests/test_error_recovery_backtracking
 
+test-bounding-box-scale-norm:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bounding_box_scale_norm.c -o tests/test_bounding_box_scale_norm
+	./tests/test_bounding_box_scale_norm
+	@rm -f tests/test_bounding_box_scale_norm
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
