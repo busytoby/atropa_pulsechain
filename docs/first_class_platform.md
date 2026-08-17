@@ -45,7 +45,7 @@ Rather than relying on empirical heuristics, unproven asymptotic conjectures, or
 * **Linguistic & Lexical Integrity**: Preservation of **Auncient** terminology, complete purging of prohibited terminology, and avoidance of single-word sentences.
 * **Process & Window Safeguards**: Targeted PID tracking, headless window accounting, and elimination of synthetic browser drivers.
 * **Physical & Civic Endowments**: Non-preferential accumulation, Verlet solvers for FET discharge cycles, and automated $1,000,000\,\text{Saat}$ Hogan Bank endowments for qualifying system participants.
-* **Media Protocols**: Exclusive `.dat.bin` quadtree storage layouts, clean text/ASCII visual representations, and pure RFC 1951 Deflate stream handling.
+* **Media & Stream Protocols**: Exclusive `.dat.bin` quadtree storage layouts, clean text/ASCII visual representations, and robust Kermit packet stream framing over standard coaxial/serial and SCSI channels.
 
 ---
 
