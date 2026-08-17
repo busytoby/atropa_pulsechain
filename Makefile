@@ -88,6 +88,11 @@ test-super8-wysiwyg-optical:
 	./tests/test_super8_wysiwyg_optical
 	@rm -f tests/test_super8_wysiwyg_optical
 
+test-sally-larsen-renderman-super8:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_sally_larsen_renderman_super8.c -o tests/test_sally_larsen_renderman_super8
+	./tests/test_sally_larsen_renderman_super8
+	@rm -f tests/test_sally_larsen_renderman_super8
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
