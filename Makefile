@@ -1688,6 +1688,18 @@ test-cpm-tomie-4box-coaxial-suite:
 	./tsfi2-deepseek/src/cpm_exec_4box_coaxial /tmp/4box_coaxial.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_4box_coaxial tsfi2-deepseek/src/cpm_exec_4box_coaxial /tmp/4box_coaxial.bin
 
+test-cpm-tomie-coaxial-multiplex-inference-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_coaxial_multiplex_inference_prover.c -o tests/test_cpm_tomie_coaxial_multiplex_inference_prover
+	./tests/test_cpm_tomie_coaxial_multiplex_inference_prover
+	@rm -f tests/test_cpm_tomie_coaxial_multiplex_inference_prover
+
+test-cpm-tomie-coaxial-mux-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_coaxial_mux.c -o tsfi2-deepseek/src/cpm_compiler_coaxial_mux
+	./tsfi2-deepseek/src/cpm_compiler_coaxial_mux /tmp/coaxial_mux.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_coaxial_mux.c -o tsfi2-deepseek/src/cpm_exec_coaxial_mux
+	./tsfi2-deepseek/src/cpm_exec_coaxial_mux /tmp/coaxial_mux.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_coaxial_mux tsfi2-deepseek/src/cpm_exec_coaxial_mux /tmp/coaxial_mux.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
