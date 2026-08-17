@@ -558,6 +558,11 @@ test-upward-gaze-vulnerability:
 	./tests/test_upward_gaze_vulnerability
 	@rm -f tests/test_upward_gaze_vulnerability
 
+test-indirect-linguistic-softening:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_indirect_linguistic_softening.c -o tests/test_indirect_linguistic_softening
+	./tests/test_indirect_linguistic_softening
+	@rm -f tests/test_indirect_linguistic_softening
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

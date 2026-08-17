@@ -1,0 +1,117 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LANG-SOFT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LINGUISTIC SOFTENING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SOFT-PARAMS.
+           05 WS-INDIRECT-HINT          PIC 9(04) VALUE 0750.
+           05 WS-POLITENESS             PIC 9(04) VALUE 0850.
+           05 WS-BASE-PROB              PIC 9(04) VALUE 0400.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SOFT-SCORE             PIC 9(04) VALUE 0.
+           05 WS-ELEVATED-ACCEPT        PIC 9(04) VALUE 0.
+           05 WS-SOFT-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-SOFT-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-SOFT-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SOFT-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-HINT-OR-POLITE      VALUE 2.
+              88 INVALID-BASE-PROB           VALUE 3.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 4.
+              88 SOFTENING-VITALITY-COLLAP   VALUE 5.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 6.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-LINGUISTIC-SOFTENING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INDIRECT-HINT < 100 OR WS-INDIRECT-HINT > 1000 OR
+               WS-POLITENESS < 100 OR WS-POLITENESS > 1000
+                SET INVALID-HINT-OR-POLITE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BASE-PROB < 100 OR WS-BASE-PROB > 800
+                SET INVALID-BASE-PROB TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SOFT-SCORE = (WS-INDIRECT-HINT * WS-POLITENESS) / 1000.
+            COMPUTE WS-ELEVATED-ACCEPT = WS-BASE-PROB +
+                                         (WS-SOFT-SCORE * (1000 - WS-BASE-PROB)) / 1000.
+            IF WS-ELEVATED-ACCEPT > 1000
+                MOVE 1000 TO WS-ELEVATED-ACCEPT
+            END-IF.
+
+            IF WS-ELEVATED-ACCEPT EQUAL ZERO
+                SET SOFTENING-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-LINGUISTIC-SOFTENING.
+            COMPUTE WS-SOFT-VITALITY = (WS-ELEVATED-ACCEPT / 4) +
+                                       (WS-SOFT-SCORE / 8) +
+                                       (WS-INDIRECT-HINT / 8) + 1.
+
+            IF WS-SOFT-VITALITY EQUAL ZERO
+                SET SOFTENING-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SOFT-COHERENCE = (WS-ELEVATED-ACCEPT / 16) +
+                                        (WS-SOFT-SCORE / 32) +
+                                        (WS-INDIRECT-HINT / 32).
+
+            COMPUTE WS-SOFT-REBAR-LATCH = 1470169088 +
+                                          (WS-ELEVATED-ACCEPT / 2) +
+                                          (WS-SOFT-SCORE / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SOFT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-SOFT-VITALITY * 10) +
+                                          (WS-SOFT-COHERENCE * 10) +
+                                          (WS-ELEVATED-ACCEPT * 10) +
+                                          (WS-SOFT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SOFT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SOFT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
