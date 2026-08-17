@@ -333,6 +333,11 @@ test-monotonic-spmm-attention:
 	./tests/test_monotonic_spmm_attention
 	@rm -f tests/test_monotonic_spmm_attention
 
+test-hierarchical-k-quantization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_hierarchical_k_quantization.c -o tests/test_hierarchical_k_quantization
+	./tests/test_hierarchical_k_quantization
+	@rm -f tests/test_hierarchical_k_quantization
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

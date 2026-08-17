@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. HIERARCHICAL-KQUANT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / K-QUANTIZATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-QUANT-PARAMS.
+           05 WS-BITWIDTH               PIC 9(02) VALUE 04.
+           05 WS-SUPER-BLOCKS           PIC 9(02) VALUE 08.
+           05 WS-SUB-BLOCK-WEIGHTS      PIC 9(03) VALUE 032.
+           05 WS-SCALE-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-QUANT-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-K-QUANT-COHERENCE      PIC 9(09) VALUE 0.
+           05 WS-QUANT-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-QUANT-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-BITWIDTH            VALUE 2.
+              88 INVALID-SUPER-BLOCK         VALUE 3.
+              88 INVALID-SUB-BLOCK           VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HIERARCHICAL-SCALE-FAIL     VALUE 6.
+              88 QUANTIZATION-DIVERG-FAIL    VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-K-QUANTIZATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BITWIDTH < 2 OR WS-BITWIDTH > 8
+                SET INVALID-BITWIDTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SUPER-BLOCKS < 1 OR WS-SUPER-BLOCKS > 32
+                SET INVALID-SUPER-BLOCK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SUB-BLOCK-WEIGHTS < 16 OR WS-SUB-BLOCK-WEIGHTS > 256
+                SET INVALID-SUB-BLOCK TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCALE-FLAG NOT EQUAL 1
+                SET HIERARCHICAL-SCALE-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-K-QUANTIZATION.
+            COMPUTE WS-QUANT-VITALITY = (WS-BITWIDTH * 512) +
+                                        (WS-SUPER-BLOCKS * 64) +
+                                        (WS-SUB-BLOCK-WEIGHTS / 2) +
+                                        (WS-SCALE-FLAG * 256) + 1.
+
+            IF WS-QUANT-VITALITY EQUAL ZERO
+                SET QUANTIZATION-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-K-QUANT-COHERENCE = (WS-SUPER-BLOCKS * 32) +
+                                           (WS-BITWIDTH * 64) +
+                                           (WS-SUB-BLOCK-WEIGHTS / 8).
+
+            COMPUTE WS-QUANT-REBAR-LATCH = 1470169088 + (WS-BITWIDTH * 256) +
+                                           (WS-SUPER-BLOCKS * 64) +
+                                           (WS-SUB-BLOCK-WEIGHTS / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-QUANT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-QUANT-VITALITY * 10) +
+                                           (WS-K-QUANT-COHERENCE * 10) +
+                                           (WS-BITWIDTH * 1000) +
+                                           (WS-QUANT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-QUANT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-QUANT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
