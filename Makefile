@@ -1183,6 +1183,11 @@ test-query-driven-assembly-scope-gating:
 	./tests/test_query_driven_assembly_scope_gating
 	@rm -f tests/test_query_driven_assembly_scope_gating
 
+test-occlusion-free-camera-orbit:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_occlusion_free_camera_orbit.c -o tests/test_occlusion_free_camera_orbit
+	./tests/test_occlusion_free_camera_orbit
+	@rm -f tests/test_occlusion_free_camera_orbit
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
