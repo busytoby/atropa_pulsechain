@@ -1736,6 +1736,18 @@ test-cpm-tomie-clay-soundness-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_soundness /tmp/clay_soundness.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_soundness tsfi2-deepseek/src/cpm_exec_clay_soundness /tmp/clay_soundness.bin
 
+test-cpm-tomie-3d-spatial-clay-ideation-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_3d_spatial_clay_ideation_prover.c -o tests/test_cpm_tomie_3d_spatial_clay_ideation_prover
+	./tests/test_cpm_tomie_3d_spatial_clay_ideation_prover
+	@rm -f tests/test_cpm_tomie_3d_spatial_clay_ideation_prover
+
+test-cpm-tomie-3d-spatial-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_3d_spatial.c -o tsfi2-deepseek/src/cpm_compiler_3d_spatial
+	./tsfi2-deepseek/src/cpm_compiler_3d_spatial /tmp/3d_spatial.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_3d_spatial.c -o tsfi2-deepseek/src/cpm_exec_3d_spatial
+	./tsfi2-deepseek/src/cpm_exec_3d_spatial /tmp/3d_spatial.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_3d_spatial tsfi2-deepseek/src/cpm_exec_3d_spatial /tmp/3d_spatial.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
