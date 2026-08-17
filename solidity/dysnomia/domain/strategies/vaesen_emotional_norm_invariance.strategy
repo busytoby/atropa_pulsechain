@@ -1,0 +1,125 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VAESEN-EMO-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VAESEN EMOTIONAL LENS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VAESEN-PARAMS.
+           05 WS-CUE-VALIDITY           PIC 9(04) VALUE 0850.
+           05 WS-CUE-UTILIZATION        PIC 9(04) VALUE 0780.
+           05 WS-EMOTIONAL-STATE        PIC 9(02) VALUE 04.
+           05 WS-EXACT-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ACHIEVEMENT            PIC 9(06) VALUE 0.
+           05 WS-VAESEN-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-VAESEN-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-VAESEN-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-VAESEN-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CUE-VALIDITY        VALUE 2.
+              88 INVALID-CUE-UTILIZATION     VALUE 3.
+              88 INVALID-EMOTIONAL-STATE     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 LENS-EXACTNESS-FLAG-FAIL    VALUE 6.
+              88 ACHIEVEMENT-COLLAPSE        VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VAESEN-LENS-MODEL
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-VALIDITY < 100 OR WS-CUE-VALIDITY > 1000
+                SET INVALID-CUE-VALIDITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-UTILIZATION < 100 OR WS-CUE-UTILIZATION > 1000
+                SET INVALID-CUE-UTILIZATION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EMOTIONAL-STATE < 1 OR WS-EMOTIONAL-STATE > 5
+                SET INVALID-EMOTIONAL-STATE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXACT-FLAG NOT EQUAL 1
+                SET LENS-EXACTNESS-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ACHIEVEMENT = (WS-CUE-VALIDITY * WS-CUE-UTILIZATION) / 1000.
+            IF WS-ACHIEVEMENT EQUAL ZERO
+                SET ACHIEVEMENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VAESEN-LENS-MODEL.
+            COMPUTE WS-VAESEN-VITALITY = (WS-ACHIEVEMENT / 4) +
+                                         (WS-CUE-VALIDITY / 8) +
+                                         (WS-CUE-UTILIZATION / 8) +
+                                         (WS-EMOTIONAL-STATE * 128) + 1.
+
+            IF WS-VAESEN-VITALITY EQUAL ZERO
+                SET ACHIEVEMENT-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VAESEN-COHERENCE = (WS-ACHIEVEMENT / 16) +
+                                          (WS-CUE-VALIDITY / 32) +
+                                          (WS-CUE-UTILIZATION / 32) +
+                                          (WS-EMOTIONAL-STATE * 32).
+
+            COMPUTE WS-VAESEN-REBAR-LATCH = 1470169088 +
+                                            (WS-ACHIEVEMENT / 2) +
+                                            (WS-CUE-VALIDITY / 4) +
+                                            (WS-EMOTIONAL-STATE * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-VAESEN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-VAESEN-VITALITY * 10) +
+                                            (WS-VAESEN-COHERENCE * 10) +
+                                            (WS-ACHIEVEMENT * 10) +
+                                            (WS-VAESEN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-VAESEN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-VAESEN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

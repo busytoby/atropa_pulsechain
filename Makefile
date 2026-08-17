@@ -473,6 +473,11 @@ test-activation-distribution-clipping:
 	./tests/test_activation_distribution_clipping
 	@rm -f tests/test_activation_distribution_clipping
 
+test-vaesen-emotional-norm-invariance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_vaesen_emotional_norm_invariance.c -o tests/test_vaesen_emotional_norm_invariance
+	./tests/test_vaesen_emotional_norm_invariance
+	@rm -f tests/test_vaesen_emotional_norm_invariance
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
