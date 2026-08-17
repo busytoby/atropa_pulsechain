@@ -1508,6 +1508,11 @@ test-value-oriented-concept:
 	./tests/test_value_oriented_concept
 	@rm -f tests/test_value_oriented_concept
 
+test-groupsense-biosensing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_groupsense_biosensing.c -o tests/test_groupsense_biosensing
+	./tests/test_groupsense_biosensing
+	@rm -f tests/test_groupsense_biosensing
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
