@@ -1423,6 +1423,11 @@ test-chamfer-lead-in-tolerance:
 	./tests/test_chamfer_lead_in_tolerance
 	@rm -f tests/test_chamfer_lead_in_tolerance
 
+test-via6522-torque-bear-xp:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_via6522_torque_bear_xp.c -o tests/test_via6522_torque_bear_xp
+	./tests/test_via6522_torque_bear_xp
+	@rm -f tests/test_via6522_torque_bear_xp
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
