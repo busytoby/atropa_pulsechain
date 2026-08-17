@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. RME-MEM-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LONG-TERM RELATIONAL MEMORY EVOLUTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-RME-PARAMS.
+           05 WS-ACCESS-LAT-MS          PIC 9(02) VALUE 20.
+           05 WS-INTIMACY-GROWTH-M      PIC 9(04) VALUE 0960.
+           05 WS-EPISTEMIC-DRIFT-M      PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-RME-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-RME-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-RME-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-RME-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-RME-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 ACCESS-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 INTIMACY-GROWTH-LOW         VALUE 3.
+              88 EPISTEMIC-DRIFT-EXCEEDED    VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MEMORY-EVOLUTION-COLLAPSE   VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MEMORY-EVOLUTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACCESS-LAT-MS < 10 OR WS-ACCESS-LAT-MS > 50
+                SET ACCESS-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INTIMACY-GROWTH-M < 850 OR WS-INTIMACY-GROWTH-M > 1000
+                SET INTIMACY-GROWTH-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EPISTEMIC-DRIFT-M < 0 OR WS-EPISTEMIC-DRIFT-M > 5
+                SET EPISTEMIC-DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MEMORY-EVOLUTION.
+            COMPUTE WS-RME-COMPOSITE = ((60 - WS-ACCESS-LAT-MS) * 10) +
+                                       (WS-INTIMACY-GROWTH-M / 2) +
+                                       ((10 - WS-EPISTEMIC-DRIFT-M) * 40).
+
+            COMPUTE WS-RME-VITALITY = (WS-RME-COMPOSITE / 4) +
+                                      (WS-INTIMACY-GROWTH-M / 4) +
+                                      ((60 - WS-ACCESS-LAT-MS) * 4) + 1.
+
+            IF WS-RME-VITALITY EQUAL ZERO
+                SET MEMORY-EVOLUTION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RME-COHERENCE = (WS-RME-COMPOSITE / 16) +
+                                       (WS-INTIMACY-GROWTH-M / 16) +
+                                       ((60 - WS-ACCESS-LAT-MS) * 2).
+
+            COMPUTE WS-RME-REBAR-LATCH = 1470169088 +
+                                         (WS-RME-COMPOSITE / 2) +
+                                         ((60 - WS-ACCESS-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-RME-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-RME-VITALITY * 10) +
+                                         (WS-RME-COHERENCE * 10) +
+                                         (WS-RME-COMPOSITE * 10) +
+                                         (WS-RME-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-RME-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-RME-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

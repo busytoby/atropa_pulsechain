@@ -1148,6 +1148,11 @@ test-episodic-souvenir-crystallization:
 	./tests/test_episodic_souvenir_crystallization
 	@rm -f tests/test_episodic_souvenir_crystallization
 
+test-longterm-relational-memory-evolution:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_longterm_relational_memory_evolution.c -o tests/test_longterm_relational_memory_evolution
+	./tests/test_longterm_relational_memory_evolution
+	@rm -f tests/test_longterm_relational_memory_evolution
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
