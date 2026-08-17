@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 TsfiPdfDocumentWriter *tsfi_pdf_writer_create(void) {
     TsfiPdfDocumentWriter *w = (TsfiPdfDocumentWriter *)malloc(sizeof(TsfiPdfDocumentWriter));
@@ -25,9 +26,22 @@ TsfiPdfDocumentWriter *tsfi_pdf_writer_create(void) {
     }
     w->xref.count = 0;
 
-    // Write PDF header
+    // Write standard PDF 1.7 header
     const char *hdr = "%PDF-1.7\n%\xE2\xE3\xCF\xD3\n";
     tsfi_pdf_writer_write_raw(w, hdr, strlen(hdr));
+
+    // Object 1: Catalog
+    w->catalog_obj = tsfi_pdf_writer_add_object(w);
+    const char *cat_dict = "<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(w, cat_dict, strlen(cat_dict));
+
+    // Object 2: Pages Root
+    w->pages_root_obj = tsfi_pdf_writer_add_object(w);
+    const char *pgs_dict = "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
+    tsfi_pdf_writer_write_raw(w, pgs_dict, strlen(pgs_dict));
+
+    // Object 4: Font Object (referenced before page, but numbered as 4)
+    // We will reserve Object 3 for Page, Object 4 for Font, Object 5 for Content Stream
 
     return w;
 }
@@ -58,67 +72,133 @@ size_t tsfi_pdf_writer_add_object(TsfiPdfDocumentWriter *writer) {
     return writer->object_count;
 }
 
+static void format_wrapped_text_stream(TsfiPdfStreamWriter *stream_buf, const char *text) {
+    if (!text) return;
+
+    // Start Text object, set font to Helvetica 11pt, leading 15pt
+    const char *bt = "BT\n/F1 11 Tf\n15 TL\n50 780 Td\n";
+    if (stream_buf->length + strlen(bt) >= stream_buf->capacity) {
+        stream_buf->capacity = (stream_buf->length + strlen(bt) + 4096) * 2;
+        stream_buf->data = (char *)realloc(stream_buf->data, stream_buf->capacity);
+    }
+    memcpy(stream_buf->data + stream_buf->length, bt, strlen(bt));
+    stream_buf->length += strlen(bt);
+
+    // Split text into ~75 character wrapped lines
+    const char *p = text;
+    char line[128];
+    size_t line_len = 0;
+    bool first_line = true;
+
+    while (*p) {
+        if (*p == '\n' || line_len >= 75) {
+            if (line_len > 0) {
+                line[line_len] = '\0';
+                char op[256];
+                int olen = 0;
+                if (first_line) {
+                    olen = snprintf(op, sizeof(op), "(%s) Tj\n", line);
+                    first_line = false;
+                } else {
+                    olen = snprintf(op, sizeof(op), "T* (%s) Tj\n", line);
+                }
+                if (stream_buf->length + olen >= stream_buf->capacity) {
+                    stream_buf->capacity = (stream_buf->length + olen + 4096) * 2;
+                    stream_buf->data = (char *)realloc(stream_buf->data, stream_buf->capacity);
+                }
+                memcpy(stream_buf->data + stream_buf->length, op, olen);
+                stream_buf->length += olen;
+                line_len = 0;
+            }
+            if (*p == '\n') {
+                p++;
+                continue;
+            }
+        }
+
+        // Handle parentheses escaping
+        if (*p == '(' || *p == ')' || *p == '\\') {
+            if (line_len + 2 < sizeof(line)) {
+                line[line_len++] = '\\';
+                line[line_len++] = *p;
+            }
+        } else if ((unsigned char)*p >= 32 && (unsigned char)*p <= 126) {
+            if (line_len + 1 < sizeof(line)) {
+                line[line_len++] = *p;
+            }
+        }
+        p++;
+    }
+
+    if (line_len > 0) {
+        line[line_len] = '\0';
+        char op[256];
+        int olen = 0;
+        if (first_line) {
+            olen = snprintf(op, sizeof(op), "(%s) Tj\n", line);
+        } else {
+            olen = snprintf(op, sizeof(op), "T* (%s) Tj\n", line);
+        }
+        if (stream_buf->length + olen >= stream_buf->capacity) {
+            stream_buf->capacity = (stream_buf->length + olen + 4096) * 2;
+            stream_buf->data = (char *)realloc(stream_buf->data, stream_buf->capacity);
+        }
+        memcpy(stream_buf->data + stream_buf->length, op, olen);
+        stream_buf->length += olen;
+    }
+
+    const char *et = "ET\n";
+    if (stream_buf->length + strlen(et) >= stream_buf->capacity) {
+        stream_buf->capacity = (stream_buf->length + strlen(et) + 128) * 2;
+        stream_buf->data = (char *)realloc(stream_buf->data, stream_buf->capacity);
+    }
+    memcpy(stream_buf->data + stream_buf->length, et, strlen(et));
+    stream_buf->length += strlen(et);
+    stream_buf->data[stream_buf->length] = '\0';
+}
+
 void tsfi_pdf_writer_add_page(TsfiPdfDocumentWriter *writer, const char *text_content, size_t text_len) {
     if (!writer) return;
 
-    // Content Stream Object
-    size_t stream_obj = tsfi_pdf_writer_add_object(writer);
-    char stream_hdr[256];
-    
-    // Format text stream operations
-    char content_buf[8192];
-    int c_len = snprintf(content_buf, sizeof(content_buf),
-                         "BT\n"
-                         "/F1 12 Tf\n"
-                         "50 750 Td\n"
-                         "14 TL\n"
-                         "(%s) Tj\n"
-                         "ET\n",
-                         text_content ? text_content : "Auncient CP/M-Tomie Pure C Document");
+    // Object 3: Page Object
+    writer->current_page_obj = tsfi_pdf_writer_add_object(writer);
+    const char *page_dict = 
+        "<< /Type /Page\n"
+        "   /Parent 2 0 R\n"
+        "   /MediaBox [0 0 595 842]\n"
+        "   /Contents 5 0 R\n"
+        "   /Resources << /Font << /F1 4 0 R >> >>\n"
+        ">>\nendobj\n";
+    tsfi_pdf_writer_write_raw(writer, page_dict, strlen(page_dict));
 
-    int s_len = snprintf(stream_hdr, sizeof(stream_hdr),
-                         "<< /Length %d >>\nstream\n", c_len);
-    tsfi_pdf_writer_write_raw(writer, stream_hdr, (size_t)s_len);
-    tsfi_pdf_writer_write_raw(writer, content_buf, (size_t)c_len);
-    tsfi_pdf_writer_write_raw(writer, "\nendstream\nendobj\n", 18);
-
-    // Page Object
-    size_t page_obj = tsfi_pdf_writer_add_object(writer);
-    char page_dict[512];
-    int p_len = snprintf(page_dict, sizeof(page_dict),
-                         "<< /Type /Page\n"
-                         "   /Parent 1 0 R\n"
-                         "   /MediaBox [0 0 595 842]\n"
-                         "   /Contents %zu 0 R\n"
-                         "   /Resources << /Font << /F1 2 0 R >> >>\n"
-                         ">>\nendobj\n",
-                         stream_obj);
-    tsfi_pdf_writer_write_raw(writer, page_dict, (size_t)p_len);
-    (void)text_len;
-    (void)page_obj;
-}
-
-int tsfi_pdf_writer_finalize_file(TsfiPdfDocumentWriter *writer, const char *output_filepath) {
-    if (!writer || !output_filepath) return -1;
-
-    // Standard Font Object (Object 2)
+    // Object 4: Font Object
     size_t font_obj = tsfi_pdf_writer_add_object(writer);
     const char *font_dict = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n";
     tsfi_pdf_writer_write_raw(writer, font_dict, strlen(font_dict));
 
-    // Pages Root Object (Object 1)
-    size_t pages_obj = tsfi_pdf_writer_add_object(writer);
-    char pages_dict[256];
-    int pg_len = snprintf(pages_dict, sizeof(pages_dict),
-                          "<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n");
-    tsfi_pdf_writer_write_raw(writer, pages_dict, (size_t)pg_len);
+    // Object 5: Content Stream
+    size_t stream_obj = tsfi_pdf_writer_add_object(writer);
+    TsfiPdfStreamWriter content = {0};
+    content.capacity = 4096;
+    content.data = (char *)malloc(content.capacity);
+    content.length = 0;
 
-    // Catalog Object (Object 5)
-    size_t catalog_obj = tsfi_pdf_writer_add_object(writer);
-    char cat_dict[256];
-    int cat_len = snprintf(cat_dict, sizeof(cat_dict),
-                           "<< /Type /Catalog /Pages %zu 0 R >>\nendobj\n", pages_obj);
-    tsfi_pdf_writer_write_raw(writer, cat_dict, (size_t)cat_len);
+    format_wrapped_text_stream(&content, text_content);
+
+    char s_hdr[128];
+    int sh_len = snprintf(s_hdr, sizeof(s_hdr), "<< /Length %zu >>\nstream\n", content.length);
+    tsfi_pdf_writer_write_raw(writer, s_hdr, (size_t)sh_len);
+    tsfi_pdf_writer_write_raw(writer, content.data, content.length);
+    tsfi_pdf_writer_write_raw(writer, "\nendstream\nendobj\n", 18);
+
+    free(content.data);
+    (void)font_obj;
+    (void)stream_obj;
+    (void)text_len;
+}
+
+int tsfi_pdf_writer_finalize_file(TsfiPdfDocumentWriter *writer, const char *output_filepath) {
+    if (!writer || !output_filepath) return -1;
 
     // XREF Table
     size_t xref_start = writer->out.length;
@@ -135,8 +215,8 @@ int tsfi_pdf_writer_finalize_file(TsfiPdfDocumentWriter *writer, const char *out
     // Trailer
     char trailer[256];
     int tr_len = snprintf(trailer, sizeof(trailer),
-                          "trailer\n<< /Size %zu /Root %zu 0 R >>\nstartxref\n%zu\n%%%%EOF\n",
-                          writer->xref.count + 1, catalog_obj, xref_start);
+                          "trailer\n<< /Size %zu /Root 1 0 R >>\nstartxref\n%zu\n%%%%EOF\n",
+                          writer->xref.count + 1, xref_start);
     tsfi_pdf_writer_write_raw(writer, trailer, (size_t)tr_len);
 
     FILE *f = fopen(output_filepath, "wb");
@@ -144,7 +224,6 @@ int tsfi_pdf_writer_finalize_file(TsfiPdfDocumentWriter *writer, const char *out
     fwrite(writer->out.data, 1, writer->out.length, f);
     fclose(f);
 
-    (void)font_obj;
     return 0;
 }
 
