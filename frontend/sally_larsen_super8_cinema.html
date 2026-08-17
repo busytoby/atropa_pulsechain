@@ -297,6 +297,7 @@
             </p>
             <div class="playback-controls">
                 <button id="btnPlay">▶ Play 90s Demo</button>
+                <button id="btnExportMP4">⬇ Export 90s .mp4</button>
                 <button id="btnReset">↺ Reset Reel</button>
             </div>
         </div>
@@ -589,6 +590,56 @@
             requestAnimationFrame(render);
         }
 
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        document.getElementById('btnExportMP4').addEventListener('click', () => {
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Stream canvas at 24.0 FPS
+            const canvasStream = canvas.captureStream(24.0);
+            
+            // Route WebAudio destination to stream
+            const audioDest = audioCtx.createMediaStreamDestination();
+            masterGain.connect(audioDest);
+            const combinedStream = new MediaStream([
+                ...canvasStream.getVideoTracks(),
+                ...audioDest.stream.getAudioTracks()
+            ]);
+
+            recordedChunks = [];
+            let options = { mimeType: 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options = { mimeType: 'video/webm; codecs=vp9,opus' };
+            }
+
+            mediaRecorder = new MediaRecorder(combinedStream, options);
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: options.mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sally_larsen_90s_game_of_life_185.mp4';
+                a.click();
+                URL.revokeObjectURL(url);
+                document.getElementById('btnExportMP4').innerText = "⬇ Export 90s .mp4";
+            };
+
+            currentFrame = 0;
+            initGliderGun();
+            isPlaying = true;
+            mediaRecorder.start();
+            document.getElementById('btnExportMP4').innerText = "🔴 Recording .mp4...";
+            document.getElementById('btnPlay').innerText = "⏸ Recording Cinema";
+        });
+
         document.getElementById('btnPlay').addEventListener('click', () => {
             initAudio();
             if (audioCtx && audioCtx.state === 'suspended') {
@@ -602,6 +653,9 @@
             currentFrame = 0;
             initGliderGun();
             isPlaying = false;
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
             document.getElementById('btnPlay').innerText = "▶ Play 90s Demo";
         });
 
