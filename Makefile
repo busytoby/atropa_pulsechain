@@ -643,6 +643,11 @@ test-relational-habituation-renewal:
 	./tests/test_relational_habituation_renewal
 	@rm -f tests/test_relational_habituation_renewal
 
+test-leaky-acoustic-gesture-input:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_leaky_acoustic_gesture_input.c -o tests/test_leaky_acoustic_gesture_input
+	./tests/test_leaky_acoustic_gesture_input
+	@rm -f tests/test_leaky_acoustic_gesture_input
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
