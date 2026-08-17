@@ -228,6 +228,11 @@ test-quad-ablation-sensitivity:
 	./tests/test_quad_ablation_sensitivity
 	@rm -f tests/test_quad_ablation_sensitivity
 
+test-pll-general-dub-support:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_pll_general_dub_support.c -o tests/test_pll_general_dub_support
+	./tests/test_pll_general_dub_support
+	@rm -f tests/test_pll_general_dub_support
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

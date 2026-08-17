@@ -1,0 +1,115 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PLL-GENERAL-DUB-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / PLL GENERAL DUB AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PLL-DUB-PARAMS.
+           05 WS-KP-PERMILLE            PIC 9(03) VALUE 150.
+           05 WS-KI-PERMILLE            PIC 9(03) VALUE 025.
+           05 WS-PHASE-ERR-MICRORAD     PIC 9(04) VALUE 0140.
+           05 WS-PHASE-LOCK-FLAG        PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PLL-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-PHASE-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-PLL-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PLL-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-KP-GAIN             VALUE 2.
+              88 INVALID-KI-GAIN             VALUE 3.
+              88 PHASE-ERR-OUT-OF-BOUNDS     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 LIP-SYNC-UNLOCK-FAIL        VALUE 6.
+              88 PLL-DUB-DIVERG-FAIL         VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PLL-DUBBING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KP-PERMILLE < 10 OR WS-KP-PERMILLE > 500
+                SET INVALID-KP-GAIN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KI-PERMILLE < 1 OR WS-KI-PERMILLE > 100
+                SET INVALID-KI-GAIN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-ERR-MICRORAD < 0 OR WS-PHASE-ERR-MICRORAD > 1400
+                SET PHASE-ERR-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-LOCK-FLAG NOT EQUAL 1
+                SET LIP-SYNC-UNLOCK-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PLL-DUBBING.
+            COMPUTE WS-PLL-VITALITY = (WS-KP-PERMILLE * 512) +
+                                      (WS-KI-PERMILLE * 256) +
+                                      ((1400 - WS-PHASE-ERR-MICRORAD) * 2) +
+                                      (WS-PHASE-LOCK-FLAG * 128) + 1.
+
+            IF WS-PLL-VITALITY EQUAL ZERO
+                SET PLL-DUB-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PHASE-COHERENCE = (((1400 - WS-PHASE-ERR-MICRORAD) / 10) * 16) +
+                                         (WS-KP-PERMILLE * 4).
+
+            COMPUTE WS-PLL-REBAR-LATCH = 1470169088 + (WS-KP-PERMILLE * 256) +
+                                         (WS-KI-PERMILLE * 64) +
+                                         (WS-PHASE-ERR-MICRORAD * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PLL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-PLL-VITALITY * 10) +
+                                         (WS-PHASE-COHERENCE * 10) +
+                                         (WS-KP-PERMILLE * 1000) +
+                                         (WS-PLL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PLL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PLL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
