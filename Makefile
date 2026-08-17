@@ -368,6 +368,11 @@ test-ffn-projection-dominance:
 	./tests/test_ffn_projection_dominance
 	@rm -f tests/test_ffn_projection_dominance
 
+test-mhsa-projection-scaling:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mhsa_projection_scaling.c -o tests/test_mhsa_projection_scaling
+	./tests/test_mhsa_projection_scaling
+	@rm -f tests/test_mhsa_projection_scaling
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

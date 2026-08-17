@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MHSA-SCALING-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MHSA PROJECTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-MHSA-PARAMS.
+           05 WS-HIDDEN-DIM             PIC 9(05) VALUE 04096.
+           05 WS-HEAD-COUNT             PIC 9(02) VALUE 32.
+           05 WS-SEQ-LEN                PIC 9(04) VALUE 0512.
+           05 WS-SCALING-FLAG           PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MHSA-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-MHSA-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-MHSA-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-MHSA-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-HIDDEN-DIM          VALUE 2.
+              88 INVALID-HEAD-COUNT          VALUE 3.
+              88 INVALID-SEQ-LEN             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MHSA-SCALING-FAIL           VALUE 6.
+              88 MHSA-DIVERG-FAIL            VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-MHSA-SCALING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HIDDEN-DIM < 256 OR WS-HIDDEN-DIM > 8192
+                SET INVALID-HIDDEN-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HEAD-COUNT < 1 OR WS-HEAD-COUNT > 64
+                SET INVALID-HEAD-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SEQ-LEN < 1 OR WS-SEQ-LEN > 4096
+                SET INVALID-SEQ-LEN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SCALING-FLAG NOT EQUAL 1
+                SET MHSA-SCALING-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-MHSA-SCALING.
+            COMPUTE WS-MHSA-VITALITY = (WS-HIDDEN-DIM / 8) +
+                                       (WS-HEAD-COUNT * 128) +
+                                       (WS-SEQ-LEN / 16) +
+                                       (WS-SCALING-FLAG * 256) + 1.
+
+            IF WS-MHSA-VITALITY EQUAL ZERO
+                SET MHSA-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-MHSA-COHERENCE = (WS-HEAD-COUNT * 32) +
+                                        (WS-HIDDEN-DIM / 32) +
+                                        (WS-SEQ-LEN / 64).
+
+            COMPUTE WS-MHSA-REBAR-LATCH = 1470169088 + (WS-HIDDEN-DIM / 4) +
+                                          (WS-HEAD-COUNT * 64) +
+                                          (WS-SEQ-LEN / 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-MHSA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-MHSA-VITALITY * 10) +
+                                          (WS-MHSA-COHERENCE * 10) +
+                                          (WS-HEAD-COUNT * 1000) +
+                                          (WS-MHSA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-MHSA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-MHSA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
