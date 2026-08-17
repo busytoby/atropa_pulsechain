@@ -1363,6 +1363,11 @@ test-gaze-dwell-selection:
 	./tests/test_gaze_dwell_selection
 	@rm -f tests/test_gaze_dwell_selection
 
+test-temporal-velocity-scaling:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_temporal_velocity_scaling.c -o tests/test_temporal_velocity_scaling
+	./tests/test_temporal_velocity_scaling
+	@rm -f tests/test_temporal_velocity_scaling
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
