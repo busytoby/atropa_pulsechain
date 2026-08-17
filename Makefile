@@ -1408,6 +1408,11 @@ test-pronoun-gaze-disambiguation:
 	./tests/test_pronoun_gaze_disambiguation
 	@rm -f tests/test_pronoun_gaze_disambiguation
 
+test-multimodal-audio-haptic:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multimodal_audio_haptic.c -o tests/test_multimodal_audio_haptic
+	./tests/test_multimodal_audio_haptic
+	@rm -f tests/test_multimodal_audio_haptic
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
