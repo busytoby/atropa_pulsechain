@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDR",
+        .opcode_signature = 0x43504452,
+        .title = "CPMTOMIE-DYNAMIC-REMESHING-MANIFOLD-CORPS",
+        .theorem_descriptions = {
+            "2-Manifold Euler Characteristic Invariance",
+            "Local Dynamic Edge Split/Collapse Invariance",
+            "Non-Degenerate Delaunay Edge Swapping",
+            "Sub-Millisecond Adaptive Remeshing Latency",
+            "Sovereign Dynamic Remeshing & Manifold Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTC",
         .opcode_signature = 0x43505443,
         .title = "CPMTOMIE-SURFACE-TENSION-CURVATURE-CORPS",
