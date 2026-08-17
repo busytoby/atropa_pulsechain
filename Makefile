@@ -553,6 +553,11 @@ test-paralinguistic-micro-inflection:
 	./tests/test_paralinguistic_micro_inflection
 	@rm -f tests/test_paralinguistic_micro_inflection
 
+test-upward-gaze-vulnerability:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_upward_gaze_vulnerability.c -o tests/test_upward_gaze_vulnerability
+	./tests/test_upward_gaze_vulnerability
+	@rm -f tests/test_upward_gaze_vulnerability
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
