@@ -1796,6 +1796,18 @@ test-cpm-tomie-dynamic-feedback-suite:
 	./tsfi2-deepseek/src/cpm_exec_dynamic_feedback /tmp/dynamic_feedback.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_dynamic_feedback tsfi2-deepseek/src/cpm_exec_dynamic_feedback /tmp/dynamic_feedback.bin
 
+test-cpm-tomie-finke-geneplore-ideation-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_finke_geneplore_ideation_prover.c -o tests/test_cpm_tomie_finke_geneplore_ideation_prover
+	./tests/test_cpm_tomie_finke_geneplore_ideation_prover
+	@rm -f tests/test_cpm_tomie_finke_geneplore_ideation_prover
+
+test-cpm-tomie-finke-geneplore-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_finke_geneplore.c -o tsfi2-deepseek/src/cpm_compiler_finke_geneplore
+	./tsfi2-deepseek/src/cpm_compiler_finke_geneplore /tmp/finke_geneplore.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_finke_geneplore.c -o tsfi2-deepseek/src/cpm_exec_finke_geneplore
+	./tsfi2-deepseek/src/cpm_exec_finke_geneplore /tmp/finke_geneplore.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_finke_geneplore tsfi2-deepseek/src/cpm_exec_finke_geneplore /tmp/finke_geneplore.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
