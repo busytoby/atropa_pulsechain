@@ -1353,6 +1353,11 @@ test-collaborative-turn-taking:
 	./tests/test_collaborative_turn_taking
 	@rm -f tests/test_collaborative_turn_taking
 
+test-viewpoint-sync-anchoring:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_viewpoint_sync_anchoring.c -o tests/test_viewpoint_sync_anchoring
+	./tests/test_viewpoint_sync_anchoring
+	@rm -f tests/test_viewpoint_sync_anchoring
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
