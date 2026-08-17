@@ -1088,6 +1088,11 @@ test-photo-spot-attentional-posing:
 	./tests/test_photo_spot_attentional_posing
 	@rm -f tests/test_photo_spot_attentional_posing
 
+test-dynamic-persona-calibration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_dynamic_persona_calibration.c -o tests/test_dynamic_persona_calibration
+	./tests/test_dynamic_persona_calibration
+	@rm -f tests/test_dynamic_persona_calibration
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
