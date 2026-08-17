@@ -813,6 +813,11 @@ test-dynamic-utterance-binary-slice:
 	./tests/test_dynamic_utterance_binary_slice
 	@rm -f tests/test_dynamic_utterance_binary_slice
 
+test-skeleton-hasp-vocabulary-binaries:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_skeleton_hasp_vocabulary_binaries.c -o tests/test_skeleton_hasp_vocabulary_binaries
+	./tests/test_skeleton_hasp_vocabulary_binaries
+	@rm -f tests/test_skeleton_hasp_vocabulary_binaries
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
