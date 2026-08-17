@@ -938,6 +938,11 @@ test-mcp-triparty-schema-grounding:
 	./tests/test_mcp_triparty_schema_grounding
 	@rm -f tests/test_mcp_triparty_schema_grounding
 
+test-hbridge-lighthouse-wcag:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_hbridge_lighthouse_wcag.c -o tests/test_hbridge_lighthouse_wcag
+	./tests/test_hbridge_lighthouse_wcag
+	@rm -f tests/test_hbridge_lighthouse_wcag
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
