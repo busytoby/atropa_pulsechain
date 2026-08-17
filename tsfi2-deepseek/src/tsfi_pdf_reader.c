@@ -98,134 +98,154 @@ static void byte_buf_push(TsfiPdfByteBuffer *b, uint8_t byte) {
 }
 
 static int inflate_block(BitReader *br, TsfiPdfByteBuffer *out,
-                         const HuffmanTable *lit_table,
-                         const HuffmanTable *dist_table) {
+                         const HuffmanTable *lt, const HuffmanTable *dt) {
     while (1) {
-        int sym = decode_symbol(br, lit_table);
+        int sym = decode_symbol(br, lt);
         if (sym < 0) return -1;
         if (sym < 256) {
             byte_buf_push(out, (uint8_t)sym);
         } else if (sym == 256) {
-            break;
+            return 0; // End of block
         } else if (sym <= 285) {
             int len_idx = sym - 257;
-            int length = LENGTH_BASES[len_idx] + (int)read_bits(br, LENGTH_EXTRA_BITS[len_idx]);
-            int dist_sym = decode_symbol(br, dist_table);
+            int length = LENGTH_BASES[len_idx];
+            int extra_bits = LENGTH_EXTRA_BITS[len_idx];
+            if (extra_bits > 0) {
+                length += (int)read_bits(br, extra_bits);
+            }
+
+            int dist_sym = decode_symbol(br, dt);
             if (dist_sym < 0 || dist_sym >= 30) return -1;
-            int distance = DIST_BASES[dist_sym] + (int)read_bits(br, DIST_EXTRA_BITS[dist_sym]);
+            int distance = DIST_BASES[dist_sym];
+            int dist_extra = DIST_EXTRA_BITS[dist_sym];
+            if (dist_extra > 0) {
+                distance += (int)read_bits(br, dist_extra);
+            }
+
             if ((size_t)distance > out->size) return -1;
             size_t start = out->size - (size_t)distance;
             for (int i = 0; i < length; ++i) {
-                byte_buf_push(out, out->data[start + (size_t)i]);
+                uint8_t b = out->data[start + i];
+                byte_buf_push(out, b);
             }
         } else {
             return -1;
         }
     }
-    return 0;
 }
 
-int tsfi_pdf_inflate_raw(const uint8_t *src, size_t src_len, TsfiPdfByteBuffer *out) {
-    BitReader br = { src, src_len, 0 };
+int tsfi_pdf_zlib_decompress(const uint8_t *src, size_t src_len, TsfiPdfByteBuffer *out) {
+    if (!src || src_len < 2 || !out) return -1;
+    
+    // Check zlib header (CMF/FLG)
+    uint8_t cmf = src[0];
+    uint8_t flg = src[1];
+    if ((cmf & 0x0F) != 8) {
+        return -1;
+    }
+    if (((cmf * 256 + flg) % 31) != 0) {
+        return -1;
+    }
+
+    size_t offset = 2;
+    if (flg & 0x20) { // FDICT
+        if (src_len < 6) return -1;
+        offset += 4;
+    }
+
+    BitReader br = { src + offset, src_len - offset, 0 };
     int bfinal = 0;
+
     while (!bfinal) {
         bfinal = (int)read_bits(&br, 1);
         int btype = (int)read_bits(&br, 2);
-        if (btype == 0) {
-            br.bit_pos = (br.bit_pos + 7) & ~7ULL;
-            uint16_t len = (uint16_t)read_bits(&br, 16);
-            uint16_t nlen = (uint16_t)read_bits(&br, 16);
-            if ((len ^ 0xFFFF) != nlen) return -1;
-            for (int i = 0; i < len; ++i) {
-                byte_buf_push(out, (uint8_t)read_bits(&br, 8));
+
+        if (btype == 0) { // Uncompressed
+            br.bit_pos = (br.bit_pos + 7) & ~7ULL; // Byte align
+            size_t byte_idx = br.bit_pos >> 3;
+            if (byte_idx + 4 > br.src_len) return -1;
+            uint16_t len = (uint16_t)(br.src[byte_idx] | (br.src[byte_idx + 1] << 8));
+            uint16_t nlen = (uint16_t)(br.src[byte_idx + 2] | (br.src[byte_idx + 3] << 8));
+            if ((uint16_t)len != (uint16_t)~nlen) return -1;
+            byte_idx += 4;
+            if (byte_idx + len > br.src_len) return -1;
+            for (uint16_t i = 0; i < len; ++i) {
+                byte_buf_push(out, br.src[byte_idx + i]);
             }
-        } else if (btype == 1) {
-            uint8_t lit_lengths[288];
-            for (int i = 0; i <= 143; ++i) lit_lengths[i] = 8;
-            for (int i = 144; i <= 255; ++i) lit_lengths[i] = 9;
-            for (int i = 256; i <= 279; ++i) lit_lengths[i] = 7;
-            for (int i = 280; i <= 287; ++i) lit_lengths[i] = 8;
-            HuffmanTable lit_ht;
-            build_huffman_table(&lit_ht, lit_lengths, 288);
+            br.bit_pos = (byte_idx + len) << 3;
+        } else if (btype == 1) { // Fixed Huffman
+            uint8_t l_lens[288];
+            for (int i = 0; i <= 143; ++i) l_lens[i] = 8;
+            for (int i = 144; i <= 255; ++i) l_lens[i] = 9;
+            for (int i = 256; i <= 279; ++i) l_lens[i] = 7;
+            for (int i = 280; i <= 287; ++i) l_lens[i] = 8;
+            HuffmanTable lt;
+            build_huffman_table(&lt, l_lens, 288);
 
-            uint8_t dist_lengths[32];
-            for (int i = 0; i < 32; ++i) dist_lengths[i] = 5;
-            HuffmanTable dist_ht;
-            build_huffman_table(&dist_ht, dist_lengths, 32);
+            uint8_t d_lens[32];
+            for (int i = 0; i < 32; ++i) d_lens[i] = 5;
+            HuffmanTable dt;
+            build_huffman_table(&dt, d_lens, 32);
 
-            if (inflate_block(&br, out, &lit_ht, &dist_ht) != 0) return -1;
-        } else if (btype == 2) {
+            if (inflate_block(&br, out, &lt, &dt) != 0) return -1;
+        } else if (btype == 2) { // Dynamic Huffman
             int hlit = (int)read_bits(&br, 5) + 257;
             int hdist = (int)read_bits(&br, 5) + 1;
             int hclen = (int)read_bits(&br, 4) + 4;
 
-            uint8_t clen_lengths[19] = {0};
+            uint8_t cl_lens[19] = {0};
             for (int i = 0; i < hclen; ++i) {
-                clen_lengths[CLEN_ORDER[i]] = (uint8_t)read_bits(&br, 3);
+                cl_lens[CLEN_ORDER[i]] = (uint8_t)read_bits(&br, 3);
             }
-            HuffmanTable clen_ht;
-            build_huffman_table(&clen_ht, clen_lengths, 19);
+            HuffmanTable cl_table;
+            build_huffman_table(&cl_table, cl_lens, 19);
 
-            uint8_t dyn_lengths[320] = {0};
+            uint8_t total_lens[320];
             int total_codes = hlit + hdist;
             int idx = 0;
             while (idx < total_codes) {
-                int sym = decode_symbol(&br, &clen_ht);
+                int sym = decode_symbol(&br, &cl_table);
+                if (sym < 0) return -1;
                 if (sym < 16) {
-                    dyn_lengths[idx++] = (uint8_t)sym;
+                    total_lens[idx++] = (uint8_t)sym;
                 } else if (sym == 16) {
-                    int repeat = (int)read_bits(&br, 2) + 3;
-                    uint8_t prev = idx > 0 ? dyn_lengths[idx - 1] : 0;
-                    while (repeat-- > 0 && idx < total_codes) dyn_lengths[idx++] = prev;
+                    if (idx == 0) return -1;
+                    uint8_t prev = total_lens[idx - 1];
+                    int rep = (int)read_bits(&br, 2) + 3;
+                    while (rep-- > 0 && idx < total_codes) total_lens[idx++] = prev;
                 } else if (sym == 17) {
-                    int repeat = (int)read_bits(&br, 3) + 3;
-                    while (repeat-- > 0 && idx < total_codes) dyn_lengths[idx++] = 0;
+                    int rep = (int)read_bits(&br, 3) + 3;
+                    while (rep-- > 0 && idx < total_codes) total_lens[idx++] = 0;
                 } else if (sym == 18) {
-                    int repeat = (int)read_bits(&br, 7) + 11;
-                    while (repeat-- > 0 && idx < total_codes) dyn_lengths[idx++] = 0;
-                } else {
-                    return -1;
+                    int rep = (int)read_bits(&br, 7) + 11;
+                    while (rep-- > 0 && idx < total_codes) total_lens[idx++] = 0;
                 }
             }
 
-            HuffmanTable lit_ht;
-            build_huffman_table(&lit_ht, dyn_lengths, hlit);
+            HuffmanTable lt, dt;
+            build_huffman_table(&lt, total_lens, hlit);
+            build_huffman_table(&dt, total_lens + hlit, hdist);
 
-            HuffmanTable dist_ht;
-            build_huffman_table(&dist_ht, &dyn_lengths[hlit], hdist);
-
-            if (inflate_block(&br, out, &lit_ht, &dist_ht) != 0) return -1;
+            if (inflate_block(&br, out, &lt, &dt) != 0) return -1;
         } else {
             return -1;
         }
     }
     return 0;
-}
-
-int tsfi_pdf_zlib_decompress(const uint8_t *src, size_t src_len, TsfiPdfByteBuffer *out) {
-    if (src_len < 2) return -1;
-    size_t offset = 2;
-    if ((src[1] & 0x20) != 0) {
-        if (src_len < 6) return -1;
-        offset += 4;
-    }
-    return tsfi_pdf_inflate_raw(src + offset, src_len - offset, out);
 }
 
 TsfiPdfTextBuffer *tsfi_pdf_text_buffer_create(void) {
     TsfiPdfTextBuffer *buf = (TsfiPdfTextBuffer *)malloc(sizeof(TsfiPdfTextBuffer));
     if (!buf) return NULL;
-    buf->capacity = 4096;
+    buf->capacity = 8192;
     buf->length = 0;
     buf->text = (char *)malloc(buf->capacity);
-    if (buf->text) buf->text[0] = '\0';
+    if (!buf->text) {
+        free(buf);
+        return NULL;
+    }
+    buf->text[0] = '\0';
     return buf;
-}
-
-void tsfi_pdf_text_buffer_free(TsfiPdfTextBuffer *buf) {
-    if (!buf) return;
-    if (buf->text) free(buf->text);
-    free(buf);
 }
 
 void tsfi_pdf_text_buffer_append(TsfiPdfTextBuffer *buf, const char *str, size_t len) {
@@ -239,42 +259,39 @@ void tsfi_pdf_text_buffer_append(TsfiPdfTextBuffer *buf, const char *str, size_t
     buf->text[buf->length] = '\0';
 }
 
-static void *memmem_fast(const void *l, size_t l_len, const void *s, size_t s_len) {
-    if (!l || !s || s_len == 0 || l_len < s_len) return NULL;
-    const uint8_t *cl = (const uint8_t *)l;
-    const uint8_t *cs = (const uint8_t *)s;
-    for (size_t i = 0; i <= l_len - s_len; i++) {
-        if (memcmp(cl + i, cs, s_len) == 0) return (void *)(cl + i);
+void tsfi_pdf_text_buffer_free(TsfiPdfTextBuffer *buf) {
+    if (!buf) return;
+    if (buf->text) free(buf->text);
+    free(buf);
+}
+
+static inline void *memmem_fast(const void *haystack, size_t haystacklen,
+                                const void *needle, size_t needlelen) {
+    if (needlelen == 0) return (void *)haystack;
+    if (haystacklen < needlelen) return NULL;
+    const uint8_t *h = (const uint8_t *)haystack;
+    const uint8_t *n = (const uint8_t *)needle;
+    for (size_t i = 0; i <= haystacklen - needlelen; ++i) {
+        if (h[i] == n[0] && memcmp(h + i, n, needlelen) == 0) {
+            return (void *)(h + i);
+        }
     }
     return NULL;
 }
 
-static bool is_content_stream(const uint8_t *data, size_t len) {
-    if (len < 4) return false;
-    if (memmem_fast(data, len < 64 ? len : 64, "%!PS-Adobe", 10) != NULL) return false;
-    if (memmem_fast(data, len < 128 ? len : 128, "/CIDInit", 8) != NULL) return false;
-    if (memmem_fast(data, len, "BT", 2) != NULL ||
-        memmem_fast(data, len, "ET", 2) != NULL ||
-        memmem_fast(data, len, "Tj", 2) != NULL ||
-        memmem_fast(data, len, "TJ", 2) != NULL ||
-        memmem_fast(data, len, "Td", 2) != NULL) {
-        return true;
-    }
-    return false;
-}
-
-static void parse_multimodal_content_stream(const uint8_t *data, size_t len,
-                                           TsfiPdfTextBuffer *text_out,
-                                           TsfiPdfDocumentFeatures *feats) {
-    if (!is_content_stream(data, len)) {
-        return;
-    }
-
+static void parse_multimodal_content_stream(const uint8_t *data, size_t len, 
+                                            TsfiPdfTextBuffer *text_out,
+                                            TsfiPdfDocumentFeatures *feats) {
+    if (!data || len == 0) return;
+    
     size_t i = 0;
     while (i < len) {
-        if (data[i] == '[') {
+        if (data[i] == '[') { // Array TJ operator
             i++;
             while (i < len && data[i] != ']') {
+                while (i < len && isspace(data[i])) i++;
+                if (i >= len || data[i] == ']') break;
+                
                 if (data[i] == '(') {
                     i++;
                     size_t start = i;
@@ -299,12 +316,34 @@ static void parse_multimodal_content_stream(const uint8_t *data, size_t len,
                         for (size_t k = start; k < i && out_idx + 1 < sizeof(temp); ++k) {
                             if (data[k] == '\\' && k + 1 < i) {
                                 k++;
-                                if (data[k] == 'n') temp[out_idx++] = '\n';
+                                if (data[k] >= '0' && data[k] <= '7') {
+                                    int oct_val = data[k] - '0';
+                                    int count = 1;
+                                    while (count < 3 && k + 1 < i && data[k+1] >= '0' && data[k+1] <= '7') {
+                                        k++;
+                                        oct_val = (oct_val << 3) | (data[k] - '0');
+                                        count++;
+                                    }
+                                    if (oct_val == 033) { temp[out_idx++] = 'f'; temp[out_idx++] = 'f'; }
+                                    else if (oct_val == 034) { temp[out_idx++] = 'f'; temp[out_idx++] = 'i'; }
+                                    else if (oct_val == 035) { temp[out_idx++] = 'f'; temp[out_idx++] = 'l'; }
+                                    else if (oct_val == 036) { temp[out_idx++] = 'f'; temp[out_idx++] = 'f'; temp[out_idx++] = 'i'; }
+                                    else if (oct_val == 025 || oct_val == 026) temp[out_idx++] = '-';
+                                    else if (oct_val == 050) temp[out_idx++] = '(';
+                                    else if (oct_val == 051) temp[out_idx++] = ')';
+                                    else if (oct_val == 002) temp[out_idx++] = 'x';
+                                    else if (oct_val >= 32 && oct_val <= 126) temp[out_idx++] = (char)oct_val;
+                                    else temp[out_idx++] = ' ';
+                                } else if (data[k] == 'n') temp[out_idx++] = '\n';
                                 else if (data[k] == 'r') temp[out_idx++] = '\r';
                                 else if (data[k] == 't') temp[out_idx++] = '\t';
                                 else temp[out_idx++] = (char)data[k];
                             } else {
-                                temp[out_idx++] = (char)data[k];
+                                if (data[k] >= 32 && data[k] <= 126) {
+                                    temp[out_idx++] = (char)data[k];
+                                } else if (data[k] == '\n' || data[k] == '\t') {
+                                    temp[out_idx++] = (char)data[k];
+                                }
                             }
                         }
                         temp[out_idx] = '\0';
@@ -349,12 +388,34 @@ static void parse_multimodal_content_stream(const uint8_t *data, size_t len,
                 for (size_t k = start; k < i && out_idx + 1 < sizeof(temp); ++k) {
                     if (data[k] == '\\' && k + 1 < i) {
                         k++;
-                        if (data[k] == 'n') temp[out_idx++] = '\n';
+                        if (data[k] >= '0' && data[k] <= '7') {
+                            int oct_val = data[k] - '0';
+                            int count = 1;
+                            while (count < 3 && k + 1 < i && data[k+1] >= '0' && data[k+1] <= '7') {
+                                k++;
+                                oct_val = (oct_val << 3) | (data[k] - '0');
+                                count++;
+                            }
+                            if (oct_val == 033) { temp[out_idx++] = 'f'; temp[out_idx++] = 'f'; }
+                            else if (oct_val == 034) { temp[out_idx++] = 'f'; temp[out_idx++] = 'i'; }
+                            else if (oct_val == 035) { temp[out_idx++] = 'f'; temp[out_idx++] = 'l'; }
+                            else if (oct_val == 036) { temp[out_idx++] = 'f'; temp[out_idx++] = 'f'; temp[out_idx++] = 'i'; }
+                            else if (oct_val == 025 || oct_val == 026) temp[out_idx++] = '-';
+                            else if (oct_val == 050) temp[out_idx++] = '(';
+                            else if (oct_val == 051) temp[out_idx++] = ')';
+                            else if (oct_val == 002) temp[out_idx++] = 'x';
+                            else if (oct_val >= 32 && oct_val <= 126) temp[out_idx++] = (char)oct_val;
+                            else temp[out_idx++] = ' ';
+                        } else if (data[k] == 'n') temp[out_idx++] = '\n';
                         else if (data[k] == 'r') temp[out_idx++] = '\r';
                         else if (data[k] == 't') temp[out_idx++] = '\t';
                         else temp[out_idx++] = (char)data[k];
                     } else {
-                        temp[out_idx++] = (char)data[k];
+                        if (data[k] >= 32 && data[k] <= 126) {
+                            temp[out_idx++] = (char)data[k];
+                        } else if (data[k] == '\n' || data[k] == '\t') {
+                            temp[out_idx++] = (char)data[k];
+                        }
                     }
                 }
                 temp[out_idx] = '\0';
@@ -478,34 +539,15 @@ char *tsfi_pdf_extract_text(const char *filepath, size_t *out_length) {
         return NULL;
     }
 
-    if (out_length) *out_length = feats->text_buffer->length;
-    char *result = feats->text_buffer->text;
-    feats->text_buffer->text = NULL;
-    tsfi_pdf_document_features_free(feats);
-    return result;
-}
-
-#ifdef TSFI_PDF_READER_STANDALONE
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <path_to_pdf>\n", argv[0]);
-        return 1;
+    char *res = NULL;
+    if (feats->text_buffer->length > 0) {
+        res = (char *)malloc(feats->text_buffer->length + 1);
+        if (res) {
+            memcpy(res, feats->text_buffer->text, feats->text_buffer->length);
+            res[feats->text_buffer->length] = '\0';
+            if (out_length) *out_length = feats->text_buffer->length;
+        }
     }
-    TsfiPdfDocumentFeatures *feats = tsfi_pdf_extract_all_features(argv[1]);
-    if (!feats) {
-        fprintf(stderr, "Failed to analyze %s\n", argv[1]);
-        return 1;
-    }
-    printf("=== TSFI2 PDF Multimodal Extraction Proof Report ===\n");
-    printf("Document: %s\n", argv[1]);
-    printf("Total Compressed/Uncompressed Streams: %zu\n", feats->total_streams);
-    printf("Extracted Text Stream Length: %zu bytes\n", feats->text_bytes_extracted);
-    printf("Vector Graphics Path Operators: %zu\n", feats->vector_path_count);
-    printf("Chart & Diagram Polygonal Elements: %zu\n", feats->chart_element_count);
-    printf("Raster Image XObjects: %zu\n", feats->image_object_count);
-    printf("====================================================\n");
-
     tsfi_pdf_document_features_free(feats);
-    return 0;
+    return res;
 }
-#endif
