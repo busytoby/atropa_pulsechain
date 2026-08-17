@@ -663,6 +663,11 @@ test-anatomical-ik-contact-refinement:
 	./tests/test_anatomical_ik_contact_refinement
 	@rm -f tests/test_anatomical_ik_contact_refinement
 
+test-grand-master-unification-v:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_v.c -o tests/test_grand_master_unification_v
+	./tests/test_grand_master_unification_v
+	@rm -f tests/test_grand_master_unification_v
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
