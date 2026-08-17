@@ -348,6 +348,11 @@ test-kv-cache-decode-complexity:
 	./tests/test_kv_cache_decode_complexity
 	@rm -f tests/test_kv_cache_decode_complexity
 
+test-whisper-fixed-cross-attention:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_whisper_fixed_cross_attention.c -o tests/test_whisper_fixed_cross_attention
+	./tests/test_whisper_fixed_cross_attention
+	@rm -f tests/test_whisper_fixed_cross_attention
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
