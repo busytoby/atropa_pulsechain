@@ -673,6 +673,11 @@ test-clutter-suppression-cross-attention:
 	./tests/test_clutter_suppression_cross_attention
 	@rm -f tests/test_clutter_suppression_cross_attention
 
+test-fmcw-chirp-ranging-profile:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_fmcw_chirp_ranging_profile.c -o tests/test_fmcw_chirp_ranging_profile
+	./tests/test_fmcw_chirp_ranging_profile
+	@rm -f tests/test_fmcw_chirp_ranging_profile
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

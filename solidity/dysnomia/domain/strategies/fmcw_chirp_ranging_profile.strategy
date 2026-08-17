@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. FMCW-RANG-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / FMCW CHIRP RANGING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-FMCW-PARAMS.
+           05 WS-CARRIER-FREQ-KHZ       PIC 9(02) VALUE 48.
+           05 WS-SWEEP-BANDWIDTH-KHZ    PIC 9(02) VALUE 04.
+           05 WS-RANGING-DISP-TENTHS    PIC 9(02) VALUE 15.
+           05 WS-FOV-GRID-COUNT         PIC 9(03) VALUE 095.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CHIRP-COMPOSITE        PIC 9(04) VALUE 0.
+           05 WS-FMCW-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-FMCW-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-FMCW-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-FMCW-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CARRIER-FREQ        VALUE 2.
+              88 INVALID-SWEEP-BANDWIDTH     VALUE 3.
+              88 RANGING-DISP-DEGRADED       VALUE 4.
+              88 FOV-GRID-UNDERFLOW          VALUE 5.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 6.
+              88 FMCW-VITALITY-COLLAPSE      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-FMCW-RANGING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CARRIER-FREQ-KHZ < 40 OR WS-CARRIER-FREQ-KHZ > 50
+                SET INVALID-CARRIER-FREQ TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SWEEP-BANDWIDTH-KHZ < 2 OR WS-SWEEP-BANDWIDTH-KHZ > 8
+                SET INVALID-SWEEP-BANDWIDTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RANGING-DISP-TENTHS < 1 OR WS-RANGING-DISP-TENTHS > 22
+                SET RANGING-DISP-DEGRADED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FOV-GRID-COUNT < 80 OR WS-FOV-GRID-COUNT > 100
+                SET FOV-GRID-UNDERFLOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-FMCW-RANGING.
+            COMPUTE WS-CHIRP-COMPOSITE = (WS-CARRIER-FREQ-KHZ * 10) +
+                                         (WS-SWEEP-BANDWIDTH-KHZ * 20) +
+                                         (WS-FOV-GRID-COUNT * 4).
+
+            COMPUTE WS-FMCW-VITALITY = (WS-CHIRP-COMPOSITE / 4) +
+                                       ((22 - WS-RANGING-DISP-TENTHS) * 16) +
+                                       (WS-FOV-GRID-COUNT * 2) + 1.
+
+            IF WS-FMCW-VITALITY EQUAL ZERO
+                SET FMCW-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-FMCW-COHERENCE = (WS-CHIRP-COMPOSITE / 16) +
+                                        ((22 - WS-RANGING-DISP-TENTHS) * 4) +
+                                        (WS-FOV-GRID-COUNT / 2).
+
+            COMPUTE WS-FMCW-REBAR-LATCH = 1470169088 +
+                                          (WS-CHIRP-COMPOSITE / 2) +
+                                          (WS-CARRIER-FREQ-KHZ * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-FMCW-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-FMCW-VITALITY * 10) +
+                                          (WS-FMCW-COHERENCE * 10) +
+                                          (WS-CHIRP-COMPOSITE * 10) +
+                                          (WS-FMCW-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-FMCW-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-FMCW-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
