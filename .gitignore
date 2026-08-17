@@ -391,9 +391,12 @@ frontend/compiled_yul.json
 /tests/test_auncient_siggraph_discharge
 /tests/siggraph_physics.dat.bin
 /tests/test_*
+!/tests/test_*.c
 /tests/*_prover
 /tests/bench_*
+!/tests/bench_*.c
 /tests/render_vaesen_*
+!/tests/render_vaesen_*.c
 /tests/pre_render_vaesen_*
 /tests/compact_model_weight_builder
 /tools/build_custom_cpm_tomie_model_c

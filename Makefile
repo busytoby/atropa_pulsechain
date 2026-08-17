@@ -113,6 +113,11 @@ test-totient-turtle-graphics:
 	./tests/test_totient_turtle_graphics
 	@rm -f tests/test_totient_turtle_graphics
 
+test-totient-turtle-perception:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_totient_turtle_perception.c -o tests/test_totient_turtle_perception
+	./tests/test_totient_turtle_perception
+	@rm -f tests/test_totient_turtle_perception
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
