@@ -1033,6 +1033,11 @@ test-universal-io-data-communicability:
 	./tests/test_universal_io_data_communicability
 	@rm -f tests/test_universal_io_data_communicability
 
+test-grand-master-unification-xii:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xii.c -o tests/test_grand_master_unification_xii
+	./tests/test_grand_master_unification_xii
+	@rm -f tests/test_grand_master_unification_xii
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
