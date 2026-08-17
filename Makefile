@@ -1628,6 +1628,18 @@ test-cpm-tomie-clay-cst-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_cst /tmp/clay_cst.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_cst tsfi2-deepseek/src/cpm_exec_clay_cst /tmp/clay_cst.bin
 
+test-cpm-tomie-totient-clay-sculpting-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_totient_clay_sculpting_prover.c -o tests/test_cpm_tomie_totient_clay_sculpting_prover
+	./tests/test_cpm_tomie_totient_clay_sculpting_prover
+	@rm -f tests/test_cpm_tomie_totient_clay_sculpting_prover
+
+test-cpm-tomie-totient-sculpt-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_totient_sculpt.c -o tsfi2-deepseek/src/cpm_compiler_totient_sculpt
+	./tsfi2-deepseek/src/cpm_compiler_totient_sculpt /tmp/totient_sculpt.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_totient_sculpt.c -o tsfi2-deepseek/src/cpm_exec_totient_sculpt
+	./tsfi2-deepseek/src/cpm_exec_totient_sculpt /tmp/totient_sculpt.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_totient_sculpt tsfi2-deepseek/src/cpm_exec_totient_sculpt /tmp/totient_sculpt.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
