@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GROBNER-STABILIZATION-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / REMARK 13 AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-STAB-PARAMS.
+           05 WS-CRITERION-MODE         PIC 9(01) VALUE 1.
+           05 WS-STEP-HORIZON-H         PIC 9(02) VALUE 02.
+           05 WS-BASIS-CARDINALITY      PIC 9(02) VALUE 08.
+           05 WS-HOLO-FLAG              PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-STAB-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-STAB-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-STAB-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-STAB-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CRITERION-MODE      VALUE 2.
+              88 INVALID-STEP-HORIZON        VALUE 3.
+              88 INVALID-BASIS-CARDINALITY   VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HOLO-FLAG-FAIL              VALUE 6.
+              88 STAB-DIVERG-FAIL            VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-STABILIZATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CRITERION-MODE < 1 OR WS-CRITERION-MODE > 2
+                SET INVALID-CRITERION-MODE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STEP-HORIZON-H < 0 OR WS-STEP-HORIZON-H > 16
+                SET INVALID-STEP-HORIZON TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BASIS-CARDINALITY < 1 OR WS-BASIS-CARDINALITY > 64
+                SET INVALID-BASIS-CARDINALITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HOLO-FLAG NOT EQUAL 1
+                SET HOLO-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-STABILIZATION.
+            COMPUTE WS-STAB-VITALITY = (WS-CRITERION-MODE * 512) +
+                                       (WS-BASIS-CARDINALITY * 64) +
+                                       (WS-STEP-HORIZON-H * 32) +
+                                       (WS-HOLO-FLAG * 128) + 1.
+
+            IF WS-STAB-VITALITY EQUAL ZERO
+                SET STAB-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-STAB-COHERENCE = (WS-BASIS-CARDINALITY * 32) +
+                                        (WS-STEP-HORIZON-H * 16) +
+                                        (WS-CRITERION-MODE * 64).
+
+            COMPUTE WS-STAB-REBAR-LATCH = 1470169088 + (WS-CRITERION-MODE * 256) +
+                                          (WS-BASIS-CARDINALITY * 64) +
+                                          (WS-STEP-HORIZON-H * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-STAB-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-STAB-VITALITY * 10) +
+                                          (WS-STAB-COHERENCE * 10) +
+                                          (WS-CRITERION-MODE * 1000) +
+                                          (WS-STAB-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-STAB-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-STAB-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -283,6 +283,11 @@ test-block-monomial-elimination-order:
 	./tests/test_block_monomial_elimination_order
 	@rm -f tests/test_block_monomial_elimination_order
 
+test-grobner-sequence-stabilization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grobner_sequence_stabilization.c -o tests/test_grobner_sequence_stabilization
+	./tests/test_grobner_sequence_stabilization
+	@rm -f tests/test_grobner_sequence_stabilization
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
