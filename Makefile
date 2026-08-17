@@ -208,6 +208,11 @@ test-universal-multimodal-dubbing:
 	./tests/test_universal_multimodal_dubbing
 	@rm -f tests/test_universal_multimodal_dubbing
 
+test-nonverbal-scene-dynamics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_nonverbal_scene_dynamics.c -o tests/test_nonverbal_scene_dynamics
+	./tests/test_nonverbal_scene_dynamics
+	@rm -f tests/test_nonverbal_scene_dynamics
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

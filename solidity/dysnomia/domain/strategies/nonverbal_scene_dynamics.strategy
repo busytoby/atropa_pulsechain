@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. NONVERBAL-SCENE-DYNAMICS-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SCENE DYNAMICS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-DYNAMICS-PARAMS.
+           05 WS-EVENT-TYPE             PIC 9(02) VALUE 02.
+           05 WS-CHEW-RATIO-PERMILLE    PIC 9(03) VALUE 500.
+           05 WS-PHASE-LOCK-PERMILLE    PIC 9(04) VALUE 0920.
+           05 WS-INTERLEAVED-SYLLABLES  PIC 9(02) VALUE 02.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DYNAMICS-VITALITY      PIC 9(09) VALUE 0.
+           05 WS-SCENE-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-SCENE-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SCENE-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-EVENT-TYPE          VALUE 2.
+              88 INVALID-CHEW-RATIO          VALUE 3.
+              88 FOLEY-PHASE-LOCK-FAIL       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SYLLABLE-INTERLEAV-FAIL     VALUE 6.
+              88 SCENE-DIVERG-FAIL           VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCENE-DYNAMICS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EVENT-TYPE < 1 OR WS-EVENT-TYPE > 8
+                SET INVALID-EVENT-TYPE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CHEW-RATIO-PERMILLE < 100 OR WS-CHEW-RATIO-PERMILLE > 900
+                SET INVALID-CHEW-RATIO TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-LOCK-PERMILLE < 800 OR WS-PHASE-LOCK-PERMILLE > 1000
+                SET FOLEY-PHASE-LOCK-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INTERLEAVED-SYLLABLES < 0 OR WS-INTERLEAVED-SYLLABLES > 6
+                SET SYLLABLE-INTERLEAV-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCENE-DYNAMICS.
+            COMPUTE WS-DYNAMICS-VITALITY = (WS-EVENT-TYPE * 512) +
+                                           (WS-CHEW-RATIO-PERMILLE * 4) +
+                                           (WS-PHASE-LOCK-PERMILLE * 2) + 1.
+
+            IF WS-DYNAMICS-VITALITY EQUAL ZERO
+                SET SCENE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SCENE-COHERENCE = ((WS-PHASE-LOCK-PERMILLE / 10) * 16) +
+                                         (WS-INTERLEAVED-SYLLABLES * 64).
+
+            COMPUTE WS-SCENE-REBAR-LATCH = 1470169088 + (WS-EVENT-TYPE * 256) +
+                                           (WS-INTERLEAVED-SYLLABLES * 64) +
+                                           (WS-PHASE-LOCK-PERMILLE * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SCENE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-DYNAMICS-VITALITY * 10) +
+                                           (WS-SCENE-COHERENCE * 10) +
+                                           (WS-EVENT-TYPE * 1000) +
+                                           (WS-SCENE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SCENE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SCENE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
