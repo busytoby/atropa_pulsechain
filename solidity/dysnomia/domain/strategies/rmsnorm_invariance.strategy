@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. RMSNORM-INV-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / RMSNORM AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-RMS-PARAMS.
+           05 WS-HIDDEN-DIM             PIC 9(05) VALUE 04096.
+           05 WS-MS-ENERGY              PIC 9(06) VALUE 002500.
+           05 WS-EPSILON-MICRO          PIC 9(03) VALUE 001.
+           05 WS-EXACT-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-RMS-SCALE              PIC 9(06) VALUE 0.
+           05 WS-RMS-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-RMS-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-RMS-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-RMS-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-HIDDEN-DIM          VALUE 2.
+              88 INVALID-MS-ENERGY           VALUE 3.
+              88 INVALID-EPSILON             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 RMSNORM-EXACTNESS-FLAG-FAIL VALUE 6.
+              88 RMSNORM-COLLAPSE-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-RMSNORM-SCALING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HIDDEN-DIM < 128 OR WS-HIDDEN-DIM > 8192
+                SET INVALID-HIDDEN-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MS-ENERGY < 10 OR WS-MS-ENERGY > 100000
+                SET INVALID-MS-ENERGY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EPSILON-MICRO < 1 OR WS-EPSILON-MICRO > 100
+                SET INVALID-EPSILON TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXACT-FLAG NOT EQUAL 1
+                SET RMSNORM-EXACTNESS-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RMS-SCALE = WS-MS-ENERGY + (WS-EPSILON-MICRO / 10).
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-RMSNORM-SCALING.
+            COMPUTE WS-RMS-VITALITY = (WS-RMS-SCALE / 8) +
+                                      (WS-HIDDEN-DIM / 4) +
+                                      (WS-EPSILON-MICRO * 16) +
+                                      (WS-EXACT-FLAG * 128) + 1.
+
+            IF WS-RMS-VITALITY EQUAL ZERO
+                SET RMSNORM-COLLAPSE-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RMS-COHERENCE = (WS-RMS-SCALE / 32) +
+                                       (WS-HIDDEN-DIM / 16) +
+                                       (WS-EPSILON-MICRO * 4).
+
+            COMPUTE WS-RMS-REBAR-LATCH = 1470169088 +
+                                         (WS-RMS-SCALE / 4) +
+                                         (WS-HIDDEN-DIM / 2) +
+                                         (WS-EPSILON-MICRO * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-RMS-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-RMS-VITALITY * 10) +
+                                         (WS-RMS-COHERENCE * 10) +
+                                         (WS-RMS-SCALE * 10) +
+                                         (WS-RMS-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-RMS-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-RMS-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

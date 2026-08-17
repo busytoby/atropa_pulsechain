@@ -463,6 +463,11 @@ test-swiglu-gated-activation:
 	./tests/test_swiglu_gated_activation
 	@rm -f tests/test_swiglu_gated_activation
 
+test-rmsnorm-invariance:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_rmsnorm_invariance.c -o tests/test_rmsnorm_invariance
+	./tests/test_rmsnorm_invariance
+	@rm -f tests/test_rmsnorm_invariance
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
