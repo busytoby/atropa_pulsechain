@@ -248,6 +248,11 @@ test-singular-locus-elimination:
 	./tests/test_singular_locus_elimination
 	@rm -f tests/test_singular_locus_elimination
 
+test-grobner-truncation-termination:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grobner_truncation_termination.c -o tests/test_grobner_truncation_termination
+	./tests/test_grobner_truncation_termination
+	@rm -f tests/test_grobner_truncation_termination
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
