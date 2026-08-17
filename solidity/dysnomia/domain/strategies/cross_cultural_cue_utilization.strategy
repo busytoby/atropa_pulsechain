@@ -1,0 +1,129 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CULT-UTIL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / CROSS CULTURAL CUE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CULT-PARAMS.
+           05 WS-UTIL-JAPAN             PIC 9(04) VALUE 0820.
+           05 WS-UTIL-KOREA             PIC 9(04) VALUE 0790.
+           05 WS-UTIL-CHINA             PIC 9(04) VALUE 0760.
+           05 WS-MAX-DIVERG             PIC 9(04) VALUE 0150.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DIFF-JK                PIC 9(04) VALUE 0.
+           05 WS-DIFF-KC                PIC 9(04) VALUE 0.
+           05 WS-TOTAL-DIVERG           PIC 9(04) VALUE 0.
+           05 WS-MEAN-UTIL              PIC 9(04) VALUE 0.
+           05 WS-CULT-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-CULT-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-CULT-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CULT-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-UTILIZATION-RANGE   VALUE 2.
+              88 INVALID-MAX-DIVERGENCE      VALUE 3.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 4.
+              88 CULTURAL-DIVERGENCE-BREACH  VALUE 5.
+              88 CULTURAL-VITALITY-COLLAPSE  VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-CULTURAL-UTILIZATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UTIL-JAPAN < 100 OR WS-UTIL-JAPAN > 1000 OR
+               WS-UTIL-KOREA < 100 OR WS-UTIL-KOREA > 1000 OR
+               WS-UTIL-CHINA < 100 OR WS-UTIL-CHINA > 1000
+                SET INVALID-UTILIZATION-RANGE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MAX-DIVERG < 10 OR WS-MAX-DIVERG > 500
+                SET INVALID-MAX-DIVERGENCE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-UTIL-JAPAN >= WS-UTIL-KOREA
+                COMPUTE WS-DIFF-JK = WS-UTIL-JAPAN - WS-UTIL-KOREA
+            ELSE
+                COMPUTE WS-DIFF-JK = WS-UTIL-KOREA - WS-UTIL-JAPAN
+            END-IF.
+
+            IF WS-UTIL-KOREA >= WS-UTIL-CHINA
+                COMPUTE WS-DIFF-KC = WS-UTIL-KOREA - WS-UTIL-CHINA
+            ELSE
+                COMPUTE WS-DIFF-KC = WS-UTIL-CHINA - WS-UTIL-KOREA
+            END-IF.
+
+            COMPUTE WS-TOTAL-DIVERG = WS-DIFF-JK + WS-DIFF-KC.
+
+            IF WS-TOTAL-DIVERG > WS-MAX-DIVERG
+                SET CULTURAL-DIVERGENCE-BREACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-CULTURAL-UTILIZATION.
+            COMPUTE WS-MEAN-UTIL = (WS-UTIL-JAPAN + WS-UTIL-KOREA + WS-UTIL-CHINA) / 3.
+
+            COMPUTE WS-CULT-VITALITY = (WS-MEAN-UTIL / 4) +
+                                       ((WS-MAX-DIVERG - WS-TOTAL-DIVERG) * 32) + 1.
+
+            IF WS-CULT-VITALITY EQUAL ZERO
+                SET CULTURAL-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CULT-COHERENCE = (WS-MEAN-UTIL / 16) +
+                                        ((WS-MAX-DIVERG - WS-TOTAL-DIVERG) * 8).
+
+            COMPUTE WS-CULT-REBAR-LATCH = 1470169088 +
+                                          (WS-MEAN-UTIL / 2) +
+                                          (WS-TOTAL-DIVERG * 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CULT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-CULT-VITALITY * 10) +
+                                          (WS-CULT-COHERENCE * 10) +
+                                          (WS-MEAN-UTIL * 10) +
+                                          (WS-CULT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CULT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CULT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

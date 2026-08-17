@@ -498,6 +498,11 @@ test-holonomic-emotional-weyl-closure:
 	./tests/test_holonomic_emotional_weyl_closure
 	@rm -f tests/test_holonomic_emotional_weyl_closure
 
+test-cross-cultural-cue-utilization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cross_cultural_cue_utilization.c -o tests/test_cross_cultural_cue_utilization
+	./tests/test_cross_cultural_cue_utilization
+	@rm -f tests/test_cross_cultural_cue_utilization
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
