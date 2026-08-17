@@ -1748,6 +1748,18 @@ test-cpm-tomie-3d-spatial-suite:
 	./tsfi2-deepseek/src/cpm_exec_3d_spatial /tmp/3d_spatial.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_3d_spatial tsfi2-deepseek/src/cpm_exec_3d_spatial /tmp/3d_spatial.bin
 
+test-cpm-tomie-23tree-quadtree-lod-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_23tree_quadtree_lod_prover.c -o tests/test_cpm_tomie_23tree_quadtree_lod_prover
+	./tests/test_cpm_tomie_23tree_quadtree_lod_prover
+	@rm -f tests/test_cpm_tomie_23tree_quadtree_lod_prover
+
+test-cpm-tomie-quadtree-lod-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_quadtree_lod.c -o tsfi2-deepseek/src/cpm_compiler_quadtree_lod
+	./tsfi2-deepseek/src/cpm_compiler_quadtree_lod /tmp/quadtree_lod.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_quadtree_lod.c -o tsfi2-deepseek/src/cpm_exec_quadtree_lod
+	./tsfi2-deepseek/src/cpm_exec_quadtree_lod /tmp/quadtree_lod.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_quadtree_lod tsfi2-deepseek/src/cpm_exec_quadtree_lod /tmp/quadtree_lod.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
