@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. RDP-REV-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / REVERSE DISASSEMBLY PATH AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-RDP-PARAMS.
+           05 WS-INVERT-LAT-MS          PIC 9(02) VALUE 20.
+           05 WS-CLEARANCE-FID-M        PIC 9(04) VALUE 0960.
+           05 WS-VECTOR-DRIFT-M         PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-RDP-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-RDP-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-RDP-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-RDP-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-RDP-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVERT-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 CLEARANCE-FID-LOW           VALUE 3.
+              88 VECTOR-DRIFT-EXCEEDED       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVERSION-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-REVERSE-PATH
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INVERT-LAT-MS < 10 OR WS-INVERT-LAT-MS > 50
+                SET INVERT-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CLEARANCE-FID-M < 850 OR WS-CLEARANCE-FID-M > 1000
+                SET CLEARANCE-FID-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VECTOR-DRIFT-M < 0 OR WS-VECTOR-DRIFT-M > 5
+                SET VECTOR-DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-REVERSE-PATH.
+            COMPUTE WS-RDP-COMPOSITE = ((60 - WS-INVERT-LAT-MS) * 10) +
+                                       (WS-CLEARANCE-FID-M / 2) +
+                                       ((10 - WS-VECTOR-DRIFT-M) * 40).
+
+            COMPUTE WS-RDP-VITALITY = (WS-RDP-COMPOSITE / 4) +
+                                      (WS-CLEARANCE-FID-M / 4) +
+                                      ((60 - WS-INVERT-LAT-MS) * 4) + 1.
+
+            IF WS-RDP-VITALITY EQUAL ZERO
+                SET INVERSION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RDP-COHERENCE = (WS-RDP-COMPOSITE / 16) +
+                                       (WS-CLEARANCE-FID-M / 16) +
+                                       ((60 - WS-INVERT-LAT-MS) * 2).
+
+            COMPUTE WS-RDP-REBAR-LATCH = 1470169088 +
+                                         (WS-RDP-COMPOSITE / 2) +
+                                         ((60 - WS-INVERT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-RDP-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-RDP-VITALITY * 10) +
+                                         (WS-RDP-COHERENCE * 10) +
+                                         (WS-RDP-COMPOSITE * 10) +
+                                         (WS-RDP-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-RDP-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-RDP-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

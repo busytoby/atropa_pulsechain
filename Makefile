@@ -1228,6 +1228,11 @@ test-spatial-reference-resolution:
 	./tests/test_spatial_reference_resolution
 	@rm -f tests/test_spatial_reference_resolution
 
+test-reverse-disassembly-path:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_reverse_disassembly_path.c -o tests/test_reverse_disassembly_path
+	./tests/test_reverse_disassembly_path
+	@rm -f tests/test_reverse_disassembly_path
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
