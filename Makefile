@@ -1719,6 +1719,12 @@ test-cpm-tomie-semantic-csg-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-acoustic-resonance-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-4box-coaxial-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-semantic-projection-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-multiscale-voxel-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-multiscale-voxel-lod-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_multiscale_voxel_lod_prover.c -o tests/test_cpm_tomie_multiscale_voxel_lod_prover
+	./tests/test_cpm_tomie_multiscale_voxel_lod_prover
+	@rm -f tests/test_cpm_tomie_multiscale_voxel_lod_prover
 
 test-cpm-tomie-semantic-projection-anchoring-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_semantic_projection_anchoring_prover.c -o tests/test_cpm_tomie_semantic_projection_anchoring_prover

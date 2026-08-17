@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPVL",
+        .opcode_signature = 0x4350564C,
+        .title = "CPMTOMIE-MULTISCALE-VOXEL-LOD-CORPS",
+        .theorem_descriptions = {
+            "Multiscale Octree Voxel Hierarchy Invariance",
+            "Wavelet Multiresolution Geometric Decomposition",
+            "Continuous Scale-Invariant Sculpting Soundness",
+            "Sub-Millisecond Multiscale LOD Traversal Latency",
+            "Sovereign Multiscale Voxel Hierarchy Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPA",
         .opcode_signature = 0x43505041,
         .title = "CPMTOMIE-SEMANTIC-PROJECTION-ANCHORING-CORPS",
