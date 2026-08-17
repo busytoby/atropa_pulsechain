@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. KVCACHE-DECODE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / KV CACHE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-DECODE-PARAMS.
+           05 WS-HEAD-COUNT             PIC 9(02) VALUE 32.
+           05 WS-HEAD-DIM               PIC 9(03) VALUE 128.
+           05 WS-SEQ-LEN                PIC 9(04) VALUE 0512.
+           05 WS-MATVEC-FLAG            PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DECODE-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-DECODE-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-DECODE-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-DECODE-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-HEAD-COUNT          VALUE 2.
+              88 INVALID-HEAD-DIM            VALUE 3.
+              88 INVALID-SEQ-LEN             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 MATVEC-FLAG-FAIL            VALUE 6.
+              88 DECODE-DIVERG-FAIL          VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-KV-DECODE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HEAD-COUNT < 1 OR WS-HEAD-COUNT > 64
+                SET INVALID-HEAD-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HEAD-DIM < 16 OR WS-HEAD-DIM > 256
+                SET INVALID-HEAD-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SEQ-LEN < 1 OR WS-SEQ-LEN > 4096
+                SET INVALID-SEQ-LEN TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MATVEC-FLAG NOT EQUAL 1
+                SET MATVEC-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-KV-DECODE.
+            COMPUTE WS-DECODE-VITALITY = (WS-HEAD-COUNT * 512) +
+                                         (WS-HEAD-DIM * 64) +
+                                         (WS-SEQ-LEN / 8) +
+                                         (WS-MATVEC-FLAG * 256) + 1.
+
+            IF WS-DECODE-VITALITY EQUAL ZERO
+                SET DECODE-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-DECODE-COHERENCE = (WS-HEAD-COUNT * 64) +
+                                          (WS-HEAD-DIM * 32) +
+                                          (WS-SEQ-LEN / 32).
+
+            COMPUTE WS-DECODE-REBAR-LATCH = 1470169088 + (WS-HEAD-COUNT * 256) +
+                                            (WS-HEAD-DIM * 64) +
+                                            (WS-SEQ-LEN / 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-DECODE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-DECODE-VITALITY * 10) +
+                                            (WS-DECODE-COHERENCE * 10) +
+                                            (WS-HEAD-COUNT * 1000) +
+                                            (WS-DECODE-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-DECODE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-DECODE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

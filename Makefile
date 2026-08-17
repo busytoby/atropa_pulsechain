@@ -343,6 +343,11 @@ test-bitnet-ternary-bitlinear:
 	./tests/test_bitnet_ternary_bitlinear
 	@rm -f tests/test_bitnet_ternary_bitlinear
 
+test-kv-cache-decode-complexity:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_kv_cache_decode_complexity.c -o tests/test_kv_cache_decode_complexity
+	./tests/test_kv_cache_decode_complexity
+	@rm -f tests/test_kv_cache_decode_complexity
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
