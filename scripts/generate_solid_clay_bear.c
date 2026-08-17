@@ -1,14 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Solid Ceramic Terracotta Clay Teddy Bear 3D Raymarcher & Audio Synthesizer
+ * Perfectly Stationary Solid Ceramic Terracotta Clay Teddy Bear 3D Raymarcher
  * 
- * Generates an actual solid, 3D shaded earthenware clay / ceramic glazed teddy bear:
- * - Solid volumetric raymarched Signed Distance Fields (SDFs) with smooth blending
- * - Solid terracotta clay diffuse shading + warm earthen ambient + golden ceramic specular highlights
- * - Articulated monobone kinematics: Solid head, round sculpted clay ears, solid clay muzzle & nose,
- *   solid torso, rounded clay arms that wave expressively, and solid feet grounded on a studio turntable.
- * - Perfectly centered camera with smooth, slow 360-degree orbital turntable rotation (no scrolling across screen).
- * - Continuous high-fidelity Bionika audio ("Eye of the Tiger").
+ * Features:
+ * - Fixed Studio Camera (ro = 0.0, 0.4, 3.5; ta = 0.0, 0.1, 0.0; up = 0.0, 1.0, 0.0) -> ZERO screen scrolling/sliding.
+ * - Solid volumetric Signed Distance Fields (SDFs) with polynomial smooth blending (`smin`).
+ * - Rich Terracotta Clay pigment with two-point lighting, warm ambient, and ceramic specular glaze.
+ * - Stationary seated bear on studio pedestal with rhythmic waving arm and slight head tilt.
+ * - Continuous high-fidelity studio AAC 192k audio ("Eye of the Tiger").
  */
 
 #include <stdio.h>
@@ -36,24 +35,24 @@ typedef struct { float x, y, z; } vec3;
 static pixel_t framebuffer[WIDTH * HEIGHT];
 static int16_t audio_buffer[SAMPLES_PER_FRAME * 2];
 
-/* Vec3 Math */
 static inline vec3 v_add(vec3 a, vec3 b) { return (vec3){a.x + b.x, a.y + b.y, a.z + b.z}; }
 static inline vec3 v_sub(vec3 a, vec3 b) { return (vec3){a.x - b.x, a.y - b.y, a.z - b.z}; }
 static inline vec3 v_scale(vec3 a, float s) { return (vec3){a.x * s, a.y * s, a.z * s}; }
 static inline float v_dot(vec3 a, vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 static inline float v_length(vec3 a) { return sqrtf(v_dot(a, a)); }
+static inline vec3 v_cross(vec3 a, vec3 b) {
+    return (vec3){a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
 static inline vec3 v_normalize(vec3 a) {
     float l = v_length(a);
     return l > 0.00001f ? v_scale(a, 1.0f / l) : (vec3){0, 0, 0};
 }
 
-/* Smooth Minimum for organic clay joint blending */
 static inline float smin(float a, float b, float k) {
     float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
     return fminf(a, b) - h * h * h * (k * (1.0f / 6.0f));
 }
 
-/* SDF Primitives */
 static inline float sd_sphere(vec3 p, float r) {
     return v_length(p) - r;
 }
@@ -70,30 +69,31 @@ static inline float sd_capsule(vec3 p, vec3 a, vec3 b, float r) {
     return v_length(v_sub(pa, v_scale(ba, h))) - r;
 }
 
-/* Solid Clay Teddy Bear Scene SDF */
 static float map_clay_bear(vec3 p, float time) {
-    // 1. Solid Clay Torso (Warm Earthen Pot Belly)
+    // 1. Solid Clay Torso (Seated Center)
     float d_torso = sd_ellipsoid(v_sub(p, (vec3){0.0f, -0.2f, 0.0f}), (vec3){0.65f, 0.75f, 0.60f});
 
-    // 2. Solid Clay Head
-    float d_head = sd_sphere(v_sub(p, (vec3){0.0f, 0.70f, 0.0f}), 0.52f);
+    // 2. Solid Clay Head with slight expressive tilt
+    float head_tilt = sinf(time * 2.0f) * 0.03f;
+    vec3 head_pos = (vec3){head_tilt, 0.70f, 0.0f};
+    float d_head = sd_sphere(v_sub(p, head_pos), 0.52f);
 
-    // 3. Smooth blend head & torso into single organic ceramic monobone
     float d_bear = smin(d_torso, d_head, 0.18f);
 
-    // 4. Solid Clay Snout / Muzzle
-    float d_muzzle = sd_ellipsoid(v_sub(p, (vec3){0.0f, 0.58f, 0.40f}), (vec3){0.22f, 0.18f, 0.20f});
+    // 3. Solid Clay Snout & Nose
+    vec3 snout_pos = (vec3){head_tilt, 0.58f, 0.40f};
+    float d_muzzle = sd_ellipsoid(v_sub(p, snout_pos), (vec3){0.22f, 0.18f, 0.20f});
     d_bear = smin(d_bear, d_muzzle, 0.08f);
 
-    // 5. Solid Clay Ears
-    vec3 ear_l_pos = (vec3){-0.42f, 1.10f, -0.05f};
-    vec3 ear_r_pos = (vec3){ 0.42f, 1.10f, -0.05f};
+    // 4. Solid Clay Ears
+    vec3 ear_l_pos = (vec3){-0.42f + head_tilt, 1.10f, -0.05f};
+    vec3 ear_r_pos = (vec3){ 0.42f + head_tilt, 1.10f, -0.05f};
     float d_ear_l = sd_ellipsoid(v_sub(p, ear_l_pos), (vec3){0.18f, 0.18f, 0.08f});
     float d_ear_r = sd_ellipsoid(v_sub(p, ear_r_pos), (vec3){0.18f, 0.18f, 0.08f});
     float d_ears = fminf(d_ear_l, d_ear_r);
     d_bear = smin(d_bear, d_ears, 0.06f);
 
-    // 6. Solid Clay Arms & Kinematronic Wave
+    // 5. Solid Clay Arms & Kinematronic Wave
     float wave = sinf(time * 5.0f) * 0.35f + 0.2f;
     vec3 arm_l_start = (vec3){-0.50f, 0.25f, 0.0f};
     vec3 arm_l_end   = (vec3){-0.85f, 0.55f + wave * 0.4f, 0.35f + wave * 0.2f};
@@ -105,7 +105,7 @@ static float map_clay_bear(vec3 p, float time) {
     float d_arms = fminf(d_arm_l, d_arm_r);
     d_bear = smin(d_bear, d_arms, 0.12f);
 
-    // 7. Solid Clay Legs / Feet (Seated Studio Pose)
+    // 6. Solid Clay Legs / Feet (Seated on Pedestal)
     vec3 leg_l_start = (vec3){-0.40f, -0.65f, 0.10f};
     vec3 leg_l_end   = (vec3){-0.50f, -0.75f, 0.65f};
     float d_leg_l = sd_capsule(p, leg_l_start, leg_l_end, 0.20f);
@@ -116,12 +116,11 @@ static float map_clay_bear(vec3 p, float time) {
     float d_legs = fminf(d_leg_l, d_leg_r);
     d_bear = smin(d_bear, d_legs, 0.15f);
 
-    // 8. Ceramic Studio Pedestal Turntable
-    float d_pedestal = sd_ellipsoid(v_sub(p, (vec3){0.0f, -1.15f, 0.0f}), (vec3){1.5f, 0.2f, 1.5f});
+    // 7. Ceramic Studio Pedestal
+    float d_pedestal = sd_ellipsoid(v_sub(p, (vec3){0.0f, -1.15f, 0.0f}), (vec3){1.6f, 0.22f, 1.6f});
     return fminf(d_bear, d_pedestal);
 }
 
-/* Calculate Normal via Central Differences */
 static vec3 calc_normal(vec3 p, float time) {
     float eps = 0.002f;
     return v_normalize((vec3){
@@ -131,21 +130,18 @@ static vec3 calc_normal(vec3 p, float time) {
     });
 }
 
-/* Render Solid Clay Shaded Frame */
-static void render_solid_clay_frame(int frame) {
+static void render_stationary_clay_frame(int frame) {
     float t = (float)frame / (float)FPS;
 
-    // Centered turntable camera rotating smoothly around origin
-    float cam_dist = 3.6f;
-    float cam_angle = t * 0.40f; // Smooth, slow 360 rotation
-    vec3 ro = (vec3){ cam_dist * sinf(cam_angle), 0.5f + 0.1f * sinf(t * 0.3f), cam_dist * cosf(cam_angle) };
-    vec3 ta = (vec3){ 0.0f, 0.1f, 0.0f }; // Always look directly at center of bear
+    // Fixed Studio Camera Setup: Front-Facing 3/4 Perspective, ALWAYS STATIONARY
+    vec3 ro = (vec3){ 0.4f, 0.45f, 3.4f };
+    vec3 ta = (vec3){ 0.0f, 0.10f, 0.0f };
+    vec3 up = (vec3){ 0.0f, 1.0f, 0.0f };
 
     vec3 ww = v_normalize(v_sub(ta, ro));
-    vec3 uu = v_normalize((vec3){ww.z, 0.0f, -ww.x});
-    vec3 vv = (vec3){uu.y * ww.z - uu.z * ww.y, uu.z * ww.x - uu.x * ww.z, uu.x * ww.y - uu.y * ww.x};
+    vec3 uu = v_normalize(v_cross(ww, up));
+    vec3 vv = v_cross(uu, ww);
 
-    // Lights
     vec3 light1_dir = v_normalize((vec3){0.8f, 1.2f, 0.9f});
     vec3 light2_dir = v_normalize((vec3){-0.7f, 0.4f, -0.8f});
 
@@ -157,9 +153,8 @@ static void render_solid_clay_frame(int frame) {
 
             vec3 rd = v_normalize(v_add(v_add(v_scale(uu, px), v_scale(vv, py)), v_scale(ww, 1.8f)));
 
-            // Raymarching Loop
             float depth = 0.5f;
-            float max_depth = 8.0f;
+            float max_depth = 7.0f;
             bool hit = false;
             vec3 p = ro;
 
@@ -176,40 +171,33 @@ static void render_solid_clay_frame(int frame) {
 
             if (hit) {
                 vec3 n = calc_normal(p, t);
-
-                // Material differentiation: Pedestal vs Terracotta Clay
                 bool is_pedestal = (p.y < -0.95f);
 
                 float diff1 = fmaxf(v_dot(n, light1_dir), 0.0f);
                 float diff2 = fmaxf(v_dot(n, light2_dir), 0.0f) * 0.4f;
                 float amb = 0.25f + 0.15f * n.y;
 
-                // Specular gloss highlight (Ceramic Glaze)
                 vec3 ref = v_sub(v_scale(n, 2.0f * v_dot(n, light1_dir)), light1_dir);
                 float spec = powf(fmaxf(-v_dot(ref, rd), 0.0f), 24.0f) * 0.6f;
 
                 float r, g, b;
                 if (is_pedestal) {
-                    // Dark glazed porcelain turntable
                     r = (0.15f * diff1 + 0.10f * diff2 + 0.08f * amb + spec * 0.8f);
                     g = (0.20f * diff1 + 0.15f * diff2 + 0.10f * amb + spec * 0.8f);
                     b = (0.30f * diff1 + 0.25f * diff2 + 0.18f * amb + spec * 0.8f);
                 } else {
-                    // Rich Terracotta / Earthen Clay Pigment
-                    // Base Clay: R=0.82, G=0.45, B=0.28
+                    // Rich Terracotta Clay Pigment
                     r = (0.82f * diff1 + 0.40f * diff2 + 0.35f * amb + spec);
                     g = (0.45f * diff1 + 0.22f * diff2 + 0.20f * amb + spec * 0.9f);
                     b = (0.28f * diff1 + 0.15f * diff2 + 0.14f * amb + spec * 0.7f);
                 }
 
-                // Clamping & Gamma Tone Mapping
                 r = sqrtf(fminf(r, 1.0f));
                 g = sqrtf(fminf(g, 1.0f));
                 b = sqrtf(fminf(b, 1.0f));
 
                 framebuffer[y * WIDTH + x] = (pixel_t){ (uint8_t)(r * 255.0f), (uint8_t)(g * 255.0f), (uint8_t)(b * 255.0f) };
             } else {
-                // Warm Studio Gradient Backdrop
                 float bg_t = ((float)y / (float)HEIGHT);
                 uint8_t bg_r = (uint8_t)(25.0f + 35.0f * (1.0f - bg_t));
                 uint8_t bg_g = (uint8_t)(28.0f + 40.0f * (1.0f - bg_t));
@@ -220,7 +208,6 @@ static void render_solid_clay_frame(int frame) {
     }
 }
 
-/* Continuous High-Fidelity Bionika Audio Synthesizer */
 static double b_phase = 0.0;
 static double l_phase = 0.0;
 static double l5_phase = 0.0;
@@ -333,7 +320,7 @@ static void generate_audio(int frame, int16_t *stereo_out) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("RENDERING SOLID CLAY TEDDY BEAR 3D RAYMARCHED MP4 (90 SEC)   \n");
+    printf("RENDERING PERFECTLY STATIONARY SOLID CLAY BEAR MP4 (90 SEC)  \n");
     printf("=============================================================\n");
 
     const char *cmd = "ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - "
@@ -348,14 +335,14 @@ int main(void) {
     }
 
     for (int f = 0; f < TOTAL_FRAMES; f++) {
-        render_solid_clay_frame(f);
+        render_stationary_clay_frame(f);
         generate_audio(f, audio_buffer);
 
         fwrite(framebuffer, sizeof(pixel_t), WIDTH * HEIGHT, pipe);
         fwrite(audio_buffer, sizeof(int16_t) * 2, SAMPLES_PER_FRAME, pipe);
 
         if (f % 150 == 0) {
-            printf("   -> Solid Clay Raymarched %d/%d frames (%.1f%%, Time: %.1f sec)...\n",
+            printf("   -> Stationary Clay Raymarched %d/%d frames (%.1f%%, Time: %.1f sec)...\n",
                    f, TOTAL_FRAMES, (float)f / (float)TOTAL_FRAMES * 100.0f, (float)f / 30.0f);
             fflush(stdout);
         }
@@ -363,7 +350,7 @@ int main(void) {
 
     pclose(pipe);
     printf("=============================================================\n");
-    printf("✓ SOLID CLAY TEDDY BEAR RENDER COMPLETE: clayscape_bear_solid_demo.mp4\n");
+    printf("✓ STATIONARY SOLID CLAY BEAR RENDER COMPLETE: clayscape_bear_solid_demo.mp4\n");
     printf("=============================================================\n");
     return 0;
 }
