@@ -312,27 +312,31 @@ int main(void) {
     write_u32(out, 0); /* Placeholder for stbl size */
     write_fourcc(out, "stbl");
 
-    /* stsd (Sample Description Atom with 'raw ' uncompressed RGB visual sample entry, 86 bytes) */
+    /* stsd (Sample Description Atom with '24BG' or 'raw ' uncompressed visual sample entry, 86 bytes) */
     write_u32(out, 86);
     write_fourcc(out, "stsd");
     write_u32(out, 0); /* Version & Flags */
     write_u32(out, 1); /* Entry count */
-    /* VisualSampleEntry ('raw ') */
+    /* VisualSampleEntry ('24BG' - 24-bit RGB) */
     write_u32(out, 70);
-    write_fourcc(out, "raw ");
+    write_fourcc(out, "24BG");
     for (int i = 0; i < 6; i++) fputc(0, out); /* Reserved */
-    write_u16(out, 1); /* Data reference index */
-    write_u16(out, 0); write_u16(out, 0); /* Pre-defined & Reserved */
-    for (int i = 0; i < 3; i++) write_u32(out, 0); /* Pre-defined */
+    write_u16(out, 1); /* Data reference index = 1 */
+    write_u16(out, 0); /* Version = 0 */
+    write_u16(out, 0); /* Revision level = 0 */
+    write_u32(out, 0); /* Vendor */
+    write_u32(out, 0); /* Temporal quality */
+    write_u32(out, 0); /* Spatial quality */
     write_u16(out, WIDTH); /* Width */
     write_u16(out, HEIGHT); /* Height */
     write_u32(out, 0x00480000); /* 72 dpi horiz */
     write_u32(out, 0x00480000); /* 72 dpi vert */
-    write_u32(out, 0); /* Reserved */
+    write_u32(out, 0); /* Data size = 0 */
     write_u16(out, 1); /* Frame count = 1 */
-    for (int i = 0; i < 32; i++) fputc(0, out); /* Compressor name */
-    write_u16(out, 24); /* Depth: 24 bits (RGB24) */
-    write_u16(out, 0xFFFF); /* Pre-defined */
+    fputc(0, out); /* Pascal string length = 0 */
+    for (int i = 0; i < 31; i++) fputc(0, out); /* Compressor name padding */
+    write_u16(out, 24); /* Color Depth = 24 bpp */
+    write_u16(out, 0xFFFF); /* Color table ID = -1 (no color table) */
 
     /* stts (Time-to-Sample Atom, 24 bytes) */
     write_u32(out, 24);
