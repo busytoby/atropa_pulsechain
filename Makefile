@@ -163,6 +163,11 @@ export-multi-agent-usd-stage:
 	./tests/export_multi_agent_usd_stage
 	@rm -f tests/export_multi_agent_usd_stage
 
+test-usd-stage-audio-exporter:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_usd_stage_audio_exporter.c -o tests/test_usd_stage_audio_exporter
+	./tests/test_usd_stage_audio_exporter
+	@rm -f tests/test_usd_stage_audio_exporter
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
