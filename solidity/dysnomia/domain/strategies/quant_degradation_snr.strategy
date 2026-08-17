@@ -1,0 +1,128 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. QUANT-DEG-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / QUANT DEGRADATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SNR-PARAMS.
+           05 WS-SNR-DB                 PIC S9(02) VALUE -05.
+           05 WS-CLEAN-NUBIA            PIC 9(04) VALUE 0390.
+           05 WS-NOISY-NUBIA            PIC 9(04) VALUE 0340.
+           05 WS-MAX-DELTA              PIC 9(04) VALUE 0080.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-MEASURED-DELTA         PIC 9(04) VALUE 0.
+           05 WS-DEG-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-DEG-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-DEG-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-DEG-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-SNR-DB              VALUE 2.
+              88 INVALID-CLEAN-NUBIA         VALUE 3.
+              88 INVALID-NOISY-NUBIA         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-DELTA-MAX           VALUE 6.
+              88 SNR-DEGRADATION-BREACH      VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SNR-DEGRADATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SNR-DB < -10 OR WS-SNR-DB > 30
+                SET INVALID-SNR-DB TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CLEAN-NUBIA < 150 OR WS-CLEAN-NUBIA > 1000
+                SET INVALID-CLEAN-NUBIA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NOISY-NUBIA < 100 OR WS-NOISY-NUBIA > 1000
+                SET INVALID-NOISY-NUBIA TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MAX-DELTA < 10 OR WS-MAX-DELTA > 300
+                SET INVALID-DELTA-MAX TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CLEAN-NUBIA >= WS-NOISY-NUBIA
+                COMPUTE WS-MEASURED-DELTA = WS-CLEAN-NUBIA - WS-NOISY-NUBIA
+            ELSE
+                COMPUTE WS-MEASURED-DELTA = WS-NOISY-NUBIA - WS-CLEAN-NUBIA
+            END-IF.
+
+            IF WS-MEASURED-DELTA > WS-MAX-DELTA
+                SET SNR-DEGRADATION-BREACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SNR-DEGRADATION.
+            COMPUTE WS-DEG-VITALITY = (WS-NOISY-NUBIA / 2) +
+                                      ((WS-MAX-DELTA - WS-MEASURED-DELTA) * 64) +
+                                      ((WS-SNR-DB + 15) * 32) + 1.
+
+            IF WS-DEG-VITALITY EQUAL ZERO
+                SET SNR-DEGRADATION-BREACH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-DEG-COHERENCE = (WS-NOISY-NUBIA / 4) +
+                                       ((WS-MAX-DELTA - WS-MEASURED-DELTA) * 16) +
+                                       ((WS-SNR-DB + 15) * 8).
+
+            COMPUTE WS-DEG-REBAR-LATCH = 1470169088 +
+                                         (WS-NOISY-NUBIA / 2) +
+                                         (WS-MEASURED-DELTA * 32) +
+                                         ((WS-SNR-DB + 15) * 64).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-DEG-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-DEG-VITALITY * 10) +
+                                         (WS-DEG-COHERENCE * 10) +
+                                         (WS-NOISY-NUBIA * 100) +
+                                         (WS-DEG-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-DEG-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-DEG-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

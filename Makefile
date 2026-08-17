@@ -438,6 +438,11 @@ test-formant-resonator-modulation:
 	./tests/test_formant_resonator_modulation
 	@rm -f tests/test_formant_resonator_modulation
 
+test-quant-degradation-snr:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_quant_degradation_snr.c -o tests/test_quant_degradation_snr
+	./tests/test_quant_degradation_snr
+	@rm -f tests/test_quant_degradation_snr
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
