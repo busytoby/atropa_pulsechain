@@ -763,6 +763,11 @@ test-acoustic-doppler-velocity:
 	./tests/test_acoustic_doppler_velocity
 	@rm -f tests/test_acoustic_doppler_velocity
 
+test-bone-air-dual-conduction:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bone_air_dual_conduction.c -o tests/test_bone_air_dual_conduction
+	./tests/test_bone_air_dual_conduction
+	@rm -f tests/test_bone_air_dual_conduction
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
