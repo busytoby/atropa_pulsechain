@@ -213,6 +213,11 @@ test-nonverbal-scene-dynamics:
 	./tests/test_nonverbal_scene_dynamics
 	@rm -f tests/test_nonverbal_scene_dynamics
 
+test-grand-unified-dubbing-synthesis:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_unified_dubbing_synthesis.c -o tests/test_grand_unified_dubbing_synthesis
+	./tests/test_grand_unified_dubbing_synthesis
+	@rm -f tests/test_grand_unified_dubbing_synthesis
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
