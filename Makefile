@@ -1218,6 +1218,11 @@ test-articulated-mechanism-motion:
 	./tests/test_articulated_mechanism_motion
 	@rm -f tests/test_articulated_mechanism_motion
 
+test-convex-hull-sdf-bounds:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_convex_hull_sdf_bounds.c -o tests/test_convex_hull_sdf_bounds
+	./tests/test_convex_hull_sdf_bounds
+	@rm -f tests/test_convex_hull_sdf_bounds
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
