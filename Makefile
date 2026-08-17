@@ -1592,6 +1592,18 @@ test-cpm-tomie-clay-5op-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_5op /tmp/clay_5op.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_5op tsfi2-deepseek/src/cpm_exec_clay_5op /tmp/clay_5op.bin
 
+test-cpm-tomie-clay-play-shneiderman-autonomy-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_shneiderman_autonomy_prover.c -o tests/test_cpm_tomie_clay_play_shneiderman_autonomy_prover
+	./tests/test_cpm_tomie_clay_play_shneiderman_autonomy_prover
+	@rm -f tests/test_cpm_tomie_clay_play_shneiderman_autonomy_prover
+
+test-cpm-tomie-clay-autonomy-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_autonomy.c -o tsfi2-deepseek/src/cpm_compiler_clay_autonomy
+	./tsfi2-deepseek/src/cpm_compiler_clay_autonomy /tmp/clay_autonomy.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_autonomy.c -o tsfi2-deepseek/src/cpm_exec_clay_autonomy
+	./tsfi2-deepseek/src/cpm_exec_clay_autonomy /tmp/clay_autonomy.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_autonomy tsfi2-deepseek/src/cpm_exec_clay_autonomy /tmp/clay_autonomy.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
