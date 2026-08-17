@@ -1403,6 +1403,11 @@ test-fastener-thread-clearance:
 	./tests/test_fastener_thread_clearance
 	@rm -f tests/test_fastener_thread_clearance
 
+test-pronoun-gaze-disambiguation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_pronoun_gaze_disambiguation.c -o tests/test_pronoun_gaze_disambiguation
+	./tests/test_pronoun_gaze_disambiguation
+	@rm -f tests/test_pronoun_gaze_disambiguation
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
