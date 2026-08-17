@@ -1892,6 +1892,18 @@ test-cpm-tomie-exploration-history-suite:
 	./tsfi2-deepseek/src/cpm_exec_exploration_history /tmp/exploration_history.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_exploration_history tsfi2-deepseek/src/cpm_exec_exploration_history /tmp/exploration_history.bin
 
+test-cpm-tomie-haptic-tactile-viscosity-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_tactile_viscosity_prover.c -o tests/test_cpm_tomie_haptic_tactile_viscosity_prover
+	./tests/test_cpm_tomie_haptic_tactile_viscosity_prover
+	@rm -f tests/test_cpm_tomie_haptic_tactile_viscosity_prover
+
+test-cpm-tomie-haptic-viscosity-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_haptic_viscosity.c -o tsfi2-deepseek/src/cpm_compiler_haptic_viscosity
+	./tsfi2-deepseek/src/cpm_compiler_haptic_viscosity /tmp/haptic_viscosity.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_haptic_viscosity.c -o tsfi2-deepseek/src/cpm_exec_haptic_viscosity
+	./tsfi2-deepseek/src/cpm_exec_haptic_viscosity /tmp/haptic_viscosity.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_haptic_viscosity tsfi2-deepseek/src/cpm_exec_haptic_viscosity /tmp/haptic_viscosity.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
