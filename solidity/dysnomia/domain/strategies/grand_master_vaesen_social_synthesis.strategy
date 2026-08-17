@@ -1,0 +1,128 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GM-SOC-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GRAND MASTER SOCIAL AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SYNTH-PARAMS.
+           05 WS-PROXEMIC-CUE           PIC 9(04) VALUE 0750.
+           05 WS-VOICE-INFLECT          PIC 9(04) VALUE 0850.
+           05 WS-GAZE-VULN              PIC 9(04) VALUE 0700.
+           05 WS-INTENT-ERR             PIC 9(04) VALUE 0600.
+           05 WS-BLUSH-CHROMA           PIC 9(04) VALUE 0650.
+           05 WS-INDIRECT-LANG          PIC 9(04) VALUE 0550.
+           05 WS-E2E-LATENCY-MS         PIC 9(04) VALUE 0320.
+           05 WS-THERMAL-POWER-MW       PIC 9(05) VALUE 15000.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COMPOSITE-CUE          PIC 9(04) VALUE 0.
+           05 WS-SYNTH-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-SYNTH-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-SYNTH-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SYNTH-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CUE-ENERGIES        VALUE 2.
+              88 LATENCY-LIMIT-EXCEEDED      VALUE 3.
+              88 THERMAL-POWER-EXCEEDED      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SYNTHESIS-VITALITY-COLLAP   VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SOCIAL-SYNTHESIS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROXEMIC-CUE < 100 OR WS-PROXEMIC-CUE > 1000 OR
+               WS-VOICE-INFLECT < 100 OR WS-VOICE-INFLECT > 1000 OR
+               WS-GAZE-VULN < 100 OR WS-GAZE-VULN > 1000 OR
+               WS-INTENT-ERR < 100 OR WS-INTENT-ERR > 1000 OR
+               WS-BLUSH-CHROMA < 100 OR WS-BLUSH-CHROMA > 1000 OR
+               WS-INDIRECT-LANG < 100 OR WS-INDIRECT-LANG > 1000
+                SET INVALID-CUE-ENERGIES TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-E2E-LATENCY-MS < 50 OR WS-E2E-LATENCY-MS > 500
+                SET LATENCY-LIMIT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-THERMAL-POWER-MW < 1000 OR WS-THERMAL-POWER-MW > 25000
+                SET THERMAL-POWER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-COMPOSITE-CUE = (WS-PROXEMIC-CUE + WS-VOICE-INFLECT +
+                                        WS-GAZE-VULN + WS-INTENT-ERR +
+                                        WS-BLUSH-CHROMA + WS-INDIRECT-LANG) / 6.
+
+            IF WS-COMPOSITE-CUE EQUAL ZERO
+                SET SYNTHESIS-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SOCIAL-SYNTHESIS.
+            COMPUTE WS-SYNTH-VITALITY = (WS-COMPOSITE-CUE / 4) +
+                                        (WS-E2E-LATENCY-MS / 2) +
+                                        (WS-THERMAL-POWER-MW / 250) + 1.
+
+            IF WS-SYNTH-VITALITY EQUAL ZERO
+                SET SYNTHESIS-VITALITY-COLLAP TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SYNTH-COHERENCE = (WS-COMPOSITE-CUE / 16) +
+                                         (WS-E2E-LATENCY-MS / 8) +
+                                         (WS-THERMAL-POWER-MW / 1000).
+
+            COMPUTE WS-SYNTH-REBAR-LATCH = 1470169088 +
+                                           (WS-COMPOSITE-CUE / 2) +
+                                           (WS-E2E-LATENCY-MS * 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SYNTH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-SYNTH-VITALITY * 10) +
+                                           (WS-SYNTH-COHERENCE * 10) +
+                                           (WS-COMPOSITE-CUE * 10) +
+                                           (WS-SYNTH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SYNTH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SYNTH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

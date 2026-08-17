@@ -568,6 +568,11 @@ test-expressive-blushing-modulation:
 	./tests/test_expressive_blushing_modulation
 	@rm -f tests/test_expressive_blushing_modulation
 
+test-grand-master-vaesen-social-synthesis:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_vaesen_social_synthesis.c -o tests/test_grand_master_vaesen_social_synthesis
+	./tests/test_grand_master_vaesen_social_synthesis
+	@rm -f tests/test_grand_master_vaesen_social_synthesis
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
