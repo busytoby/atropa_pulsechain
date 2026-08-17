@@ -528,6 +528,11 @@ test-grand-master-physical-robot-synthesis:
 	./tests/test_grand_master_physical_robot_synthesis
 	@rm -f tests/test_grand_master_physical_robot_synthesis
 
+test-intentional-error-modulation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_intentional_error_modulation.c -o tests/test_intentional_error_modulation
+	./tests/test_intentional_error_modulation
+	@rm -f tests/test_intentional_error_modulation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
