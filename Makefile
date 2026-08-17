@@ -1483,6 +1483,11 @@ test-myointeract-biomechanics:
 	./tests/test_myointeract_biomechanics
 	@rm -f tests/test_myointeract_biomechanics
 
+test-privacymotiv-journey:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_privacymotiv_journey.c -o tests/test_privacymotiv_journey
+	./tests/test_privacymotiv_journey
+	@rm -f tests/test_privacymotiv_journey
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
