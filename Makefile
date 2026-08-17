@@ -1118,6 +1118,11 @@ test-shared-gaze-joint-savoring:
 	./tests/test_shared_gaze_joint_savoring
 	@rm -f tests/test_shared_gaze_joint_savoring
 
+test-unprompted-contextual-empathy:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_unprompted_contextual_empathy.c -o tests/test_unprompted_contextual_empathy
+	./tests/test_unprompted_contextual_empathy
+	@rm -f tests/test_unprompted_contextual_empathy
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
