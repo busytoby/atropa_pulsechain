@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TBY-STN-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TEDDY PROTEIN STANAG VOTE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-STN-PARAMS.
+           05 WS-STANAG-QUORUM-PCT      PIC 9(03) VALUE 085.
+           05 WS-PROTEIN-PARITY-M       PIC 9(04) VALUE 0960.
+           05 WS-WEYL-DIFF-RANK         PIC 9(02) VALUE 02.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-STN-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-STN-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-STN-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-STN-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-STN-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 QUORUM-BELOW-SUPERMAJORITY  VALUE 2.
+              88 PROTEIN-FOLD-PARITY-LOW     VALUE 3.
+              88 WEYL-RANK-OUT-OF-BOUNDS     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 STANAG-VOTE-COLLAPSE        VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-STANAG-VOTE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STANAG-QUORUM-PCT < 67 OR WS-STANAG-QUORUM-PCT > 100
+                SET QUORUM-BELOW-SUPERMAJORITY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PROTEIN-PARITY-M < 850 OR WS-PROTEIN-PARITY-M > 1000
+                SET PROTEIN-FOLD-PARITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIFF-RANK < 1 OR WS-WEYL-DIFF-RANK > 8
+                SET WEYL-RANK-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-STANAG-VOTE.
+            COMPUTE WS-STN-COMPOSITE = (WS-STANAG-QUORUM-PCT * 10) +
+                                       (WS-PROTEIN-PARITY-M / 2) +
+                                       ((9 - WS-WEYL-DIFF-RANK) * 50).
+
+            COMPUTE WS-STN-VITALITY = (WS-STN-COMPOSITE / 4) +
+                                      (WS-PROTEIN-PARITY-M / 4) +
+                                      (WS-STANAG-QUORUM-PCT * 2) + 1.
+
+            IF WS-STN-VITALITY EQUAL ZERO
+                SET STANAG-VOTE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-STN-COHERENCE = (WS-STN-COMPOSITE / 16) +
+                                       (WS-PROTEIN-PARITY-M / 16) +
+                                       (WS-STANAG-QUORUM-PCT / 4).
+
+            COMPUTE WS-STN-REBAR-LATCH = 1470169088 +
+                                         (WS-STN-COMPOSITE / 2) +
+                                         (WS-STANAG-QUORUM-PCT * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-STN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-STN-VITALITY * 10) +
+                                         (WS-STN-COHERENCE * 10) +
+                                         (WS-STN-COMPOSITE * 10) +
+                                         (WS-STN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-STN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-STN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

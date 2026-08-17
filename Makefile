@@ -948,6 +948,11 @@ test-governable-situational-wcag-accessibility:
 	./tests/test_governable_situational_wcag_accessibility
 	@rm -f tests/test_governable_situational_wcag_accessibility
 
+test-teddy-protein-weyl-stanag-vote:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_teddy_protein_weyl_stanag_vote.c -o tests/test_teddy_protein_weyl_stanag_vote
+	./tests/test_teddy_protein_weyl_stanag_vote
+	@rm -f tests/test_teddy_protein_weyl_stanag_vote
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
