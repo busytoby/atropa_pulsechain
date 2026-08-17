@@ -798,6 +798,11 @@ test-zorse-quadtree-llm-fusion:
 	./tests/test_zorse_quadtree_llm_fusion
 	@rm -f tests/test_zorse_quadtree_llm_fusion
 
+test-grand-master-unification-viii:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_viii.c -o tests/test_grand_master_unification_viii
+	./tests/test_grand_master_unification_viii
+	@rm -f tests/test_grand_master_unification_viii
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

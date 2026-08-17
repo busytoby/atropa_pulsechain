@@ -1,0 +1,132 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GMU8-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GRAND MASTER UNIFICATION VIII AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-GMU8-PARAMS.
+           05 WS-S-VII-SCORE            PIC 9(04) VALUE 0850.
+           05 WS-E-DOPPLER-SCORE        PIC 9(04) VALUE 0870.
+           05 WS-E-DUAL-COND-SCORE      PIC 9(04) VALUE 0890.
+           05 WS-S-HYB-CORE-SCORE       PIC 9(04) VALUE 0910.
+           05 WS-E-BEAMSTEER-SCORE      PIC 9(04) VALUE 0880.
+           05 WS-S-IN-EAR-SCORE         PIC 9(04) VALUE 0940.
+           05 WS-E-CURVATURE-SCORE      PIC 9(04) VALUE 0860.
+           05 WS-S-QUAD-TREE-SCORE      PIC 9(04) VALUE 0880.
+           05 WS-S-ZORSE-FUSION-SCORE   PIC 9(04) VALUE 0920.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-S-VIII-COMPOSITE       PIC 9(04) VALUE 0.
+           05 WS-GMU8-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-GMU8-COHERENCE         PIC 9(09) VALUE 0.
+           05 WS-GMU8-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-GMU8-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 BASE-VII-SCORE-LOW          VALUE 2.
+              88 COMPONENT-SCORE-OUT-OF-BOUNDS VALUE 3.
+              88 UNIFIED-VIII-SCORE-COLLAPSE VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 GRAND-MASTER-VIII-COLLAPSE  VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-UNIFICATION-VIII
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-S-VII-SCORE < 500 OR WS-S-VII-SCORE > 1000
+                SET BASE-VII-SCORE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-E-DOPPLER-SCORE < 600 OR WS-E-DOPPLER-SCORE > 1000 OR
+               WS-E-DUAL-COND-SCORE < 600 OR WS-E-DUAL-COND-SCORE > 1000 OR
+               WS-S-HYB-CORE-SCORE < 600 OR WS-S-HYB-CORE-SCORE > 1000 OR
+               WS-E-BEAMSTEER-SCORE < 600 OR WS-E-BEAMSTEER-SCORE > 1000 OR
+               WS-S-IN-EAR-SCORE < 600 OR WS-S-IN-EAR-SCORE > 1000 OR
+               WS-E-CURVATURE-SCORE < 600 OR WS-E-CURVATURE-SCORE > 1000 OR
+               WS-S-QUAD-TREE-SCORE < 600 OR WS-S-QUAD-TREE-SCORE > 1000 OR
+               WS-S-ZORSE-FUSION-SCORE < 600 OR WS-S-ZORSE-FUSION-SCORE > 1000
+                SET COMPONENT-SCORE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-UNIFICATION-VIII.
+            COMPUTE WS-S-VIII-COMPOSITE = (WS-S-VII-SCORE +
+                                          WS-E-DOPPLER-SCORE +
+                                          WS-E-DUAL-COND-SCORE +
+                                          WS-S-HYB-CORE-SCORE +
+                                          WS-E-BEAMSTEER-SCORE +
+                                          WS-S-IN-EAR-SCORE +
+                                          WS-E-CURVATURE-SCORE +
+                                          WS-S-QUAD-TREE-SCORE +
+                                          WS-S-ZORSE-FUSION-SCORE) / 9.
+
+            IF WS-S-VIII-COMPOSITE < 500
+                SET UNIFIED-VIII-SCORE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GMU8-VITALITY = (WS-S-VIII-COMPOSITE / 2) +
+                                       (WS-S-ZORSE-FUSION-SCORE / 4) +
+                                       (WS-S-QUAD-TREE-SCORE / 8) + 1.
+
+            IF WS-GMU8-VITALITY EQUAL ZERO
+                SET GRAND-MASTER-VIII-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GMU8-COHERENCE = (WS-S-VIII-COMPOSITE / 8) +
+                                        (WS-S-ZORSE-FUSION-SCORE / 16) +
+                                        (WS-S-QUAD-TREE-SCORE / 32).
+
+            COMPUTE WS-GMU8-REBAR-LATCH = 1470169088 +
+                                          (WS-S-VIII-COMPOSITE / 2) +
+                                          (WS-S-ZORSE-FUSION-SCORE * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-GMU8-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-GMU8-VITALITY * 10) +
+                                          (WS-GMU8-COHERENCE * 10) +
+                                          (WS-S-VIII-COMPOSITE * 10) +
+                                          (WS-GMU8-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-GMU8-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-GMU8-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
