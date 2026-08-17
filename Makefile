@@ -1133,6 +1133,11 @@ test-nonverbal-microexpression-synchrony:
 	./tests/test_nonverbal_microexpression_synchrony
 	@rm -f tests/test_nonverbal_microexpression_synchrony
 
+test-cultural-sacred-space-reverence:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cultural_sacred_space_reverence.c -o tests/test_cultural_sacred_space_reverence
+	./tests/test_cultural_sacred_space_reverence
+	@rm -f tests/test_cultural_sacred_space_reverence
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
