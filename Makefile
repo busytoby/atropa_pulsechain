@@ -858,6 +858,11 @@ test-egocentric-scene-text-anls:
 	./tests/test_egocentric_scene_text_anls
 	@rm -f tests/test_egocentric_scene_text_anls
 
+test-dynamic-lossfree-load-balancing:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_dynamic_lossfree_load_balancing.c -o tests/test_dynamic_lossfree_load_balancing
+	./tests/test_dynamic_lossfree_load_balancing
+	@rm -f tests/test_dynamic_lossfree_load_balancing
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LFB-BAL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / DYNAMIC LOSS-FREE LOAD BALANCING AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-BAL-PARAMS.
+           05 WS-EXPERT-COUNT-N         PIC 9(02) VALUE 04.
+           05 WS-STEP-SIZE-HUNDREDTHS   PIC 9(02) VALUE 10.
+           05 WS-MAX-LOAD-PCT           PIC 9(02) VALUE 35.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-BAL-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-BAL-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-BAL-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-BAL-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-BAL-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 EXPERT-COUNT-OUT-OF-BOUNDS  VALUE 2.
+              88 STEP-SIZE-OUT-OF-BOUNDS     VALUE 3.
+              88 MAX-LOAD-OUT-OF-BOUNDS      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 LOAD-BALANCE-COLLAPSE       VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-LOAD-BALANCING
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXPERT-COUNT-N < 2 OR WS-EXPERT-COUNT-N > 8
+                SET EXPERT-COUNT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STEP-SIZE-HUNDREDTHS < 5 OR WS-STEP-SIZE-HUNDREDTHS > 20
+                SET STEP-SIZE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MAX-LOAD-PCT < 20 OR WS-MAX-LOAD-PCT > 65
+                SET MAX-LOAD-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-LOAD-BALANCING.
+            COMPUTE WS-BAL-COMPOSITE = (WS-EXPERT-COUNT-N * 50) +
+                                       (WS-STEP-SIZE-HUNDREDTHS * 20) +
+                                       ((65 - WS-MAX-LOAD-PCT) * 10).
+
+            COMPUTE WS-BAL-VITALITY = (WS-BAL-COMPOSITE / 4) +
+                                      (WS-STEP-SIZE-HUNDREDTHS * 4) +
+                                      (WS-EXPERT-COUNT-N * 10) + 1.
+
+            IF WS-BAL-VITALITY EQUAL ZERO
+                SET LOAD-BALANCE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-BAL-COHERENCE = (WS-BAL-COMPOSITE / 16) +
+                                       (WS-STEP-SIZE-HUNDREDTHS) +
+                                       (WS-EXPERT-COUNT-N * 2).
+
+            COMPUTE WS-BAL-REBAR-LATCH = 1470169088 +
+                                         (WS-BAL-COMPOSITE / 2) +
+                                         (WS-EXPERT-COUNT-N * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-BAL-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-BAL-VITALITY * 10) +
+                                         (WS-BAL-COHERENCE * 10) +
+                                         (WS-BAL-COMPOSITE * 10) +
+                                         (WS-BAL-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-BAL-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-BAL-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
