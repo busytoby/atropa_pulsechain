@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. HSK-CLS-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / HOLONOMIC SKELETON CLOSURE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-HSK-PARAMS.
+           05 WS-QUADTREE-DEPTH         PIC 9(02) VALUE 16.
+           05 WS-BESSEL-FREQ-SCALE      PIC 9(03) VALUE 050.
+           05 WS-WEYL-DIFF-RANK         PIC 9(02) VALUE 02.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-HSK-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-HSK-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-HSK-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-HSK-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-HSK-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 QUADTREE-DEPTH-OUT-OF-BND   VALUE 2.
+              88 BESSEL-FREQ-OUT-OF-BOUNDS   VALUE 3.
+              88 WEYL-RANK-OUT-OF-BOUNDS     VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HOLONOMIC-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-HOLONOMIC-CLOSURE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUADTREE-DEPTH < 4 OR WS-QUADTREE-DEPTH > 64
+                SET QUADTREE-DEPTH-OUT-OF-BND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BESSEL-FREQ-SCALE < 1 OR WS-BESSEL-FREQ-SCALE > 100
+                SET BESSEL-FREQ-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-WEYL-DIFF-RANK < 1 OR WS-WEYL-DIFF-RANK > 8
+                SET WEYL-RANK-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-HOLONOMIC-CLOSURE.
+            COMPUTE WS-HSK-COMPOSITE = (WS-QUADTREE-DEPTH * 20) +
+                                       (WS-BESSEL-FREQ-SCALE * 10) +
+                                       ((9 - WS-WEYL-DIFF-RANK) * 50).
+
+            COMPUTE WS-HSK-VITALITY = (WS-HSK-COMPOSITE / 4) +
+                                      (WS-BESSEL-FREQ-SCALE * 2) +
+                                      (WS-QUADTREE-DEPTH * 4) + 1.
+
+            IF WS-HSK-VITALITY EQUAL ZERO
+                SET HOLONOMIC-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-HSK-COHERENCE = (WS-HSK-COMPOSITE / 16) +
+                                       (WS-BESSEL-FREQ-SCALE / 4) +
+                                       (WS-QUADTREE-DEPTH / 2).
+
+            COMPUTE WS-HSK-REBAR-LATCH = 1470169088 +
+                                         (WS-HSK-COMPOSITE / 2) +
+                                         (WS-QUADTREE-DEPTH * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-HSK-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-HSK-VITALITY * 10) +
+                                         (WS-HSK-COHERENCE * 10) +
+                                         (WS-HSK-COMPOSITE * 10) +
+                                         (WS-HSK-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-HSK-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-HSK-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

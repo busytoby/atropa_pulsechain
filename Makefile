@@ -1003,6 +1003,11 @@ test-ankh-zorse-xplsm-skeleton:
 	./tests/test_ankh_zorse_xplsm_skeleton
 	@rm -f tests/test_ankh_zorse_xplsm_skeleton
 
+test-holonomic-skeleton-gaze-closure:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_holonomic_skeleton_gaze_closure.c -o tests/test_holonomic_skeleton_gaze_closure
+	./tests/test_holonomic_skeleton_gaze_closure
+	@rm -f tests/test_holonomic_skeleton_gaze_closure
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
