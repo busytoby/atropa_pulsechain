@@ -1448,6 +1448,11 @@ test-cross-threading-prevention:
 	./tests/test_cross_threading_prevention
 	@rm -f tests/test_cross_threading_prevention
 
+test-keyed-interlocking-path:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_keyed_interlocking_path.c -o tests/test_keyed_interlocking_path
+	./tests/test_keyed_interlocking_path
+	@rm -f tests/test_keyed_interlocking_path
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
