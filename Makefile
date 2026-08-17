@@ -448,6 +448,11 @@ test-quantization-scale-propagation:
 	./tests/test_quantization_scale_propagation
 	@rm -f tests/test_quantization_scale_propagation
 
+test-rope-relative-position:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_rope_relative_position.c -o tests/test_rope_relative_position
+	./tests/test_rope_relative_position
+	@rm -f tests/test_rope_relative_position
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
