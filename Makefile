@@ -1143,6 +1143,11 @@ test-nonintrusive-gaze-redirection:
 	./tests/test_nonintrusive_gaze_redirection
 	@rm -f tests/test_nonintrusive_gaze_redirection
 
+test-episodic-souvenir-crystallization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_episodic_souvenir_crystallization.c -o tests/test_episodic_souvenir_crystallization
+	./tests/test_episodic_souvenir_crystallization
+	@rm -f tests/test_episodic_souvenir_crystallization
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
