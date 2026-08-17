@@ -1604,6 +1604,18 @@ test-cpm-tomie-clay-autonomy-suite:
 	./tsfi2-deepseek/src/cpm_exec_clay_autonomy /tmp/clay_autonomy.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_autonomy tsfi2-deepseek/src/cpm_exec_clay_autonomy /tmp/clay_autonomy.bin
 
+test-cpm-tomie-clay-play-os-pipeline-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_os_pipeline_prover.c -o tests/test_cpm_tomie_clay_play_os_pipeline_prover
+	./tests/test_cpm_tomie_clay_play_os_pipeline_prover
+	@rm -f tests/test_cpm_tomie_clay_play_os_pipeline_prover
+
+test-cpm-tomie-clay-os-pipeline-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_os_pipeline.c -o tsfi2-deepseek/src/cpm_compiler_clay_os_pipeline
+	./tsfi2-deepseek/src/cpm_compiler_clay_os_pipeline /tmp/clay_os_pipeline.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_os_pipeline.c -o tsfi2-deepseek/src/cpm_exec_clay_os_pipeline
+	./tsfi2-deepseek/src/cpm_exec_clay_os_pipeline /tmp/clay_os_pipeline.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_os_pipeline tsfi2-deepseek/src/cpm_exec_clay_os_pipeline /tmp/clay_os_pipeline.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
