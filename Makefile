@@ -1333,6 +1333,11 @@ test-exploded-view-trajectory:
 	./tests/test_exploded_view_trajectory
 	@rm -f tests/test_exploded_view_trajectory
 
+test-tactile-insertion-detent:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_tactile_insertion_detent.c -o tests/test_tactile_insertion_detent
+	./tests/test_tactile_insertion_detent
+	@rm -f tests/test_tactile_insertion_detent
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
