@@ -868,6 +868,11 @@ test-partially-shared-residual-routing:
 	./tests/test_partially_shared_residual_routing
 	@rm -f tests/test_partially_shared_residual_routing
 
+test-sublinear-graph-memory-scalability:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_sublinear_graph_memory_scalability.c -o tests/test_sublinear_graph_memory_scalability
+	./tests/test_sublinear_graph_memory_scalability
+	@rm -f tests/test_sublinear_graph_memory_scalability
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
