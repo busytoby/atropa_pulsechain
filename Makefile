@@ -1832,6 +1832,18 @@ test-cpm-tomie-kermit-stanag-suite:
 	./tsfi2-deepseek/src/cpm_exec_kermit_stanag /tmp/kermit_stanag.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_kermit_stanag tsfi2-deepseek/src/cpm_exec_kermit_stanag /tmp/kermit_stanag.bin
 
+test-cpm-tomie-lyapunov-singularity-boundary-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_lyapunov_singularity_boundary_prover.c -o tests/test_cpm_tomie_lyapunov_singularity_boundary_prover
+	./tests/test_cpm_tomie_lyapunov_singularity_boundary_prover
+	@rm -f tests/test_cpm_tomie_lyapunov_singularity_boundary_prover
+
+test-cpm-tomie-lyapunov-boundary-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary.c -o tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary
+	./tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary /tmp/lyapunov_boundary.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_lyapunov_boundary.c -o tsfi2-deepseek/src/cpm_exec_lyapunov_boundary
+	./tsfi2-deepseek/src/cpm_exec_lyapunov_boundary /tmp/lyapunov_boundary.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_lyapunov_boundary tsfi2-deepseek/src/cpm_exec_lyapunov_boundary /tmp/lyapunov_boundary.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
