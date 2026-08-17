@@ -958,6 +958,11 @@ test-universal-stanag-weyl-closure:
 	./tests/test_universal_stanag_weyl_closure
 	@rm -f tests/test_universal_stanag_weyl_closure
 
+test-spontaneous-shared-hallucination:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_spontaneous_shared_hallucination.c -o tests/test_spontaneous_shared_hallucination
+	./tests/test_spontaneous_shared_hallucination
+	@rm -f tests/test_spontaneous_shared_hallucination
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

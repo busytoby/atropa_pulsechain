@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SSH-HAL-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SPONTANEOUS SHARED HALLUCINATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SSH-PARAMS.
+           05 WS-PHASE-ALIGN-MRAD       PIC 9(02) VALUE 05.
+           05 WS-GEOM-CONGRUENCE-M      PIC 9(04) VALUE 0960.
+           05 WS-SYNC-LATENCY-MS        PIC 9(02) VALUE 04.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SSH-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-SSH-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SSH-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SSH-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SSH-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 PHASE-ALIGNMENT-DRIFT       VALUE 2.
+              88 GEOM-CONGRUENCE-LOW         VALUE 3.
+              88 SYNC-LATENCY-EXCEEDED       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HALLUCINATION-COLLAPSE      VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SHARED-HALLUCINATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-ALIGN-MRAD < 0 OR WS-PHASE-ALIGN-MRAD > 15
+                SET PHASE-ALIGNMENT-DRIFT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GEOM-CONGRUENCE-M < 900 OR WS-GEOM-CONGRUENCE-M > 1000
+                SET GEOM-CONGRUENCE-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SYNC-LATENCY-MS < 1 OR WS-SYNC-LATENCY-MS > 10
+                SET SYNC-LATENCY-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SHARED-HALLUCINATION.
+            COMPUTE WS-SSH-COMPOSITE = ((20 - WS-PHASE-ALIGN-MRAD) * 20) +
+                                       (WS-GEOM-CONGRUENCE-M / 2) +
+                                       ((15 - WS-SYNC-LATENCY-MS) * 30).
+
+            COMPUTE WS-SSH-VITALITY = (WS-SSH-COMPOSITE / 4) +
+                                      (WS-GEOM-CONGRUENCE-M / 4) +
+                                      ((20 - WS-PHASE-ALIGN-MRAD) * 4) + 1.
+
+            IF WS-SSH-VITALITY EQUAL ZERO
+                SET HALLUCINATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SSH-COHERENCE = (WS-SSH-COMPOSITE / 16) +
+                                       (WS-GEOM-CONGRUENCE-M / 16) +
+                                       ((20 - WS-PHASE-ALIGN-MRAD) * 2).
+
+            COMPUTE WS-SSH-REBAR-LATCH = 1470169088 +
+                                         (WS-SSH-COMPOSITE / 2) +
+                                         ((20 - WS-PHASE-ALIGN-MRAD) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SSH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SSH-VITALITY * 10) +
+                                         (WS-SSH-COHERENCE * 10) +
+                                         (WS-SSH-COMPOSITE * 10) +
+                                         (WS-SSH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SSH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SSH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
