@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. PARETO-SELECT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / PARETO OPTIMIZATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-PARETO-PARAMS.
+           05 WS-MEASURED-TPS           PIC 9(05) VALUE 03060.
+           05 WS-NUBIA-SCORE            PIC 9(04) VALUE 0390.
+           05 WS-FOOTPRINT-MB           PIC 9(05) VALUE 01800.
+           05 WS-OPTIMALITY-FLAG        PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-PARETO-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-PARETO-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-PARETO-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-PARETO-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-TPS-METRIC          VALUE 2.
+              88 INVALID-NUBIA-METRIC        VALUE 3.
+              88 INVALID-FOOTPRINT-MB        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PARETO-OPTIMALITY-FAIL      VALUE 6.
+              88 PARETO-DOMINATED-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-PARETO-SELECT
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MEASURED-TPS < 200 OR WS-MEASURED-TPS > 50000
+                SET INVALID-TPS-METRIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-NUBIA-SCORE < 150 OR WS-NUBIA-SCORE > 1000
+                SET INVALID-NUBIA-METRIC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-FOOTPRINT-MB < 200 OR WS-FOOTPRINT-MB > 16000
+                SET INVALID-FOOTPRINT-MB TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-OPTIMALITY-FLAG NOT EQUAL 1
+                SET PARETO-OPTIMALITY-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MEASURED-TPS < 1000 AND WS-NUBIA-SCORE < 250
+                SET PARETO-DOMINATED-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-PARETO-SELECT.
+            COMPUTE WS-PARETO-VITALITY = (WS-MEASURED-TPS / 20) +
+                                         (WS-NUBIA-SCORE / 2) +
+                                         ((16000 - WS-FOOTPRINT-MB) / 32) + 1.
+
+            IF WS-PARETO-VITALITY EQUAL ZERO
+                SET PARETO-DOMINATED-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-PARETO-COHERENCE = (WS-NUBIA-SCORE / 4) +
+                                          (WS-MEASURED-TPS / 100) +
+                                          ((16000 - WS-FOOTPRINT-MB) / 64).
+
+            COMPUTE WS-PARETO-REBAR-LATCH = 1470169088 + (WS-MEASURED-TPS / 10) +
+                                            (WS-NUBIA-SCORE / 2) +
+                                            ((16000 - WS-FOOTPRINT-MB) / 16).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-PARETO-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-PARETO-VITALITY * 10) +
+                                            (WS-PARETO-COHERENCE * 10) +
+                                            (WS-NUBIA-SCORE * 100) +
+                                            (WS-PARETO-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-PARETO-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-PARETO-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

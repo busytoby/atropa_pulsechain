@@ -393,6 +393,11 @@ test-memory-compression-footprint:
 	./tests/test_memory_compression_footprint
 	@rm -f tests/test_memory_compression_footprint
 
+test-pareto-model-selection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_pareto_model_selection.c -o tests/test_pareto_model_selection
+	./tests/test_pareto_model_selection
+	@rm -f tests/test_pareto_model_selection
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
