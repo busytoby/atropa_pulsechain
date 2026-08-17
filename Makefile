@@ -1784,6 +1784,18 @@ test-cpm-tomie-zero-bulk-suite:
 	./tsfi2-deepseek/src/cpm_exec_zero_bulk /tmp/zero_bulk.bin
 	@rm -f tsfi2-deepseek/src/cpm_compiler_zero_bulk tsfi2-deepseek/src/cpm_exec_zero_bulk /tmp/zero_bulk.bin
 
+test-cpm-tomie-dynamic-feedback-momentum-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_dynamic_feedback_momentum_prover.c -o tests/test_cpm_tomie_dynamic_feedback_momentum_prover
+	./tests/test_cpm_tomie_dynamic_feedback_momentum_prover
+	@rm -f tests/test_cpm_tomie_dynamic_feedback_momentum_prover
+
+test-cpm-tomie-dynamic-feedback-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_dynamic_feedback.c -o tsfi2-deepseek/src/cpm_compiler_dynamic_feedback
+	./tsfi2-deepseek/src/cpm_compiler_dynamic_feedback /tmp/dynamic_feedback.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_dynamic_feedback.c -o tsfi2-deepseek/src/cpm_exec_dynamic_feedback
+	./tsfi2-deepseek/src/cpm_exec_dynamic_feedback /tmp/dynamic_feedback.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_dynamic_feedback tsfi2-deepseek/src/cpm_exec_dynamic_feedback /tmp/dynamic_feedback.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch
