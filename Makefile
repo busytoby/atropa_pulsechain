@@ -583,6 +583,11 @@ test-spatial-trajectory-smoothing:
 	./tests/test_spatial_trajectory_smoothing
 	@rm -f tests/test_spatial_trajectory_smoothing
 
+test-participatory-consensus-voting:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_participatory_consensus_voting.c -o tests/test_participatory_consensus_voting
+	./tests/test_participatory_consensus_voting
+	@rm -f tests/test_participatory_consensus_voting
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
