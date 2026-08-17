@@ -1578,6 +1578,11 @@ test-slow-acoustic-sanctuary:
 	./tests/test_slow_acoustic_sanctuary
 	@rm -f tests/test_slow_acoustic_sanctuary
 
+test-creative-futures-mapping:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_creative_futures_mapping.c -o tests/test_creative_futures_mapping
+	./tests/test_creative_futures_mapping
+	@rm -f tests/test_creative_futures_mapping
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
