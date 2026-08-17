@@ -1173,6 +1173,11 @@ test-bear-companion-collaboration:
 	./tests/test_bear_companion_collaboration
 	@rm -f tests/test_bear_companion_collaboration
 
+test-assembly-by-disassembly-dependency:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_assembly_by_disassembly_dependency.c -o tests/test_assembly_by_disassembly_dependency
+	./tests/test_assembly_by_disassembly_dependency
+	@rm -f tests/test_assembly_by_disassembly_dependency
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
