@@ -1193,6 +1193,11 @@ test-cad-semantic-name-mapping:
 	./tests/test_cad_semantic_name_mapping
 	@rm -f tests/test_cad_semantic_name_mapping
 
+test-microadaptive-sequence-replanning:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_microadaptive_sequence_replanning.c -o tests/test_microadaptive_sequence_replanning
+	./tests/test_microadaptive_sequence_replanning
+	@rm -f tests/test_microadaptive_sequence_replanning
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
