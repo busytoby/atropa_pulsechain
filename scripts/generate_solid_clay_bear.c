@@ -1,13 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Perfectly Stationary Solid Ceramic Terracotta Clay Teddy Bear 3D Raymarcher
+ * Pure C11 Native POSIX-Threaded (pthreads) Solid Terracotta Clay Bear 3D Raymarcher
  * 
- * Features:
- * - Fixed Studio Camera (ro = 0.0, 0.4, 3.5; ta = 0.0, 0.1, 0.0; up = 0.0, 1.0, 0.0) -> ZERO screen scrolling/sliding.
- * - Solid volumetric Signed Distance Fields (SDFs) with polynomial smooth blending (`smin`).
- * - Rich Terracotta Clay pigment with two-point lighting, warm ambient, and ceramic specular glaze.
- * - Stationary seated bear on studio pedestal with rhythmic waving arm and slight head tilt.
- * - Continuous high-fidelity studio AAC 192k audio ("Eye of the Tiger").
+ * Strict Standards:
+ * - NO OpenMP: Uses standard pure POSIX threads (pthread_t / pthread_create / pthread_join).
+ * - Fixed Studio Camera: Front-facing stationary 3/4 perspective (Zero horizontal scrolling).
+ * - Solid Volumetric Clay SDF: Organic sculpted earthenware clay teddy bear on porcelain turntable.
+ * - Continuous Studio Bionika Audio: Phase-continuous "Eye of the Tiger" AAC 192k.
  */
 
 #include <stdio.h>
@@ -16,6 +15,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #define WIDTH 1280
 #define HEIGHT 720
@@ -24,6 +25,7 @@
 #define TOTAL_FRAMES (FPS * DURATION_SEC)
 #define SAMPLE_RATE 44100
 #define SAMPLES_PER_FRAME (SAMPLE_RATE / FPS)
+#define NUM_WORKER_THREADS 16
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -70,22 +72,17 @@ static inline float sd_capsule(vec3 p, vec3 a, vec3 b, float r) {
 }
 
 static float map_clay_bear(vec3 p, float time) {
-    // 1. Solid Clay Torso (Seated Center)
     float d_torso = sd_ellipsoid(v_sub(p, (vec3){0.0f, -0.2f, 0.0f}), (vec3){0.65f, 0.75f, 0.60f});
 
-    // 2. Solid Clay Head with slight expressive tilt
     float head_tilt = sinf(time * 2.0f) * 0.03f;
     vec3 head_pos = (vec3){head_tilt, 0.70f, 0.0f};
     float d_head = sd_sphere(v_sub(p, head_pos), 0.52f);
-
     float d_bear = smin(d_torso, d_head, 0.18f);
 
-    // 3. Solid Clay Snout & Nose
     vec3 snout_pos = (vec3){head_tilt, 0.58f, 0.40f};
     float d_muzzle = sd_ellipsoid(v_sub(p, snout_pos), (vec3){0.22f, 0.18f, 0.20f});
     d_bear = smin(d_bear, d_muzzle, 0.08f);
 
-    // 4. Solid Clay Ears
     vec3 ear_l_pos = (vec3){-0.42f + head_tilt, 1.10f, -0.05f};
     vec3 ear_r_pos = (vec3){ 0.42f + head_tilt, 1.10f, -0.05f};
     float d_ear_l = sd_ellipsoid(v_sub(p, ear_l_pos), (vec3){0.18f, 0.18f, 0.08f});
@@ -93,7 +90,6 @@ static float map_clay_bear(vec3 p, float time) {
     float d_ears = fminf(d_ear_l, d_ear_r);
     d_bear = smin(d_bear, d_ears, 0.06f);
 
-    // 5. Solid Clay Arms & Kinematronic Wave
     float wave = sinf(time * 5.0f) * 0.35f + 0.2f;
     vec3 arm_l_start = (vec3){-0.50f, 0.25f, 0.0f};
     vec3 arm_l_end   = (vec3){-0.85f, 0.55f + wave * 0.4f, 0.35f + wave * 0.2f};
@@ -105,7 +101,6 @@ static float map_clay_bear(vec3 p, float time) {
     float d_arms = fminf(d_arm_l, d_arm_r);
     d_bear = smin(d_bear, d_arms, 0.12f);
 
-    // 6. Solid Clay Legs / Feet (Seated on Pedestal)
     vec3 leg_l_start = (vec3){-0.40f, -0.65f, 0.10f};
     vec3 leg_l_end   = (vec3){-0.50f, -0.75f, 0.65f};
     float d_leg_l = sd_capsule(p, leg_l_start, leg_l_end, 0.20f);
@@ -116,7 +111,6 @@ static float map_clay_bear(vec3 p, float time) {
     float d_legs = fminf(d_leg_l, d_leg_r);
     d_bear = smin(d_bear, d_legs, 0.15f);
 
-    // 7. Ceramic Studio Pedestal
     float d_pedestal = sd_ellipsoid(v_sub(p, (vec3){0.0f, -1.15f, 0.0f}), (vec3){1.6f, 0.22f, 1.6f});
     return fminf(d_bear, d_pedestal);
 }
@@ -130,10 +124,16 @@ static vec3 calc_normal(vec3 p, float time) {
     });
 }
 
-static void render_stationary_clay_frame(int frame) {
-    float t = (float)frame / (float)FPS;
+typedef struct {
+    int start_y;
+    int end_y;
+    float time;
+} worker_arg_t;
 
-    // Fixed Studio Camera Setup: Front-Facing 3/4 Perspective, ALWAYS STATIONARY
+static void *render_slice_worker(void *arg) {
+    worker_arg_t *w = (worker_arg_t *)arg;
+    float t = w->time;
+
     vec3 ro = (vec3){ 0.4f, 0.45f, 3.4f };
     vec3 ta = (vec3){ 0.0f, 0.10f, 0.0f };
     vec3 up = (vec3){ 0.0f, 1.0f, 0.0f };
@@ -145,8 +145,7 @@ static void render_stationary_clay_frame(int frame) {
     vec3 light1_dir = v_normalize((vec3){0.8f, 1.2f, 0.9f});
     vec3 light2_dir = v_normalize((vec3){-0.7f, 0.4f, -0.8f});
 
-    #pragma omp parallel for schedule(dynamic, 16)
-    for (int y = 0; y < HEIGHT; y++) {
+    for (int y = w->start_y; y < w->end_y; y++) {
         for (int x = 0; x < WIDTH; x++) {
             float px = ((float)x - WIDTH * 0.5f) / (HEIGHT * 0.5f);
             float py = -((float)y - HEIGHT * 0.5f) / (HEIGHT * 0.5f);
@@ -186,7 +185,6 @@ static void render_stationary_clay_frame(int frame) {
                     g = (0.20f * diff1 + 0.15f * diff2 + 0.10f * amb + spec * 0.8f);
                     b = (0.30f * diff1 + 0.25f * diff2 + 0.18f * amb + spec * 0.8f);
                 } else {
-                    // Rich Terracotta Clay Pigment
                     r = (0.82f * diff1 + 0.40f * diff2 + 0.35f * amb + spec);
                     g = (0.45f * diff1 + 0.22f * diff2 + 0.20f * amb + spec * 0.9f);
                     b = (0.28f * diff1 + 0.15f * diff2 + 0.14f * amb + spec * 0.7f);
@@ -205,6 +203,25 @@ static void render_stationary_clay_frame(int frame) {
                 framebuffer[y * WIDTH + x] = (pixel_t){ bg_r, bg_g, bg_b };
             }
         }
+    }
+    return NULL;
+}
+
+static void render_frame_pthreads(int frame) {
+    float t = (float)frame / (float)FPS;
+    pthread_t threads[NUM_WORKER_THREADS];
+    worker_arg_t args[NUM_WORKER_THREADS];
+    int slice_h = HEIGHT / NUM_WORKER_THREADS;
+
+    for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+        args[i].start_y = i * slice_h;
+        args[i].end_y = (i == NUM_WORKER_THREADS - 1) ? HEIGHT : (i + 1) * slice_h;
+        args[i].time = t;
+        pthread_create(&threads[i], NULL, render_slice_worker, &args[i]);
+    }
+
+    for (int i = 0; i < NUM_WORKER_THREADS; i++) {
+        pthread_join(threads[i], NULL);
     }
 }
 
@@ -320,7 +337,7 @@ static void generate_audio(int frame, int16_t *stereo_out) {
 
 int main(void) {
     printf("=============================================================\n");
-    printf("RENDERING PERFECTLY STATIONARY SOLID CLAY BEAR MP4 (90 SEC)  \n");
+    printf("RENDERING NATIVE PTHREAD SOLID CLAY BEAR MP4 (90 SEC)        \n");
     printf("=============================================================\n");
 
     const char *cmd = "ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - "
@@ -335,14 +352,14 @@ int main(void) {
     }
 
     for (int f = 0; f < TOTAL_FRAMES; f++) {
-        render_stationary_clay_frame(f);
+        render_frame_pthreads(f);
         generate_audio(f, audio_buffer);
 
         fwrite(framebuffer, sizeof(pixel_t), WIDTH * HEIGHT, pipe);
         fwrite(audio_buffer, sizeof(int16_t) * 2, SAMPLES_PER_FRAME, pipe);
 
         if (f % 150 == 0) {
-            printf("   -> Stationary Clay Raymarched %d/%d frames (%.1f%%, Time: %.1f sec)...\n",
+            printf("   -> Native Pthread Raymarched %d/%d frames (%.1f%%, Time: %.1f sec)...\n",
                    f, TOTAL_FRAMES, (float)f / (float)TOTAL_FRAMES * 100.0f, (float)f / 30.0f);
             fflush(stdout);
         }
@@ -350,7 +367,7 @@ int main(void) {
 
     pclose(pipe);
     printf("=============================================================\n");
-    printf("✓ STATIONARY SOLID CLAY BEAR RENDER COMPLETE: clayscape_bear_solid_demo.mp4\n");
+    printf("✓ PTHREAD SOLID CLAY BEAR RENDER COMPLETE: clayscape_bear_solid_demo.mp4\n");
     printf("=============================================================\n");
     return 0;
 }
