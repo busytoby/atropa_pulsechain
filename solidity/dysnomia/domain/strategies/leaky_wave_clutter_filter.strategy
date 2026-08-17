@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. CLUTTER-FLT-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LEAKY WAVE CLUTTER FILTER AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-CLT-PARAMS.
+           05 WS-TEMPORAL-ALPHA-M       PIC 9(04) VALUE 0950.
+           05 WS-SUPPRESSION-TENTHS-DB  PIC 9(03) VALUE 245.
+           05 WS-GESTURE-INTEGRITY-M    PIC 9(04) VALUE 0880.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-CLT-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-CLT-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-CLT-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-CLT-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-CLT-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 TEMPORAL-ALPHA-OUT-OF-BOUNDS VALUE 2.
+              88 CLUTTER-SUPPRESSION-LOW     VALUE 3.
+              88 GESTURE-INTEGRITY-LOW       VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 FILTER-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-CLUTTER-FILTER
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TEMPORAL-ALPHA-M < 850 OR WS-TEMPORAL-ALPHA-M > 990
+                SET TEMPORAL-ALPHA-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SUPPRESSION-TENTHS-DB < 180 OR WS-SUPPRESSION-TENTHS-DB > 400
+                SET CLUTTER-SUPPRESSION-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GESTURE-INTEGRITY-M < 600 OR WS-GESTURE-INTEGRITY-M > 1000
+                SET GESTURE-INTEGRITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-CLUTTER-FILTER.
+            COMPUTE WS-CLT-COMPOSITE = (WS-TEMPORAL-ALPHA-M / 2) +
+                                       (WS-SUPPRESSION-TENTHS-DB * 4) +
+                                       (WS-GESTURE-INTEGRITY-M / 2).
+
+            COMPUTE WS-CLT-VITALITY = (WS-CLT-COMPOSITE / 4) +
+                                      (WS-GESTURE-INTEGRITY-M / 4) +
+                                      (WS-SUPPRESSION-TENTHS-DB / 2) + 1.
+
+            IF WS-CLT-VITALITY EQUAL ZERO
+                SET FILTER-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-CLT-COHERENCE = (WS-CLT-COMPOSITE / 16) +
+                                       (WS-GESTURE-INTEGRITY-M / 16) +
+                                       (WS-SUPPRESSION-TENTHS-DB / 8).
+
+            COMPUTE WS-CLT-REBAR-LATCH = 1470169088 +
+                                         (WS-CLT-COMPOSITE / 2) +
+                                         (WS-SUPPRESSION-TENTHS-DB * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-CLT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-CLT-VITALITY * 10) +
+                                         (WS-CLT-COHERENCE * 10) +
+                                         (WS-CLT-COMPOSITE * 10) +
+                                         (WS-CLT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-CLT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-CLT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

@@ -743,6 +743,11 @@ test-azatoi-teddy-bear-multimodal:
 	./tests/test_azatoi_teddy_bear_multimodal
 	@rm -f tests/test_azatoi_teddy_bear_multimodal
 
+test-leaky-wave-clutter-filter:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_leaky_wave_clutter_filter.c -o tests/test_leaky_wave_clutter_filter
+	./tests/test_leaky_wave_clutter_filter
+	@rm -f tests/test_leaky_wave_clutter_filter
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
