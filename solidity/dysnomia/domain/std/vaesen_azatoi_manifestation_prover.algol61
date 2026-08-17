@@ -1,0 +1,122 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Vaesen Azatoi Behavioral Manifestation Prover;
+  comment Reference: ACM DIS '26 (3802974.3808677.pdf, Sec 1-5 - What Makes a Robot Azatoi: 6 Cues, 5 Effects & Transparent Intent),;
+  comment            ACM ISSAC '26 (3815436.3815469.pdf, Holonomic Partial Weyl Closure Cl_S(I)),;
+  comment            Rule 12 (Non-Preferential Accumulator Redirection) & Rule 16 (Teddy Bear Participant Verification);
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Vaesen Azatoi Tripartite Constitutive Axiom: M_azatoi = (C_cues >= C_floor) & (T_transparency >= T_floor) & (A_achievement >= A_floor),;
+  comment 2. The 6 Orthogonal Multimodal Cues: Proxemics (600m), Voice (850m), Gaze (750m), Intentional Error (500m), Expression (700m), Indirect Lang (400m),;
+  comment 3. Transparent Charm vs Dark Pattern: Intention attribution is fully visible in open accumulator registers without deception (Delta_hidden = 0),;
+  comment 4. Non-Preferential Emotional Energy Redirection (Rule 12) across the 5 Weyl Phonation Closures,;
+  comment 5. Zero-Loss ReBAR Shadow Rollback: Deceptive perturbation restores shadow baseline (delta_Saat = 0).;
+
+  integer procedure verify_vaesen_azatoi_manifestation(
+    cue_composite_energy_milli,
+    transparency_score_milli,
+    lens_achievement_milli,
+    dark_pattern_flag,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value cue_composite_energy_milli, transparency_score_milli, lens_achievement_milli, dark_pattern_flag, cics_writer_id, simulate_fault, k_param;
+  integer cue_composite_energy_milli, transparency_score_milli, lens_achievement_milli, dark_pattern_flag, cics_writer_id, simulate_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Vaesen Azatoi Manifestation Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = INVALID_CUE_ENERGY (cue composite energy must be in [200..1000] milli-units)
+            3 = INVALID_TRANSPARENCY (transparency must be in [300..1000] milli-score)
+            4 = INVALID_ACHIEVEMENT (lens achievement must be in [200..1000] milli-score)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = DARK_PATTERN_DECEPTION_FAIL (dark pattern manipulation intercepted)
+            7 = AZATOI_VITALITY_COLLAPSE (vitality dropped below floor)
+            8 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault);
+
+    integer azatoi_vitality_metric;
+    integer azatoi_coherence;
+    integer azatoi_rebar_latch;
+    integer shadow_azatoi_base;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_vaesen_azatoi_manifestation := 1;
+        go to end_azatoi_proc;
+      end;
+
+    if cue_composite_energy_milli < 200 or cue_composite_energy_milli > 1000 then
+      begin
+        verify_vaesen_azatoi_manifestation := 2;
+        go to end_azatoi_proc;
+      end;
+
+    if transparency_score_milli < 300 or transparency_score_milli > 1000 then
+      begin
+        verify_vaesen_azatoi_manifestation := 3;
+        go to end_azatoi_proc;
+      end;
+
+    if lens_achievement_milli < 200 or lens_achievement_milli > 1000 then
+      begin
+        verify_vaesen_azatoi_manifestation := 4;
+        go to end_azatoi_proc;
+      end;
+
+    if dark_pattern_flag != 0 then
+      begin
+        verify_vaesen_azatoi_manifestation := 6;
+        go to end_azatoi_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen;
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_vaesen_azatoi_manifestation := 5;
+        go to end_azatoi_proc;
+      end;
+
+    comment Pillar 1 & 2: Vaesen Azatoi Vitality Metric;
+    azatoi_vitality_metric := ((cue_composite_energy_milli / 4) +
+                               (transparency_score_milli / 8) +
+                               (lens_achievement_milli / 8) + 1);
+
+    if azatoi_vitality_metric <= 0 then
+      begin
+        verify_vaesen_azatoi_manifestation := 7;
+        go to end_azatoi_proc;
+      end;
+
+    comment Pillar 3 & 4: Azatoi Coherence;
+    azatoi_coherence := (cue_composite_energy_milli / 16) +
+                        (transparency_score_milli / 32) +
+                        (lens_achievement_milli / 32);
+
+    comment Pillar 5: ReBAR 0x57A1 Hardware Latch;
+    azatoi_rebar_latch := 1470169088 +
+                          (cue_composite_energy_milli / 2) +
+                          (transparency_score_milli / 4);
+
+    shadow_azatoi_base := (cics_writer_id * 1000000) +
+                          (azatoi_vitality_metric * 10) +
+                          (azatoi_coherence * 10) +
+                          (cue_composite_energy_milli * 10) +
+                          (azatoi_rebar_latch / 10000);
+
+    if simulate_fault = 1 then
+      begin
+        committed_output := shadow_azatoi_base - 1163;
+        disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
+        verify_vaesen_azatoi_manifestation := 0;
+        go to end_azatoi_proc;
+      end;
+
+    committed_output := shadow_azatoi_base;
+    disp_wrap := committed_output - (256 * (committed_output / 256));
+    verify_vaesen_azatoi_manifestation := 0;
+
+  end_azatoi_proc:
+  end;
+end

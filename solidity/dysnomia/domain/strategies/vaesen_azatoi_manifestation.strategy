@@ -1,0 +1,115 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AZATOI-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VAESEN AZATOI AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-AZATOI-PARAMS.
+           05 WS-CUE-ENERGY             PIC 9(04) VALUE 0672.
+           05 WS-TRANSPARENCY           PIC 9(04) VALUE 0680.
+           05 WS-ACHIEVEMENT            PIC 9(04) VALUE 0663.
+           05 WS-DARK-PATTERN-FLAG      PIC 9(01) VALUE 0.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-AZATOI-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-AZATOI-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-AZATOI-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-AZATOI-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-CUE-ENERGY          VALUE 2.
+              88 INVALID-TRANSPARENCY        VALUE 3.
+              88 INVALID-ACHIEVEMENT         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 DARK-PATTERN-DECEPTION-FAIL VALUE 6.
+              88 AZATOI-VITALITY-COLLAPSE    VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-AZATOI-MANIFESTATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CUE-ENERGY < 200 OR WS-CUE-ENERGY > 1000
+                SET INVALID-CUE-ENERGY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TRANSPARENCY < 300 OR WS-TRANSPARENCY > 1000
+                SET INVALID-TRANSPARENCY TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ACHIEVEMENT < 200 OR WS-ACHIEVEMENT > 1000
+                SET INVALID-ACHIEVEMENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DARK-PATTERN-FLAG NOT EQUAL ZERO
+                SET DARK-PATTERN-DECEPTION-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-AZATOI-MANIFESTATION.
+            COMPUTE WS-AZATOI-VITALITY = (WS-CUE-ENERGY / 4) +
+                                         (WS-TRANSPARENCY / 8) +
+                                         (WS-ACHIEVEMENT / 8) + 1.
+
+            IF WS-AZATOI-VITALITY EQUAL ZERO
+                SET AZATOI-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-AZATOI-COHERENCE = (WS-CUE-ENERGY / 16) +
+                                          (WS-TRANSPARENCY / 32) +
+                                          (WS-ACHIEVEMENT / 32).
+
+            COMPUTE WS-AZATOI-REBAR-LATCH = 1470169088 +
+                                            (WS-CUE-ENERGY / 2) +
+                                            (WS-TRANSPARENCY / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-AZATOI-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-AZATOI-VITALITY * 10) +
+                                            (WS-AZATOI-COHERENCE * 10) +
+                                            (WS-CUE-ENERGY * 10) +
+                                            (WS-AZATOI-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-AZATOI-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-AZATOI-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

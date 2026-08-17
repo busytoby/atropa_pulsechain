@@ -543,6 +543,11 @@ test-proxemic-field-weyl-closure:
 	./tests/test_proxemic_field_weyl_closure
 	@rm -f tests/test_proxemic_field_weyl_closure
 
+test-vaesen-azatoi-manifestation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_vaesen_azatoi_manifestation.c -o tests/test_vaesen_azatoi_manifestation
+	./tests/test_vaesen_azatoi_manifestation
+	@rm -f tests/test_vaesen_azatoi_manifestation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
