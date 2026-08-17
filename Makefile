@@ -1533,6 +1533,11 @@ test-profy-motor-skill:
 	./tests/test_profy_motor_skill
 	@rm -f tests/test_profy_motor_skill
 
+test-proteus-visualization-adaptation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_proteus_visualization_adaptation.c -o tests/test_proteus_visualization_adaptation
+	./tests/test_proteus_visualization_adaptation
+	@rm -f tests/test_proteus_visualization_adaptation
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
