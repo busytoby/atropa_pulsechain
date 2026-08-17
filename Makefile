@@ -373,6 +373,11 @@ test-mhsa-projection-scaling:
 	./tests/test_mhsa_projection_scaling
 	@rm -f tests/test_mhsa_projection_scaling
 
+test-quantization-noise-regularization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_quantization_noise_regularization.c -o tests/test_quantization_noise_regularization
+	./tests/test_quantization_noise_regularization
+	@rm -f tests/test_quantization_noise_regularization
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
