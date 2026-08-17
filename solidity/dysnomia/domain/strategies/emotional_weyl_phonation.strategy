@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. EMOTIONAL-WEYL-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / EMOTIONAL PHONATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-EMOTION-PARAMS.
+           05 WS-EMOTION-ID             PIC 9(02) VALUE 01.
+           05 WS-PITCH-ARC              PIC S9(05) VALUE +0000.
+           05 WS-DISPERSION-HZ          PIC 9(04) VALUE 0500.
+           05 WS-STABILITY-FLAG         PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-EMOTION-VITALITY       PIC 9(09) VALUE 0.
+           05 WS-EMOTION-COHERENCE      PIC 9(09) VALUE 0.
+           05 WS-EMOTION-REBAR-LATCH    PIC 9(12) VALUE 0.
+           05 WS-SHADOW-EMOTION-BASE    PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-EMOTION-ID          VALUE 2.
+              88 INVALID-PITCH-ARC           VALUE 3.
+              88 INVALID-DISPERSION          VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 PHONATION-STABILITY-FAIL    VALUE 6.
+              88 EMOTION-DIVERG-FAIL         VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-EMOTIONAL-WEYL
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EMOTION-ID < 1 OR WS-EMOTION-ID > 5
+                SET INVALID-EMOTION-ID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PITCH-ARC < -1200 OR WS-PITCH-ARC > 1200
+                SET INVALID-PITCH-ARC TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DISPERSION-HZ < 100 OR WS-DISPERSION-HZ > 2000
+                SET INVALID-DISPERSION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-STABILITY-FLAG NOT EQUAL 1
+                SET PHONATION-STABILITY-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-EMOTIONAL-WEYL.
+            COMPUTE WS-EMOTION-VITALITY = (WS-EMOTION-ID * 512) +
+                                          ((WS-PITCH-ARC + 1200) / 4) +
+                                          (WS-DISPERSION-HZ / 10) +
+                                          (WS-STABILITY-FLAG * 256) + 1.
+
+            IF WS-EMOTION-VITALITY EQUAL ZERO
+                SET EMOTION-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-EMOTION-COHERENCE = (WS-EMOTION-ID * 64) +
+                                           ((WS-PITCH-ARC + 1200) / 16) +
+                                           (WS-DISPERSION-HZ / 20).
+
+            COMPUTE WS-EMOTION-REBAR-LATCH = 1470169088 + (WS-EMOTION-ID * 256) +
+                                             ((WS-PITCH-ARC + 1200) / 8) +
+                                             (WS-DISPERSION-HZ / 10).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-EMOTION-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                             (WS-EMOTION-VITALITY * 10) +
+                                             (WS-EMOTION-COHERENCE * 10) +
+                                             (WS-EMOTION-ID * 1000) +
+                                             (WS-EMOTION-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-EMOTION-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-EMOTION-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

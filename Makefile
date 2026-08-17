@@ -318,6 +318,11 @@ test-ore-fraction-normal-form:
 	./tests/test_ore_fraction_normal_form
 	@rm -f tests/test_ore_fraction_normal_form
 
+test-emotional-weyl-phonation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_emotional_weyl_phonation.c -o tests/test_emotional_weyl_phonation
+	./tests/test_emotional_weyl_phonation
+	@rm -f tests/test_emotional_weyl_phonation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
