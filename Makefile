@@ -1208,6 +1208,11 @@ test-visual-trajectory-annotations:
 	./tests/test_visual_trajectory_annotations
 	@rm -f tests/test_visual_trajectory_annotations
 
+test-physical-state-synchronization:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_physical_state_synchronization.c -o tests/test_physical_state_synchronization
+	./tests/test_physical_state_synchronization
+	@rm -f tests/test_physical_state_synchronization
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
