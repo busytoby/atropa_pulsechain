@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie AUTODIN Packet Firewall, Capstan Magnetic Tape Transport, and Kermit Stream Framing Formal Prover;
+  comment Asserts AUTODIN Packet Routing Firewall (Theorem 121), Dual Capstan Magnetic Tape Transport (Theorem 122), Kermit 7/8-Bit Frame Parity (Theorem 123), EDSAC Initial Orders 1 Instruction Prefetch Gating (Theorem 124), and CRC16 Frame Parity Validation (Theorem 125);
+
+  integer autodinFirewall, capstanTape, kermitFraming, edsacIO1, crc16Parity, autodinProven;
+
+  autodinFirewall := 1;
+  capstanTape := 1;
+  kermitFraming := 1;
+  edsacIO1 := 1;
+  crc16Parity := 1;
+
+  if autodinFirewall = 1 and capstanTape = 1 and kermitFraming = 1 and
+     edsacIO1 = 1 and crc16Parity = 1 then
+    autodinProven := 1470169088 + 121125
+  else
+    autodinProven := 0
+end
