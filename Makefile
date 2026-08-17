@@ -83,6 +83,11 @@ test-dna-breeder-inheritance:
 	./tests/test_dna_breeder_inheritance
 	@rm -f tests/test_dna_breeder_inheritance
 
+test-super8-wysiwyg-optical:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_super8_wysiwyg_optical.c -o tests/test_super8_wysiwyg_optical
+	./tests/test_super8_wysiwyg_optical
+	@rm -f tests/test_super8_wysiwyg_optical
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
