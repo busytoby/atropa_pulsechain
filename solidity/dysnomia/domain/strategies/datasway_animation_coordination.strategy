@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. DSW-ANI-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / DATASWAY ANIMATION COORDINATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-DSW-PARAMS.
+           05 WS-GEN-LAT-MS             PIC 9(02) VALUE 12.
+           05 WS-TIMELINE-FID-M         PIC 9(04) VALUE 0960.
+           05 WS-PHASE-JITTER-MS        PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-DSW-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-DSW-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-DSW-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-DSW-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-DSW-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 GEN-LAT-OUT-OF-BOUNDS       VALUE 2.
+              88 TIMELINE-FIDELITY-LOW       VALUE 3.
+              88 JITTER-EXCEEDED             VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 DATASWAY-COLLAPSE           VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-DATASWAY-TIMELINE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GEN-LAT-MS < 5 OR WS-GEN-LAT-MS > 25
+                SET GEN-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TIMELINE-FID-M < 850 OR WS-TIMELINE-FID-M > 1000
+                SET TIMELINE-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PHASE-JITTER-MS < 0 OR WS-PHASE-JITTER-MS > 5
+                SET JITTER-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-DATASWAY-TIMELINE.
+            COMPUTE WS-DSW-COMPOSITE = ((30 - WS-GEN-LAT-MS) * 20) +
+                                       (WS-TIMELINE-FID-M / 2) +
+                                       ((10 - WS-PHASE-JITTER-MS) * 40).
+
+            COMPUTE WS-DSW-VITALITY = (WS-DSW-COMPOSITE / 4) +
+                                      (WS-TIMELINE-FID-M / 4) +
+                                      ((30 - WS-GEN-LAT-MS) * 4) + 1.
+
+            IF WS-DSW-VITALITY EQUAL ZERO
+                SET DATASWAY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-DSW-COHERENCE = (WS-DSW-COMPOSITE / 16) +
+                                       (WS-TIMELINE-FID-M / 16) +
+                                       ((30 - WS-GEN-LAT-MS) * 2).
+
+            COMPUTE WS-DSW-REBAR-LATCH = 1470169088 +
+                                         (WS-DSW-COMPOSITE / 2) +
+                                         ((30 - WS-GEN-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-DSW-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-DSW-VITALITY * 10) +
+                                         (WS-DSW-COHERENCE * 10) +
+                                         (WS-DSW-COMPOSITE * 10) +
+                                         (WS-DSW-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-DSW-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-DSW-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

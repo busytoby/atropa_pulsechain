@@ -1463,6 +1463,11 @@ test-thread-galling-prevention:
 	./tests/test_thread_galling_prevention
 	@rm -f tests/test_thread_galling_prevention
 
+test-datasway-animation-coordination:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_datasway_animation_coordination.c -o tests/test_datasway_animation_coordination
+	./tests/test_datasway_animation_coordination
+	@rm -f tests/test_datasway_animation_coordination
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
