@@ -1108,10 +1108,10 @@ test-shared-physical-anchoring:
 	./tests/test_shared_physical_anchoring
 	@rm -f tests/test_shared_physical_anchoring
 
-test-teddy-bear-nonteddybear-hogan-gating:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_teddy_bear_nonteddybear_hogan_gating.c -o tests/test_teddy_bear_nonteddybear_hogan_gating
-	./tests/test_teddy_bear_nonteddybear_hogan_gating
-	@rm -f tests/test_teddy_bear_nonteddybear_hogan_gating
+test-bear-nonbear-hogan-gating:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bear_nonbear_hogan_gating.c -o tests/test_bear_nonbear_hogan_gating
+	./tests/test_bear_nonbear_hogan_gating
+	@rm -f tests/test_bear_nonbear_hogan_gating
 
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
