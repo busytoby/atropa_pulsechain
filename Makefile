@@ -1263,6 +1263,11 @@ test-friction-torque-thread:
 	./tests/test_friction_torque_thread
 	@rm -f tests/test_friction_torque_thread
 
+test-interlocking-constraint-deadlock:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_interlocking_constraint_deadlock.c -o tests/test_interlocking_constraint_deadlock
+	./tests/test_interlocking_constraint_deadlock
+	@rm -f tests/test_interlocking_constraint_deadlock
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
