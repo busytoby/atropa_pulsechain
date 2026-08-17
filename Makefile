@@ -878,6 +878,11 @@ test-post-thinking-deadtime-reflection:
 	./tests/test_post_thinking_deadtime_reflection
 	@rm -f tests/test_post_thinking_deadtime_reflection
 
+test-post-thinking-sliding-window:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_post_thinking_sliding_window.c -o tests/test_post_thinking_sliding_window
+	./tests/test_post_thinking_sliding_window
+	@rm -f tests/test_post_thinking_sliding_window
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
