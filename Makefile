@@ -103,6 +103,11 @@ test-pure-vulkan-video-encode:
 	./tests/test_pure_vulkan_video_encode
 	@rm -f tests/test_pure_vulkan_video_encode
 
+render-sally-larsen-vulkan-mp4:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/render_sally_larsen_pure_vulkan_mp4.c -o tests/render_sally_larsen_pure_vulkan_mp4 -lm
+	./tests/render_sally_larsen_pure_vulkan_mp4
+	@rm -f tests/render_sally_larsen_pure_vulkan_mp4
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix
