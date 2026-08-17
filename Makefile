@@ -843,6 +843,11 @@ test-egocentric-audio-vad-gating:
 	./tests/test_egocentric_audio_vad_gating
 	@rm -f tests/test_egocentric_audio_vad_gating
 
+test-banknote-currency-feature:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_banknote_currency_feature.c -o tests/test_banknote_currency_feature
+	./tests/test_banknote_currency_feature
+	@rm -f tests/test_banknote_currency_feature
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
