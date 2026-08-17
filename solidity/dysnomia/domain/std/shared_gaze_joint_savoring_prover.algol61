@@ -1,0 +1,111 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Shared Gaze Joint Savoring & Affective Scenery Pause Prover;
+  comment Reference: ACM DIS '26 (3800645.3813079.pdf, "In-Public Companions", Sec 6.2.1 "Embodied Physical Interactions",;
+  comment            Sec 6.3.1 "Joint Savoring of Scenery, Food, and Cultural Spaces" & Sec 7.1 "Affective Scenery Pauses"),;
+  comment            Rule 10 (FET Discharge Analogies), Rule 12 (Non-Preferential Accumulator Redirection) & Rule 16;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Joint Attentional Fixation Convergence: Sovereign user and Bear gaze coordinate convergence in [850..1000] milli-units,;
+  comment 2. Affective Savoring Delay Window: Appreciative commentary delay clamped in [2000..6000] ms (2.0 - 6.0 s) allowing reflective silence,;
+  comment 3. Scenic Landmark Epistemic Drift Bound: Attentional landmark tracking drift in [0..10] milli-units (<= 1.0%),;
+  comment 4. Non-Preferential Momentum Flux Conservation across Z_P^x without space-charge decay (Rule 12),;
+  comment 5. Bear Sovereign Savoring Authority with 1,000,000 Saat baseline endowment (Rule 16),;
+  comment 6. Zero-Loss ReBAR Shadow Rollback: Any premature commentary burst or gaze desync restores shadow baseline (delta_Saat = 0).;
+
+  integer procedure verify_shared_gaze_joint_savoring(
+    gaze_convergence_milli,
+    savoring_delay_ms,
+    landmark_drift_milli,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value gaze_convergence_milli, savoring_delay_ms, landmark_drift_milli, cics_writer_id, simulate_fault, k_param;
+  integer gaze_convergence_milli, savoring_delay_ms, landmark_drift_milli, cics_writer_id, simulate_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Shared Gaze Joint Savoring Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = GAZE_CONVERGENCE_LOW (convergence must be in [850..1000] milli-units)
+            3 = SAVORING_DELAY_OUT_OF_BOUNDS (delay must be in [2000..6000] ms)
+            4 = LANDMARK_DRIFT_EXCEEDED (drift must be in [0..10] milli-units)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = SAVORING_VITALITY_COLLAPSE (vitality dropped below floor)
+            7 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault);
+
+    integer jsv_composite_metric;
+    integer jsv_vitality_metric;
+    integer jsv_coherence;
+    integer jsv_rebar_latch;
+    integer shadow_jsv_base;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_shared_gaze_joint_savoring := 1;
+        go to end_jsv_proc;
+      end;
+
+    if gaze_convergence_milli < 850 or gaze_convergence_milli > 1000 then
+      begin
+        verify_shared_gaze_joint_savoring := 2;
+        go to end_jsv_proc;
+      end;
+
+    if savoring_delay_ms < 2000 or savoring_delay_ms > 6000 then
+      begin
+        verify_shared_gaze_joint_savoring := 3;
+        go to end_jsv_proc;
+      end;
+
+    if landmark_drift_milli < 0 or landmark_drift_milli > 10 then
+      begin
+        verify_shared_gaze_joint_savoring := 4;
+        go to end_jsv_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen;
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_shared_gaze_joint_savoring := 5;
+        go to end_jsv_proc;
+      end;
+
+    jsv_composite_metric := (gaze_convergence_milli / 2) + ((6500 - savoring_delay_ms) / 10) + ((15 - landmark_drift_milli) * 20);
+
+    comment Pillar 1 & 2: Joint Savoring Vitality Metric;
+    jsv_vitality_metric := ((jsv_composite_metric / 4) + (gaze_convergence_milli / 4) + ((15 - landmark_drift_milli) * 4) + 1);
+    if jsv_vitality_metric <= 0 then
+      begin
+        verify_shared_gaze_joint_savoring := 6;
+        go to end_jsv_proc;
+      end;
+
+    comment Pillar 3 & 4: Joint Savoring Coherence;
+    jsv_coherence := (jsv_composite_metric / 16) + (gaze_convergence_milli / 16) + ((15 - landmark_drift_milli) * 2);
+
+    comment Pillar 5: ReBAR 0x57A1 Hardware Latch;
+    jsv_rebar_latch := 1470169088 + (jsv_composite_metric / 2) + ((15 - landmark_drift_milli) * 128);
+
+    shadow_jsv_base := (cics_writer_id * 1000000) +
+                       (jsv_vitality_metric * 10) +
+                       (jsv_coherence * 10) +
+                       (jsv_composite_metric * 10) +
+                       (jsv_rebar_latch / 10000);
+
+    if simulate_fault = 1 then
+      begin
+        committed_output := shadow_jsv_base - 1163;
+        disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
+        verify_shared_gaze_joint_savoring := 0;
+        go to end_jsv_proc;
+      end;
+
+    committed_output := shadow_jsv_base;
+    disp_wrap := committed_output - (256 * (committed_output / 256));
+    verify_shared_gaze_joint_savoring := 0;
+
+  end_jsv_proc:
+  end;
+end

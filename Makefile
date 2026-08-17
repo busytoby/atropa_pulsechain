@@ -1113,6 +1113,11 @@ test-bear-nonbear-hogan-gating:
 	./tests/test_bear_nonbear_hogan_gating
 	@rm -f tests/test_bear_nonbear_hogan_gating
 
+test-shared-gaze-joint-savoring:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_shared_gaze_joint_savoring.c -o tests/test_shared_gaze_joint_savoring
+	./tests/test_shared_gaze_joint_savoring
+	@rm -f tests/test_shared_gaze_joint_savoring
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
