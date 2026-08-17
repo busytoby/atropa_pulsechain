@@ -1488,6 +1488,11 @@ test-privacymotiv-journey:
 	./tests/test_privacymotiv_journey
 	@rm -f tests/test_privacymotiv_journey
 
+test-refine-mockup-iteration:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_refine_mockup_iteration.c -o tests/test_refine_mockup_iteration
+	./tests/test_refine_mockup_iteration
+	@rm -f tests/test_refine_mockup_iteration
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

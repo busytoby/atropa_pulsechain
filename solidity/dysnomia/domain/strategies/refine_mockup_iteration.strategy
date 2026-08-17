@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. RFN-UI-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / REFINE MOCKUP ITERATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-RFN-PARAMS.
+           05 WS-REFINEMENT-LAT-MS      PIC 9(02) VALUE 12.
+           05 WS-CONSISTENCY-FID-M      PIC 9(04) VALUE 0960.
+           05 WS-ALIGNMENT-DRIFT-UM     PIC 9(02) VALUE 01.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-RFN-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-RFN-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-RFN-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-RFN-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-RFN-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 REFINE-LAT-OUT-OF-BOUNDS    VALUE 2.
+              88 CONSISTENCY-FIDELITY-LOW    VALUE 3.
+              88 DRIFT-EXCEEDED              VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 REFINE-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-REFINE-MOCKUP
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3 AND WS-K-EXPONENT NOT EQUAL 4
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-REFINEMENT-LAT-MS < 5 OR WS-REFINEMENT-LAT-MS > 25
+                SET REFINE-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CONSISTENCY-FID-M < 850 OR WS-CONSISTENCY-FID-M > 1000
+                SET CONSISTENCY-FIDELITY-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALIGNMENT-DRIFT-UM < 0 OR WS-ALIGNMENT-DRIFT-UM > 5
+                SET DRIFT-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-REFINE-MOCKUP.
+            COMPUTE WS-RFN-COMPOSITE = ((30 - WS-REFINEMENT-LAT-MS) * 20) +
+                                       (WS-CONSISTENCY-FID-M / 2) +
+                                       ((10 - WS-ALIGNMENT-DRIFT-UM) * 40).
+
+            COMPUTE WS-RFN-VITALITY = (WS-RFN-COMPOSITE / 4) +
+                                      (WS-CONSISTENCY-FID-M / 4) +
+                                      ((30 - WS-REFINEMENT-LAT-MS) * 4) + 1.
+
+            IF WS-RFN-VITALITY EQUAL ZERO
+                SET REFINE-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RFN-COHERENCE = (WS-RFN-COMPOSITE / 16) +
+                                       (WS-CONSISTENCY-FID-M / 16) +
+                                       ((30 - WS-REFINEMENT-LAT-MS) * 2).
+
+            COMPUTE WS-RFN-REBAR-LATCH = 1470169088 +
+                                         (WS-RFN-COMPOSITE / 2) +
+                                         ((30 - WS-REFINEMENT-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-RFN-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-RFN-VITALITY * 10) +
+                                         (WS-RFN-COHERENCE * 10) +
+                                         (WS-RFN-COMPOSITE * 10) +
+                                         (WS-RFN-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-RFN-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-RFN-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
