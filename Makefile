@@ -1548,6 +1548,50 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-cpm-tomie-clay-play-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_prover.c -o tests/test_cpm_tomie_clay_play_prover
+	./tests/test_cpm_tomie_clay_play_prover
+	@rm -f tests/test_cpm_tomie_clay_play_prover
+
+test-cpm-tomie-clay-play-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_play.c -o tsfi2-deepseek/src/cpm_compiler_clay_play
+	./tsfi2-deepseek/src/cpm_compiler_clay_play /tmp/clay_play_geneplore.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_play.c -o tsfi2-deepseek/src/cpm_exec_clay_play
+	./tsfi2-deepseek/src/cpm_exec_clay_play /tmp/clay_play_geneplore.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_play tsfi2-deepseek/src/cpm_exec_clay_play /tmp/clay_play_geneplore.bin
+	gcc -Wall -Wextra -std=c11 -O3 -Itsfi2-deepseek/src tsfi2-deepseek/src/cpm_tomie_clay_play_analyzer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tsfi2-deepseek/src/cpm_tomie_clay_play_analyzer -lm
+	./tsfi2-deepseek/src/cpm_tomie_clay_play_analyzer /home/mariarahel/Downloads/3746058.3758345.pdf
+	@rm -f tsfi2-deepseek/src/cpm_tomie_clay_play_analyzer
+
+test-cpm-tomie-geneplore-totient-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_geneplore_totient_prover.c -o tests/test_cpm_tomie_geneplore_totient_prover
+	./tests/test_cpm_tomie_geneplore_totient_prover
+	@rm -f tests/test_cpm_tomie_geneplore_totient_prover
+
+test-cpm-tomie-clay-play-extended-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_extended_prover.c -o tests/test_cpm_tomie_clay_play_extended_prover
+	./tests/test_cpm_tomie_clay_play_extended_prover
+	@rm -f tests/test_cpm_tomie_clay_play_extended_prover
+
+test-cpm-tomie-clay-extended-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_extended.c -o tsfi2-deepseek/src/cpm_compiler_clay_extended
+	./tsfi2-deepseek/src/cpm_compiler_clay_extended /tmp/clay_extended.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_extended.c -o tsfi2-deepseek/src/cpm_exec_clay_extended
+	./tsfi2-deepseek/src/cpm_exec_clay_extended /tmp/clay_extended.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_extended tsfi2-deepseek/src/cpm_exec_clay_extended /tmp/clay_extended.bin
+
+test-cpm-tomie-clay-play-5operator-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_5operator_prover.c -o tests/test_cpm_tomie_clay_play_5operator_prover
+	./tests/test_cpm_tomie_clay_play_5operator_prover
+	@rm -f tests/test_cpm_tomie_clay_play_5operator_prover
+
+test-cpm-tomie-clay-5op-suite:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_compiler_clay_5op.c -o tsfi2-deepseek/src/cpm_compiler_clay_5op
+	./tsfi2-deepseek/src/cpm_compiler_clay_5op /tmp/clay_5op.bin
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tsfi2-deepseek/src/cpm_exec_clay_5op.c -o tsfi2-deepseek/src/cpm_exec_clay_5op
+	./tsfi2-deepseek/src/cpm_exec_clay_5op /tmp/clay_5op.bin
+	@rm -f tsfi2-deepseek/src/cpm_compiler_clay_5op tsfi2-deepseek/src/cpm_exec_clay_5op /tmp/clay_5op.bin
+
 test-mediated-social-touch:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_mediated_social_touch.c -o tests/test_mediated_social_touch
 	./tests/test_mediated_social_touch

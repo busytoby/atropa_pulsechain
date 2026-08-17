@@ -421,7 +421,9 @@ static void parse_multimodal_content_stream(const uint8_t *data, size_t len,
                 temp[out_idx] = '\0';
                 if (out_idx > 0 && text_out) {
                     tsfi_pdf_text_buffer_append(text_out, temp, out_idx);
-                    tsfi_pdf_text_buffer_append(text_out, " ", 1);
+                    if (out_idx > 1 && temp[out_idx - 1] != ' ') {
+                        tsfi_pdf_text_buffer_append(text_out, " ", 1);
+                    }
                 }
             }
             if (i < len && data[i] == ')') i++;
@@ -498,18 +500,40 @@ TsfiPdfDocumentFeatures *tsfi_pdf_extract_all_features(const char *filepath) {
         feats->total_streams++;
 
         size_t dict_back = (size_t)(p - pdf_data);
-        size_t dict_start = dict_back > 300 ? dict_back - 300 : 0;
-        if (memmem_fast(pdf_data + dict_start, dict_back - dict_start, "/Image", 6) != NULL ||
-            memmem_fast(pdf_data + dict_start, dict_back - dict_start, "/DCTDecode", 10) != NULL) {
+        size_t dict_start = dict_back > 500 ? dict_back - 500 : 0;
+        size_t dict_len = dict_back - dict_start;
+
+        bool is_image = (memmem_fast(pdf_data + dict_start, dict_len, "/Image", 6) != NULL ||
+                         memmem_fast(pdf_data + dict_start, dict_len, "/DCTDecode", 10) != NULL);
+        if (is_image) {
             feats->image_object_count++;
         }
 
+        bool is_font_or_meta = (memmem_fast(pdf_data + dict_start, dict_len, "/FontFile", 9) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/FontFile2", 10) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/FontFile3", 10) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Type/XRef", 10) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Type /XRef", 11) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Type/ObjStm", 12) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Type /ObjStm", 13) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Type/Font", 10) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Type /Font", 11) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Subtype/Type1C", 15) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Subtype /Type1C", 16) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Subtype/CIDFontType0C", 22) != NULL ||
+                                memmem_fast(pdf_data + dict_start, dict_len, "/Subtype /CIDFontType0C", 23) != NULL ||
+                                is_image);
+
         TsfiPdfByteBuffer decompressed = {0};
         if (tsfi_pdf_zlib_decompress(pdf_data + s_pos, stream_len, &decompressed) == 0 && decompressed.size > 0) {
-            parse_multimodal_content_stream(decompressed.data, decompressed.size, feats->text_buffer, feats);
+            if (!is_font_or_meta) {
+                parse_multimodal_content_stream(decompressed.data, decompressed.size, feats->text_buffer, feats);
+            }
             free(decompressed.data);
         } else {
-            parse_multimodal_content_stream(pdf_data + s_pos, stream_len, feats->text_buffer, feats);
+            if (!is_font_or_meta) {
+                parse_multimodal_content_stream(pdf_data + s_pos, stream_len, feats->text_buffer, feats);
+            }
         }
 
         pos = (size_t)(end_p - pdf_data) + 9;
