@@ -1153,6 +1153,11 @@ test-longterm-relational-memory-evolution:
 	./tests/test_longterm_relational_memory_evolution
 	@rm -f tests/test_longterm_relational_memory_evolution
 
+test-tactile-breathing-haptics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_tactile_breathing_haptics.c -o tests/test_tactile_breathing_haptics
+	./tests/test_tactile_breathing_haptics
+	@rm -f tests/test_tactile_breathing_haptics
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii

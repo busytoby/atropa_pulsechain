@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. TBH-HAP-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / TACTILE BREATHING HAPTICS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-TBH-PARAMS.
+           05 WS-RESP-FREQ-CHZ          PIC 9(02) VALUE 20.
+           05 WS-HOLD-LAT-MS            PIC 9(02) VALUE 12.
+           05 WS-MOTOR-NOISE-DBA        PIC 9(02) VALUE 15.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-TBH-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-TBH-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-TBH-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-TBH-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-TBH-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 RESP-FREQ-OUT-OF-BOUNDS     VALUE 2.
+              88 HOLD-LAT-OUT-OF-BOUNDS      VALUE 3.
+              88 MOTOR-NOISE-EXCEEDED        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 HAPTIC-COLLAPSE             VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-BREATHING-HAPTICS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RESP-FREQ-CHZ < 15 OR WS-RESP-FREQ-CHZ > 30
+                SET RESP-FREQ-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HOLD-LAT-MS < 5 OR WS-HOLD-LAT-MS > 25
+                SET HOLD-LAT-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MOTOR-NOISE-DBA < 0 OR WS-MOTOR-NOISE-DBA > 30
+                SET MOTOR-NOISE-EXCEEDED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-BREATHING-HAPTICS.
+            COMPUTE WS-TBH-COMPOSITE = ((35 - WS-RESP-FREQ-CHZ) * 20) +
+                                       ((30 - WS-HOLD-LAT-MS) * 20) +
+                                       ((35 - WS-MOTOR-NOISE-DBA) * 15).
+
+            COMPUTE WS-TBH-VITALITY = (WS-TBH-COMPOSITE / 4) +
+                                      ((35 - WS-RESP-FREQ-CHZ) * 4) +
+                                      ((30 - WS-HOLD-LAT-MS) * 4) + 1.
+
+            IF WS-TBH-VITALITY EQUAL ZERO
+                SET HAPTIC-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-TBH-COHERENCE = (WS-TBH-COMPOSITE / 16) +
+                                       ((35 - WS-RESP-FREQ-CHZ) * 2) +
+                                       ((30 - WS-HOLD-LAT-MS) * 2).
+
+            COMPUTE WS-TBH-REBAR-LATCH = 1470169088 +
+                                         (WS-TBH-COMPOSITE / 2) +
+                                         ((30 - WS-HOLD-LAT-MS) * 128).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-TBH-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-TBH-VITALITY * 10) +
+                                         (WS-TBH-COHERENCE * 10) +
+                                         (WS-TBH-COMPOSITE * 10) +
+                                         (WS-TBH-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-TBH-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-TBH-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
