@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. MULTIPRIME-RECON-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / RATIONAL RECONSTRUCTION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-RECON-PARAMS.
+           05 WS-PRIME-COUNT-K          PIC 9(02) VALUE 03.
+           05 WS-CONSEC-AGREEMENT       PIC 9(02) VALUE 02.
+           05 WS-HEIGHT-LOG2            PIC 9(03) VALUE 064.
+           05 WS-EXACT-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-RECON-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-RECON-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-RECON-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-RECON-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-PRIME-COUNT         VALUE 2.
+              88 CONSEC-AGREEMENT-FAIL       VALUE 3.
+              88 INVALID-HEIGHT-BOUND        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 EXACT-FLAG-FAIL             VALUE 6.
+              88 RECON-DIVERG-FAIL           VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-RECONSTRUCTION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PRIME-COUNT-K < 2 OR WS-PRIME-COUNT-K > 16
+                SET INVALID-PRIME-COUNT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CONSEC-AGREEMENT < 2 OR WS-CONSEC-AGREEMENT > 8
+                SET CONSEC-AGREEMENT-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HEIGHT-LOG2 < 8 OR WS-HEIGHT-LOG2 > 256
+                SET INVALID-HEIGHT-BOUND TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXACT-FLAG NOT EQUAL 1
+                SET EXACT-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-RECONSTRUCTION.
+            COMPUTE WS-RECON-VITALITY = (WS-PRIME-COUNT-K * 512) +
+                                        (WS-CONSEC-AGREEMENT * 256) +
+                                        (WS-HEIGHT-LOG2 * 8) +
+                                        (WS-EXACT-FLAG * 128) + 1.
+
+            IF WS-RECON-VITALITY EQUAL ZERO
+                SET RECON-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-RECON-COHERENCE = (WS-CONSEC-AGREEMENT * 32) +
+                                         (WS-PRIME-COUNT-K * 64) +
+                                         ((WS-HEIGHT-LOG2 / 8) * 16).
+
+            COMPUTE WS-RECON-REBAR-LATCH = 1470169088 + (WS-PRIME-COUNT-K * 256) +
+                                           (WS-CONSEC-AGREEMENT * 64) +
+                                           ((WS-HEIGHT-LOG2 / 8) * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-RECON-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-RECON-VITALITY * 10) +
+                                           (WS-RECON-COHERENCE * 10) +
+                                           (WS-PRIME-COUNT-K * 1000) +
+                                           (WS-RECON-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-RECON-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-RECON-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

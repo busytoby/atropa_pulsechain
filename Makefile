@@ -288,6 +288,11 @@ test-grobner-sequence-stabilization:
 	./tests/test_grobner_sequence_stabilization
 	@rm -f tests/test_grobner_sequence_stabilization
 
+test-multiprime-rational-reconstruction:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multiprime_rational_reconstruction.c -o tests/test_multiprime_rational_reconstruction
+	./tests/test_multiprime_rational_reconstruction
+	@rm -f tests/test_multiprime_rational_reconstruction
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
