@@ -983,6 +983,11 @@ test-multi-companion-public-fellowship:
 	./tests/test_multi_companion_public_fellowship
 	@rm -f tests/test_multi_companion_public_fellowship
 
+test-grand-master-unification-xi:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xi.c -o tests/test_grand_master_unification_xi
+	./tests/test_grand_master_unification_xi
+	@rm -f tests/test_grand_master_unification_xi
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
