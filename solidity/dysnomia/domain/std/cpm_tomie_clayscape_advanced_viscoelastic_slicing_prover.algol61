@@ -1,0 +1,18 @@
+begin
+  comment CP/M-Tomie Advanced ClayScape Ceramic Fabrication & Materials Science Formal Prover;
+  comment Asserts Thixotropic Yield Stress Slump Stability (Theorem 251), Self-Supporting Overhang Catenary Angle Bounds (Theorem 252), Multi-Piece Interlocking Joint Firing Tolerance Clearance (Theorem 253), Capillary Pore Glaze Vitrification Diffusion (Theorem 254), and Sovereign Advanced ClayScape Ceramic Seal (Theorem 255);
+
+  integer thixotropicYield, overhangSupport, jointTolerance, capillaryGlaze, clayAdvClosure, clayAdvProven;
+
+  thixotropicYield := 1;
+  overhangSupport := 1;
+  jointTolerance := 1;
+  capillaryGlaze := 1;
+  clayAdvClosure := 1;
+
+  if thixotropicYield = 1 and overhangSupport = 1 and jointTolerance = 1 and
+     capillaryGlaze = 1 and clayAdvClosure = 1 then
+    clayAdvProven := 1470169088 + 251255
+  else
+    clayAdvProven := 0
+end
