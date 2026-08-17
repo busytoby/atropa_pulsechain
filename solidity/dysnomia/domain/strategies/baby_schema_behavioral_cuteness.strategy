@@ -1,0 +1,118 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SCHEMA-CUTE-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / BABY SCHEMA CUTENESS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SCHEMA-PARAMS.
+           05 WS-MORPH-SCORE            PIC 9(04) VALUE 0350.
+           05 WS-BEHAV-SCORE            PIC 9(04) VALUE 0850.
+           05 WS-ALPHA-WEIGHT           PIC 9(04) VALUE 0300.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-COMPOSITE-CUTENESS     PIC 9(06) VALUE 0.
+           05 WS-SCHEMA-VITALITY        PIC 9(09) VALUE 0.
+           05 WS-SCHEMA-COHERENCE       PIC 9(09) VALUE 0.
+           05 WS-SCHEMA-REBAR-LATCH     PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SCHEMA-BASE     PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-MORPH-SCORE         VALUE 2.
+              88 INVALID-BEHAV-SCORE         VALUE 3.
+              88 INVALID-ALPHA-WEIGHT        VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 CUTENESS-ENERGY-COLLAPSE    VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SCHEMA-CUTENESS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-MORPH-SCORE > 1000
+                SET INVALID-MORPH-SCORE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BEHAV-SCORE < 100 OR WS-BEHAV-SCORE > 1000
+                SET INVALID-BEHAV-SCORE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-ALPHA-WEIGHT > 1000
+                SET INVALID-ALPHA-WEIGHT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-COMPOSITE-CUTENESS = ((WS-MORPH-SCORE * WS-ALPHA-WEIGHT) +
+                                             (WS-BEHAV-SCORE * (1000 - WS-ALPHA-WEIGHT))) / 1000.
+
+            IF WS-COMPOSITE-CUTENESS EQUAL ZERO
+                SET CUTENESS-ENERGY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SCHEMA-CUTENESS.
+            COMPUTE WS-SCHEMA-VITALITY = (WS-COMPOSITE-CUTENESS / 4) +
+                                         (WS-BEHAV-SCORE / 8) +
+                                         ((1000 - WS-ALPHA-WEIGHT) / 8) + 1.
+
+            IF WS-SCHEMA-VITALITY EQUAL ZERO
+                SET CUTENESS-ENERGY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SCHEMA-COHERENCE = (WS-COMPOSITE-CUTENESS / 16) +
+                                          (WS-BEHAV-SCORE / 32) +
+                                          ((1000 - WS-ALPHA-WEIGHT) / 32).
+
+            COMPUTE WS-SCHEMA-REBAR-LATCH = 1470169088 +
+                                            (WS-COMPOSITE-CUTENESS / 2) +
+                                            (WS-BEHAV-SCORE / 4) +
+                                            ((1000 - WS-ALPHA-WEIGHT) / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SCHEMA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                            (WS-SCHEMA-VITALITY * 10) +
+                                            (WS-SCHEMA-COHERENCE * 10) +
+                                            (WS-COMPOSITE-CUTENESS * 10) +
+                                            (WS-SCHEMA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SCHEMA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SCHEMA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

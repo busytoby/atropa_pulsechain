@@ -518,6 +518,11 @@ test-long-term-habituation-dynamics:
 	./tests/test_long_term_habituation_dynamics
 	@rm -f tests/test_long_term_habituation_dynamics
 
+test-baby-schema-behavioral-cuteness:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_baby_schema_behavioral_cuteness.c -o tests/test_baby_schema_behavioral_cuteness
+	./tests/test_baby_schema_behavioral_cuteness
+	@rm -f tests/test_baby_schema_behavioral_cuteness
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
