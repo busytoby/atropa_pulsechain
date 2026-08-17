@@ -310,34 +310,34 @@ int main(void) {
     write_u32(out, 0); /* Placeholder for stbl size */
     write_fourcc(out, "stbl");
 
-    /* stsd (Sample Description Atom, 86 bytes) */
-    write_u32(out, 86);
+    /* stsd (Sample Description Atom, 98 bytes: 16 bytes stsd header + 82 bytes VisualSampleEntry) */
+    write_u32(out, 98);
     write_fourcc(out, "stsd");
-    write_u32(out, 0); /* Version & Flags */
-    write_u32(out, 1); /* Entry count = 1 */
+    write_u32(out, 0); /* Version & Flags (4 bytes) */
+    write_u32(out, 1); /* Entry count = 1 (4 bytes) */
 
-    /* VisualSampleEntry ('raw ' uncompressed RGB24, 70 bytes) */
-    write_u32(out, 70);
+    /* VisualSampleEntry ('raw ' uncompressed RGB24, 82 bytes) */
+    write_u32(out, 82);
     write_fourcc(out, "raw ");
-    for (int i = 0; i < 6; i++) fputc(0, out); /* Reserved */
-    write_u16(out, 1); /* Data reference index = 1 */
-    write_u16(out, 0); /* Version = 0 */
-    write_u16(out, 0); /* Revision level = 0 */
-    write_fourcc(out, "appl"); /* Vendor = Apple QuickTime */
-    write_u32(out, 0x00000200); /* Temporal quality */
-    write_u32(out, 0x00000200); /* Spatial quality */
-    write_u16(out, WIDTH); /* Width */
-    write_u16(out, HEIGHT); /* Height */
-    write_u32(out, 0x00480000); /* 72 dpi horizontal */
-    write_u32(out, 0x00480000); /* 72 dpi vertical */
-    write_u32(out, 0); /* Data size = 0 */
-    write_u16(out, 1); /* Frame count = 1 */
+    for (int i = 0; i < 6; i++) fputc(0, out); /* Reserved (6 bytes) */
+    write_u16(out, 1); /* Data reference index = 1 (2 bytes) */
+    write_u16(out, 0); /* Version = 0 (2 bytes) */
+    write_u16(out, 0); /* Revision level = 0 (2 bytes) */
+    write_fourcc(out, "appl"); /* Vendor = Apple QuickTime (4 bytes) */
+    write_u32(out, 0x00000200); /* Temporal quality (4 bytes) */
+    write_u32(out, 0x00000200); /* Spatial quality (4 bytes) */
+    write_u16(out, WIDTH); /* Width (2 bytes) */
+    write_u16(out, HEIGHT); /* Height (2 bytes) */
+    write_u32(out, 0x00480000); /* 72 dpi horizontal (4 bytes) */
+    write_u32(out, 0x00480000); /* 72 dpi vertical (4 bytes) */
+    write_u32(out, 0); /* Data size = 0 (4 bytes) */
+    write_u16(out, 1); /* Frame count = 1 (2 bytes) */
     /* Compressor Name (32 bytes: 1 length byte + 31 chars) */
-    fputc(11, out);
-    fwrite("Uncompressed", 1, 11, out);
-    for (int i = 0; i < 20; i++) fputc(0, out);
-    write_u16(out, 24); /* Depth: 24 bits (RGB24) */
-    write_u16(out, 0xFFFF); /* Color table ID: -1 (default color table) */
+    fputc(12, out);
+    fwrite("Uncompressed", 1, 12, out);
+    for (int i = 0; i < 19; i++) fputc(0, out);
+    write_u16(out, 24); /* Depth: 24 bits (RGB24) (2 bytes) */
+    write_u16(out, 0xFFFF); /* Color table ID: -1 (default color table) (2 bytes) */
 
     /* stts (Time-to-Sample Atom, 24 bytes) */
     write_u32(out, 24);
