@@ -1478,6 +1478,11 @@ test-colleagle-collaboration:
 	./tests/test_colleagle_collaboration
 	@rm -f tests/test_colleagle_collaboration
 
+test-myointeract-biomechanics:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_myointeract_biomechanics.c -o tests/test_myointeract_biomechanics
+	./tests/test_myointeract_biomechanics
+	@rm -f tests/test_myointeract_biomechanics
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
