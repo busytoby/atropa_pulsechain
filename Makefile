@@ -118,6 +118,11 @@ test-totient-turtle-perception:
 	./tests/test_totient_turtle_perception
 	@rm -f tests/test_totient_turtle_perception
 
+test-vaesen-morphogenetic-life:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_vaesen_morphogenetic_life.c -o tests/test_vaesen_morphogenetic_life
+	./tests/test_vaesen_morphogenetic_life
+	@rm -f tests/test_vaesen_morphogenetic_life
+
 test-ankh-island-admit-matrix:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_island_admit_matrix.c -o tests/test_ankh_island_admit_matrix
 	./tests/test_ankh_island_admit_matrix

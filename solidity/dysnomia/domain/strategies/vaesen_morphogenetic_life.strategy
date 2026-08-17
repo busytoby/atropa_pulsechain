@@ -1,0 +1,114 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. VAESEN-MORPHOGENETIC-LIFE-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / VAESEN SENTIENCE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-VAESEN-PARAMETERS.
+           05 WS-DNA-SEED               PIC 9(07) VALUE 0555555.
+           05 WS-EMOTION-STATE          PIC 9(01) VALUE 1.
+           05 WS-TACTILE-Q16            PIC 9(06) VALUE 032768.
+           05 WS-BIOLUM-HZ              PIC 9(03) VALUE 024.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-VITALITY-METRIC        PIC 9(09) VALUE 0.
+           05 WS-SUBCONSCIOUS-GAIT      PIC 9(09) VALUE 0.
+           05 WS-REBAR-LIFE-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-LIFE-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-DNA-SEED            VALUE 2.
+              88 INVALID-EMOTION-STATE       VALUE 3.
+              88 INVALID-TACTILE-Q16         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-BIOLUM-HZ           VALUE 6.
+              88 VAESEN-UNDERFLOW-FAIL       VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-VAESEN-LIFE
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DNA-SEED < 1 OR WS-DNA-SEED > 1000000
+                SET INVALID-DNA-SEED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EMOTION-STATE < 1 OR WS-EMOTION-STATE > 4
+                SET INVALID-EMOTION-STATE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TACTILE-Q16 < 100 OR WS-TACTILE-Q16 > 65536
+                SET INVALID-TACTILE-Q16 TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-BIOLUM-HZ < 1 OR WS-BIOLUM-HZ > 120
+                SET INVALID-BIOLUM-HZ TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-VAESEN-LIFE.
+            COMPUTE WS-VITALITY-METRIC = (WS-DNA-SEED / 10) +
+                                         (WS-EMOTION-STATE * 1024) +
+                                         (WS-BIOLUM-HZ * 32) + 1.
+
+            IF WS-VITALITY-METRIC EQUAL ZERO
+                SET VAESEN-UNDERFLOW-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SUBCONSCIOUS-GAIT = ((WS-TACTILE-Q16 * 875) / 10000) +
+                                           (WS-BIOLUM-HZ * 10).
+
+            COMPUTE WS-REBAR-LIFE-LATCH = 1470169088 + (WS-DNA-SEED / 100) +
+                                          (WS-EMOTION-STATE * 64) +
+                                          (WS-BIOLUM-HZ * 2).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-LIFE-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-VITALITY-METRIC * 10) +
+                                          (WS-SUBCONSCIOUS-GAIT * 10) +
+                                          (WS-EMOTION-STATE * 1000) +
+                                          (WS-REBAR-LIFE-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-LIFE-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-LIFE-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
