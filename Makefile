@@ -1453,6 +1453,11 @@ test-keyed-interlocking-path:
 	./tests/test_keyed_interlocking_path
 	@rm -f tests/test_keyed_interlocking_path
 
+test-surface-roughness-friction:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_surface_roughness_friction.c -o tests/test_surface_roughness_friction
+	./tests/test_surface_roughness_friction
+	@rm -f tests/test_surface_roughness_friction
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
