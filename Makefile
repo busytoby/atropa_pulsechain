@@ -1438,6 +1438,11 @@ test-spring-clamp-retention:
 	./tests/test_spring_clamp_retention
 	@rm -f tests/test_spring_clamp_retention
 
+test-bear-rig-skill-mastery:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_bear_rig_skill_mastery.c -o tests/test_bear_rig_skill_mastery
+	./tests/test_bear_rig_skill_mastery
+	@rm -f tests/test_bear_rig_skill_mastery
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
