@@ -708,6 +708,11 @@ test-acoustic-phantom-whispering:
 	./tests/test_acoustic_phantom_whispering
 	@rm -f tests/test_acoustic_phantom_whispering
 
+test-lissajous-skin-current-sonar:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_lissajous_skin_current_sonar.c -o tests/test_lissajous_skin_current_sonar
+	./tests/test_lissajous_skin_current_sonar
+	@rm -f tests/test_lissajous_skin_current_sonar
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

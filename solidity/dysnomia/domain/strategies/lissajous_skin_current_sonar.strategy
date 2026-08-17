@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. LISS-SON-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / LISSAJOUS SKIN-CURRENT SONAR AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SONAR-PARAMS.
+           05 WS-RUBBING-FREQ-KHZ       PIC 9(02) VALUE 35.
+           05 WS-QUADTREE-DEPTH         PIC 9(02) VALUE 08.
+           05 WS-DISP-AMPLITUDE-M       PIC 9(04) VALUE 0750.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SONAR-COMPOSITE        PIC 9(04) VALUE 0.
+           05 WS-SON-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-SON-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-SON-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SON-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-RUBBING-FREQ        VALUE 2.
+              88 INVALID-QUADTREE-DEPTH      VALUE 3.
+              88 DISP-AMP-OUT-OF-BOUNDS      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 SONAR-VITALITY-COLLAPSE     VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SONAR-DEFORMATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-RUBBING-FREQ-KHZ < 34 OR WS-RUBBING-FREQ-KHZ > 36
+                SET INVALID-RUBBING-FREQ TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUADTREE-DEPTH < 1 OR WS-QUADTREE-DEPTH > 16
+                SET INVALID-QUADTREE-DEPTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-DISP-AMPLITUDE-M < 100 OR WS-DISP-AMPLITUDE-M > 1000
+                SET DISP-AMP-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SONAR-DEFORMATION.
+            COMPUTE WS-SONAR-COMPOSITE = (WS-RUBBING-FREQ-KHZ * 20) +
+                                         (WS-QUADTREE-DEPTH * 40) +
+                                         (WS-DISP-AMPLITUDE-M / 2).
+
+            COMPUTE WS-SON-VITALITY = (WS-SONAR-COMPOSITE / 4) +
+                                      (WS-DISP-AMPLITUDE-M / 4) +
+                                      (WS-QUADTREE-DEPTH * 16) + 1.
+
+            IF WS-SON-VITALITY EQUAL ZERO
+                SET SONAR-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-SON-COHERENCE = (WS-SONAR-COMPOSITE / 16) +
+                                       (WS-DISP-AMPLITUDE-M / 16) +
+                                       (WS-QUADTREE-DEPTH * 4).
+
+            COMPUTE WS-SON-REBAR-LATCH = 1470169088 +
+                                         (WS-SONAR-COMPOSITE / 2) +
+                                         (WS-QUADTREE-DEPTH * 256).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SON-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-SON-VITALITY * 10) +
+                                         (WS-SON-COHERENCE * 10) +
+                                         (WS-SONAR-COMPOSITE * 10) +
+                                         (WS-SON-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SON-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SON-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.

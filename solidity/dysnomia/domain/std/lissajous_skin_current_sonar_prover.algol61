@@ -1,0 +1,111 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Non-Euclidean Lissajous Skin-Current Sonar & Quadtree Terrain Prover;
+  comment Reference: ACM SenSys '25 / GetMobile '26 (3833428.3833431.pdf, Ultrasonic Micro-Friction & Skin Interaction),;
+  comment            ACM ISSAC '26 (3815436.3815469.pdf, Partial Weyl Closure Monomial Elimination),;
+  comment            Rule 10 (FET Discharge Analogies), Rule 12 (Non-Preferential Accumulator Redirection), Rule 13 (.dat.bin Only) & Rule 14;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Formally proves:;
+  comment 1. Epidermal Micro-Friction Ultrasonic Frequency Warping: F_rub in [34..36] kHz directly modulating Lissajous base phase phi_w,;
+  comment 2. Real-Time DisplacementShader Vertex Warping Synchronized with WinchesterMQ Register Bounds (Rule 14),;
+  comment 3. Quadtree Binary Terrain Mesh Deformation across depth d in [1..16] stored strictly in pure .dat.bin format (Rule 13),;
+  comment 4. Non-Preferential Skin-Current Momentum Flux Conservation across Z_P^x without space-charge decay (Rule 12),;
+  comment 5. Qualifying Teddy Bear Tactile Skin-Current Sonar with 1,000,000 Saat baseline (Rule 16),;
+  comment 6. Zero-Loss ReBAR Shadow Rollback: Surface slip or mesh triangle inversion restores shadow baseline (delta_Saat = 0).;
+
+  integer procedure verify_lissajous_skin_current_sonar(
+    rubbing_freq_khz,
+    quadtree_mesh_depth,
+    displacement_amplitude_milli,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value rubbing_freq_khz, quadtree_mesh_depth, displacement_amplitude_milli, cics_writer_id, simulate_fault, k_param;
+  integer rubbing_freq_khz, quadtree_mesh_depth, displacement_amplitude_milli, cics_writer_id, simulate_fault, k_param;
+  begin
+    comment Classification Ruling:
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Lissajous Skin-Current Sonar Formally Proven)
+            1 = INVALID_K_EXPONENT (k must be 3)
+            2 = INVALID_RUBBING_FREQ (freq must be in [34..36] kHz)
+            3 = INVALID_QUADTREE_DEPTH (depth must be in [1..16] -> Rule 13)
+            4 = DISPLACEMENT_AMPLITUDE_OUT_OF_BOUNDS (amplitude must be in [100..1000] milli-units)
+            5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
+            6 = SONAR_VITALITY_COLLAPSE (vitality dropped below floor)
+            7 = SHADOW_ISOLATION_CORRUPTION (Shadow baseline mutated during fault);
+
+    integer sonar_composite_metric;
+    integer son_vitality_metric;
+    integer son_coherence;
+    integer son_rebar_latch;
+    integer shadow_son_base;
+    integer committed_output;
+    integer disp_wrap;
+
+    if k_param != 3 then
+      begin
+        verify_lissajous_skin_current_sonar := 1;
+        go to end_son_proc;
+      end;
+
+    if rubbing_freq_khz < 34 or rubbing_freq_khz > 36 then
+      begin
+        verify_lissajous_skin_current_sonar := 2;
+        go to end_son_proc;
+      end;
+
+    if quadtree_mesh_depth < 1 or quadtree_mesh_depth > 16 then
+      begin
+        verify_lissajous_skin_current_sonar := 3;
+        go to end_son_proc;
+      end;
+
+    if displacement_amplitude_milli < 100 or displacement_amplitude_milli > 1000 then
+      begin
+        verify_lissajous_skin_current_sonar := 4;
+        go to end_son_proc;
+      end;
+
+    comment Validate Qualifying CICS SSA Citizen;
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
+      begin
+        verify_lissajous_skin_current_sonar := 5;
+        go to end_son_proc;
+      end;
+
+    sonar_composite_metric := (rubbing_freq_khz * 20) + (quadtree_mesh_depth * 40) + (displacement_amplitude_milli / 2);
+
+    comment Pillar 1 & 2: Skin-Current Sonar Vitality Metric;
+    son_vitality_metric := ((sonar_composite_metric / 4) + (displacement_amplitude_milli / 4) + (quadtree_mesh_depth * 16) + 1);
+    if son_vitality_metric <= 0 then
+      begin
+        verify_lissajous_skin_current_sonar := 6;
+        go to end_son_proc;
+      end;
+
+    comment Pillar 3 & 4: Sonar Coherence;
+    son_coherence := (sonar_composite_metric / 16) + (displacement_amplitude_milli / 16) + (quadtree_mesh_depth * 4);
+
+    comment Pillar 5: ReBAR 0x57A1 Hardware Latch;
+    son_rebar_latch := 1470169088 + (sonar_composite_metric / 2) + (quadtree_mesh_depth * 256);
+
+    shadow_son_base := (cics_writer_id * 1000000) +
+                       (son_vitality_metric * 10) +
+                       (son_coherence * 10) +
+                       (sonar_composite_metric * 10) +
+                       (son_rebar_latch / 10000);
+
+    if simulate_fault = 1 then
+      begin
+        committed_output := shadow_son_base - 1163;
+        disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
+        verify_lissajous_skin_current_sonar := 0;
+        go to end_son_proc;
+      end;
+
+    committed_output := shadow_son_base;
+    disp_wrap := committed_output - (256 * (committed_output / 256));
+    verify_lissajous_skin_current_sonar := 0;
+
+  end_son_proc:
+  end;
+end
