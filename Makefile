@@ -823,6 +823,11 @@ test-acoustic-multipath-echo-cancel:
 	./tests/test_acoustic_multipath_echo_cancel
 	@rm -f tests/test_acoustic_multipath_echo_cancel
 
+test-multiuser-acoustic-isolation:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_multiuser_acoustic_isolation.c -o tests/test_multiuser_acoustic_isolation
+	./tests/test_multiuser_acoustic_isolation
+	@rm -f tests/test_multiuser_acoustic_isolation
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

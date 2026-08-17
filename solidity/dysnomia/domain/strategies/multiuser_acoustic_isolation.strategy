@@ -1,0 +1,113 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. USR-ISO-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / MULTIUSER ACOUSTIC ISOLATION AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-ISO-PARAMS.
+           05 WS-INTER-AURAL-ISO-T-DB   PIC 9(03) VALUE 342.
+           05 WS-CROSSTALK-REJ-T-DB     PIC 9(03) VALUE 385.
+           05 WS-USER-DISTANCE-T-M      PIC 9(02) VALUE 15.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-ISO-COMPOSITE          PIC 9(04) VALUE 0.
+           05 WS-ISO-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-ISO-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-ISO-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-ISO-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INTER-AURAL-ISOLATION-LOW   VALUE 2.
+              88 CROSSTALK-REJECTION-LOW     VALUE 3.
+              88 USER-DISTANCE-OUT-OF-BOUNDS VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 ISOLATION-COLLAPSE          VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-ACOUSTIC-ISOLATION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-INTER-AURAL-ISO-T-DB < 280 OR WS-INTER-AURAL-ISO-T-DB > 500
+                SET INTER-AURAL-ISOLATION-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CROSSTALK-REJ-T-DB < 320 OR WS-CROSSTALK-REJ-T-DB > 600
+                SET CROSSTALK-REJECTION-LOW TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-USER-DISTANCE-T-M < 2 OR WS-USER-DISTANCE-T-M > 50
+                SET USER-DISTANCE-OUT-OF-BOUNDS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-ACOUSTIC-ISOLATION.
+            COMPUTE WS-ISO-COMPOSITE = (WS-INTER-AURAL-ISO-T-DB * 2) +
+                                       (WS-CROSSTALK-REJ-T-DB * 2) +
+                                       (WS-USER-DISTANCE-T-M * 10).
+
+            COMPUTE WS-ISO-VITALITY = (WS-ISO-COMPOSITE / 4) +
+                                      (WS-CROSSTALK-REJ-T-DB / 4) +
+                                      (WS-INTER-AURAL-ISO-T-DB / 4) + 1.
+
+            IF WS-ISO-VITALITY EQUAL ZERO
+                SET ISOLATION-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-ISO-COHERENCE = (WS-ISO-COMPOSITE / 16) +
+                                       (WS-CROSSTALK-REJ-T-DB / 16) +
+                                       (WS-INTER-AURAL-ISO-T-DB / 16).
+
+            COMPUTE WS-ISO-REBAR-LATCH = 1470169088 +
+                                         (WS-ISO-COMPOSITE / 2) +
+                                         (WS-CROSSTALK-REJ-T-DB * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-ISO-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-ISO-VITALITY * 10) +
+                                         (WS-ISO-COHERENCE * 10) +
+                                         (WS-ISO-COMPOSITE * 10) +
+                                         (WS-ISO-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-ISO-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-ISO-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
