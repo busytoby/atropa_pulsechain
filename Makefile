@@ -508,6 +508,11 @@ test-intention-attribution-transparency:
 	./tests/test_intention_attribution_transparency
 	@rm -f tests/test_intention_attribution_transparency
 
+test-participatory-vote-projection:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_participatory_vote_projection.c -o tests/test_participatory_vote_projection
+	./tests/test_participatory_vote_projection
+	@rm -f tests/test_participatory_vote_projection
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
