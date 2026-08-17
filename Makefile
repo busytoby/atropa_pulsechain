@@ -1343,6 +1343,11 @@ test-voice-command-intent:
 	./tests/test_voice_command_intent
 	@rm -f tests/test_voice_command_intent
 
+test-wmq-mount-coax-kermit:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_wmq_mount_coax_kermit.c -o tests/test_wmq_mount_coax_kermit
+	./tests/test_wmq_mount_coax_kermit
+	@rm -f tests/test_wmq_mount_coax_kermit
+
 test-grand-master-unification-xiii:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_grand_master_unification_xiii.c -o tests/test_grand_master_unification_xiii
 	./tests/test_grand_master_unification_xiii
