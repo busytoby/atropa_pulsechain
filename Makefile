@@ -453,6 +453,11 @@ test-rope-relative-position:
 	./tests/test_rope_relative_position
 	@rm -f tests/test_rope_relative_position
 
+test-gqa-bandwidth-reduction:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_gqa_bandwidth_reduction.c -o tests/test_gqa_bandwidth_reduction
+	./tests/test_gqa_bandwidth_reduction
+	@rm -f tests/test_gqa_bandwidth_reduction
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

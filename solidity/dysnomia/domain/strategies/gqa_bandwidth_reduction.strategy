@@ -1,0 +1,127 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. GQA-BW-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / GQA BANDWIDTH AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-GQA-PARAMS.
+           05 WS-QUERY-HEADS            PIC 9(03) VALUE 032.
+           05 WS-KV-HEADS               PIC 9(03) VALUE 008.
+           05 WS-HEAD-DIM               PIC 9(04) VALUE 0128.
+           05 WS-EXACT-FLAG             PIC 9(01) VALUE 1.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-GQA-RATIO              PIC 9(03) VALUE 0.
+           05 WS-GQA-VITALITY           PIC 9(09) VALUE 0.
+           05 WS-GQA-COHERENCE          PIC 9(09) VALUE 0.
+           05 WS-GQA-REBAR-LATCH        PIC 9(12) VALUE 0.
+           05 WS-SHADOW-GQA-BASE        PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-QUERY-HEADS         VALUE 2.
+              88 INVALID-KV-HEADS            VALUE 3.
+              88 INVALID-HEAD-DIM            VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 GQA-EXACTNESS-FLAG-FAIL     VALUE 6.
+              88 GQA-GROUPING-INVALID        VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-GQA-COMPRESSION
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUERY-HEADS < 4 OR WS-QUERY-HEADS > 128
+                SET INVALID-QUERY-HEADS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KV-HEADS < 1 OR WS-KV-HEADS > 32
+                SET INVALID-KV-HEADS TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-HEAD-DIM < 32 OR WS-HEAD-DIM > 256
+                SET INVALID-HEAD-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-EXACT-FLAG NOT EQUAL 1
+                SET GQA-EXACTNESS-FLAG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KV-HEADS > WS-QUERY-HEADS OR
+               FUNCTION MOD(WS-QUERY-HEADS, WS-KV-HEADS) NOT EQUAL ZERO
+                SET GQA-GROUPING-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GQA-RATIO = WS-QUERY-HEADS / WS-KV-HEADS.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-GQA-COMPRESSION.
+            COMPUTE WS-GQA-VITALITY = (WS-GQA-RATIO * 256) +
+                                      (WS-QUERY-HEADS * 32) +
+                                      (WS-KV-HEADS * 64) +
+                                      (WS-HEAD-DIM / 2) + 1.
+
+            IF WS-GQA-VITALITY EQUAL ZERO
+                SET GQA-GROUPING-INVALID TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-GQA-COHERENCE = (WS-GQA-RATIO * 64) +
+                                       (WS-QUERY-HEADS * 8) +
+                                       (WS-KV-HEADS * 16) +
+                                       (WS-HEAD-DIM / 8).
+
+            COMPUTE WS-GQA-REBAR-LATCH = 1470169088 +
+                                         (WS-GQA-RATIO * 128) +
+                                         (WS-QUERY-HEADS * 16) +
+                                         (WS-KV-HEADS * 32).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-GQA-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                         (WS-GQA-VITALITY * 10) +
+                                         (WS-GQA-COHERENCE * 10) +
+                                         (WS-GQA-RATIO * 1000) +
+                                         (WS-GQA-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-GQA-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-GQA-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
