@@ -648,6 +648,11 @@ test-leaky-acoustic-gesture-input:
 	./tests/test_leaky_acoustic_gesture_input
 	@rm -f tests/test_leaky_acoustic_gesture_input
 
+test-unified-input-matrix-quadtree:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_unified_input_matrix_quadtree.c -o tests/test_unified_input_matrix_quadtree
+	./tests/test_unified_input_matrix_quadtree
+	@rm -f tests/test_unified_input_matrix_quadtree
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

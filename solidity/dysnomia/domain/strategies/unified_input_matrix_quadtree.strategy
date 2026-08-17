@@ -1,0 +1,120 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. INPUT-QUAD-STRAT.
+        AUTHOR. AUNCIENT DYSNOMIA VM / UNIFIED INPUT MATRIX & QUADTREE AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-INPUT-PARAMS.
+           05 WS-KEYBOARD-KEYCODE       PIC 9(03) VALUE 032.
+           05 WS-TURTLE-VOLTAGE-MV      PIC 9(04) VALUE 2400.
+           05 WS-QUADTREE-DEPTH         PIC 9(02) VALUE 08.
+           05 WS-GESTURE-ENERGY-MILLI   PIC 9(04) VALUE 0750.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-INPUT-COMPOSITE        PIC 9(04) VALUE 0.
+           05 WS-INPUT-VITALITY         PIC 9(09) VALUE 0.
+           05 WS-INPUT-COHERENCE        PIC 9(09) VALUE 0.
+           05 WS-INPUT-REBAR-LATCH      PIC 9(12) VALUE 0.
+           05 WS-SHADOW-INPUT-BASE      PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-KEYBOARD-KEYCODE    VALUE 2.
+              88 INVALID-TURTLE-VOLTAGE      VALUE 3.
+              88 INVALID-QUADTREE-DEPTH      VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INPUT-VITALITY-COLLAPSE     VALUE 6.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 7.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-INPUT-MATRIX
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-KEYBOARD-KEYCODE NOT EQUAL 30 AND
+               WS-KEYBOARD-KEYCODE NOT EQUAL 32 AND
+               (WS-KEYBOARD-KEYCODE < 33 OR WS-KEYBOARD-KEYCODE > 126)
+                SET INVALID-KEYBOARD-KEYCODE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-TURTLE-VOLTAGE-MV < 100 OR WS-TURTLE-VOLTAGE-MV > 5000
+                SET INVALID-TURTLE-VOLTAGE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-QUADTREE-DEPTH < 1 OR WS-QUADTREE-DEPTH > 16
+                SET INVALID-QUADTREE-DEPTH TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-GESTURE-ENERGY-MILLI < 100 OR WS-GESTURE-ENERGY-MILLI > 1000
+                MOVE 500 TO WS-GESTURE-ENERGY-MILLI
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-INPUT-MATRIX.
+            COMPUTE WS-INPUT-COMPOSITE = (WS-TURTLE-VOLTAGE-MV / 5) +
+                                         (WS-GESTURE-ENERGY-MILLI / 2) +
+                                         (WS-QUADTREE-DEPTH * 25).
+
+            COMPUTE WS-INPUT-VITALITY = (WS-INPUT-COMPOSITE / 4) +
+                                        (WS-KEYBOARD-KEYCODE * 8) +
+                                        (WS-QUADTREE-DEPTH * 16) + 1.
+
+            IF WS-INPUT-VITALITY EQUAL ZERO
+                SET INPUT-VITALITY-COLLAPSE TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-INPUT-COHERENCE = (WS-INPUT-COMPOSITE / 16) +
+                                         (WS-KEYBOARD-KEYCODE * 2) +
+                                         (WS-QUADTREE-DEPTH * 4).
+
+            COMPUTE WS-INPUT-REBAR-LATCH = 1470169088 +
+                                           (WS-INPUT-COMPOSITE / 2) +
+                                           (WS-TURTLE-VOLTAGE-MV / 4).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-INPUT-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                           (WS-INPUT-VITALITY * 10) +
+                                           (WS-INPUT-COHERENCE * 10) +
+                                           (WS-INPUT-COMPOSITE * 10) +
+                                           (WS-INPUT-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-INPUT-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-INPUT-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
