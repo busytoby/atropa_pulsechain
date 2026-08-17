@@ -243,6 +243,11 @@ test-two-sided-ideal-commutation:
 	./tests/test_two_sided_ideal_commutation
 	@rm -f tests/test_two_sided_ideal_commutation
 
+test-singular-locus-elimination:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_singular_locus_elimination.c -o tests/test_singular_locus_elimination
+	./tests/test_singular_locus_elimination
+	@rm -f tests/test_singular_locus_elimination
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words

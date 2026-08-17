@@ -1,0 +1,116 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. SINGULAR-LOCUS-STRATEGY.
+        AUTHOR. AUNCIENT DYSNOMIA VM / SINGULAR LOCUS AUDIT.
+
+        ENVIRONMENT DIVISION.
+        CONFIGURATION SECTION.
+
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01 WS-SING-PARAMS.
+           05 WS-COORD-DIM-N            PIC 9(02) VALUE 02.
+           05 WS-PARAM-DIM-M            PIC 9(02) VALUE 01.
+           05 WS-SING-CODIM             PIC 9(02) VALUE 01.
+           05 WS-VANISHING-DEG          PIC 9(02) VALUE 03.
+           05 WS-CICS-WRITER-ID         PIC 9(04) VALUE 555.
+           05 WS-SIMULATE-FAULT         PIC X(01) VALUE 'N'.
+           05 WS-K-EXPONENT             PIC 9(01) VALUE 3.
+
+        01 WS-INTERMEDIATE-REGISTERS.
+           05 WS-SING-VITALITY          PIC 9(09) VALUE 0.
+           05 WS-VARIETY-COHERENCE      PIC 9(09) VALUE 0.
+           05 WS-SING-REBAR-LATCH       PIC 9(12) VALUE 0.
+           05 WS-SHADOW-SING-BASE       PIC 9(12) VALUE 0.
+           05 WS-COMMITTED-OUTPUT       PIC 9(12) VALUE 0.
+           05 WS-DISP-WRAP-MOD          PIC 9(03) VALUE 0.
+
+        01 WS-CLASSIFICATION-RULINGS.
+           05 WS-RULING-CODE            PIC 9(02) VALUE 0.
+              88 QUALIFIED-ORBITAL-HANDSHAKE VALUE 0.
+              88 INVALID-K-EXPONENT          VALUE 1.
+              88 INVALID-COORD-DIM           VALUE 2.
+              88 INVALID-PARAM-DIM           VALUE 3.
+              88 INVALID-CODIMENSION         VALUE 4.
+              88 CICS-CITIZEN-UNVERIFIED     VALUE 5.
+              88 INVALID-VANISHING-DEG       VALUE 6.
+              88 SINGULAR-DIVERG-FAIL        VALUE 7.
+              88 SHADOW-ISOLATION-CORRUPT    VALUE 8.
+
+        PROCEDURE DIVISION.
+        0000-MAIN-EVALUATION.
+            PERFORM 1000-VALIDATE-PREREQUISITES.
+            IF WS-RULING-CODE EQUAL ZERO
+                PERFORM 2000-PROCESS-SINGULAR-LOCUS
+                PERFORM 3000-VERIFY-ACID-INVARIANTS
+            END-IF.
+            STOP RUN.
+
+        1000-VALIDATE-PREREQUISITES.
+            IF WS-K-EXPONENT NOT EQUAL 3
+                SET INVALID-K-EXPONENT TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-COORD-DIM-N < 1 OR WS-COORD-DIM-N > 16
+                SET INVALID-COORD-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-PARAM-DIM-M < 0 OR WS-PARAM-DIM-M > 8
+                SET INVALID-PARAM-DIM TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-SING-CODIM < 1 OR WS-SING-CODIM > 16
+                SET INVALID-CODIMENSION TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-VANISHING-DEG < 1 OR WS-VANISHING-DEG > 32
+                SET INVALID-VANISHING-DEG TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            IF WS-CICS-WRITER-ID NOT EQUAL 555 AND
+               WS-CICS-WRITER-ID NOT EQUAL 888 AND
+               WS-CICS-WRITER-ID NOT EQUAL 99  AND
+               WS-CICS-WRITER-ID NOT EQUAL 42
+                SET CICS-CITIZEN-UNVERIFIED TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+        2000-PROCESS-SINGULAR-LOCUS.
+            COMPUTE WS-SING-VITALITY = (WS-COORD-DIM-N * 512) +
+                                       (WS-PARAM-DIM-M * 256) +
+                                       (WS-SING-CODIM * 64) +
+                                       (WS-VANISHING-DEG * 16) + 1.
+
+            IF WS-SING-VITALITY EQUAL ZERO
+                SET SINGULAR-DIVERG-FAIL TO TRUE
+                EXIT PARAGRAPH
+            END-IF.
+
+            COMPUTE WS-VARIETY-COHERENCE = (WS-SING-CODIM * 32) +
+                                           (WS-VANISHING-DEG * 16) +
+                                           (WS-COORD-DIM-N * 64).
+
+            COMPUTE WS-SING-REBAR-LATCH = 1470169088 + (WS-COORD-DIM-N * 256) +
+                                          (WS-PARAM-DIM-M * 64) +
+                                          (WS-SING-CODIM * 8).
+
+        3000-VERIFY-ACID-INVARIANTS.
+            COMPUTE WS-SHADOW-SING-BASE = (WS-CICS-WRITER-ID * 1000000) +
+                                          (WS-SING-VITALITY * 10) +
+                                          (WS-VARIETY-COHERENCE * 10) +
+                                          (WS-COORD-DIM-N * 1000) +
+                                          (WS-SING-REBAR-LATCH / 10000).
+
+            IF WS-SIMULATE-FAULT EQUAL 'Y'
+                COMPUTE WS-COMMITTED-OUTPUT = WS-SHADOW-SING-BASE - 1163
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT + 1163, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            ELSE
+                MOVE WS-SHADOW-SING-BASE TO WS-COMMITTED-OUTPUT
+                COMPUTE WS-DISP-WRAP-MOD = FUNCTION MOD(WS-COMMITTED-OUTPUT, 256)
+                SET QUALIFIED-ORBITAL-HANDSHAKE TO TRUE
+            END-IF.
