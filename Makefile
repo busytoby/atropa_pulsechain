@@ -573,6 +573,11 @@ test-grand-master-vaesen-social-synthesis:
 	./tests/test_grand_master_vaesen_social_synthesis
 	@rm -f tests/test_grand_master_vaesen_social_synthesis
 
+test-temporal-habituation-decay:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_temporal_habituation_decay.c -o tests/test_temporal_habituation_decay
+	./tests/test_temporal_habituation_decay
+	@rm -f tests/test_temporal_habituation_decay
+
 synthesize-human-speech-words:
 	gcc -Wall -Wextra -std=c11 -O3 tests/synthesize_human_speech_words.c -lm -o tests/synthesize_human_speech_words
 	./tests/synthesize_human_speech_words
