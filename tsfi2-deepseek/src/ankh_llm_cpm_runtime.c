@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDQ",
+        .opcode_signature = 0x43504451,
+        .title = "CPMTOMIE-DUAL-QUAT-RIGGING-CORPS",
+        .theorem_descriptions = {
+            "Rejection of Fixed-Point Pinning Singularities",
+            "Dual Quaternion Skinning Volume Preservation",
+            "Laplace-Beltrami Geodesic Weight Diffusion",
+            "Sub-Millisecond Dual Quaternion Rigging Latency",
+            "Sovereign Dual Quaternion Rigging Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDT",
         .opcode_signature = 0x43504454,
         .title = "CPMTOMIE-DTMF-PBX-MATRIX-CORPS",
