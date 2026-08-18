@@ -79,3 +79,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
    * Theorem 33: Bilateral Physical-Digital State Synchronization Banach Contraction ($\|\mathbf{e}(t)\| \le \|\mathbf{e}(0)\| e^{-\gamma t}$).
    * Theorem 34: In-Situ Passive Sensing Non-Perturbation Zero-Commutator ($[\mathcal{M}, \mathcal{B}] = 0$).
    * Theorem 35: Pixar RenderMan Photometric Daylight SSIM Validation Metric ($\text{SSIM} \ge 0.95$).
+
+8. **Tier 8 (Theorems 36–40: Dimitri Schuurman Living Lab Methodology & Ecosystem Triad)**:
+   * Theorem 36: Schuurman 5-Stage Lifecycle State Machine (Exploration $\to$ Co-Creation $\to$ Iteration $\to$ Evaluation $\to$ Scaling).
+   * Theorem 37: Schuurman Living Lab Triad Balance Invariance ($\Phi_{\text{Triad}}(\mathcal{I}, \mathcal{M}, \mathcal{E}) \ge 0.70$).
+   * Theorem 38: Strict Temporal Sequence Ordering & Event Dependency DAG ($e_i \prec e_j \iff t(e_i) + \Delta t_{\text{causal}} \le t(e_j)$).
+   * Theorem 39: Longitudinal Quasi-Experimental Rubin Causal Model Unconfoundedness ($|\hat{\tau} - \tau| \le \epsilon$).
+   * Theorem 40: Multi-Scale Occupant Co-Creation Nash Equilibrium Convergence ($\mathbf{T}^* = \arg\max \sum U_i - \lambda P$).
