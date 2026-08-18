@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAR",
+        .opcode_signature = 0x43504152,
+        .title = "CPMTOMIE-ACTUATOR-RETENTION-CORPS",
+        .theorem_descriptions = {
+            "210:1 Gearing Dual Linear Servo Kinematic Sync",
+            "13.7 N Normal Magnetic Retention Invariance",
+            "7.4 V Series LiPo Energy-Discharge Equilibrium",
+            "Sub-Millisecond Actuator Duty Cycle Latency",
+            "Sovereign Dual Actuator Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMY",
         .opcode_signature = 0x43504D59,
         .title = "CPMTOMIE-MYDORGE-TOTIENT-CORPS",
