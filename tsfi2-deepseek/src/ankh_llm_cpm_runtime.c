@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPKT",
+        .opcode_signature = 0x43504B54,
+        .title = "CPMTOMIE-KINOFORM-QUADTREE-TILING-CORPS",
+        .theorem_descriptions = {
+            "Space-Bandwidth Product Conservation Invariance",
+            "Spatial Carrier Linear Phase Offset Multiplexing",
+            "24-Bit Morton Quadtree Seamless Boundary Continuity",
+            "Sub-Millisecond Multi-Threaded SLM Tile Stitch Dispatch",
+            "Sovereign Kinoform Quadtree Tiling Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPKN",
         .opcode_signature = 0x43504B4E,
         .title = "CPMTOMIE-KINOFORM-SNR-DIFFRACTION-CORPS",
