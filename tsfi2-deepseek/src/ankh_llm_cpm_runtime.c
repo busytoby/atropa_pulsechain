@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPOC",
+        .opcode_signature = 0x43504F43,
+        .title = "CPMTOMIE-OPTICAL-COHERENCE-ELASTOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Phase-Resolved Optical Coherence Doppler Tracking Invariance",
+            "Viscoelastic Rayleigh Wave Phase Velocity Inversion",
+            "Spherical Joint Micro-Cavity Coherence Gating",
+            "Sub-Millisecond Complex OCT k-Space Resampling Dispatch",
+            "Sovereign Optical Coherence Elastography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPOE",
         .opcode_signature = 0x43504F45,
         .title = "CPMTOMIE-OPTOACOUSTIC-ELASTOGRAPHY-CORPS",
