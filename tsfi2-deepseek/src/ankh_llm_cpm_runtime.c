@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPEL",
+        .opcode_signature = 0x4350454C,
+        .title = "CPMTOMIE-EDO22-LISSAJOUS-CORPS",
+        .theorem_descriptions = {
+            "EDO-22 Microtonal Step Generator Invariance",
+            "Lissajous 4D Quaternion Phase Envelope Lock",
+            "Motzkin Prime Field Divisor Arithmetic Invariance",
+            "Sub-Millisecond Lissajous-Fa Cycle Latency",
+            "Sovereign EDO-22 Lissajous Fa Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPVH",
         .opcode_signature = 0x43505648,
         .title = "CPMTOMIE-VISCOELASTIC-HYSTERESIS-CORPS",
