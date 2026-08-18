@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPRN",
+        .opcode_signature = 0x4350524E,
+        .title = "CPMTOMIE-RENDERMAN-ASSEMBLEIT-CORPS",
+        .theorem_descriptions = {
+            "Sub-Pixel Micropolygon Tessellation Invariance",
+            "Dual-Quaternion Kinematic Skinning Invariance",
+            "N52 Neodymium Magnetic BxDF Specular Reflection",
+            "Sub-Millisecond REYES Tile Shading Latency",
+            "Sovereign Hudson-Mann RenderMan Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAS",
         .opcode_signature = 0x43504153,
         .title = "CPMTOMIE-ASSEMBLEIT-CORPS",
