@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMG",
+        .opcode_signature = 0x43504D47,
+        .title = "CPMTOMIE-MORPHOGENETIC-CLAY-CORPS",
+        .theorem_descriptions = {
+            "Triplet-Strut Morphogenetic Growth Invariance",
+            "Asymmetric Skeletal Center-of-Mass Dynamic Shift",
+            "Clay-Viscoelastic Strain Energy Dissipation",
+            "Sub-Millisecond Morphogenetic Cycle Latency",
+            "Sovereign Morphogenetic Clay Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPRN",
         .opcode_signature = 0x4350524E,
         .title = "CPMTOMIE-RENDERMAN-ASSEMBLEIT-CORPS",
