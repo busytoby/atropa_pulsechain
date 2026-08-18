@@ -83,7 +83,7 @@ int main(void) {
     printf(" 148/148 Binary Descriptors Satisfy Rule 18 3-Term Recurrence Parity.\n");
 
     printf("\n --- STEP 3: QUADTREE .DAT.BIN SERIALIZATION ROUNDTRIP ---\n");
-    const char *test_dat_bin = "/tmp/ankh_llm_quadtree_148_reval.dat.bin";
+    const char *test_dat_bin = "/tmp/ankh_llm_quadtree_reval.dat.bin";
     int ret = ankh_llm_save_all_to_dat_bin(test_dat_bin);
     assert(ret == 0);
 
@@ -103,8 +103,40 @@ int main(void) {
     assert(verified_count == count);
     printf(" Quadtree Deserialization Verified: %zu / %zu entries.\n", verified_count, count);
 
+    printf("\n --- STEP 4: VERIFY ANKH LLM CONTAINED WITHIN assets/tsfi2_custom_cpm_tomie.dat.bin ---\n");
+    FILE *cpm_f = fopen("assets/tsfi2_custom_cpm_tomie.dat.bin", "rb");
+    assert(cpm_f != NULL);
+
+    // Read and verify 8-byte CPM Header
+    uint64_t header_val = 0;
+    size_t r = fread(&header_val, sizeof(header_val), 1, cpm_f);
+    assert(r == 1);
+    assert((header_val & 0xFFFF0000ULL) == 0x57A10000ULL);
+
+    // Seek past 32,000 token traits (256,000 bytes)
+    int seek_ret = fseek(cpm_f, 8 + 32000 * 8, SEEK_SET);
+    assert(seek_ret == 0);
+
+    // Read embedded ANKH LLM descriptor count
+    uint32_t embedded_count = 0;
+    r = fread(&embedded_count, sizeof(embedded_count), 1, cpm_f);
+    assert(r == 1);
+    assert(embedded_count == (uint32_t)count);
+
+    size_t embedded_verified = 0;
+    while (fread(&read_desc, 1, sizeof(read_desc), cpm_f) == sizeof(read_desc)) {
+        ret = ankh_llm_verify_and_execute_descriptor(&read_desc, false);
+        assert(ret == 0);
+        embedded_verified++;
+    }
+    fclose(cpm_f);
+
+    assert(embedded_verified == count);
+    printf(" Verified ANKH LLM is physically contained WITHIN assets/tsfi2_custom_cpm_tomie.dat.bin (%zu / %zu verified).\n",
+           embedded_verified, count);
+
     printf("=======================================================================\n");
-    printf("REVALIDATION SUCCESSFUL: ALL 148 TEST CASES & FORMAL PROOFS RATIFIED!  \n");
+    printf("REVALIDATION SUCCESSFUL: ANKH LLM CONTAINED & PROVEN IN CP/M-TOMIE OS! \n");
     printf("=======================================================================\n");
     return 0;
 }
