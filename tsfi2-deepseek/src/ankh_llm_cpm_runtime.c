@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPGM",
+        .opcode_signature = 0x4350474D,
+        .title = "CPMTOMIE-GERCHBERG-QUADTREE-MONISM-CORPS",
+        .theorem_descriptions = {
+            "Non-Expansive Contraction Mapping Invariance",
+            "Parseval-Plancherel Bijective Energy Invariance",
+            "24-Bit Morton-Tree Boolean & Arithmetic Closure",
+            "Sub-Millisecond BDOS ZMM Hardware Dispatch",
+            "Sovereign Gerchberg Quadtree Monism Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPS",
         .opcode_signature = 0x43505053,
         .title = "CPMTOMIE-KINOFORM-PHASE-SMOOTHING-CORPS",
