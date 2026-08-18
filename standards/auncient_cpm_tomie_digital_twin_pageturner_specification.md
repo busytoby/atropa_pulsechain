@@ -331,3 +331,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 213: Jam-Free Recursive Folding Invariant (zero-stall proof composition).
     * Theorem 214: Atomic Saat Settlement Verification ($1,000,000\text{ Saat}$ settled atomically).
     * Theorem 215: Grand Master 215-Theorem ZJ-SNARKs Parity Closure ($0\text{x00006A43}$).
+
+44. **Tier 44 (Theorems 216–220: ZJ-SNARK Deep Recursive Folding & Multi-Tenant Aggregation)**:
+    * Theorem 216: Deep Recursive Folding Invariant ($N = 1024$ cycles, proof size bounded to $128\text{ bytes}$).
+    * Theorem 217: Drift-Free Field Accumulator Invariant ($\text{Drift} \equiv 0.00$).
+    * Theorem 218: Multi-Tenant Batch Proof Aggregation ($16$ Teddy Bear tenants aggregated concurrently).
+    * Theorem 219: Recursive Saat Conservation Under Folding ($100\%$ balance preserved across folding depth).
+    * Theorem 220: Grand Master 220-Theorem Deep Folding Closure ($0\text{x00003394}$).
