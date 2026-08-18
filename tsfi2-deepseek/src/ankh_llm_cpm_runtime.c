@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCF",
+        .opcode_signature = 0x43504346,
+        .title = "CPMTOMIE-CONFOCAL-FABRY-PEROT-CORPS",
+        .theorem_descriptions = {
+            "Airy Multi-Beam Transmission Function Invariance",
+            "Confocal Spherical Cavity High Finesse Inversion",
+            "Spherical Joint Speckle Decorrelation Rejection",
+            "Sub-Millisecond Piezoelectric Frequency-Lock Dispatch",
+            "Sovereign Confocal Fabry-Perot Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPXF",
         .opcode_signature = 0x43505846,
         .title = "CPMTOMIE-MICRO-XRF-CORPS",
