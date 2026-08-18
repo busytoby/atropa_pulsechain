@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPS8",
+        .opcode_signature = 0x43505338,
+        .title = "CPMTOMIE-SUPER8-SPATIAL-CARRIER-CORPS",
+        .theorem_descriptions = {
+            "Super 8 Optical Gate Emulsion Holographic Transfer Invariance",
+            "Teddy Bear Hand-to-Camera Spatial Carrier Tilt Invariance",
+            "Rotary Shutter Kinematic Phase Integration",
+            "Sub-Millisecond BDOS Port 0x48-0x4B Hardware Dispatch",
+            "Sovereign Super 8 RenderMan Spatial Carrier Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPKT",
         .opcode_signature = 0x43504B54,
         .title = "CPMTOMIE-KINOFORM-QUADTREE-TILING-CORPS",

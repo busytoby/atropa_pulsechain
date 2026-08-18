@@ -1811,6 +1811,7 @@ test-cpm-tomie-kinoform-multiplex-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-angular-spectrum-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-kinoform-snr-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-kinoform-tiling-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-super8-carrier-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-assembleit-renderman:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I tsfi2-deepseek/include tests/test_cpm_tomie_assembleit_renderman.c tsfi2-deepseek/src/cpm_tomie_assembleit_renderman.c -lm -o tests/test_cpm_tomie_assembleit_renderman
 	./tests/test_cpm_tomie_assembleit_renderman
