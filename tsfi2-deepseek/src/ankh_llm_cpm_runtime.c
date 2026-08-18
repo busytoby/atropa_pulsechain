@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPT",
+        .opcode_signature = 0x43505054,
+        .title = "CPMTOMIE-PAPER-TAPE-CHAD-CORPS",
+        .theorem_descriptions = {
+            "Perforated Paper-Tape Chad Shearing Invariance",
+            "Optoelectronic Strobe Parity Alignment",
+            "Non-Preferential Gravity Chad Chute Clearing",
+            "Sub-Millisecond Tape Perforation Latency",
+            "Sovereign Paper-Tape Chad Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSR",
         .opcode_signature = 0x43505352,
         .title = "CPMTOMIE-SAGNAC-RING-CORPS",
