@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMC",
+        .opcode_signature = 0x43504D43,
+        .title = "CPMTOMIE-MICRO-CT-CORPS",
+        .theorem_descriptions = {
+            "Beer-Lambert Radiographic Linear Attenuation Invariance",
+            "Feldkamp-Davis-Kress 3D Cone-Beam Inversion",
+            "Spherical Joint Metal Artifact Reduction",
+            "Sub-Millisecond Hierarchical Voxel Dispatch",
+            "Sovereign Micro-Computed Tomography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPOC",
         .opcode_signature = 0x43504F43,
         .title = "CPMTOMIE-OPTICAL-COHERENCE-ELASTOGRAPHY-CORPS",
