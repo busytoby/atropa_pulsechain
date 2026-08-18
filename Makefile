@@ -1548,6 +1548,11 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-auncient-leed-master-grand-proof-theorems-1-30:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_leed_master_grand_proof_theorems_1_30.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c tsfi2-deepseek/src/auncient_clayscape_usda_digital_twin.c tsfi2-deepseek/src/auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c tsfi2-deepseek/src/auncient_renderman_usda_rib_prover.c -o tests/test_auncient_leed_master_grand_proof_theorems_1_30 -lm
+	./tests/test_auncient_leed_master_grand_proof_theorems_1_30
+	@rm -f tests/test_auncient_leed_master_grand_proof_theorems_1_30
+
 test-auncient-renderman-usda-theorems-26-30:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_renderman_usda_theorems_26_30.c tsfi2-deepseek/src/auncient_renderman_usda_rib_prover.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c -o tests/test_auncient_renderman_usda_theorems_26_30 -lm
 	./tests/test_auncient_renderman_usda_theorems_26_30

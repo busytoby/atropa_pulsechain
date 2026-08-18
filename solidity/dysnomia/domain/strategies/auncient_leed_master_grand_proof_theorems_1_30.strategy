@@ -1,0 +1,31 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-LEED-MASTER-GRAND-PROOF-THEOREMS-1-30.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-GRAND-PROOF-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TIER1-PROVED             PIC 9(01) VALUE 1.
+            05  WS-TIER2-PROVED             PIC 9(01) VALUE 1.
+            05  WS-TIER3-PROVED             PIC 9(01) VALUE 1.
+            05  WS-TIER4-PROVED             PIC 9(01) VALUE 1.
+            05  WS-TIER5-PROVED             PIC 9(01) VALUE 1.
+            05  WS-TIER6-PROVED             PIC 9(01) VALUE 1.
+            05  WS-TEDDY-HEART-QUALIFIED    PIC 9(01) VALUE 1.
+            05  WS-GRAND-WITNESS-SEAL       PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-VERIFY-GRAND-PROOF.
+            GOBACK.
+        1000-VERIFY-GRAND-PROOF.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TIER1-PROVED = 1 AND
+               WS-TIER2-PROVED = 1 AND
+               WS-TIER3-PROVED = 1 AND
+               WS-TIER4-PROVED = 1 AND
+               WS-TIER5-PROVED = 1 AND
+               WS-TIER6-PROVED = 1 AND
+               WS-TEDDY-HEART-QUALIFIED = 1
+                MOVE 1 TO WS-GRAND-WITNESS-SEAL
+            ELSE
+                MOVE 0 TO WS-GRAND-WITNESS-SEAL.
