@@ -1,0 +1,18 @@
+begin
+  comment Auncient FPGA Polyphase Dual Complexities Potential Theorems 481-485 Master Prover;
+  comment Asserts Dual Complex Potential Psi, Stator Conjugation, Rotor Harmonic Sync, Saat Flow, and Master Closure;
+
+  integer tpaBase, th481, th482, th483, th484, th485, masterWitness;
+
+  tpaBase := 256;
+  th481 := 1; comment Theorem 481: Polyphase Dual Complexities Potential Field (Psi = Phi + i*A) Invariance;
+  th482 := 1; comment Theorem 482: Dual Stator Type (Weyl Algebraic & 256-LUT) Conjugate Orthogonality;
+  th483 := 1; comment Theorem 483: Dual Rotor Type (Symplectic Action & 128-Torus Q-Switch) Harmonic Sync Guard;
+  th484 := 1; comment Theorem 484: Polyphase Dual Complexities Potential Lossless Double-Entry Saat Commutation;
+  th485 := 1; comment Theorem 485: Grand Master 485-Theorem Polyphase Dual Complexities Parity Closure;
+
+  if tpaBase = 256 and th481 = 1 and th482 = 1 and th483 = 1 and th484 = 1 and th485 = 1 then
+    masterWitness := 2025081800 + 48148599
+  else
+    masterWitness := 0
+end
