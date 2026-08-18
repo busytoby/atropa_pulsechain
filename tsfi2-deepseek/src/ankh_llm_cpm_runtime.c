@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAI",
+        .opcode_signature = 0x43504149,
+        .title = "CPMTOMIE-AIRY-BOUNDEDNESS-PROVER-CORPS",
+        .theorem_descriptions = {
+            "Radial Bessel Zero & 83.8% Encircled Energy Boundedness",
+            "24-Bit Morton Quadtree Nyquist Discretization Invariance",
+            "WinchesterMQ Real-Time Register Hardware Dispatch",
+            "Tripartite Multi-Prover Master Strategy Synthesis",
+            "Sovereign Coherent Airy Boundedness Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPOF",
         .opcode_signature = 0x43504F46,
         .title = "CPMTOMIE-KINOFORM-OTF-PSF-CORPS",

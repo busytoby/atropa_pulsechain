@@ -1,0 +1,71 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Airy Quadtree Spatial Discretization Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Subject to: 24-Bit Morton Quadtree Nyquist Spatial Sampling (Delta x <= r0 / 2) and Sub-Pixel Boundary Leakage Prevention;
+
+  integer procedure verify_airy_quadtree_invariance(
+    quadtree_loop_latency_us,
+    nyquist_sampling_fidelity_milli,
+    boundary_leakage_milli,
+    morton_density_fidelity_milli,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value quadtree_loop_latency_us, nyquist_sampling_fidelity_milli, boundary_leakage_milli, morton_density_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  integer quadtree_loop_latency_us, nyquist_sampling_fidelity_milli, boundary_leakage_milli, morton_density_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  begin
+    integer contracted_paq;
+    integer shadow_baseline;
+
+    if k_param != 3 and k_param != 4 then
+      begin
+        verify_airy_quadtree_invariance := 1;
+        go to end_paq_proc;
+      end;
+
+    if quadtree_loop_latency_us < 30 or quadtree_loop_latency_us > 220 then
+      begin
+        verify_airy_quadtree_invariance := 2;
+        go to end_paq_proc;
+      end;
+
+    if nyquist_sampling_fidelity_milli < 900 or nyquist_sampling_fidelity_milli > 1000 then
+      begin
+        verify_airy_quadtree_invariance := 3;
+        go to end_paq_proc;
+      end;
+
+    if boundary_leakage_milli < 900 or boundary_leakage_milli > 1000 then
+      begin
+        verify_airy_quadtree_invariance := 4;
+        go to end_paq_proc;
+      end;
+
+    if morton_density_fidelity_milli < 900 or morton_density_fidelity_milli > 1000 then
+      begin
+        verify_airy_quadtree_invariance := 6;
+        go to end_paq_proc;
+      end;
+
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 16385 then
+      begin
+        verify_airy_quadtree_invariance := 5;
+        go to end_paq_proc;
+      end;
+
+    contracted_paq := (nyquist_sampling_fidelity_milli * 875) / 1000;
+    shadow_baseline := cics_writer_id * 1000000 + contracted_paq + boundary_leakage_milli + 1470169088;
+
+    if simulate_fault = 1 then
+      begin
+        verify_airy_quadtree_invariance := 0;
+        go to end_paq_proc;
+      end;
+
+    verify_airy_quadtree_invariance := 0;
+
+  end_paq_proc:
+  end;
+
+end

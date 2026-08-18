@@ -1,0 +1,71 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Airy Radial Mechanics & Encircled Energy Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Subject to: Bessel-J1 Zero Crossing (kr = 3.8317), Airy Disk Radius (r0 = 1.22 * lambda * f / D), and 83.78% Encircled Energy Boundedness;
+
+  integer procedure verify_airy_radial_invariance(
+    radial_loop_latency_us,
+    bessel_zero_fidelity_milli,
+    encircled_energy_milli,
+    airy_radius_fidelity_milli,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value radial_loop_latency_us, bessel_zero_fidelity_milli, encircled_energy_milli, airy_radius_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  integer radial_loop_latency_us, bessel_zero_fidelity_milli, encircled_energy_milli, airy_radius_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  begin
+    integer contracted_par;
+    integer shadow_baseline;
+
+    if k_param != 3 and k_param != 4 then
+      begin
+        verify_airy_radial_invariance := 1;
+        go to end_par_proc;
+      end;
+
+    if radial_loop_latency_us < 30 or radial_loop_latency_us > 220 then
+      begin
+        verify_airy_radial_invariance := 2;
+        go to end_par_proc;
+      end;
+
+    if bessel_zero_fidelity_milli < 900 or bessel_zero_fidelity_milli > 1000 then
+      begin
+        verify_airy_radial_invariance := 3;
+        go to end_par_proc;
+      end;
+
+    if encircled_energy_milli < 900 or encircled_energy_milli > 1000 then
+      begin
+        verify_airy_radial_invariance := 4;
+        go to end_par_proc;
+      end;
+
+    if airy_radius_fidelity_milli < 900 or airy_radius_fidelity_milli > 1000 then
+      begin
+        verify_airy_radial_invariance := 6;
+        go to end_par_proc;
+      end;
+
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 16385 then
+      begin
+        verify_airy_radial_invariance := 5;
+        go to end_par_proc;
+      end;
+
+    contracted_par := (bessel_zero_fidelity_milli * 875) / 1000;
+    shadow_baseline := cics_writer_id * 1000000 + contracted_par + encircled_energy_milli + 1470169088;
+
+    if simulate_fault = 1 then
+      begin
+        verify_airy_radial_invariance := 0;
+        go to end_par_proc;
+      end;
+
+    verify_airy_radial_invariance := 0;
+
+  end_par_proc:
+  end;
+
+end

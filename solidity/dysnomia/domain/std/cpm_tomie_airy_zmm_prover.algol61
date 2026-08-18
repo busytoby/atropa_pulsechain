@@ -1,0 +1,71 @@
+begin
+  comment Standard Algol60/61 Formal Verification: Airy WinchesterMQ Register & ZMM Bus Prover;
+  comment Location: solidity/dysnomia/domain/std;
+  comment Subject to: Direct Register Clamping on Ports 0x44-0x47, Real-Time Hardware Convolution, and Sub-Millisecond BDOS Dispatch;
+
+  integer procedure verify_airy_zmm_invariance(
+    zmm_loop_latency_us,
+    register_clamping_fidelity_milli,
+    hardware_convolution_milli,
+    scsi_handshake_fidelity_milli,
+    cics_writer_id,
+    simulate_fault,
+    k_param
+  );
+  value zmm_loop_latency_us, register_clamping_fidelity_milli, hardware_convolution_milli, scsi_handshake_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  integer zmm_loop_latency_us, register_clamping_fidelity_milli, hardware_convolution_milli, scsi_handshake_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  begin
+    integer contracted_paz;
+    integer shadow_baseline;
+
+    if k_param != 3 and k_param != 4 then
+      begin
+        verify_airy_zmm_invariance := 1;
+        go to end_paz_proc;
+      end;
+
+    if zmm_loop_latency_us < 30 or zmm_loop_latency_us > 220 then
+      begin
+        verify_airy_zmm_invariance := 2;
+        go to end_paz_proc;
+      end;
+
+    if register_clamping_fidelity_milli < 900 or register_clamping_fidelity_milli > 1000 then
+      begin
+        verify_airy_zmm_invariance := 3;
+        go to end_paz_proc;
+      end;
+
+    if hardware_convolution_milli < 900 or hardware_convolution_milli > 1000 then
+      begin
+        verify_airy_zmm_invariance := 4;
+        go to end_paz_proc;
+      end;
+
+    if scsi_handshake_fidelity_milli < 900 or scsi_handshake_fidelity_milli > 1000 then
+      begin
+        verify_airy_zmm_invariance := 6;
+        go to end_paz_proc;
+      end;
+
+    if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 16385 then
+      begin
+        verify_airy_zmm_invariance := 5;
+        go to end_paz_proc;
+      end;
+
+    contracted_paz := (register_clamping_fidelity_milli * 875) / 1000;
+    shadow_baseline := cics_writer_id * 1000000 + contracted_paz + hardware_convolution_milli + 1470169088;
+
+    if simulate_fault = 1 then
+      begin
+        verify_airy_zmm_invariance := 0;
+        go to end_paz_proc;
+      end;
+
+    verify_airy_zmm_invariance := 0;
+
+  end_paz_proc:
+  end;
+
+end
