@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPST",
+        .opcode_signature = 0x43505354,
+        .title = "CPMTOMIE-SPHERICAL-TORQUE-CORPS",
+        .theorem_descriptions = {
+            "3D Spherical Contact Friction Cone Invariance",
+            "4-Strut Magnetic Torque Polytope Equilibrium",
+            "Angular Sweep +- 65 Degree Seat Clearance Bounds",
+            "Sub-Millisecond Contact Tensor Evaluation",
+            "Sovereign Spherical Torque Polytope Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPIC",
         .opcode_signature = 0x43504943,
         .title = "CPMTOMIE-INCOMPRESSIBLE-CLAY-CORPS",
