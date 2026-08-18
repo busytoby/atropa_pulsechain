@@ -342,7 +342,9 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
                     $(OBJ_DIR)/tsfi_hydrascene.o \
                     $(OBJ_DIR)/tsfi_renderdelegate.o \
                     $(OBJ_DIR)/tsfi_stagelock.o \
-                    $(OBJ_DIR)/tsfi_renderindex.o
+                    $(OBJ_DIR)/tsfi_renderindex.o \
+                    $(OBJ_DIR)/tsfi_mariner_fabric_dispatch.o \
+                    $(OBJ_DIR)/tsfi_chancery_docket.o
 
 
 
@@ -1651,16 +1653,16 @@ tests/test_xpl_central_components: tests/test_xpl_central_components.c src/tsfi_
 tests/test_xplos_explorer_vsam: tests/test_xplos_explorer_vsam.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
-tests/test_skeleton_hasp_book: tests/test_skeleton_hasp_book.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+tests/test_skeleton_hasp_book: tests/test_skeleton_hasp_book.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
-tests/bench_jcl_spool: tests/bench_jcl_spool.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+tests/bench_jcl_spool: tests/bench_jcl_spool.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
-tests/bench_cics_queues: tests/bench_cics_queues.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+tests/bench_cics_queues: tests/bench_cics_queues.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
-bin/cics_cli: src/cics_cli.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_vtam.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
+bin/cics_cli: src/cics_cli.c src/tsfi_xplos_shell_cbt_cics.c src/tsfi_xplos_shell_cbt_jcl.c src/tsfi_xplos_shell_cbt_jes.c src/tsfi_xplos_shell_book.c src/tsfi_xplos_kernel.c src/tsfi_xplos_shell_legacy.c src/tsfi_xplos_shell_tape.c src/tsfi_xplos_shell_explorer.c src/tsfi_xplos_shell_xdc.c src/tsfi_cbt_inmemory.c src/tsfi_xpl_mallgren.c src/tsfi_xplos_shell_cbt_tso.c ../src/auncient_cloth_material_bridge.c ../src/cloth_simulator.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o
 	@mkdir -p bin
 	$(CC) $(filter-out -Werror,$(CFLAGS)) -o $@ $^ $(LDFLAGS) -lz
 
