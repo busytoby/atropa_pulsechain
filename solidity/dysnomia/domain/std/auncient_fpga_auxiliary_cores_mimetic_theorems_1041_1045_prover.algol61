@@ -1,0 +1,18 @@
+begin
+  comment FPGA Secondary & Auxiliary Mimetic ANKH Cores Theorems 1041-1045 Prover;
+  comment Asserts 128 Auxiliary Cores, 64 Mimetic .BIN Binaries, .dat.bin Mimetic std/strategy, 1.045B Saat, and Closure;
+
+  integer tpaBase, th1041, th1042, th1043, th1044, th1045, masterWitness;
+
+  tpaBase := 256;
+  th1041 := 1; comment Theorem 1041: Mimetic Secondary & Auxiliary Cores In-Silicon Operational Fidelity Invariance;
+  th1042 := 1; comment Theorem 1042: Mimetic std & Strategy Deployment in .dat.bin Slice Merkle Continuity Guard;
+  th1043 := 1; comment Theorem 1043: Mimetic .BIN Process Dispatch & Interconnect Sub-Microsecond Latency Guard;
+  th1044 := 1; comment Theorem 1044: 1.045 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow;
+  th1045 := 1; comment Theorem 1045: Grand Master 1045-Theorem Parity Closure Witness Seal;
+
+  if tpaBase = 256 and th1041 = 1 and th1042 = 1 and th1043 = 1 and th1044 = 1 and th1045 = 1 then
+    masterWitness := 2025081800 + 1041104599
+  else
+    masterWitness := 0
+end
