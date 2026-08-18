@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTM",
+        .opcode_signature = 0x4350544D,
+        .title = "CPMTOMIE-WIFI-TELEMETRY-CORPS",
+        .theorem_descriptions = {
+            "802.11 Packet Telemetry Invariance",
+            "12-Bit ADC Voltage Divider Brownout Defense",
+            "5V Regulated Rail Voltage Stability Invariance",
+            "Sub-Millisecond Telemetry Dispatch Latency",
+            "Sovereign Telemetry & Power Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTQ",
         .opcode_signature = 0x43505451,
         .title = "CPMTOMIE-SERVO-QUADTREE-CORPS",
