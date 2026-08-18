@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPRF",
+        .opcode_signature = 0x43505246,
+        .title = "CPMTOMIE-RFID-IMPEDANCE-CORPS",
+        .theorem_descriptions = {
+            "Near-Field Inductive Impedance Invariance",
+            "Ferromagnetic Clay Permeability Telemetry",
+            "12-Bit Dual-Slope ADC Port Transduction",
+            "Sub-Millisecond RF Transduction Latency",
+            "Sovereign RFID Telemetry Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMO",
         .opcode_signature = 0x43504D4F,
         .title = "CPMTOMIE-BICARTESIAN-MONAD-CORPS",
