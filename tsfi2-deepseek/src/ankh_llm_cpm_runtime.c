@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMO",
+        .opcode_signature = 0x43504D4F,
+        .title = "CPMTOMIE-BICARTESIAN-MONAD-CORPS",
+        .theorem_descriptions = {
+            "Categorical Product & Coproduct Adjunction",
+            "BDOS Dynamic Symbol Resolution Monad",
+            "Currying & Exponentiation Invariance",
+            "Sub-Millisecond Monadic Dispatch Latency",
+            "Sovereign Bi-Cartesian Monad Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPBC",
         .opcode_signature = 0x43504243,
         .title = "CPMTOMIE-BIOMORPHIC-CURVATURE-CORPS",
