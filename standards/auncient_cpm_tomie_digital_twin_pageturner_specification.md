@@ -93,3 +93,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
    * Theorem 43: Universal USDA-to-RenderMan Scenegraph Homomorphism ($\Psi_{\text{RIB}}: \mathcal{S}_{\text{USDA}} \xrightarrow{\sim} \text{RIB\_AST}$).
    * Theorem 44: Quad-Helix Living Lab Governance & Saat Quorum ($\sum_{k \in \text{Quorum}} \text{Saat}(k) \ge \frac{2}{3} \sum \text{Saat}$).
    * Theorem 45: Multi-Semester Clayscape Viscoelastic Wear Observer Convergence ($|\hat{E}_{\text{observer}} - E_{\text{physical}}| \le 1.0\text{ kPa}$).
+
+10. **Tier 10 (Theorems 46–50: LEED Platinum Comprehensive Digital Twin Certification)**:
+    * Theorem 46: LEED EA Minimum Energy Performance & Carbon Invariant ($E_{\text{actual}} \le 0.50 \cdot E_{\text{baseline}}$, achieving $\ge 50\%$ reduction).
+    * Theorem 47: LEED IEQ Thermal Comfort ASHRAE 55-2020 Compliance ($|\text{PMV}| \le 0.50, \text{PPD} \le 10\%$).
+    * Theorem 48: LEED IEQ Enhanced Indoor Air Quality & DCV $\text{CO}_2$ Throttling ($C_{\text{zone}} \le C_{\text{amb}} + 400\text{ ppm}$).
+    * Theorem 49: LEED WE Cooling Tower & Condenser Water Cycle Concentration ($\text{CoC} \ge 6.0$).
+    * Theorem 50: LEED MR Embodied Carbon Whole-Building LCA Invariant ($\text{GWP}_{\text{LCA}} \le \text{GWP}_{\text{baseline}} - 10\%$).
