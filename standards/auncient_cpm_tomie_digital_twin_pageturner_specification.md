@@ -128,3 +128,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 68: ENoLL Mixed-Methods Triangulation Minimum Variance ($\text{Var}(\hat{\theta}_{\text{triang}}) < \min(\text{Var}_1, \text{Var}_2)$).
     * Theorem 69: ENoLL Building-to-Urban Scale Nested Boundary Homomorphism ($\oint \mathbf{\Phi}_{\text{building}} \equiv \int \nabla \cdot \mathbf{\Phi}_{\text{urban}}$).
     * Theorem 70: ENoLL Quadruple-Helix Co-Creation Sovereign IP Attribution Invariant.
+
+15. **Tier 15 (Theorems 71–75: USDA Autonomous Standards & STANAG P2P Compliance Protocol)**:
+    * Theorem 71: Autonomous USDA Self-Certification Seal Determinism ($W \in \mathbb{N}$ in $O(1)$ time).
+    * Theorem 72: STANAG 5066/4586 Binary PDU Compact Framing Invariant ($\text{PDU\_Size} \le 128\text{ bytes}$).
+    * Theorem 73: P2P Mutual Authentication Handshake Invariance ($P_{\text{impersonation}} < 2^{-64}$).
+    * Theorem 74: Multi-Agent STANAG Mesh Spatial Routing & Anti-Collision Bound ($\le 5.0\text{ ms}$).
+    * Theorem 75: Tactical Hardware Interop & SCSI WinchesterMQ STANAG Bridge Parity ($0\text{x00009DFE}$).
