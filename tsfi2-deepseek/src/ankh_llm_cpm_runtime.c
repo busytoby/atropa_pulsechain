@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPVC",
+        .opcode_signature = 0x43505643,
+        .title = "CPMTOMIE-VISCOELASTIC-CLAY-CORPS",
+        .theorem_descriptions = {
+            "Viscoelastic Stress Relaxation & Dissipation",
+            "Plastic Yield Threshold & Irreversible Bounds",
+            "Non-Preferential Green-Lagrange Strain Invar",
+            "Sub-Millisecond Rheological Integration Latency",
+            "Sovereign Viscoelastic Plasticity Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAF",
         .opcode_signature = 0x43504146,
         .title = "CPMTOMIE-AFFORDANCE-FIELD-CORPS",
