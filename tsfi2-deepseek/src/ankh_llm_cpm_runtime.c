@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMI",
+        .opcode_signature = 0x43504D49,
+        .title = "CPMTOMIE-MAGNETOACOUSTIC-INDUCTION-CORPS",
+        .theorem_descriptions = {
+            "Lorentz Force Acoustic Wave Launch Invariance",
+            "Electrical Conductivity Boundary Inversion",
+            "Spherical Joint Eddy Current Suppression",
+            "Sub-Millisecond Time-Reversal Acoustic Dispatch",
+            "Sovereign Magneto-Acoustic Tomography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTR",
         .opcode_signature = 0x43505452,
         .title = "CPMTOMIE-OPTOTHERMAL-RADIOMETRY-CORPS",
