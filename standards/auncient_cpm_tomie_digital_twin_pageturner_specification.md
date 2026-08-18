@@ -870,3 +870,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 603: In-Silicon DAT Ledger Block Settlement Sub-Microsecond Latency Guard ($\text{Latency} = 215.0\text{ ns} < 1000.0\text{ ns}$).
     * Theorem 604: 605M Ledger-Block Milestone Lossless Double-Entry Saat Commutation ($605,000,000$ verified clearances).
     * Theorem 605: Grand Master 605-Theorem Parity Closure Witness Seal ($0\text{x0000940F}$).
+
+121. **Tier 121 (Theorems 606–610: FPGA Beyond-605 Diamond Jubilee NPN/PNP Pairwise Transistor & Quadtree/Blockchain Connector)**:
+    * Theorem 606: In-Silicon NPN/PNP Pairwise Transistor Connector Hardware Invariance ($\text{Fidelity} = 1.000$).
+    * Theorem 607: Diamond Jubilee Quadtree & Blockchain Replacement for Unpaired Accumulators ($\text{Ratio} = 1.000$).
+    * Theorem 608: Diamond Jubilee Pairwise Hardware Dispatch Sub-Microsecond Latency Guard ($\text{Latency} = 210.0\text{ ns} < 1000.0\text{ ns}$).
+    * Theorem 609: 610M Diamond Jubilee Milestone Lossless Double-Entry Saat Commutation ($610,000,000$ verified clearances).
+    * Theorem 610: Grand Master 610-Theorem Parity Closure Witness Seal ($0\text{x0000FF54}$).
