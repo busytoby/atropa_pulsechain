@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPBC",
+        .opcode_signature = 0x43504243,
+        .title = "CPMTOMIE-BIOMORPHIC-CURVATURE-CORPS",
+        .theorem_descriptions = {
+            "Asymptote-Free Biomorphic Curvature Bound",
+            "Kinetic Soft-Touch Interaction Compliance",
+            "Ambient-to-UV Dark-Field Spectral Contrast",
+            "Sub-Millisecond Curvature Regularization",
+            "Sovereign Biomorphic Curvature Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPEL",
         .opcode_signature = 0x4350454C,
         .title = "CPMTOMIE-EDO22-LISSAJOUS-CORPS",
