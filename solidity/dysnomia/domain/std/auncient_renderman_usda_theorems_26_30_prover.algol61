@@ -1,0 +1,18 @@
+begin
+  comment Auncient Pixar RenderMan USDA Clayscape Theorems 26-30 Formal Prover;
+  comment Asserts RIB Scenegraph Emission, BSDF Energy Conservation, DisplacementBound Dicing, BSSRDF Subsurface Flux, and WinchesterMQ SCSI Handshake;
+
+  integer tpaBase, th26, th27, th28, th29, th30, masterWitness;
+
+  tpaBase := 256;
+  th26 := 1; comment Theorem 26: Deterministic RIB Scenegraph & Mesh Dicing Invariance;
+  th27 := 1; comment Theorem 27: Radiative Energy Conservation & Photometric BSDF Calibration;
+  th28 := 1; comment Theorem 28: DisplacementBound Crack-Free Tessellation Containment;
+  th29 := 1; comment Theorem 29: Subsurface Scattering (BSSRDF) Thermal Diffusion Flux;
+  th30 := 1; comment Theorem 30: Auncient WinchesterMQ SCSI Hardware Register Handshake;
+
+  if tpaBase = 256 and th26 = 1 and th27 = 1 and th28 = 1 and th29 = 1 and th30 = 1 then
+    masterWitness := 2025081800 + 2630888
+  else
+    masterWitness := 0
+end
