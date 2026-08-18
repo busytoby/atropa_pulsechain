@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTQ",
+        .opcode_signature = 0x43505451,
+        .title = "CPMTOMIE-SERVO-QUADTREE-CORPS",
+        .theorem_descriptions = {
+            "2D Servo Stroke Morton Quadtree Mapping",
+            "Radix Trie BDOS Instruction Decoding Invariance",
+            "Dual-Servo Hardware State Machine Interlock",
+            "Sub-Millisecond Trie-Quadtree VM Loop",
+            "Sovereign Servo Trie-Quadtree Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAR",
         .opcode_signature = 0x43504152,
         .title = "CPMTOMIE-ACTUATOR-RETENTION-CORPS",
