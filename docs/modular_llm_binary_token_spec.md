@@ -53,8 +53,48 @@ This design conforms to Rule 13 (pure binary quadtree layout) and provides PC co
 
 ---
 
-## 4. Operational Guidelines
+## 4. Coaxial Attached PC Direct Quadtree Streaming
+
+Binary `.BIN` executables running deep within nested CP/M-Tomie virtual machines possess direct, transparent access to `.dat.bin` quadtree assets residing on the coaxially attached PC host:
+
+```
+       ┌───────────────────────────────────────────────────────────┐
+       │     COAXIAL PC-TO-NESTED-VM STREAMING TOPOLOGY            │
+       ├───────────────────────────────────────────────────────────┤
+       │ [Host PC Storage Plane]                                   │
+       │  • assets/*.dat.bin (269.4KB Quadtree Model Slices)       │
+       │  • Direct Memory-Mapped Disk Buffers                      │
+       └─────────────────────────────┬─────────────────────────────┘
+                                     │
+                        (Coaxial Loopback Socket /
+                         WinchesterMQ SCSI Handshake)
+                                     │
+                                     ▼
+       ┌───────────────────────────────────────────────────────────┐
+       │ [CP/M-Tomie Root Virtual Machine (TPA 0100H)]             │
+       │  • Bridges Coaxial Streams via Blue Box Kermit/STANAG     │
+       └─────────────────────────────┬─────────────────────────────┘
+                                     │
+                        (Multi-Tier Recursive Channel)
+                                     │
+                                     ▼
+       ┌───────────────────────────────────────────────────────────┐
+       │ [Deep Nested CP/M-Tomie Child VMs: .BIN Executables]      │
+       │  • Direct in-place streaming of .dat.bin quadtree slices  │
+       │  • Zero-copy token embedding lookups (< 250 us latency)   │
+       │  • In-memory Rule 18 checksum parity execution            │
+       └───────────────────────────────────────────────────────────┘
+```
+
+* **Coaxial Channel Protocol**: The connection operates over raw loopback sockets and WinchesterMQ SCSI handshakes, allowing nested `.BIN` programs to issue sector reads directly against the host PC's `.dat.bin` file descriptors.
+* **Transparent Multi-Tier Forwarding**: Child virtual machines at arbitrary nesting depths transparently forward packet requests through parent VM instances to stream quadtrees directly from host storage.
+* **Zero Intermediate Buffering**: Streamed `.dat.bin` slices load straight into the child VM's active execution memory without requiring intermediate local disk staging.
+
+---
+
+## 5. Operational Guidelines
 
 1. **Naming Standard**: All model tokens must use filenames ending in `.dat.bin` (e.g., `tsfi2_custom_cpm_tomie.dat.bin`, `cpm_tomie_acoustic.dat.bin`).
 2. **In-Memory Invocation**: Engines must load directly via zero-copy memory mapping and execute via native function pointers without creating intermediate `.c` or object files on disk.
 3. **Parity Validation**: Every token file must satisfy Rule 18 3-term orthogonal polynomial recurrences prior to execution authorization.
+4. **Coaxial Direct Streaming**: Deeply nested `.BIN` binaries wanna stream `.dat.bin` quadtrees straight from the coaxial attached PC across loopback sockets with sub-microsecond latency.
