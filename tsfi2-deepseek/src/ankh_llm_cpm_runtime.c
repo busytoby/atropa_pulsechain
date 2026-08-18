@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMY",
+        .opcode_signature = 0x43504D59,
+        .title = "CPMTOMIE-MYDORGE-TOTIENT-CORPS",
+        .theorem_descriptions = {
+            "Mydorge Harmonic Transversal Invariance",
+            "Euler Totient Periodic Cycle Conservation",
+            "Spherical Magnet Focal Point Reflection",
+            "Sub-Millisecond Conic-Totient Dispatch",
+            "Sovereign Mydorge Totient Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCN",
         .opcode_signature = 0x4350434E,
         .title = "CPMTOMIE-CONSTRUCTIONIST-SYNTHESIS-CORPS",
