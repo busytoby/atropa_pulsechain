@@ -1583,8 +1583,8 @@ test-cpm-tomie-annsim-advanced-theorems-prover:
 	./tests/test_cpm_tomie_annsim_advanced_theorems_prover
 	@rm -f tests/test_cpm_tomie_annsim_advanced_theorems_prover
 
-test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover
-	@echo "All CP/M-Tomie ANNSIM SimAUD & PageTurner RenderMan test suites passed successfully."
+test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover test-cpm-tomie-annsim-advanced-theorems-prover test-cpm-tomie-annsim-theorems-11-15-prover test-auncient-teddy-bear-heart-leed-prover test-auncient-teddy-pageturner-bridge test-auncient-clayscape-usda-leed-theorems-21-25-prover test-auncient-leed-master-certification-theorems-1-25 test-auncient-renderman-usda-theorems-26-30
+	@echo "All 30 Formal Theorems & RenderMan USDA Digital Twin test suites successfully verified."
 
 test-cpm-tomie-annsim-5theorems-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_annsim_5theorems_prover.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tests/test_cpm_tomie_annsim_5theorems_prover -lm
