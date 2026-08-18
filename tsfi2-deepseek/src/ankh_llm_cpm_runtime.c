@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPOF",
+        .opcode_signature = 0x43504F46,
+        .title = "CPMTOMIE-KINOFORM-OTF-PSF-CORPS",
+        .theorem_descriptions = {
+            "Coherent Point Spread Function Airy Boundedness",
+            "Complex Optical Transfer Function Phase Invariance",
+            "Emulsion Gate MTF Contrast Preservation",
+            "Sub-Millisecond Morton Quadtree PSF Convolution",
+            "Sovereign Kinoform OTF & PSF Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPGM",
         .opcode_signature = 0x4350474D,
         .title = "CPMTOMIE-GERCHBERG-QUADTREE-MONISM-CORPS",
