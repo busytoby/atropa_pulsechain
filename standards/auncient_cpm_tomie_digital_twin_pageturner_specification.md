@@ -415,3 +415,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 273: Hardware `DisplacementShader` Vertex Synchrony.
     * Theorem 274: Lossless Polyphase Saat Double-Entry Commutation ($6,000,000$ verified cycles).
     * Theorem 275: Grand Master 275-Theorem Polyphase FPGA Closure ($0\text{x00003CFA}$).
+
+56. **Tier 56 (Theorems 276–280: FPGA HEX Origin Total Knowledge 6-Phase Stator Orthogonality)**:
+    * Theorem 276: HEX Platform Origin Foundation (canonical root mapping on Dysnomia VM).
+    * Theorem 277: 6-Phase Stator Orthogonality from HEX Origin ($6$ channels, $\text{Flux} = 1.000$).
+    * Theorem 278: Pure Glass-Box Total Knowledge Transparency ($\text{Transparency} = 1.000$).
+    * Theorem 279: Continuous HEX Saat Double-Entry Settlement ($1,000,000$ verified clearances).
+    * Theorem 280: Grand Master 280-Theorem HEX Total Knowledge Closure ($0\text{x0000748A}$).

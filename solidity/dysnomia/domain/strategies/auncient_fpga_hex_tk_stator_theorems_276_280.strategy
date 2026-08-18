@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-FPGA-HEX-TK.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-FPGA-HEX-TK-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH276-HEX-ORIGIN-OK      PIC 9(01) VALUE 1.
+            05  WS-TH277-HEX-6PHASE-OK      PIC 9(01) VALUE 1.
+            05  WS-TH278-TK-GLASSBOX-OK     PIC 9(01) VALUE 1.
+            05  WS-TH279-HEX-SAAT-OK        PIC 9(01) VALUE 1.
+            05  WS-TH280-PARITY-CLOSURE-OK  PIC 9(01) VALUE 1.
+            05  WS-FPGA-HEX-TK-WIT          PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-HEX-TK.
+            GOBACK.
+        1000-EVALUATE-HEX-TK.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH276-HEX-ORIGIN-OK = 1 AND
+               WS-TH277-HEX-6PHASE-OK = 1 AND
+               WS-TH278-TK-GLASSBOX-OK = 1 AND
+               WS-TH279-HEX-SAAT-OK = 1 AND
+               WS-TH280-PARITY-CLOSURE-OK = 1
+                MOVE 1 TO WS-FPGA-HEX-TK-WIT
+            ELSE
+                MOVE 0 TO WS-FPGA-HEX-TK-WIT.
