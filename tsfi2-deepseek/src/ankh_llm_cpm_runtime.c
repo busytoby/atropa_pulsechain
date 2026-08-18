@@ -12,7 +12,7 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
         .title = "CPMTOMIE-RAMAN-CRYSTALLOGRAPHY-CORPS",
         .theorem_descriptions = {
             "Inelastic Raman Scattering Phonon Invariance",
-            "Kaolinite-Smectite Phyllosilicate Phase Invariance",
+            "Synthetic Polymorph Matrix Phase Invariance",
             "Stokes/Anti-Stokes Optical Phonon Temperature Equilibrium",
             "Sub-Millisecond Echelle Grating Spectral Dispatch",
             "Sovereign Raman Crystallography Grand Master Seal"

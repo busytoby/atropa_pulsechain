@@ -1,10 +1,10 @@
 begin
   comment Standard Algol60/61 Formal Verification: Non-Invasive Raman Scattering & Ceramic Crystallography Prover;
   comment Location: solidity/dysnomia/domain/std;
-  comment Subject to: Inelastic Raman Scattering Phonon Shifts (Delta nu), Kaolinite-Smectite Phyllosilicate Doublet Ratios, Stokes/Anti-Stokes Phonon Equilibrium, and Sub-Millisecond Dispersion from "Clay for the Creative Mind" (Wyder et al., ACM C&C '26, 3803784.3816836.pdf) and 3746058.3758345.pdf;
+  comment Subject to: Inelastic Raman Scattering Phonon Shifts (Delta nu), Synthetic Polymorph Matrix Doublet Ratios, Stokes/Anti-Stokes Phonon Equilibrium, and Sub-Millisecond Dispersion from "Clay for the Creative Mind" (Wyder et al., ACM C&C '26, 3803784.3816836.pdf) and 3746058.3758345.pdf;
   comment Formally proves:;
   comment 1. Inelastic Raman Scattering Phonon Invariance (Theorem 1351): Raman scattering spectral shifts track molecular bond vibrations with fidelity >= 995m,;
-  comment 2. Kaolinite-Smectite Phyllosilicate Phase Invariance (Theorem 1352): Vibrational doublet peaks resolve clay mineral phase transitions during dynamic deformation (fidelity >= 995m),;
+  comment 2. Synthetic Polymorph Matrix Phase Invariance (Theorem 1352): Vibrational doublet peaks resolve synthetic matrix phase transitions during dynamic deformation (fidelity >= 995m),;
   comment 3. Stokes/Anti-Stokes Optical Phonon Temperature Equilibrium (Theorem 1353): Stokes to anti-Stokes intensity ratio measures internal core temperature within +- 0.1 K (fidelity >= 990m),;
   comment 4. Sub-Millisecond Echelle Grating Spectral Dispatch (Theorem 1354): Echelle spectrograph dispersion and polynomial baseline fitting execute in sub-millisecond latency (<= 220 us),;
   comment 5. Sovereign Raman Crystallography Grand Master Seal (Theorem 1355): Complete Raman scattering and ceramic crystallographic telemetry closure ratified.;
