@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPLV",
+        .opcode_signature = 0x43504C56,
+        .title = "CPMTOMIE-LASER-VIBROMETRY-CORPS",
+        .theorem_descriptions = {
+            "Optical Doppler Velocity Shift Invariance",
+            "Discrete Modal Frequency and Damping Ratio Invariance",
+            "Spherical Joint Resonant Harmonic Transmission",
+            "Sub-Millisecond IQ Quadrature Demodulation Dispatch",
+            "Sovereign Laser Doppler Vibrometry Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSQ",
         .opcode_signature = 0x43505351,
         .title = "CPMTOMIE-SQUID-MAGNETOMETRY-CORPS",
