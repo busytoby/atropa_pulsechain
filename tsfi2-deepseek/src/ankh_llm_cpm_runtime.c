@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTH",
+        .opcode_signature = 0x43505448,
+        .title = "CPMTOMIE-TERAHERTZ-HYDRATION-CORPS",
+        .theorem_descriptions = {
+            "Sub-THz Complex Permittivity Invariance",
+            "Sub-Surface Non-Destructive Tomography Depth",
+            "Heterodyne Phase-Locked Local Oscillator",
+            "Sub-Millisecond Spectral FFT Demodulation",
+            "Sovereign Terahertz Hydration Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAB",
         .opcode_signature = 0x43504142,
         .title = "CPMTOMIE-ACOUSTIC-BEAMFORMING-CORPS",
