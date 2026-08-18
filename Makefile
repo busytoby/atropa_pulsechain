@@ -1778,6 +1778,10 @@ test-cpm-tomie-turtle-quantel-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-clay-caustics-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-assembleit-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-renderman-assembleit-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-assembleit-renderman:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I tsfi2-deepseek/include tests/test_cpm_tomie_assembleit_renderman.c tsfi2-deepseek/src/cpm_tomie_assembleit_renderman.c -lm -o tests/test_cpm_tomie_assembleit_renderman
+	./tests/test_cpm_tomie_assembleit_renderman
+	@rm -f tests/test_cpm_tomie_assembleit_renderman
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
