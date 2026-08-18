@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAS",
+        .opcode_signature = 0x43504153,
+        .title = "CPMTOMIE-ASSEMBLEIT-CORPS",
+        .theorem_descriptions = {
+            "AssembleIt Hierarchical Mate Graph Invariance",
+            "Swept-Volume Interference Collision Defense",
+            "Incremental Isostatic Assembly Stability",
+            "Sub-Millisecond Assembly Constraint Solving",
+            "Sovereign AssembleIt Motion Assembly Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCC",
         .opcode_signature = 0x43504343,
         .title = "CPMTOMIE-CLAY-CAUSTICS-CORPS",
