@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPRA",
+        .opcode_signature = 0x43505241,
+        .title = "CPMTOMIE-RAMAN-CRYSTALLOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Inelastic Raman Scattering Phonon Invariance",
+            "Kaolinite-Smectite Phyllosilicate Phase Invariance",
+            "Stokes/Anti-Stokes Optical Phonon Temperature Equilibrium",
+            "Sub-Millisecond Echelle Grating Spectral Dispatch",
+            "Sovereign Raman Crystallography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPX",
         .opcode_signature = 0x43505058,
         .title = "CPMTOMIE-PHOTOACOUSTIC-TOMOGRAPHY-CORPS",
