@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCC",
+        .opcode_signature = 0x43504343,
+        .title = "CPMTOMIE-CANONICAL-COMPLEMENT-CORPS",
+        .theorem_descriptions = {
+            "Canonical Complementarity Observation Invariance",
+            "Non-Commutative Operator Uncertainty Bounds",
+            "Non-Preferential Dual-Basis Continuance",
+            "Sub-Millisecond Dual Basis Transform Latency",
+            "Sovereign Canonical Complementarity Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPEX",
         .opcode_signature = 0x43504558,
         .title = "CPMTOMIE-EXTERIOR-CALCULUS-CORPS",
