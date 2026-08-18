@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMS",
+        .opcode_signature = 0x43504D53,
+        .title = "CPMTOMIE-MANIFOLD-SFF-SLICING-CORPS",
+        .theorem_descriptions = {
+            "Boundary Manifold Height-Field Slicing Invariance",
+            "Solid Freeform Fabrication Inter-Layer Adhesion",
+            "Non-Preferential Extruder Toolpath Invariance",
+            "Sub-Millisecond SFF Toolpath Generation Latency",
+            "Sovereign SFF Boundary Slicing Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPFS",
         .opcode_signature = 0x43504653,
         .title = "CPMTOMIE-SUBVM-LYAPUNOV-FEYNMAN-CORPS",
