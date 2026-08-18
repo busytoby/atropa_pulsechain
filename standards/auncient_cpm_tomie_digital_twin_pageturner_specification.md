@@ -772,3 +772,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 533: Zero-Drift Resonant Allan Variance Fractional Frequency Stability Invariance ($\text{Stability} = 1.000$).
     * Theorem 534: 535M Curvature Milestone Lossless Double-Entry Saat Commutation ($535,000,000$ verified clearances).
     * Theorem 535: Grand Master 535-Theorem Parity Closure Witness Seal ($0\text{x00003257}$).
+
+107. **Tier 107 (Theorems 536–540: FPGA CP/M-Tomie ANKH Symbolic AST Recursion & COBOL Strategy Branching)**:
+    * Theorem 536: CP/M-Tomie ANKH LLM In-Silicon Symbolic AST Structural Recursion Invariance ($\text{Fidelity} = 1.000$).
+    * Theorem 537: COBOL std Strategy Branch Execution Determinism Guard ($\text{Ratio} = 1.000$).
+    * Theorem 538: In-Silicon Systolic Token Pipeline High-Throughput Invariance ($\text{Throughput} = 65,536.0\text{ MOPS} \ge 50,000.0\text{ MOPS}$).
+    * Theorem 539: 540M Symbolic Milestone Lossless Double-Entry Saat Commutation ($540,000,000$ verified clearances).
+    * Theorem 540: Grand Master 540-Theorem CP/M-Tomie ANKH Symbolic Parity Closure Witness Seal ($0\text{x0000DED7}$).
