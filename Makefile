@@ -1721,6 +1721,12 @@ test-cpm-tomie-4box-coaxial-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-semantic-projection-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-multiscale-voxel-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-geodesic-flow-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-haptic-force-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-haptic-force-feedback-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
+	./tests/test_cpm_tomie_haptic_force_feedback_prover
+	@rm -f tests/test_cpm_tomie_haptic_force_feedback_prover
 
 test-cpm-tomie-geodesic-flow-line-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_geodesic_flow_line_prover.c -o tests/test_cpm_tomie_geodesic_flow_line_prover
@@ -1862,200 +1868,44 @@ test-sdk-agent-runtime:
 	./tools/ankh_sdk_runtime hello.bin tune_channel.bin teddy_endow.bin stat.bin
 	@rm -f tools/ankh_sdk_runtime
 
-compile-fet-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_fet.c -o tools/cpm_compiler_fet
-	./tools/cpm_compiler_fet fet.bin
-	@rm -f tools/cpm_compiler_fet
-
-test-exec-fet-bin: compile-fet-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_fet.c -o tools/cpm_exec_fet
-	./tools/cpm_exec_fet fet.bin
-	@rm -f tools/cpm_exec_fet
-
-compile-hogan-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_hogan.c -o tools/cpm_compiler_hogan
-	./tools/cpm_compiler_hogan hogan.bin
-	@rm -f tools/cpm_compiler_hogan
-
-test-exec-hogan-bin: compile-hogan-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_hogan.c -o tools/cpm_exec_hogan
-	./tools/cpm_exec_hogan hogan.bin
-	@rm -f tools/cpm_exec_hogan
-
-compile-tree-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_tree.c -o tools/cpm_compiler_tree
-	./tools/cpm_compiler_tree tree.bin
-	@rm -f tools/cpm_compiler_tree
-
-test-exec-tree-bin: compile-tree-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_tree.c -o tools/cpm_exec_tree
-	./tools/cpm_exec_tree tree.bin
-	@rm -f tools/cpm_exec_tree
-
-compile-gate-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_gate.c -o tools/cpm_compiler_gate
-	./tools/cpm_compiler_gate gate.bin
-	@rm -f tools/cpm_compiler_gate
-
-test-exec-gate-bin: compile-gate-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_gate.c -o tools/cpm_exec_gate
-	./tools/cpm_exec_gate gate.bin
-	@rm -f tools/cpm_exec_gate
-
-compile-patch-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_patch.c -o tools/cpm_compiler_patch
-	./tools/cpm_compiler_patch patch.bin
-	@rm -f tools/cpm_compiler_patch
-
-test-exec-patch-bin: compile-patch-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_patch.c -o tools/cpm_exec_patch
-	./tools/cpm_exec_patch patch.bin
-	@rm -f tools/cpm_exec_patch
-
-compile-unpack-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_unpack.c -o tools/cpm_compiler_unpack
-	./tools/cpm_compiler_unpack unpack.bin
-	@rm -f tools/cpm_compiler_unpack
-
-test-exec-unpack-bin: compile-unpack-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_unpack.c -o tools/cpm_exec_unpack
-	./tools/cpm_exec_unpack unpack.bin
-	@rm -f tools/cpm_exec_unpack
-
-compile-pack-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_pack.c -o tools/cpm_compiler_pack
-	./tools/cpm_compiler_pack pack.bin
-	@rm -f tools/cpm_compiler_pack
-
-test-exec-pack-bin: compile-pack-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_pack.c -o tools/cpm_exec_pack
-	./tools/cpm_exec_pack pack.bin
-	@rm -f tools/cpm_exec_pack
-
-compile-link-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_link.c -o tools/cpm_compiler_link
-	./tools/cpm_compiler_link link.bin
-	@rm -f tools/cpm_compiler_link
-
-test-exec-link-bin: compile-link-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_link.c -o tools/cpm_exec_link
-	./tools/cpm_exec_link link.bin
-	@rm -f tools/cpm_exec_link
-
-compile-eval-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_eval.c -o tools/cpm_compiler_eval
-	./tools/cpm_compiler_eval eval.bin
-	@rm -f tools/cpm_compiler_eval
-
-test-exec-eval-bin: compile-eval-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_eval.c -o tools/cpm_exec_eval
-	./tools/cpm_exec_eval eval.bin
-	@rm -f tools/cpm_exec_eval
-
-compile-prove-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_prove.c -o tools/cpm_compiler_prove
-	./tools/cpm_compiler_prove prove.bin
-	@rm -f tools/cpm_compiler_prove
-
-test-exec-prove-bin: compile-prove-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_prove.c -o tools/cpm_exec_prove
-	./tools/cpm_exec_prove prove.bin
-	@rm -f tools/cpm_exec_prove
-
-compile-fold-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_fold.c -o tools/cpm_compiler_fold
-	./tools/cpm_compiler_fold fold.bin
-	@rm -f tools/cpm_compiler_fold
-
-test-exec-fold-bin: compile-fold-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_fold.c -o tools/cpm_exec_fold
-	./tools/cpm_exec_fold fold.bin
-	@rm -f tools/cpm_exec_fold
-
-test-ankh-gguf-quadtree-pipeline:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_gguf_quadtree_pipeline.c -o tools/ankh_gguf_quadtree_pipeline
-	./tools/ankh_gguf_quadtree_pipeline
-	@rm -f tools/ankh_gguf_quadtree_pipeline
-
-test-cpm-master-fleet-18:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_master_orchestrator_18.c -o tools/cpm_master_orchestrator_18
-	./tools/cpm_master_orchestrator_18
-	@rm -f tools/cpm_master_orchestrator_18
-
-test-cpm-master-fleet: compile-stat-bin compile-dir-bin compile-pip-bin compile-asm-bin compile-ddt-bin compile-ed-bin compile-submit-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_master_orchestrator.c -o tools/cpm_master_orchestrator
-	./tools/cpm_master_orchestrator
-	@rm -f tools/cpm_master_orchestrator
-
-compile-ed-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_ed.c -o tools/cpm_compiler_ed
-	./tools/cpm_compiler_ed ed.bin
-	@rm -f tools/cpm_compiler_ed
-
-test-exec-ed-bin: compile-ed-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_ed.c -o tools/cpm_exec_ed
-	./tools/cpm_exec_ed ed.bin
-	@rm -f tools/cpm_exec_ed
-
-compile-submit-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_submit.c -o tools/cpm_compiler_submit
-	./tools/cpm_compiler_submit submit.bin
-	@rm -f tools/cpm_compiler_submit
-
-test-exec-submit-bin: compile-submit-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_submit.c -o tools/cpm_exec_submit
-	./tools/cpm_exec_submit submit.bin
-	@rm -f tools/cpm_exec_submit
-
-compile-asm-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_asm.c -o tools/cpm_compiler_asm
-	./tools/cpm_compiler_asm asm.bin
-	@rm -f tools/cpm_compiler_asm
-
-test-exec-asm-bin: compile-asm-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_asm.c -o tools/cpm_exec_asm
-	./tools/cpm_exec_asm asm.bin
-	@rm -f tools/cpm_exec_asm
-
-compile-ddt-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_ddt.c -o tools/cpm_compiler_ddt
-	./tools/cpm_compiler_ddt ddt.bin
-	@rm -f tools/cpm_compiler_ddt
-
-test-exec-ddt-bin: compile-ddt-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_ddt.c -o tools/cpm_exec_ddt
-	./tools/cpm_exec_ddt ddt.bin
-	@rm -f tools/cpm_exec_ddt
-
-compile-dir-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_dir.c -o tools/cpm_compiler_dir
-	./tools/cpm_compiler_dir dir.bin
-	@rm -f tools/cpm_compiler_dir
-
-test-exec-dir-bin: compile-dir-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_dir.c -o tools/cpm_exec_dir
-	./tools/cpm_exec_dir dir.bin
-	@rm -f tools/cpm_exec_dir
-
-compile-pip-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_pip.c -o tools/cpm_compiler_pip
-	./tools/cpm_compiler_pip pip.bin
-	@rm -f tools/cpm_compiler_pip
-
-test-exec-pip-bin: compile-pip-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_pip.c -o tools/cpm_exec_pip
-	./tools/cpm_exec_pip pip.bin
-	@rm -f tools/cpm_exec_pip
-
-compile-stat-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_compiler_stat.c -o tools/cpm_compiler_stat
-	./tools/cpm_compiler_stat stat.bin
-	@rm -f tools/cpm_compiler_stat
-
-test-exec-stat-bin: compile-stat-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/cpm_exec_stat.c -o tools/cpm_exec_stat
-	./tools/cpm_exec_stat stat.bin
-	@rm -f tools/cpm_exec_stat
+compile-fet-bin: test-ankh-llm-cpm-suite
+test-exec-fet-bin: test-ankh-llm-cpm-suite
+compile-hogan-bin: test-ankh-llm-cpm-suite
+test-exec-hogan-bin: test-ankh-llm-cpm-suite
+compile-tree-bin: test-ankh-llm-cpm-suite
+test-exec-tree-bin: test-ankh-llm-cpm-suite
+compile-gate-bin: test-ankh-llm-cpm-suite
+test-exec-gate-bin: test-ankh-llm-cpm-suite
+compile-patch-bin: test-ankh-llm-cpm-suite
+test-exec-patch-bin: test-ankh-llm-cpm-suite
+compile-unpack-bin: test-ankh-llm-cpm-suite
+test-exec-unpack-bin: test-ankh-llm-cpm-suite
+compile-pack-bin: test-ankh-llm-cpm-suite
+test-exec-pack-bin: test-ankh-llm-cpm-suite
+compile-link-bin: test-ankh-llm-cpm-suite
+test-exec-link-bin: test-ankh-llm-cpm-suite
+compile-eval-bin: test-ankh-llm-cpm-suite
+test-exec-eval-bin: test-ankh-llm-cpm-suite
+compile-prove-bin: test-ankh-llm-cpm-suite
+test-exec-prove-bin: test-ankh-llm-cpm-suite
+compile-fold-bin: test-ankh-llm-cpm-suite
+test-exec-fold-bin: test-ankh-llm-cpm-suite
+compile-ed-bin: test-ankh-llm-cpm-suite
+test-exec-ed-bin: test-ankh-llm-cpm-suite
+compile-submit-bin: test-ankh-llm-cpm-suite
+test-exec-submit-bin: test-ankh-llm-cpm-suite
+compile-asm-bin: test-ankh-llm-cpm-suite
+test-exec-asm-bin: test-ankh-llm-cpm-suite
+compile-ddt-bin: test-ankh-llm-cpm-suite
+test-exec-ddt-bin: test-ankh-llm-cpm-suite
+compile-dir-bin: test-ankh-llm-cpm-suite
+test-exec-dir-bin: test-ankh-llm-cpm-suite
+compile-pip-bin: test-ankh-llm-cpm-suite
+test-exec-pip-bin: test-ankh-llm-cpm-suite
+compile-stat-bin: test-ankh-llm-cpm-suite
+test-exec-stat-bin: test-ankh-llm-cpm-suite
+test-cpm-master-fleet-18: test-ankh-llm-cpm-suite
+test-cpm-master-fleet: test-ankh-llm-cpm-suite
 
 test-ankh-abi-wmq-compiler:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_ankh_abi_wmq_compiler.c -o tests/test_ankh_abi_wmq_compiler

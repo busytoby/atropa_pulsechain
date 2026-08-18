@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPHF",
+        .opcode_signature = 0x43504846,
+        .title = "CPMTOMIE-HAPTIC-FORCE-FEEDBACK-CORPS",
+        .theorem_descriptions = {
+            "Volumetric Force Feedback Invariance",
+            "God-Object Constraint Surface Projection",
+            "Passivity-Preserving Telehaptic Impedance Control",
+            "Sub-Millisecond 1kHz Haptic Rendering Latency",
+            "Sovereign Haptic Force Feedback Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPGF",
         .opcode_signature = 0x43504746,
         .title = "CPMTOMIE-GEODESIC-FLOW-LINE-CORPS",
@@ -340,6 +352,222 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
             "Dual-Path Hardware Register Verification Invariance",
             "Aho-Corasick Sub-Microsecond Cache Gating",
             "Sovereign Coaxial Inference Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "ASMS",
+        .opcode_signature = 0x41534D53,
+        .title = "CPMTOMIE-ASM-RELOCATABLE-ASSEMBLER-CORPS",
+        .theorem_descriptions = {
+            "Auncient Relocatable Assembler Invariance",
+            "EDSAC Opcode Bitmask Firewall Validation",
+            "Rule 18 Checksum Recurrence Invariance",
+            "TPA 0100H Memory Boundary Compliance",
+            "Sovereign Assembler Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "DDTS",
+        .opcode_signature = 0x44445453,
+        .title = "CPMTOMIE-DDT-DYNAMIC-DEBUGGER-CORPS",
+        .theorem_descriptions = {
+            "Dynamic Debugging Tool Register Inspection",
+            "SCSI XDC Handshake Boundary Halting",
+            "Zero-Loss Memory State Preservation",
+            "Rule 18 Checksum Parity Validation",
+            "Sovereign DDT Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "DIRS",
+        .opcode_signature = 0x44495253,
+        .title = "CPMTOMIE-DIR-DIRECTORY-MERKLE-CORPS",
+        .theorem_descriptions = {
+            "Quadtree Merkle Directory Traversal",
+            "FNV-1a Hash State Verification",
+            "Sub-Microsecond Directory Scanning Latency",
+            "Non-Destructive Directory Indexing",
+            "Sovereign DIR Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "EDTS",
+        .opcode_signature = 0x45445453,
+        .title = "CPMTOMIE-ED-CONTEXT-LINE-EDITOR-CORPS",
+        .theorem_descriptions = {
+            "Character Stream Context Line Editing",
+            "Ring Buffer Memory Safety Guard",
+            "Sub-Millisecond Line Insertion Latency",
+            "Zero-Loss Buffer Serialization",
+            "Sovereign ED Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "EVLS",
+        .opcode_signature = 0x45564C53,
+        .title = "CPMTOMIE-EVAL-EDO22-ARITHMETIC-CORPS",
+        .theorem_descriptions = {
+            "Arithmetic Expression Grammar Parsing",
+            "EDO-22 Microtonal Pitch Evaluation",
+            "Modular Motzkin Field Arithmetic",
+            "Constant-Time Evaluation Convergence",
+            "Sovereign EVAL Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "FETS",
+        .opcode_signature = 0x46455453,
+        .title = "CPMTOMIE-FET-SOFT-BODY-PHYSICS-CORPS",
+        .theorem_descriptions = {
+            "Field-Effect Transistor Discharge Dynamics",
+            "Verlet Soft Body Mass-Spring Integration",
+            "Non-Preferential Charge Accumulator",
+            "Discharge Cycle Energy Conservation",
+            "Sovereign FET Physics Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "FOLD",
+        .opcode_signature = 0x464F4C44,
+        .title = "CPMTOMIE-FOLD-LISSAJOUS-QUATERNION-CORPS",
+        .theorem_descriptions = {
+            "WinchesterMQ Lissajous Quaternion Folding",
+            "EDO-22 Look-Up Table Phase Modulation",
+            "Vertex Displacement Register Boundary Coupling",
+            "Sub-Millisecond Quaternion Transformation",
+            "Sovereign Mesh Folding Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "GATE",
+        .opcode_signature = 0x47415445,
+        .title = "CPMTOMIE-GATE-SCSI-BUS-FIREWALL-CORPS",
+        .theorem_descriptions = {
+            "Logic Gate & SCSI Handshake Intercept",
+            "State Register Access Arbitration",
+            "Zero-Latency Boundary Instruction Filter",
+            "Hardware State Map Keycode Verification",
+            "Sovereign Bus Gate Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "HOGN",
+        .opcode_signature = 0x484F474E,
+        .title = "CPMTOMIE-HOGAN-BANK-ENDOWMENT-CORPS",
+        .theorem_descriptions = {
+            "Hogan Bank Qualified Participant Registration",
+            "SSA Deterministic SSN Bridge Validation",
+            "Newborn Teddy Bear 1,000,000 Saat Endowment",
+            "Dual-Signature Ledger Integrity",
+            "Sovereign Hogan Account Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "LNKS",
+        .opcode_signature = 0x4C4E4B53,
+        .title = "CPMTOMIE-LINK-MERKLE-SYMBOL-LINKER-CORPS",
+        .theorem_descriptions = {
+            "Relocatable Object Merkle Linking",
+            "Symbol Resolution Invariance",
+            "Zero-Collision Quadtree Address Binding",
+            "Sub-Millisecond Linker Resolution",
+            "Sovereign Merkle Linker Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "PACK",
+        .opcode_signature = 0x5041434B,
+        .title = "CPMTOMIE-PACK-PURE-C-DEFLATE-CORPS",
+        .theorem_descriptions = {
+            "Pure C RFC 1951 Deflate Compression",
+            "Strict Zero Brotli Format Invariance",
+            "Memory-Bounded Sliding Window Streaming",
+            "Deterministic Decompression Roundtripping",
+            "Sovereign Deflate Compressor Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "PTCH",
+        .opcode_signature = 0x50544348,
+        .title = "CPMTOMIE-PATCH-BIOS-MEMORY-PATCH-CORPS",
+        .theorem_descriptions = {
+            "Bitmask Byte-Level Memory Patching",
+            "BIOS Jump Table Dynamic Redirection",
+            "Non-Destructive TPA Hot-Patching",
+            "Transaction Rollback Isolation",
+            "Sovereign BIOS Patch Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "PIPS",
+        .opcode_signature = 0x50495053,
+        .title = "CPMTOMIE-PIP-PERIPHERAL-INTERCHANGE-CORPS",
+        .theorem_descriptions = {
+            "Peripheral Interchange Program Stream Routing",
+            "Logical Device Mapping Invariance",
+            "Loopback Socket Raw SCSI Bridging",
+            "Buffer Overflow Resistant Block Transfer",
+            "Sovereign PIP Router Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "PROV",
+        .opcode_signature = 0x50524F56,
+        .title = "CPMTOMIE-PROVE-ALGOL61-FORMAL-PROVER-CORPS",
+        .theorem_descriptions = {
+            "Algol60/61 Formal Specification Parsing",
+            "COBOL Business Strategy Proof Alignment",
+            "C11 Automated Verification Ratification",
+            "Lyapunov Stability Boundary Certification",
+            "Sovereign Formal Prover Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "STAT",
+        .opcode_signature = 0x53544154,
+        .title = "CPMTOMIE-STAT-DISK-ALLOCATION-STAT-CORPS",
+        .theorem_descriptions = {
+            "Disk Parameter Block Allocation Statistics",
+            "TPA Memory Space Utilization Metrics",
+            "Quadtree Block Ledger Slice Auditing",
+            "Real-Time Diagnostic Profiling",
+            "Sovereign STAT Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "SBMT",
+        .opcode_signature = 0x53424D54,
+        .title = "CPMTOMIE-SUBMIT-BATCH-JCL-STREAM-CORPS",
+        .theorem_descriptions = {
+            "Batch Command Stream Parsing",
+            "CICS/JES Pipeline Transaction Dispatch",
+            "Non-Blocking Batch Job Coordination",
+            "Atomic Transaction Job Finalization",
+            "Sovereign JCL Submitter Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "TREE",
+        .opcode_signature = 0x54524545,
+        .title = "CPMTOMIE-TREE-23TREE-QUADTREE-NAV-CORPS",
+        .theorem_descriptions = {
+            "2-3 Tree Merkle Quadtree Hierarchy Traversal",
+            "O(1) Memory-Mapped Quadtree Resolution",
+            "Strict .dat.bin Format Invariance",
+            "Zero Non-Manifold Node Detection",
+            "Sovereign Quadtree Navigator Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "UNPK",
+        .opcode_signature = 0x554E504B,
+        .title = "CPMTOMIE-UNPACK-PURE-C-INFLATE-CORPS",
+        .theorem_descriptions = {
+            "Pure C RFC 1951 Inflate Decompression",
+            "Zero External Library Dependency Stream Decompressor",
+            "Strict Non-RDF / Non-Brotli Pipeline",
+            "Zero-Copy Memory Stream Expansion",
+            "Sovereign Inflate Decompressor Grand Seal"
         }
     }
 };
