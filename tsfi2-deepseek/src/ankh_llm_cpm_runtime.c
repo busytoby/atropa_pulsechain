@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDN",
+        .opcode_signature = 0x4350444E,
+        .title = "CPMTOMIE-DNP-NMR-CORPS",
+        .theorem_descriptions = {
+            "Microwave Solid-Effect Cross-Polarization Invariance",
+            "Hyperpolarized Chemical Shift Anisotropy Inversion",
+            "Spherical Joint Field Homogeneity Invariance",
+            "Sub-Millisecond Hyperpolarized FID Dispatch",
+            "Sovereign DNP-NMR Telemetry Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPME",
         .opcode_signature = 0x43504D45,
         .title = "CPMTOMIE-MR-ELASTOGRAPHY-CORPS",
