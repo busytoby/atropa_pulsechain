@@ -1749,6 +1749,7 @@ test-cpm-tomie-semantic-affordance-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-skinz-b4-pinz-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-acoustic-levitator-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-idempotent-totient-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-sagnac-ring-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover

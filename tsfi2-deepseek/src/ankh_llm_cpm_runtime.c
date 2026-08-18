@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSR",
+        .opcode_signature = 0x43505352,
+        .title = "CPMTOMIE-SAGNAC-RING-CORPS",
+        .theorem_descriptions = {
+            "Sagnac Relativistic Phase Shift Invariance",
+            "Coaxial Ring Laser Loopback Drift Defense",
+            "Non-Preferential ZMM Clock Frame Synchronization",
+            "Sub-Millisecond Gyro Phase Evaluation Latency",
+            "Sovereign Sagnac Ring Gyro Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPIN",
         .opcode_signature = 0x4350494E,
         .title = "CPMTOMIE-IDEMPOTENT-NULL-CORPS",
