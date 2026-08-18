@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPT8",
+        .opcode_signature = 0x43505438,
+        .title = "CPMTOMIE-TEDDY-SUPER8-AUTONOMOUS-CORPS",
+        .theorem_descriptions = {
+            "Autonomous Kinematic Camera Chassis Assembly Invariance",
+            "Spring-Wound Clockwork Shutter & Claw Mechanism Invariance",
+            "Optical Lens Cell Alignment & Multi-Coating",
+            "Sub-Millisecond Autonomous RenderMan RIB Stream Dispatch",
+            "Sovereign Teddy Bear Super 8 Autonomous Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPS8",
         .opcode_signature = 0x43505338,
         .title = "CPMTOMIE-SUPER8-SPATIAL-CARRIER-CORPS",
