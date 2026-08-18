@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CP8F",
+        .opcode_signature = 0x43503846,
+        .title = "CPMTOMIE-SUPER8-FABRY-PEROT-CORPS",
+        .theorem_descriptions = {
+            "Active Fabry-Pérot Airy Cavity Transmission Invariance",
+            "Hand-Held Vibration Micro-Doppler Phase Demodulation",
+            "Cavity Finesse & Longitudinal Mode Selectivity",
+            "Sub-Millisecond BDOS Live Intermittent Optical Sync",
+            "Sovereign Live Fabry-Pérot Super 8 Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAI",
         .opcode_signature = 0x43504149,
         .title = "CPMTOMIE-AIRY-BOUNDEDNESS-PROVER-CORPS",
