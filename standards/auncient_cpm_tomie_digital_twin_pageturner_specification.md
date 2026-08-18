@@ -107,3 +107,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 53: Thermodynamic-to-Economic Closed-Loop Token Rebate Invariance ($\sum R \ge \sum G \implies S(t) \ge 1,000,000$).
     * Theorem 54: Low-Power Hibernation State Transition Safety ($S < 10,000\text{ Saat} \implies \text{Safe Sleep}$).
     * Theorem 55: ACID Compliance Rollback Atomicity Under Out-of-Gas Conditions ($\mathcal{M}(t^+) \equiv \mathcal{M}(t^-)$).
+
+12. **Tier 12 (Theorems 56–60: Hogan Bank Diyat VIA 6522 & Capstan Shaft Mechanics)**:
+    * Theorem 56: Direct Saat Fee Debit Atomicity on Teddy Bear `HoganAccount` ($S(t^+) = S(t^-) - \text{Fee}$).
+    * Theorem 57: Capstan Shaft Kinetic Energy Diyat Scaling ($25\text{ Saat/seek}$).
+    * Theorem 58: VIA 6522 Hardware Register I/O & Interrupt Fee Invariance ($5\text{ Saat/port I/O}$).
+    * Theorem 59: Insufficient Balance Reversion & State Rollback (Zero Partial Debit).
+    * Theorem 60: WinchesterMQ SCSI & VIA 6522 Hardware Closure Parity ($0\text{x0000263F}$).
