@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSA",
+        .opcode_signature = 0x43505341,
+        .title = "CPMTOMIE-SEMANTIC-AFFORDANCE-CORPS",
+        .theorem_descriptions = {
+            "Non-Verbal Semantic Wavefront Projection",
+            "Affordance Field Gradient Potential Alignment",
+            "Non-Preferential Direct Clay Manipulation Action",
+            "Sub-Millisecond Affordance Field Latency",
+            "Sovereign Semantic Affordance Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCC",
         .opcode_signature = 0x43504343,
         .title = "CPMTOMIE-CANONICAL-COMPLEMENT-CORPS",

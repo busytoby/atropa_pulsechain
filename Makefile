@@ -1745,6 +1745,7 @@ test-cpm-tomie-dqs-to-dai-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-quadtree-wavelet-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-exterior-calculus-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-canonical-complementarity-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-semantic-affordance-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
