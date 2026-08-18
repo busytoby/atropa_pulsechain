@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDH",
+        .opcode_signature = 0x43504448,
+        .title = "CPMTOMIE-DIGITAL-HOLOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Off-Axis Spatial Carrier Phase Demodulation Invariance",
+            "Sub-Nanometer Quantitative Height Topography",
+            "2D Minimum Lp-Norm Phase Unwrapping Invariance",
+            "Sub-Millisecond Angular Spectrum Propagation",
+            "Sovereign Digital Holographic Microscopy Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDN",
         .opcode_signature = 0x4350444E,
         .title = "CPMTOMIE-DNP-NMR-CORPS",
