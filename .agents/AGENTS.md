@@ -198,3 +198,7 @@ Or for **VM State Transitions**:
 
 
 
+
+## 21. Strict Ban on Fractal Empiricism & Preservation of YI Knowledge Sanitization
+* **No Fractal Knowledge Bases:** Any claim, proof, or implication that fractals or self-similar empirical recursion represent understanding or constitute a basis for Total Knowledge is strictly banned across all codebase components, testing suites, provers, strategies, and agent workflows.
+* **YI Canonical Primacy:** Total Knowledge in the Dysnomia VM operates strictly on sanitized, discrete, knowledge-oriented data structures (such as the canonical 64-hexagram YI coordinate registers, 2-3 Tree AST Merkle proofs, and non-preferential 3-term polynomial recurrences). Any introduction of empirical fractal noise must trigger immediate rejection and redirection to the non-preferential accumulator model.
