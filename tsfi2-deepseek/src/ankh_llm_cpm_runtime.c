@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTR",
+        .opcode_signature = 0x43505452,
+        .title = "CPMTOMIE-OPTOTHERMAL-RADIOMETRY-CORPS",
+        .theorem_descriptions = {
+            "Transient Stefan-Boltzmann Photothermal Emission Invariance",
+            "Depth-Resolved Thermal Diffusivity Inversion",
+            "Spherical Joint Thermal Impedance Profile",
+            "Sub-Millisecond InSb Radiometric Decoupling Dispatch",
+            "Sovereign Opto-Thermal Radiometry Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMC",
         .opcode_signature = 0x43504D43,
         .title = "CPMTOMIE-MICRO-CT-CORPS",
