@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPNR",
+        .opcode_signature = 0x43504E52,
+        .title = "CPMTOMIE-NESTED-VM-ROUTING-CORPS",
+        .theorem_descriptions = {
+            "Multi-Tier Nested VM Coaxial Packet Framing",
+            "STANAG-4586 Dynamic Telemetry Packet Switching",
+            "Cross-VM Neuron Coaxial Channel Interop",
+            "Sub-Millisecond Cross-VM Routing Latency",
+            "Sovereign Nested VM Packet Routing Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPHT",
         .opcode_signature = 0x43504854,
         .title = "CPMTOMIE-HOGAN-SSA-TEDDY-CORPS",

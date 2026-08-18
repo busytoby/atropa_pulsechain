@@ -1726,6 +1726,7 @@ test-cpm-tomie-gestural-kinematics-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-acoustic-pbx-clay-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-spheroid-alu-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-hogan-ssa-teddy-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-nested-vm-routing-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
