@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPEX",
+        .opcode_signature = 0x43504558,
+        .title = "CPMTOMIE-EXTERIOR-CALCULUS-CORPS",
+        .theorem_descriptions = {
+            "Exterior Derivative d^2 = 0 Nilpotency Invariance",
+            "Hodge Star Dual Isomorphism Preservation",
+            "Non-Preferential Laplace-de Rham Operator",
+            "Sub-Millisecond Exterior Calculus Latency",
+            "Sovereign Differential Form Calculus Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPQW",
         .opcode_signature = 0x43505157,
         .title = "CPMTOMIE-QUADTREE-WAVELET-CORPS",
