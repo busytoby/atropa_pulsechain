@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CP3F",
+        .opcode_signature = 0x43503346,
+        .title = "CPMTOMIE-SE3-FEYNMAN-POINT-CORPS",
+        .theorem_descriptions = {
+            "SE(3) Feynman Point Fixed-Point Invariance",
+            "Maurer-Cartan Differential Form Invariance",
+            "Non-Preferential Bounded Asymptotic Orbit",
+            "Sub-Millisecond Feynman Evaluation Latency",
+            "Sovereign SE(3) Feynman Point Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPRC",
         .opcode_signature = 0x43505243,
         .title = "CPMTOMIE-RELAY-COMMUTATION-CORPS",
