@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPLA",
+        .opcode_signature = 0x43504C41,
+        .title = "CPMTOMIE-POLYHEDRAL-LATTICE-CORPS",
+        .theorem_descriptions = {
+            "Triplet-Link Polyhedral Growth Invariance",
+            "15-Link & 16-Link Lattice Structural Rigidity",
+            "Harmonic 2D Closed-Loop Morphing Continuity",
+            "Sub-Millisecond Lattice Geometry Latency",
+            "Sovereign Polyhedral Lattice Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPHM",
         .opcode_signature = 0x4350484D,
         .title = "CPMTOMIE-HAPTIC-MAGNETIC-CORPS",
