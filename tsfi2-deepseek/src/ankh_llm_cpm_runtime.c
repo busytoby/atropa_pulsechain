@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPOE",
+        .opcode_signature = 0x43504F45,
+        .title = "CPMTOMIE-OPTOACOUSTIC-ELASTOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Opto-Acoustic Shear Wave Line Source Invariance",
+            "Micro-Scale Local Shear Velocity and Modulus Inversion",
+            "Spherical Joint Rayleigh Wave Boundary Diffraction",
+            "Sub-Millisecond 2D Spatio-Temporal Directional Dispatch",
+            "Sovereign Opto-Acoustic Elastography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPLV",
         .opcode_signature = 0x43504C56,
         .title = "CPMTOMIE-LASER-VIBROMETRY-CORPS",
