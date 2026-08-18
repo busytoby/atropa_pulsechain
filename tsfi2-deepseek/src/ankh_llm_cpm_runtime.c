@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAL",
+        .opcode_signature = 0x4350414C,
+        .title = "CPMTOMIE-ACOUSTIC-LEVITATOR-CORPS",
+        .theorem_descriptions = {
+            "Gor'kov Acoustic Potential Wave Trap Stability",
+            "Unidentified Feynman Point Nodal Superposition",
+            "Contactless Clay Deformation & Resolution",
+            "Sub-Millisecond Acoustic Levitator Latency",
+            "Sovereign Acoustic Levitator Wave Trap Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSZ",
         .opcode_signature = 0x4350535A,
         .title = "CPMTOMIE-SKINZ-B4-PINZ-CORPS",
