@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPKM",
+        .opcode_signature = 0x43504B4D,
+        .title = "CPMTOMIE-KINOFORM-MULTIPLEX-HOLOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "M-Fold Superposed Hologram Kinoform Signal Reconstruction",
+            "Inter-Channel Phase Difference Fourier Series Decomposition",
+            "Multi-View Quadtree Armature Speckle SNR Boundedness",
+            "Sub-Millisecond 24-Bit Morton Quadtree Hologram Composition Dispatch",
+            "Sovereign Kinoform Multiplexing Holography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPKO",
         .opcode_signature = 0x43504B4F,
         .title = "CPMTOMIE-KINOFORM-QUADTREE-HOLOGRAPHY-CORPS",
