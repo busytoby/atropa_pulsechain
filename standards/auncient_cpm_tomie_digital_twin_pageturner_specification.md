@@ -86,3 +86,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
    * Theorem 38: Strict Temporal Sequence Ordering & Event Dependency DAG ($e_i \prec e_j \iff t(e_i) + \Delta t_{\text{causal}} \le t(e_j)$).
    * Theorem 39: Longitudinal Quasi-Experimental Rubin Causal Model Unconfoundedness ($|\hat{\tau} - \tau| \le \epsilon$).
    * Theorem 40: Multi-Scale Occupant Co-Creation Nash Equilibrium Convergence ($\mathbf{T}^* = \arg\max \sum U_i - \lambda P$).
+
+9. **Tier 9 (Theorems 41–45: Clayscape Play USDA Multi-Agent Living Lab Certification)**:
+   * Theorem 41: Multi-Agent Spatial Non-Interference Invariance ($\mathcal{V}_{\text{BIM}}(A_i) \cap \mathcal{V}_{\text{BIM}}(A_j) = \emptyset$).
+   * Theorem 42: Viscoelastic Clay Haptic Plasticity Relaxation ($\|\mathbf{K}_{\text{clay}}(t) - \mathbf{K}_{\text{rest}}\|_2 \le \|\mathbf{K}(0) - \mathbf{K}_{\text{rest}}\|_2 e^{-\alpha t}$).
+   * Theorem 43: Universal USDA-to-RenderMan Scenegraph Homomorphism ($\Psi_{\text{RIB}}: \mathcal{S}_{\text{USDA}} \xrightarrow{\sim} \text{RIB\_AST}$).
+   * Theorem 44: Quad-Helix Living Lab Governance & Saat Quorum ($\sum_{k \in \text{Quorum}} \text{Saat}(k) \ge \frac{2}{3} \sum \text{Saat}$).
+   * Theorem 45: Multi-Semester Clayscape Viscoelastic Wear Observer Convergence ($|\hat{E}_{\text{observer}} - E_{\text{physical}}| \le 1.0\text{ kPa}$).
