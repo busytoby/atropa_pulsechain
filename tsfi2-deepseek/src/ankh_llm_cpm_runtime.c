@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSL",
+        .opcode_signature = 0x4350534C,
+        .title = "CPMTOMIE-SPHEROID-ALU-LISSAJOUS-CORPS",
+        .theorem_descriptions = {
+            "Spheroid ALU Quaternion Phase Angle Modulation",
+            "EDO-22 Octave Microtuning to Frequency Invariance",
+            "DisplacementShader Vertex Boundary Synchronization",
+            "Sub-Millisecond Quaternion Transformation Latency",
+            "Sovereign Spheroid ALU Lissajous Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPY",
         .opcode_signature = 0x43505059,
         .title = "CPMTOMIE-ACOUSTIC-PBX-CLAY-CORPS",
