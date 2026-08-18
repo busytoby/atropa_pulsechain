@@ -526,12 +526,18 @@ TsfiPdfDocumentFeatures *tsfi_pdf_extract_all_features(const char *filepath) {
 
         TsfiPdfByteBuffer decompressed = {0};
         if (tsfi_pdf_zlib_decompress(pdf_data + s_pos, stream_len, &decompressed) == 0 && decompressed.size > 0) {
-            if (!is_font_or_meta) {
+            bool is_decomp_font = (memmem_fast(decompressed.data, decompressed.size < 256 ? decompressed.size : 256, "%!PS-AdobeFont", 14) != NULL ||
+                                   memmem_fast(decompressed.data, decompressed.size < 256 ? decompressed.size : 256, "%!FontType1", 10) != NULL ||
+                                   memmem_fast(decompressed.data, decompressed.size < 256 ? decompressed.size : 256, "FontDirectory", 13) != NULL ||
+                                   memmem_fast(decompressed.data, decompressed.size < 256 ? decompressed.size : 256, "CIDInit", 7) != NULL);
+            if (!is_font_or_meta && !is_decomp_font) {
                 parse_multimodal_content_stream(decompressed.data, decompressed.size, feats->text_buffer, feats);
             }
             free(decompressed.data);
         } else {
-            if (!is_font_or_meta) {
+            bool is_raw_font = (memmem_fast(pdf_data + s_pos, stream_len < 256 ? stream_len : 256, "%!PS-AdobeFont", 14) != NULL ||
+                                memmem_fast(pdf_data + s_pos, stream_len < 256 ? stream_len : 256, "CIDInit", 7) != NULL);
+            if (!is_font_or_meta && !is_raw_font) {
                 parse_multimodal_content_stream(pdf_data + s_pos, stream_len, feats->text_buffer, feats);
             }
         }

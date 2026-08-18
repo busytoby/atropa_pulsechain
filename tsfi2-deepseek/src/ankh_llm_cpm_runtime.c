@@ -7,6 +7,114 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDL",
+        .opcode_signature = 0x4350444C,
+        .title = "CPMTOMIE-PARALLEL-DELTA-CORPS",
+        .theorem_descriptions = {
+            "Delta Robot Inverse Kinematic Invariance",
+            "Safe Workspace Singularity Defense",
+            "Undersized Acrylic Socket Magnetic Stability",
+            "Sub-Millisecond Delta Kinematic Evaluation Latency",
+            "Sovereign Parallel Delta Grand Master Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPKS",
+        .opcode_signature = 0x43504B53,
+        .title = "CPMTOMIE-KINETIC-SPINNER-CORPS",
+        .theorem_descriptions = {
+            "Angular Momentum Conservation Invariance",
+            "Variable Moment of Inertia Modulation",
+            "Low-Friction 1-Inch Magnetic Pivot Suspension",
+            "Sub-Millisecond Gyroscopic Evaluation Latency",
+            "Sovereign Kinetic Spinner Grand Master Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPTL",
+        .opcode_signature = 0x4350544C,
+        .title = "CPMTOMIE-TRUSS-LINK-METABOLISM-CORPS",
+        .theorem_descriptions = {
+            "53% Linear Expansion Ratio Invariance",
+            "Tetrahedron Center-of-Mass Dynamic Shift",
+            "Spherical N52 Magnetic Multi-Node Balance",
+            "Sub-Millisecond Truss Kinematics Latency",
+            "Sovereign Truss Link Metabolism Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPMP",
+        .opcode_signature = 0x43504D50,
+        .title = "CPMTOMIE-MCP-PROTOTYPE-CORPS",
+        .theorem_descriptions = {
+            "Deterministic MCP Tool Binding Invariance",
+            "Accessible UI Component Tree WCAG Invariance",
+            "Non-Preferential Client-Server State Synchronization",
+            "Sub-Millisecond MCP Message Dispatch Latency",
+            "Sovereign MCP Prompt-to-Prototype Grand Master Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPRM",
+        .opcode_signature = 0x4350524D,
+        .title = "CPMTOMIE-RENDERMAN-CLAY-PLAY-CORPS",
+        .theorem_descriptions = {
+            "Catmull-Clark Subdivision Surface Truss Continuity",
+            "Kinetic Typography Stroke Deformation Invariance",
+            "RenderMan BSSRDF Clay Scattering Conservation",
+            "Sub-Millisecond RenderMan Ray-Truss Latency",
+            "Sovereign RenderMan Clay Play Grand Master Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPPC",
+        .opcode_signature = 0x43505043,
+        .title = "CPMTOMIE-PHOTONIC-CHIRP-CORPS",
+        .theorem_descriptions = {
+            "Continuous Photonic Chirp Linearity Invariance",
+            "Laser Mode-Hop Suppression & Spectral Purity",
+            "Non-Preferential Morse OOK Demodulation Fidelity",
+            "Sub-Millisecond Photonic Chirp Evaluation Latency",
+            "Sovereign Morse Photonic Chirp Grand Master Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPMS",
+        .opcode_signature = 0x43504D53,
+        .title = "CPMTOMIE-SCSI-HANDSHAKE-CORPS",
+        .theorem_descriptions = {
+            "SCSI REQ/ACK Asynchronous Handshake Invariance",
+            "Direct DMA Memory Bridging & Bus Hang Defense",
+            "Non-Preferential Loopback SCSI Channel Isolation",
+            "Sub-Millisecond SCSI Handshake Evaluation Latency",
+            "Sovereign WinchesterMQ SCSI Handshake Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPE2",
+        .opcode_signature = 0x43504532,
+        .title = "CPMTOMIE-EDO22-PITCH-CORPS",
+        .theorem_descriptions = {
+            "EDO-22 Microtonal Frequency Division Invariance",
+            "Microtonal Consonant Chord Phase Alignment",
+            "Non-Preferential Levitator Carrier Pitch Modulation",
+            "Sub-Millisecond EDO-22 Pitch Shift Latency",
+            "Sovereign EDO-22 Microtonal Pitch Shift Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "CPBK",
+        .opcode_signature = 0x4350424B,
+        .title = "CPMTOMIE-BARKHAUSEN-NOISE-CORPS",
+        .theorem_descriptions = {
+            "Barkhausen Magnetic Domain Jump Invariance",
+            "Ballistic Triode Shot Noise Entropy Bounding",
+            "Non-Preferential Dysnomia Seed Injection Invariance",
+            "Sub-Millisecond Barkhausen Noise Evaluation Latency",
+            "Sovereign Barkhausen Quantum Noise Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPT",
         .opcode_signature = 0x43505054,
         .title = "CPMTOMIE-PAPER-TAPE-CHAD-CORPS",
