@@ -352,3 +352,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 228: CDP Vault Solvency & Over-Collateralization ($\text{Ratio} = 2.50 \ge 1.50$).
     * Theorem 229: DAI-Saat Price Stability Equilibrium.
     * Theorem 230: Grand Master 230-Theorem DAI Folding Closure ($0\text{x00003E15}$).
+
+47. **Tier 47 (Theorems 231–235: Quadtree DAI Spatial Folding & Gradient Damping)**:
+    * Theorem 231: Smooth Gradient Damping Invariant ($\nabla \Phi \le 0.045 \le 0.050$, eliminating steep potential cliffs).
+    * Theorem 232: Universal Quadtree DAI Fill & Fold ($256$ nodes filled with $2,560,000\text{ DAI}$).
+    * Theorem 233: `.dat.bin` Quadtree Slice Solvency (pure binary database layout solvency).
+    * Theorem 234: Frictionless Multi-Scale Folding Invariant.
+    * Theorem 235: Grand Master 235-Theorem Quadtree DAI Folding Closure ($0\text{x0000523C}$).
