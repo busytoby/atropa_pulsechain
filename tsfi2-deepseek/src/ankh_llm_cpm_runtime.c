@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPFS",
+        .opcode_signature = 0x43504653,
+        .title = "CPMTOMIE-SUBVM-LYAPUNOV-FEYNMAN-CORPS",
+        .theorem_descriptions = {
+            "Recursive Sub-VM Energy Dissipation Invariance",
+            "Feynman Point Mathematical Stability Limit",
+            "Non-Preferential Accumulator State Isolation",
+            "Sub-Millisecond Stability Evaluation Latency",
+            "Sovereign Sub-VM Lyapunov Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPNR",
         .opcode_signature = 0x43504E52,
         .title = "CPMTOMIE-NESTED-VM-ROUTING-CORPS",
