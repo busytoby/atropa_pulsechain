@@ -1833,40 +1833,13 @@ test-ankh-island-admit-matrix:
 	./tests/test_ankh_island_admit_matrix
 	@rm -f tests/test_ankh_island_admit_matrix
 
-compile-hello-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_compiler_hello.c -o tools/ankh_compiler_hello
-	./tools/ankh_compiler_hello hello.bin
-	@rm -f tools/ankh_compiler_hello
-
-test-exec-hello-bin: compile-hello-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_exec_bin.c -o tools/ankh_exec_bin
-	./tools/ankh_exec_bin hello.bin
-	@rm -f tools/ankh_exec_bin
-
-compile-tune-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_compiler_tune.c -o tools/ankh_compiler_tune
-	./tools/ankh_compiler_tune tune_channel.bin
-	@rm -f tools/ankh_compiler_tune
-
-test-exec-tune-bin: compile-tune-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_exec_tune.c -o tools/ankh_exec_tune
-	./tools/ankh_exec_tune tune_channel.bin
-	@rm -f tools/ankh_exec_tune
-
-compile-teddy-bin:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_compiler_teddy.c -o tools/ankh_compiler_teddy
-	./tools/ankh_compiler_teddy teddy_endow.bin
-	@rm -f tools/ankh_compiler_teddy
-
-test-exec-teddy-bin: compile-teddy-bin
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_exec_teddy.c -o tools/ankh_exec_teddy
-	./tools/ankh_exec_teddy teddy_endow.bin
-	@rm -f tools/ankh_exec_teddy
-
-test-sdk-agent-runtime:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tools/ankh_sdk_runtime.c -o tools/ankh_sdk_runtime
-	./tools/ankh_sdk_runtime hello.bin tune_channel.bin teddy_endow.bin stat.bin
-	@rm -f tools/ankh_sdk_runtime
+compile-hello-bin: test-ankh-llm-cpm-suite
+test-exec-hello-bin: test-ankh-llm-cpm-suite
+compile-tune-bin: test-ankh-llm-cpm-suite
+test-exec-tune-bin: test-ankh-llm-cpm-suite
+compile-teddy-bin: test-ankh-llm-cpm-suite
+test-exec-teddy-bin: test-ankh-llm-cpm-suite
+test-sdk-agent-runtime: test-ankh-llm-cpm-suite
 
 compile-fet-bin: test-ankh-llm-cpm-suite
 test-exec-fet-bin: test-ankh-llm-cpm-suite

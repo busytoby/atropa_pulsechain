@@ -569,6 +569,42 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
             "Zero-Copy Memory Stream Expansion",
             "Sovereign Inflate Decompressor Grand Seal"
         }
+    },
+    {
+        .fourcc_str = "HELO",
+        .opcode_signature = 0x48454C4F,
+        .title = "ANKH-LLM-HELLO-SOVEREIGN-CORPS",
+        .theorem_descriptions = {
+            "TPA 0100H Entry Point Execution Invariance",
+            "Canonical System Banner Serialization",
+            "Memory-Mapped TPA Output Verification",
+            "Rule 18 Parity Checksum Integrity",
+            "Sovereign Hello Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "TEDY",
+        .opcode_signature = 0x54454459,
+        .title = "ANKH-LLM-TEDDY-BEAR-ENDOWMENT-CORPS",
+        .theorem_descriptions = {
+            "Newborn Teddy Bear DNA Bridge Mapping",
+            "Deterministic SSN SSA Verification",
+            "Hogan Bank 1,000,000 Saat Direct Endowment",
+            "Dual-Signature Ledger Integrity Invariance",
+            "Sovereign Teddy Bear Grand Seal"
+        }
+    },
+    {
+        .fourcc_str = "TUNE",
+        .opcode_signature = 0x54554E45,
+        .title = "ANKH-LLM-TUNE-CHANNEL-CALIBRATION-CORPS",
+        .theorem_descriptions = {
+            "Transmission Channel Modular Exponentiation",
+            "Motzkin Prime Modular Field Divisor Alignment",
+            "X-Axis Lissajous Frequency Multiplier Binding",
+            "WinchesterMQ Register State Synchronization",
+            "Sovereign Tune Channel Grand Seal"
+        }
     }
 };
 
