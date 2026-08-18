@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAF",
+        .opcode_signature = 0x43504146,
+        .title = "CPMTOMIE-AFFORDANCE-FIELD-CORPS",
+        .theorem_descriptions = {
+            "Spatial Tool Affordance Field Gradient Invariance",
+            "Dynamic Intent Projection & Ambiguity Collapse",
+            "Non-Preferential Surface Normals Invariance",
+            "Sub-Millisecond Affordance Evaluation Latency",
+            "Sovereign Affordance Field Projection Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMS",
         .opcode_signature = 0x43504D53,
         .title = "CPMTOMIE-MANIFOLD-SFF-SLICING-CORPS",
