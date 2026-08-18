@@ -219,3 +219,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 133: Relocatable Address Arithmetic Soundness ($\theta_{\text{entry}} = \text{base} + \text{offset} \pmod{65536}$).
     * Theorem 134: Total-Knowledge Opcode Prefetch Verification ($100\%$ instruction prefetch audited prior to write).
     * Theorem 135: Grand Master 135-Theorem Initial Orders 1 Parity Closure ($0\text{x0000930E}$).
+
+28. **Tier 28 (Theorems 136–140: Multi-Generational Lineage & Inherited Total Knowledge Inoculation)**:
+    * Theorem 136: Gen-1 to Gen-2 Deterministic Epistemic Inheritance ($\mathbf{S}_{\text{descendant}} \equiv \mathbf{S}_{\text{ancestor}}$).
+    * Theorem 137: Hereditary Covert Channel Inoculation ($Secret_2 \equiv 1 \implies H(\text{Private}) \equiv 0.0\text{ bits}$).
+    * Theorem 138: Proportional Hogan Account Saat Trust Endowment ($250,000\text{ Saat}$ baseline transfer).
+    * Theorem 139: Cross-Generational Remedial Cache Synchronization ($O(1)$ inherited peer awareness in `.dat.bin`).
+    * Theorem 140: Grand Master 140-Theorem Lineage Parity Closure ($0\text{x00001B3C}$).
