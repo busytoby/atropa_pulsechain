@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPC",
+        .opcode_signature = 0x43505043,
+        .title = "CPMTOMIE-PHOSPHOR-CANVAS-CORPS",
+        .theorem_descriptions = {
+            "Trap-State Phosphorescence Decay Invariance",
+            "Turtle Vector Trace Spatial Resolution Bounds",
+            "Quantel Frame-Grabber Matte Temporal Alignment",
+            "Sub-Millisecond Optical Persistence Dispatch",
+            "Sovereign Turtle Phosphor Canvas Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMG",
         .opcode_signature = 0x43504D47,
         .title = "CPMTOMIE-MORPHOGENETIC-CLAY-CORPS",
