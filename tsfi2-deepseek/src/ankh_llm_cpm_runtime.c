@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTY",
+        .opcode_signature = 0x43505459,
+        .title = "CPMTOMIE-ROBOTIC-TYPOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Kinetic Letterform Stroke Conservation",
+            "Sloped Stick-Slip Locomotion Invariance",
+            "UV Photoluminescent Phosphor Decay Kinetics",
+            "Sub-Millisecond Kinetic Letterform Latency",
+            "Sovereign Robotic Typography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDL",
         .opcode_signature = 0x4350444C,
         .title = "CPMTOMIE-PARALLEL-DELTA-CORPS",
