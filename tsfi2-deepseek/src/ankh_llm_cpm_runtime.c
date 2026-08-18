@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPGP",
+        .opcode_signature = 0x43504750,
+        .title = "CPMTOMIE-GESTURAL-PHONETICS-CORPS",
+        .theorem_descriptions = {
+            "Bio-Acoustic Formant Frequency Filter Invariance",
+            "Non-Verbal Gestural Articulation to Phonetics",
+            "Non-Preferential Acoustic Pitch Stabilization",
+            "Sub-Millisecond Formant Synthesis Latency",
+            "Sovereign Gestural Phonetics Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMG",
         .opcode_signature = 0x43504D47,
         .title = "CPMTOMIE-MORPHOLOGICAL-GEODESICS-CORPS",
