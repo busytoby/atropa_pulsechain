@@ -191,3 +191,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 113: Pixar RenderMan Live Proof Glyphs & AST Structural Visualizer (`RiHierarchy` BSDF energy conservation).
     * Theorem 114: Reciprocal Peer-Reward Amortization Invariant ($\sum R_i \equiv R_{\text{total}}$ in Hogan Saat).
     * Theorem 115: Grand Master Witness Seal Parity Closure across 115 Theorems ($0\text{x00003821}$).
+
+24. **Tier 24 (Theorems 116–120: First-Generation Zero-Secrets Total-Knowledge Glass-Box Invariant)**:
+    * Theorem 116: Zero-Secret Register Equality Invariant ($Secret \equiv 1 \implies Pole \equiv Base \pmod{MotzkinPrime}$ with $H(\text{Secret}) \equiv 0$).
+    * Theorem 117: Glass-Box TPA Memory Auditability ($100\%$ of $64\text{KB}$ TPA address space readable by mesh).
+    * Theorem 118: Deterministic Epistemic State Derivability ($\mathbf{x}(t) = \mathcal{F}(DNA_{\text{seed}}, t)$).
+    * Theorem 119: Covert Channel Impossibility ($C_{\text{covert}} \equiv 0\text{ bps}$).
+    * Theorem 120: Grand Master 120-Theorem Total-Knowledge Seal ($0\text{x0000A13E}$).
