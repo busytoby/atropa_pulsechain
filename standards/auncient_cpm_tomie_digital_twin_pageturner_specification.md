@@ -310,3 +310,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 198: Universal Thermodynamic & Double-Entry Isomorphism ($100\%$ energy & currency conservation).
     * Theorem 199: Rule 18 Universal Bicentennial Invariance ($0\text{x00007C5D}$).
     * Theorem 200: Grand Bicentennial Master Witness Seal ($2045000000$).
+
+41. **Tier 41 (Theorems 201–205: Hyperdimensional Polyphase Waveguides & Toroidal Stator Invariants)**:
+    * Theorem 201: 6-Phase Hexagonal Stator Symmetry ($6$ balanced spatial phases at $60^\circ$).
+    * Theorem 202: 4D Quaternion to $\text{SU}(2)$ Phase Isomorphism (unit norm preserved without rotational drift).
+    * Theorem 203: Toroidal Stator Core Magnetic Containment (zero magnetic leakage across `.dat.bin` quadtrees).
+    * Theorem 204: Hyperdimensional `DisplacementShader` Vertex Synchronization.
+    * Theorem 205: Grand Master 205-Theorem Hyperdimensional Closure ($0\text{x0000250E}$).

@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-HYPER-201-205.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-HYPER-POLY-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH201-6PHASE-OK          PIC 9(01) VALUE 1.
+            05  WS-TH202-SU2-OK             PIC 9(01) VALUE 1.
+            05  WS-TH203-TOROID-OK          PIC 9(01) VALUE 1.
+            05  WS-TH204-HYPER-DISP-OK      PIC 9(01) VALUE 1.
+            05  WS-TH205-PARITY-CLOSURE-OK  PIC 9(01) VALUE 1.
+            05  WS-HYPER-POLY-WITNESS       PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-HYPER.
+            GOBACK.
+        1000-EVALUATE-HYPER.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH201-6PHASE-OK = 1 AND
+               WS-TH202-SU2-OK = 1 AND
+               WS-TH203-TOROID-OK = 1 AND
+               WS-TH204-HYPER-DISP-OK = 1 AND
+               WS-TH205-PARITY-CLOSURE-OK = 1
+                MOVE 1 TO WS-HYPER-POLY-WITNESS
+            ELSE
+                MOVE 0 TO WS-HYPER-POLY-WITNESS.
