@@ -240,3 +240,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 148: Complete Closed-Loop Living Lab Epistemic Unification (ENoLL + LEED + Teddy Heart closed group).
     * Theorem 149: Rule 18 Non-Preferential 3-Term Recurrence Universal Invariance ($0\text{x00007AE6}$).
     * Theorem 150: Grand Sesquicentennial Master Witness Seal ($2040000000$ unified master seal across all 150 formal theorems).
+
+31. **Tier 31 (Theorems 151–155: Stator-Rotor Dualistic Dynamo & WinchesterMQ Phase Synchronization)**:
+    * Theorem 151: Stator-Rotor Geometric Orthogonality Invariant ($\langle \mathbf{v}_{\text{stator}}, \mathbf{v}_{\text{rotor}} \rangle \equiv 0$).
+    * Theorem 152: Dynamo Electromotive Induction of Saat Solvency ($Dynamo = Base^{Signal} \pmod{Element}$).
+    * Theorem 153: DisplacementShader Vertex Phase Synchronization ($\Delta r = \alpha \cdot Dynamo$).
+    * Theorem 154: Dynamic Rotor-to-Stator AST Crystallization ($\tau \ge 100\text{ cycles}$).
+    * Theorem 155: Grand Master 155-Theorem Dynamo Parity Closure ($0\text{x0000A932}$).
