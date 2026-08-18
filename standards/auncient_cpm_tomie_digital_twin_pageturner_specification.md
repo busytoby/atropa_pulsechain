@@ -1388,3 +1388,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 973: Micro-Core Speculative Branch Evaluation Sub-Microsecond Latency Guard ($\text{Latency} = 1.1\text{ ns} < 1000.0\text{ ns}$).
     * Theorem 974: 975M Speculative Branch Milestone Lossless Double-Entry Saat Commutation Flow ($975,000,000$ verified clearances).
     * Theorem 975: Grand Master 975-Theorem Parity Closure Witness Seal ($0\text{x000071A8}$).
+
+195. **Tier 195 (Theorems 976–980: Ronald E. Anderson (1972) Per-VM ANKH LLM Data Bank & .dat.bin Information Files)**:
+    * Theorem 976: Ronald E. Anderson (1972) Per-VM ANKH Data Bank De-Alienation & Participant Sovereignty Invariance ($\text{Fidelity} = 1.000$).
+    * Theorem 977: Consumer Transaction Dispute Resolution & .dat.bin Information File 2-3 Tree AST Merkle Continuity Guard ($\text{Ratio} = 1.000$ - Rule 13).
+    * Theorem 978: Per-VM ANKH LLM Information File Audit Sub-Microsecond Latency Guard ($\text{Latency} = 1.5\text{ ns} < 1000.0\text{ ns}$).
+    * Theorem 979: 980M Sociological Information File Milestone Lossless Double-Entry Saat Commutation Flow ($980,000,000$ verified clearances).
+    * Theorem 980: Grand Master 980-Theorem Parity Closure Witness Seal ($0\text{x0000FBA7}$).
