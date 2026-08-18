@@ -1722,6 +1722,7 @@ test-cpm-tomie-semantic-projection-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-multiscale-voxel-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-geodesic-flow-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-haptic-force-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-gestural-kinematics-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover

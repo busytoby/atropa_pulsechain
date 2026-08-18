@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPGK",
+        .opcode_signature = 0x4350474B,
+        .title = "CPMTOMIE-GESTURAL-KINEMATICS-CORPS",
+        .theorem_descriptions = {
+            "Spatial Sweeping Envelope Invariance",
+            "Kinematic Velocity & Acceleration Invariance",
+            "Non-Verbal Gesture Semantic Segmentation",
+            "Sub-Millisecond Kinematic Trajectory Latency",
+            "Sovereign Gestural Kinematics Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPHF",
         .opcode_signature = 0x43504846,
         .title = "CPMTOMIE-HAPTIC-FORCE-FEEDBACK-CORPS",

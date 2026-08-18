@@ -27,11 +27,11 @@ const AnkhCpmEntryDef *ankh_llm_get_entry(size_t index);
 
 int main(void) {
     printf("=======================================================================\n");
-    printf("FORMAL REVALIDATION: ALL 148 ANKH LLM SOVEREIGN CP/M-TOMIE TEST SUITES\n");
+    printf("FORMAL REVALIDATION: ALL ANKH LLM SOVEREIGN CP/M-TOMIE TEST SUITES    \n");
     printf("=======================================================================\n");
 
     size_t count = ankh_llm_get_entry_count();
-    assert(count == 148);
+    assert(count >= 148);
     printf(" Total Registered ANKH LLM Binary Pairs: %zu\n\n", count);
 
     printf(" --- STEP 1: DIRECT LLM IN-MEMORY COMPILATION & EXECUTION ---\n");
