@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPVH",
+        .opcode_signature = 0x43505648,
+        .title = "CPMTOMIE-VISCOELASTIC-HYSTERESIS-CORPS",
+        .theorem_descriptions = {
+            "Fractional Viscoelastic Stress-Strain Invariance",
+            "Damped Asymptotic Limit Cycle Convergence",
+            "Clay-Magnetic Interface Adhesion Invariance",
+            "Sub-Millisecond Rheological Tensor Dispatch",
+            "Sovereign Viscoelastic Clay Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPC",
         .opcode_signature = 0x43505043,
         .title = "CPMTOMIE-PHOSPHOR-CANVAS-CORPS",

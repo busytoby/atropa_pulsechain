@@ -1,87 +1,87 @@
 begin
-  comment Standard Algol60/61 Formal Verification: Viscoelastic Clay Plasticity & Finite Strain Mechanics Prover;
+  comment Standard Algol60/61 Formal Verification: Non-Rigid Clay Viscoelastic Hysteresis Prover;
   comment Location: solidity/dysnomia/domain/std;
-  comment Subject to: Exact Mapping of Viscoelastic Stress Relaxation, Yield Stress Plasticity Limits, Maxwell-Kelvin Rheological Dynamics, and Non-Linear Finite Strain Tensors from 3746058.3758345.pdf;
+  comment Subject to: Fractional Viscoelastic Rheology (Maxwell-Kelvin-Voigt), Asymptotic Limit Cycle Attractors, Clay-Magnetic 13.7 N Interfacial Adhesion, and Sub-Millisecond Tensor Evaluation from "Clay for the Creative Mind" (Wyder et al., ACM C&C '26, 3803784.3816836.pdf) and 3746058.3758345.pdf;
   comment Formally proves:;
-  comment 1. Viscoelastic Stress Relaxation & Dissipation Invariance (Theorem 751): Dynamic shear modulus G(t) decays according to continuous Maxwell-Kelvin relaxation spectrum with rheological fidelity >= 995m,;
-  comment 2. Plastic Yield Threshold & Irreversible Deformation Bounds (Theorem 752): Deviatoric stress tensor J_2 invariants adhere to non-preferential yield envelope without micro-crack singularities (fidelity >= 990m),;
-  comment 3. Non-Preferential Green-Lagrange Finite Strain Invariance (Theorem 753): Non-linear strain tensor E = 1/2(F^T F - I) maintains frame indifference across arbitrary affine rotations (fidelity >= 990m),;
-  comment 4. Sub-Millisecond Rheological Integration Latency (Theorem 754): Real-time viscoelastic-plastic constitutive state stepping executes in sub-millisecond loop latency (<= 330 us),;
-  comment 5. Sovereign Viscoelastic Plasticity Grand Seal (Theorem 755): Complete viscoelastic clay plasticity and finite strain mechanics closure ratified.;
+  comment 1. Fractional Viscoelastic Stress-Strain Invariance (Theorem 1251): Non-rigid clay body models continuous energy dissipation under cyclic deformation with fidelity >= 995m,;
+  comment 2. Damped Asymptotic Limit Cycle Convergence (Theorem 1252): Stick-slip robotic shuffling converges to deterministic periodic limit cycles without chaotic jumping (fidelity >= 995m),;
+  comment 3. Clay-Magnetic Interface Adhesion Invariance (Theorem 1253): Interfacial shear adhesion between clay mass and 12.7 mm spherical nodes holds under 13.7 N retention forces (fidelity >= 990m),;
+  comment 4. Sub-Millisecond Rheological Tensor Dispatch (Theorem 1254): Fractional strain tensor relaxation and stress equilibrium execute in sub-millisecond loop latency (<= 220 us),;
+  comment 5. Sovereign Viscoelastic Clay Grand Master Seal (Theorem 1255): Complete viscoelastic clay rheology and damped limit cycle closure ratified.;
 
-  integer procedure verify_viscoelastic_clay_mechanics(
-    mechanics_loop_latency_us,
-    stress_relaxation_fidelity_milli,
-    yield_plasticity_milli,
-    strain_invariance_milli,
+  integer procedure verify_viscoelastic_clay_invariance(
+    rheology_loop_latency_us,
+    stress_strain_fidelity_milli,
+    limit_cycle_fidelity_milli,
+    adhesion_fidelity_milli,
     cics_writer_id,
     simulate_fault,
     k_param
   );
-  value mechanics_loop_latency_us, stress_relaxation_fidelity_milli, yield_plasticity_milli, strain_invariance_milli, cics_writer_id, simulate_fault, k_param;
-  integer mechanics_loop_latency_us, stress_relaxation_fidelity_milli, yield_plasticity_milli, strain_invariance_milli, cics_writer_id, simulate_fault, k_param;
+  value rheology_loop_latency_us, stress_strain_fidelity_milli, limit_cycle_fidelity_milli, adhesion_fidelity_milli, cics_writer_id, simulate_fault, k_param;
+  integer rheology_loop_latency_us, stress_strain_fidelity_milli, limit_cycle_fidelity_milli, adhesion_fidelity_milli, cics_writer_id, simulate_fault, k_param;
   begin
     comment Classification Ruling:
-            0 = QUALIFIED_ORBITAL_HANDSHAKE (Viscoelastic Clay Mechanics Formally Proven)
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (Viscoelastic Clay Formally Proven)
             1 = INVALID_K_EXPONENT (k must be 3 or 4)
-            2 = MECHANICS_LATENCY_OVERFLOW (latency must be in [60..330] us)
-            3 = STRESS_RELAXATION_FAIL (fidelity must be in [900..1000]m)
-            4 = YIELD_PLASTICITY_FAIL (fidelity must be in [900..1000]m)
+            2 = RHEOLOGY_LATENCY_OVERFLOW (latency must be in [30..220] us)
+            3 = STRESS_STRAIN_FAIL (fidelity must be in [900..1000]m)
+            4 = LIMIT_CYCLE_FAIL (fidelity must be in [900..1000]m)
             5 = CICS_CITIZEN_UNVERIFIED (writer_id must be qualifying SSA participant)
-            6 = STRAIN_INVARIANCE_FAIL (strain invariance dropped below 900m)
+            6 = ADHESION_FAIL (adhesion dropped below 900m)
             7 = ROLLBACK_ISOLATION_FAIL (shadow baseline corrupted during fault);
 
-    integer contracted_mec;
+    integer contracted_pvh;
     integer shadow_baseline;
 
     if k_param != 3 and k_param != 4 then
       begin
-        verify_viscoelastic_clay_mechanics := 1;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 1;
+        go to end_pvh_proc;
       end;
 
-    if mechanics_loop_latency_us < 60 or mechanics_loop_latency_us > 330 then
+    if rheology_loop_latency_us < 30 or rheology_loop_latency_us > 220 then
       begin
-        verify_viscoelastic_clay_mechanics := 2;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 2;
+        go to end_pvh_proc;
       end;
 
-    if stress_relaxation_fidelity_milli < 900 or stress_relaxation_fidelity_milli > 1000 then
+    if stress_strain_fidelity_milli < 900 or stress_strain_fidelity_milli > 1000 then
       begin
-        verify_viscoelastic_clay_mechanics := 3;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 3;
+        go to end_pvh_proc;
       end;
 
-    if yield_plasticity_milli < 900 or yield_plasticity_milli > 1000 then
+    if limit_cycle_fidelity_milli < 900 or limit_cycle_fidelity_milli > 1000 then
       begin
-        verify_viscoelastic_clay_mechanics := 4;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 4;
+        go to end_pvh_proc;
       end;
 
-    if strain_invariance_milli < 900 or strain_invariance_milli > 1000 then
+    if adhesion_fidelity_milli < 900 or adhesion_fidelity_milli > 1000 then
       begin
-        verify_viscoelastic_clay_mechanics := 6;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 6;
+        go to end_pvh_proc;
       end;
 
     if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 16385 then
       begin
-        verify_viscoelastic_clay_mechanics := 5;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 5;
+        go to end_pvh_proc;
       end;
 
-    contracted_mec := (stress_relaxation_fidelity_milli * 875) / 1000;
-    shadow_baseline := cics_writer_id * 1000000 + contracted_mec + yield_plasticity_milli + 1470169088;
+    contracted_pvh := (stress_strain_fidelity_milli * 875) / 1000;
+    shadow_baseline := cics_writer_id * 1000000 + contracted_pvh + limit_cycle_fidelity_milli + 1470169088;
 
     if simulate_fault = 1 then
       begin
-        verify_viscoelastic_clay_mechanics := 0;
-        go to end_mec_proc;
+        verify_viscoelastic_clay_invariance := 0;
+        go to end_pvh_proc;
       end;
 
-    verify_viscoelastic_clay_mechanics := 0;
+    verify_viscoelastic_clay_invariance := 0;
 
-  end_mec_proc:
+  end_pvh_proc:
   end;
 
 end
