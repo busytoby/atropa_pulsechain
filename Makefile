@@ -1775,6 +1775,7 @@ test-cpm-tomie-coaxial-gripper-io-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-clay-incompressible-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-spherical-torque-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-turtle-quantel-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-clay-caustics-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover

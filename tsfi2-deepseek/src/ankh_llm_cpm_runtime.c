@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCC",
+        .opcode_signature = 0x43504343,
+        .title = "CPMTOMIE-CLAY-CAUSTICS-CORPS",
+        .theorem_descriptions = {
+            "Mydorge Conical Catoptric Caustic Invariance",
+            "Subsurface Scattering Dipole Diffusion",
+            "Photoluminescent Phosphor Surface Irradiance",
+            "Sub-Millisecond Optical Shader Evaluation",
+            "Sovereign Clay Caustics & Optical Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPQT",
         .opcode_signature = 0x43505154,
         .title = "CPMTOMIE-TURTLE-QUANTEL-CORPS",
