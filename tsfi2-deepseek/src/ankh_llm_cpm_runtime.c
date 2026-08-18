@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPIC",
+        .opcode_signature = 0x43504943,
+        .title = "CPMTOMIE-INCOMPRESSIBLE-CLAY-CORPS",
+        .theorem_descriptions = {
+            "Zero-Divergence Incompressible Volume Lock",
+            "First Homology Group Genus Invariance",
+            "Multi-Strut Surface Collision Bounds",
+            "Sub-Millisecond Homotopy Relaxation Latency",
+            "Sovereign Incompressible Clay Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCG",
         .opcode_signature = 0x43504347,
         .title = "CPMTOMIE-COAXIAL-GRIPPER-IO-CORPS",
