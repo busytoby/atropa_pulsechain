@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSE",
+        .opcode_signature = 0x43505345,
+        .title = "CPMTOMIE-LIE-SE3-RIGGING-CORPS",
+        .theorem_descriptions = {
+            "Lie Algebra se(3) Exponential Map Invariance",
+            "Zero-Shear Rigid Mesh Rigging Preservation",
+            "Non-Preferential Stylus Coordinate Mapping",
+            "Sub-Millisecond SE(3) Kinematic Latency",
+            "Sovereign Lie Group SE(3) Rigging Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSH",
         .opcode_signature = 0x43505348,
         .title = "CPMTOMIE-SYMPLECTIC-HAMILTONIAN-CORPS",
