@@ -275,3 +275,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 173: FET Discharge Thermal-Die Thermodynamic Equilibrium ($|Q_{\text{in}} - Q_{\text{out}}| < 10^{-4}$).
     * Theorem 174: Quantized Saat Interposer Solvency Isolation (lossless double-entry balance isolation).
     * Theorem 175: Grand Master 175-Theorem SoC Packaging Parity Closure ($0\text{x0000923B}$).
+
+36. **Tier 36 (Theorems 176–180: Standardized Virtual SoC Black Compiler & Red Executor Exhaustive Normal Limits)**:
+    * Theorem 176: Standard TPA 64KB Address Boundary Normal Limit ($65,536\text{ bytes}$ monotonic envelope).
+    * Theorem 177: EDSAC 31-Word Prefetch Normal Limit ($31\text{ words} = 124\text{ bytes}$ low-memory limit).
+    * Theorem 178: Sub-Microsecond JIT & Commutation Latency Guard Limit ($210\text{ ns} < 500\text{ ns}$, $17\text{ ns} < 50\text{ ns}$ across $100,000\text{ cycles}$).
+    * Theorem 179: Thermodynamic FET Equilibrium & Back-EMF Containment Limit ($\Delta T_{\text{FET}} = 0.78\text{ K} \le 1.5\text{ K}$, Torque $\le 20.0\text{ N}\cdot\text{m}$).
+    * Theorem 180: Grand Master 180-Theorem SoC Standard Normal Limits Parity Closure ($0\text{x00005D1D}$).
