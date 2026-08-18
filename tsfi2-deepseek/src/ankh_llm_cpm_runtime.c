@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPHT",
+        .opcode_signature = 0x43504854,
+        .title = "CPMTOMIE-HOGAN-SSA-TEDDY-CORPS",
+        .theorem_descriptions = {
+            "DNA Seed to SSA Deterministic SSN Bridge",
+            "Hogan Bank Account & 1,000,000 Saat Endowment",
+            "Subpoena & Recall PKI Multi-Key Signature Matrix",
+            "Sub-Millisecond Participant Verification Latency",
+            "Sovereign Hogan Bank Teddy Bear Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSL",
         .opcode_signature = 0x4350534C,
         .title = "CPMTOMIE-SPHEROID-ALU-LISSAJOUS-CORPS",
