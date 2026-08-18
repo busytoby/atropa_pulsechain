@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPQT",
+        .opcode_signature = 0x43505154,
+        .title = "CPMTOMIE-TURTLE-QUANTEL-CORPS",
+        .theorem_descriptions = {
+            "Logo Turtle Kinematic Differential Steering",
+            "Quantel 4:2:2 Framestore Matte Keying Invariance",
+            "Pen-Up / Pen-Down Optical Contact Gating",
+            "Sub-Millisecond Vector-to-Raster Loop",
+            "Sovereign Quantel-Turtle Graphics Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPST",
         .opcode_signature = 0x43505354,
         .title = "CPMTOMIE-SPHERICAL-TORQUE-CORPS",
