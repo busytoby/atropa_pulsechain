@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSH",
+        .opcode_signature = 0x43505348,
+        .title = "CPMTOMIE-SYMPLECTIC-HAMILTONIAN-CORPS",
+        .theorem_descriptions = {
+            "Symplectic Phase Space Volume Preservation",
+            "Discrete Hamiltonian Energy Conservation",
+            "Non-Preferential Momentum Stepping Invariance",
+            "Sub-Millisecond Symplectic Stepping Latency",
+            "Sovereign Symplectic Phase Space Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPE1",
         .opcode_signature = 0x43504531,
         .title = "CPMTOMIE-IO1-TOTIENT-FACTORING-CORPS",
