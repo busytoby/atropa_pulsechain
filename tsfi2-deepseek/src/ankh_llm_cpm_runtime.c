@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPRC",
+        .opcode_signature = 0x43505243,
+        .title = "CPMTOMIE-RELAY-COMMUTATION-CORPS",
+        .theorem_descriptions = {
+            "Relay Coil Commutation Timing Invariance",
+            "Non-Destructive Relay Latch Fault Recovery",
+            "Non-Preferential Contact Bounce-Free Closure",
+            "Sub-Millisecond Mainframe Relay Latency",
+            "Sovereign Harvard Relay Commutation Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSE",
         .opcode_signature = 0x43505345,
         .title = "CPMTOMIE-LIE-SE3-RIGGING-CORPS",
