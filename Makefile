@@ -1548,6 +1548,11 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-auncient-lau-resonator-bridge:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_lau_resonator_bridge.c tsfi2-deepseek/src/auncient_lau_resonator_bridge.c -o tests/test_auncient_lau_resonator_bridge -lm
+	./tests/test_auncient_lau_resonator_bridge
+	@rm -f tests/test_auncient_lau_resonator_bridge
+
 test-soc-exhaustive-standard-suite:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_soc_exhaustive_standard_suite.c tsfi2-deepseek/src/auncient_cpm_polyphase_compiler_executor.c tsfi2-deepseek/src/auncient_superconducting_dynamo_theorems_166_170.c tsfi2-deepseek/src/auncient_soc_packaging_certification_theorems_171_175.c tsfi2-deepseek/src/auncient_soc_standard_normal_limits_theorems_176_180.c tsfi2-deepseek/src/auncient_polyphase_waveguide_theorems_181_185.c -o tests/test_auncient_soc_exhaustive_standard_suite -lm
 	./tests/test_auncient_soc_exhaustive_standard_suite
