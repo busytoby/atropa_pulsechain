@@ -226,3 +226,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 138: Proportional Hogan Account Saat Trust Endowment ($250,000\text{ Saat}$ baseline transfer).
     * Theorem 139: Cross-Generational Remedial Cache Synchronization ($O(1)$ inherited peer awareness in `.dat.bin`).
     * Theorem 140: Grand Master 140-Theorem Lineage Parity Closure ($0\text{x00001B3C}$).
+
+29. **Tier 29 (Theorems 141–145: STANAG 5066 Delay-Tolerant Tactical Mesh Consensus & Orbital Link Convergence)**:
+    * Theorem 141: Asymptotic Byzantine Liveness under Long-Wave Orbital Delays ($T_{\text{delay}} \ge 120\text{ s}$).
+    * Theorem 142: STANAG Compact Frame Retransmission Bound ($\le 3\text{ retries}$, $\ge 75\text{ baud}$).
+    * Theorem 143: Clock-Drift Invariant under Relativistic Capstan Timing ($|\Delta t| \le 5.0\text{ ms}$).
+    * Theorem 144: Epistemic Convergence over Intermittent Deep-Space Links (monotonic AST reintegration).
+    * Theorem 145: Grand Master 145-Theorem Tactical Mesh Parity Closure ($0\text{x0000FB4E}$).
