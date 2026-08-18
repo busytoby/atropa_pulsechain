@@ -8,8 +8,13 @@
 void assembleit_init_model(AssembleitModel *model) {
     if (!model) return;
     memset(model, 0, sizeof(AssembleitModel));
-    model->clay_volume_mm3 = 500000.0f; /* 500 cm^3 baseline clay mass */
+    model->clay_volume_mm3 = 500000.0f; /* 500 cm^3 baseline synthetic matrix mass */
     model->isostatic_valid = true;
+    model->telemetry.mutual_inductance_uh = 4.75f;
+    model->telemetry.acoustic_radiation_pa = 120.0f;
+    model->telemetry.complex_permittivity_real = 8.5f;
+    model->telemetry.complex_permittivity_imag = 1.2f;
+    model->telemetry.adc_raw_12bit = 2048;
 }
 
 bool assembleit_add_node(AssembleitModel *model, uint32_t node_id, float x, float y, float z, bool grounded) {
@@ -69,6 +74,13 @@ bool assembleit_solve_kinematics(AssembleitModel *model, float delta_time_s) {
         }
         s->stroke_length_mm = CLAMP(s->stroke_length_mm, 280.0f, 430.0f);
     }
+
+    /* Update telemetry based on stroke */
+    if (model->num_struts > 0) {
+        float norm_stroke = (model->struts[0].stroke_length_mm - 280.0f) / 150.0f;
+        model->telemetry.mutual_inductance_uh = 2.0f + norm_stroke * 8.0f;
+        model->telemetry.adc_raw_12bit = (uint16_t)(norm_stroke * 4095.0f);
+    }
     return true;
 }
 
@@ -111,4 +123,87 @@ bool assembleit_evaluate_renderman_micropolygons(const AssembleitModel *model, s
     /* REYES sub-pixel dicing: 16 sub-micropolygons per clay mesh quadrilateral */
     *out_micropolygon_count = (size_t)(model->num_vertices * 16);
     return true;
+}
+
+bool assembleit_synthesize_gerchberg_quadtree(AssembleitModel *model, uint32_t depth_levels) {
+    if (!model || depth_levels == 0 || depth_levels > 4) return false;
+
+    AssembleitHoloQuadTree *tree = &model->holo_quadtree;
+    tree->node_count = 0;
+    tree->total_optical_energy = 1000.0f;
+
+    /* Build root node */
+    uint32_t root_idx = tree->node_count++;
+    tree->root_index = root_idx;
+    AssembleitHoloQuadNode *root = &tree->nodes[root_idx];
+    root->morton_code = 0;
+    root->phase_rad = 3.14159f;
+    root->amplitude = 1.0f;
+    root->curvature = 0.05f;
+    root->is_leaf = (depth_levels == 1);
+
+    if (depth_levels > 1) {
+        for (uint32_t q = 0; q < 4; q++) {
+            uint32_t c_idx = tree->node_count++;
+            root->child_indices[q] = c_idx;
+            AssembleitHoloQuadNode *child = &tree->nodes[c_idx];
+            child->morton_code = q;
+            child->phase_rad = (float)q * 1.570796f;
+            child->amplitude = 0.5f;
+            child->curvature = 0.02f;
+            child->is_leaf = true;
+        }
+    }
+    return true;
+}
+
+bool assembleit_save_quadtree_binary(const AssembleitModel *model, const char *dat_bin_path) {
+    if (!model || !dat_bin_path) return false;
+    FILE *fp = fopen(dat_bin_path, "wb");
+    if (!fp) return false;
+
+    /* Header: Magic 'ASMQ' (0x41534D51), node count, total energy */
+    uint32_t magic = 0x41534D51;
+    fwrite(&magic, sizeof(uint32_t), 1, fp);
+    fwrite(&model->holo_quadtree.node_count, sizeof(uint32_t), 1, fp);
+    fwrite(&model->holo_quadtree.total_optical_energy, sizeof(float), 1, fp);
+
+    /* Write nodes */
+    for (uint32_t i = 0; i < model->holo_quadtree.node_count; i++) {
+        fwrite(&model->holo_quadtree.nodes[i], sizeof(AssembleitHoloQuadNode), 1, fp);
+    }
+    fclose(fp);
+    return true;
+}
+
+uint8_t assembleit_bdos_read_port(AssembleitModel *model, uint8_t port) {
+    if (!model) return 0xFF;
+    switch (port) {
+        case ASSEMBLEIT_PORT_STROKE_TELEMETRY:
+            return (uint8_t)((model->num_struts > 0) ? (model->struts[0].stroke_length_mm - 280.0f) : 0);
+        case ASSEMBLEIT_PORT_IMPEDANCE_ADC:
+            return (uint8_t)(model->telemetry.adc_raw_12bit >> 4); /* Upper 8 bits */
+        case ASSEMBLEIT_PORT_ACOUSTIC_PRESS:
+            return (uint8_t)CLAMP(model->telemetry.acoustic_radiation_pa, 0.0f, 255.0f);
+        case ASSEMBLEIT_PORT_QUADTREE_STATUS:
+            return (uint8_t)(model->holo_quadtree.node_count & 0xFF);
+        default:
+            return 0x00;
+    }
+}
+
+void assembleit_bdos_write_port(AssembleitModel *model, uint8_t port, uint8_t val) {
+    if (!model) return;
+    switch (port) {
+        case ASSEMBLEIT_PORT_STROKE_TELEMETRY:
+            if (model->num_struts > 0) {
+                model->struts[0].target_length_mm = 280.0f + (float)val;
+            }
+            break;
+        case ASSEMBLEIT_PORT_ACOUSTIC_PRESS:
+            model->telemetry.acoustic_radiation_pa = (float)val;
+            break;
+        default:
+            break;
+    }
 }
