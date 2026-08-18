@@ -1720,6 +1720,12 @@ test-cpm-tomie-acoustic-resonance-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-4box-coaxial-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-semantic-projection-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-multiscale-voxel-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-geodesic-flow-suite: test-ankh-llm-cpm-suite
+
+test-cpm-tomie-geodesic-flow-line-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_geodesic_flow_line_prover.c -o tests/test_cpm_tomie_geodesic_flow_line_prover
+	./tests/test_cpm_tomie_geodesic_flow_line_prover
+	@rm -f tests/test_cpm_tomie_geodesic_flow_line_prover
 
 test-cpm-tomie-multiscale-voxel-lod-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_multiscale_voxel_lod_prover.c -o tests/test_cpm_tomie_multiscale_voxel_lod_prover

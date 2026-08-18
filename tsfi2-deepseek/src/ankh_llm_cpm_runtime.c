@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPGF",
+        .opcode_signature = 0x43504746,
+        .title = "CPMTOMIE-GEODESIC-FLOW-LINE-CORPS",
+        .theorem_descriptions = {
+            "Geodesic Equation Curvature Invariance",
+            "Principal Curvature Coordinate Alignment",
+            "Non-Preferential Asymptotic Flow Line Integration",
+            "Sub-Millisecond Geodesic Integration Latency",
+            "Sovereign Geodesic Path & Flow Line Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPVL",
         .opcode_signature = 0x4350564C,
         .title = "CPMTOMIE-MULTISCALE-VOXEL-LOD-CORPS",
