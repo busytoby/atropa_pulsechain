@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPIN",
+        .opcode_signature = 0x4350494E,
+        .title = "CPMTOMIE-IDEMPOTENT-NULL-CORPS",
+        .theorem_descriptions = {
+            "Idempotent Nullability of Feynman Points",
+            "Faultless Totient Residue Preservation",
+            "Non-Preferential Fault-Isolated Boundary",
+            "Sub-Millisecond Idempotent Nulling Latency",
+            "Sovereign Idempotent Totient Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAL",
         .opcode_signature = 0x4350414C,
         .title = "CPMTOMIE-ACOUSTIC-LEVITATOR-CORPS",
