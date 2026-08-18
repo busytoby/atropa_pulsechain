@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCG",
+        .opcode_signature = 0x43504347,
+        .title = "CPMTOMIE-COAXIAL-GRIPPER-IO-CORPS",
+        .theorem_descriptions = {
+            "Coaxial Magnetic Contact Ohmic Coupling",
+            "12-Bit Reflectometry Contact Sensing Invariance",
+            "BDOS Physical Port Gating & Safety Isolation",
+            "Sub-Nanosecond Coaxial Byte Transport Latency",
+            "Sovereign Coaxial Gripper I/O Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPPK",
         .opcode_signature = 0x4350504B,
         .title = "CPMTOMIE-PAYLOAD-GRIPPER-CORPS",

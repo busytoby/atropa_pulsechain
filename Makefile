@@ -1771,6 +1771,7 @@ test-cpm-tomie-servo-quadtree-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-wifi-telemetry-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-coaxial-kermit-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-payload-gripper-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-coaxial-gripper-io-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
