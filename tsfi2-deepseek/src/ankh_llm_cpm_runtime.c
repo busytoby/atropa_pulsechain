@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAB",
+        .opcode_signature = 0x43504142,
+        .title = "CPMTOMIE-ACOUSTIC-BEAMFORMING-CORPS",
+        .theorem_descriptions = {
+            "Acoustic Radiation Pressure Indentation Invariance",
+            "Spherical Harmonic Acoustic Levitation Well",
+            "Micro-Acoustic Boundary Layer Streaming",
+            "Sub-Millisecond Ultrasonic Phase Hologram Dispatch",
+            "Sovereign Acoustic Beamforming Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPRF",
         .opcode_signature = 0x43505246,
         .title = "CPMTOMIE-RFID-IMPEDANCE-CORPS",
