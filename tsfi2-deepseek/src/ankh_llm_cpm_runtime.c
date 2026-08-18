@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDA",
+        .opcode_signature = 0x43504441,
+        .title = "CPMTOMIE-DQS-TO-DAI-EMBODIMENT-CORPS",
+        .theorem_descriptions = {
+            "Continuous Lie Dual Quaternion to DAI Embodiment",
+            "04_yi.sol Reaction Reciprocity Determinism",
+            "5000-Shot Continuous Stress & Zero-Leak Invariance",
+            "Sub-Millisecond DAI Reaction Evaluation Latency",
+            "Sovereign Continuous DQS-to-DAI Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDQ",
         .opcode_signature = 0x43504451,
         .title = "CPMTOMIE-DUAL-QUAT-RIGGING-CORPS",
