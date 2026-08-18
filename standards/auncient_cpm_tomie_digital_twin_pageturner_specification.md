@@ -121,3 +121,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 63: ENoLL Federated Cross-Living Lab Interoperability Homomorphism ($\Psi_{\text{peer}} \circ \Psi_{\text{export}} \equiv \text{Id}$).
     * Theorem 64: ENoLL Ethical Governance & Strict $(\epsilon, \delta)$-Differential Privacy ($\epsilon \le 0.50, \delta \le 10^{-5}$).
     * Theorem 65: ENoLL Maturity Level 5 (Optimizing) Dynamic Closure.
+
+14. **Tier 14 (Theorems 66–70: Advanced ENoLL Open Innovation 2.0 & Action Research)**:
+    * Theorem 66: ENoLL Open Innovation 2.0 Super-Linear Value Invariant ($\mathcal{V}(N) \ge \kappa (2^N - N - 1)$).
+    * Theorem 67: ENoLL Action Research Cyclic Convergence ($\|\mathcal{T}_{\text{AR}}(\mathbf{x}) - \mathbf{x}^*\| \le \gamma \|\mathbf{x} - \mathbf{x}^*\|$).
+    * Theorem 68: ENoLL Mixed-Methods Triangulation Minimum Variance ($\text{Var}(\hat{\theta}_{\text{triang}}) < \min(\text{Var}_1, \text{Var}_2)$).
+    * Theorem 69: ENoLL Building-to-Urban Scale Nested Boundary Homomorphism ($\oint \mathbf{\Phi}_{\text{building}} \equiv \int \nabla \cdot \mathbf{\Phi}_{\text{urban}}$).
+    * Theorem 70: ENoLL Quadruple-Helix Co-Creation Sovereign IP Attribution Invariant.
