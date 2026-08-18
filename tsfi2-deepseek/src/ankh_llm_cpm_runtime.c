@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPK",
+        .opcode_signature = 0x4350504B,
+        .title = "CPMTOMIE-PAYLOAD-GRIPPER-CORPS",
+        .theorem_descriptions = {
+            "Ferromagnetic Payload Magnetic Dipole Capture",
+            "+- 2 cm Workspace Positioning Repeatability",
+            "Pre-Motion Kinematic Range Verification",
+            "Sub-Millisecond Grip & Safety Dispatch",
+            "Sovereign Magnetic Payload Gripper Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCX",
         .opcode_signature = 0x43504358,
         .title = "CPMTOMIE-COAXIAL-KERMIT-CORPS",
