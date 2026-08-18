@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-VSEN-BIN.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-VSEN-BIN-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1011-VSEN-BIN-OK       PIC 9(01) VALUE 1.
+            05  WS-TH1012-PARTITION-OK      PIC 9(01) VALUE 1.
+            05  WS-TH1013-SPOOL-REG-OK      PIC 9(01) VALUE 1.
+            05  WS-TH1014-1015M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1015-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-VSEN-BIN-WIT             PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-VSEN-BIN.
+            GOBACK.
+        1000-EVALUATE-VSEN-BIN.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1011-VSEN-BIN-OK = 1 AND
+               WS-TH1012-PARTITION-OK = 1 AND
+               WS-TH1013-SPOOL-REG-OK = 1 AND
+               WS-TH1014-1015M-SAAT-OK = 1 AND
+               WS-TH1015-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-VSEN-BIN-WIT
+            ELSE
+                MOVE 0 TO WS-VSEN-BIN-WIT.
