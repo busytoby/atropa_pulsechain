@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPBM",
+        .opcode_signature = 0x4350424D,
+        .title = "CPMTOMIE-BIOMORPHIC-MEMETICS-CORPS",
+        .theorem_descriptions = {
+            "Non-Threatening Biomorphic Contour Invariance",
+            "Ambient-to-UV Dark-Field Contrast Invariance",
+            "Non-Preferential Memetic Attractor Dynamics",
+            "Sub-Millisecond Biomorphic Visual Latency",
+            "Sovereign Biomorphic Memetics Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPLA",
         .opcode_signature = 0x43504C41,
         .title = "CPMTOMIE-POLYHEDRAL-LATTICE-CORPS",
