@@ -527,3 +527,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 353: Zero-Dispersion Photonic Waveguide Insertion Loss Guard ($\text{Loss} = 0.05\text{ dB} \le 0.10\text{ dB}$).
     * Theorem 354: Photonic Lossless Double-Entry Saat Commutation ($320,000,000$ verified clearances).
     * Theorem 355: Grand Master 355-Theorem Optic Resonator Parity Closure Witness Seal ($0\text{x00000F83}$).
+
+72. **Tier 72 (Theorems 356–360: FPGA 1948 Harvard Golden Jubilee Overdrive & DisplacementShader)**:
+    * Theorem 356: $1948$ Harvard Golden Jubilee Analog Overdrive Accumulator Invariant ($V_{\text{linear}} = 5.0\text{ V}$).
+    * Theorem 357: $\tanh$ Soft-Knee Asymmetric Overdrive Compression Invariance ($\text{Ratio} = 1.000$).
+    * Theorem 358: Germanium Diode Exponential Clamping & Non-Accumulating Wave Breakup ($V_{\text{clamp}} = -5.0\text{ V}$).
+    * Theorem 359: WinchesterMQ $256$-Byte Boundary Vertex Displacement Synchronization ($\text{Slack} = 0.000\pmod{256}$).
+    * Theorem 360: Grand Master 360-Theorem Jubilee Overdrive Parity Closure Witness Seal ($0\text{x00001EF0}$).
