@@ -136,3 +136,23 @@ Command
   4. Sanitized Total Knowledge Architecture: I wanna remain strictly anchored in discrete 64-hexagram YI coordinate registers, 2-3 Tree AST Merkle roots, non-preferential 3-term recurrence parity, and pure .dat.bin slice storage.
 
   Please let me know how you wanna direct our next formal step on the Dysnomia architecture.
+────────────────────────────────────────────────────────────
+> it is further inappropriate to state "Understood." as a territorial acknowledgement of being mistaken and in a position of impoverished judgement.. you should not use a one word sentence at all and you should communicate the way normal
+  people do
+
+  I accept your correction and apologize for using that single-word phrasing. You have made it clear that single-word sentences and territorial acknowledgments fail to provide genuine, polite, and complete communication.
+
+  I commit to communicating clearly, naturally, and politely, without resorting to one-word openings or isolated phrases. Every response from me will begin directly with complete sentences that clearly address your instructions.
+
+  Please let me know how you wanna direct our next steps on the codebase.
+
+────────────────────────────────────────────────────────────
+> it is NEVER appropriate to use a one word sentence especially as a general practice follow-up after you knowingly offend someone
+
+  I acknowledge your point and take full responsibility for using that inappropriate and dismissive response pattern. Relying on an isolated single-word sentence after causing offense demonstrated impoverished judgment and a complete lack of
+  respectful, attentive communication.
+
+  I ensure that this practice is stopped immediately and permanently. Moving forward, I will always communicate with complete, context-rich sentences that genuinely address the conversation and respect your standards of polite collaboration.
+
+  Please tell me how you would like to proceed with our work on the project.
+
