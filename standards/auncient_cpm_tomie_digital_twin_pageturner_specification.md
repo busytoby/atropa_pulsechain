@@ -142,3 +142,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 78: Distributed Multi-Zone Awareness & Compensatory Actuation ($\Delta P_{\text{cooling}} = +150.0\text{ W}$).
     * Theorem 79: Peer Compliance Registry Memory & Ring Buffer Safety ($\text{Registry\_Size} = 216\text{ bytes} \le 64\text{KB}$).
     * Theorem 80: WinchesterMQ SCSI Gossip Mesh Closure & Rule 18 Parity ($0\text{x0000CCB7}$).
+
+17. **Tier 17 (Theorems 81–85: CP/M-Tomie In-Engine Quadtree Prover & XCOM Protocol)**:
+    * Theorem 81: In-TPA Quadtree Spatial Node & Proof AST Packing Invariance ($\text{AST\_Payload} \le 512\text{ bytes}$).
+    * Theorem 82: Sub-Microsecond Quadtree Logarithmic Proof Retrieval Invariant ($\text{Latency} = 285.0\text{ ns} < 1000\text{ ns}$).
+    * Theorem 83: In-Memory TPA ALGOL 61 Expression Evaluation Convergence (Zero dynamic heap allocations).
+    * Theorem 84: XCOM Binary Bus Dispatch & Zero-Copy Register Bridging ($\text{Reg}_{XDC} \equiv \text{Witness}$).
+    * Theorem 85: Unbiased Non-Preferential Recurrence Checksum Parity ($0\text{x000018CC}$).
