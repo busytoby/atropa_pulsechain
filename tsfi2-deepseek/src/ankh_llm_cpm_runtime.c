@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPFT",
+        .opcode_signature = 0x43504654,
+        .title = "CPMTOMIE-SUPER8-FILM-TRANSPORT-CORPS",
+        .theorem_descriptions = {
+            "Autonomous Coaxial Cartridge Latching Invariance",
+            "Capstan & Pressure Plate Micro-Friction Inversion",
+            "Triacetate Silver Halide Emulsion Grain Density",
+            "Sub-Millisecond Shutter-Claw Intermittent Dispatch",
+            "Sovereign Super 8 Film Transport Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPT8",
         .opcode_signature = 0x43505438,
         .title = "CPMTOMIE-TEDDY-SUPER8-AUTONOMOUS-CORPS",
