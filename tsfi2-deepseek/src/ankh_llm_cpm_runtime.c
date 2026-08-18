@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPAX",
+        .opcode_signature = 0x43504158,
+        .title = "CPMTOMIE-ANGULAR-SPECTRUM-DIFFUSION-CORPS",
+        .theorem_descriptions = {
+            "Angular Spectrum High-Frequency Energy Diffusion Invariance",
+            "Amplitude-to-Phase Information Transfer Invariance",
+            "Spatial Light Modulator Phase-Only Diffraction Invariance",
+            "Sub-Millisecond Iterative GS Phase-Constraint Convergence Dispatch",
+            "Sovereign Angular Spectrum Phase Transfer Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPKM",
         .opcode_signature = 0x43504B4D,
         .title = "CPMTOMIE-KINOFORM-MULTIPLEX-HOLOGRAPHY-CORPS",
