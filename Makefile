@@ -1764,6 +1764,7 @@ test-cpm-tomie-robotic-typography-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-haptic-magnetic-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-polyhedral-lattice-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-biomorphic-memetics-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-constructionist-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover

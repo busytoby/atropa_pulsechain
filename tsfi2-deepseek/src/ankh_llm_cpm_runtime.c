@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCN",
+        .opcode_signature = 0x4350434E,
+        .title = "CPMTOMIE-CONSTRUCTIONIST-SYNTHESIS-CORPS",
+        .theorem_descriptions = {
+            "Constructionist Learning Spiral Invariance",
+            "AI Prompt-to-Pulse-Train Code Synthesis Invariance",
+            "Intent-Driven Creative Autonomy Invariance",
+            "Sub-Millisecond Generative Synthesis Latency",
+            "Sovereign Constructionist Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPBM",
         .opcode_signature = 0x4350424D,
         .title = "CPMTOMIE-BIOMORPHIC-MEMETICS-CORPS",
