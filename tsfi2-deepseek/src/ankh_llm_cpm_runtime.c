@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPS",
+        .opcode_signature = 0x43505053,
+        .title = "CPMTOMIE-KINOFORM-PHASE-SMOOTHING-CORPS",
+        .theorem_descriptions = {
+            "Continuous Phase Gradient Limit Invariance",
+            "Odd-Harmonic Spatial Low-Pass Noise Rejection",
+            "Dynamic Speckle Contrast Minimization",
+            "Sub-Millisecond Morton Quadtree Anti-Aliasing Dispatch",
+            "Sovereign Kinoform Phase Smoothing Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCL",
         .opcode_signature = 0x4350434C,
         .title = "CPMTOMIE-CLAY-ALU-MONISM-CORPS",
