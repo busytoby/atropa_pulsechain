@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPTT",
+        .opcode_signature = 0x43505454,
+        .title = "CPMTOMIE-THERMAL-SHEAROGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "1D Pulsed Transient Thermal Diffusion Invariance",
+            "Digital Speckle Shearing Phase Invariance",
+            "Spherical Joint Thermal Conductance Mapping",
+            "Sub-Millisecond Thermographic Shearing Dispatch",
+            "Sovereign Thermographic Shearography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDH",
         .opcode_signature = 0x43504448,
         .title = "CPMTOMIE-DIGITAL-HOLOGRAPHY-CORPS",
