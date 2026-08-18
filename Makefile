@@ -1548,6 +1548,11 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-auncient-neuron-mesh-competitive-theorems-86-90:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_neuron_mesh_competitive_theorems_86_90.c tsfi2-deepseek/src/auncient_neuron_mesh_competitive_theorems_86_90.c -o tests/test_auncient_neuron_mesh_competitive_theorems_86_90 -lm
+	./tests/test_auncient_neuron_mesh_competitive_theorems_86_90
+	@rm -f tests/test_auncient_neuron_mesh_competitive_theorems_86_90
+
 test-auncient-cpm-quadtree-prover-xcom-theorems-81-85:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_cpm_quadtree_prover_xcom_theorems_81_85.c tsfi2-deepseek/src/auncient_cpm_quadtree_prover_xcom_theorems_81_85.c -o tests/test_auncient_cpm_quadtree_prover_xcom_theorems_81_85 -lm
 	./tests/test_auncient_cpm_quadtree_prover_xcom_theorems_81_85
@@ -1643,8 +1648,8 @@ test-cpm-tomie-annsim-advanced-theorems-prover:
 	./tests/test_cpm_tomie_annsim_advanced_theorems_prover
 	@rm -f tests/test_cpm_tomie_annsim_advanced_theorems_prover
 
-test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover test-cpm-tomie-annsim-advanced-theorems-prover test-cpm-tomie-annsim-theorems-11-15-prover test-auncient-teddy-bear-heart-leed-prover test-auncient-teddy-pageturner-bridge test-auncient-clayscape-usda-leed-theorems-21-25-prover test-auncient-leed-master-certification-theorems-1-25 test-auncient-renderman-usda-theorems-26-30 test-auncient-built-pdca-theorems-31-35 test-auncient-schuurman-living-lab-theorems-36-40 test-auncient-clayscape-living-lab-theorems-41-45 test-auncient-leed-platinum-usda-theorems-46-50 test-auncient-usda-gas-economics-theorems-51-55 test-auncient-hogan-diyat-via6522-theorems-56-60 test-auncient-enoll-living-lab-theorems-61-65 test-auncient-enoll-advanced-theorems-66-70 test-auncient-usda-stanag-p2p-theorems-71-75 test-auncient-usda-mutual-affirmation-theorems-76-80 test-auncient-cpm-quadtree-prover-xcom-theorems-81-85 test-auncient-leed-master-grand-proof-theorems-1-30
-	@echo "All 85 Formal Theorems & RenderMan USDA Digital Twin test suites successfully verified."
+test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover test-cpm-tomie-annsim-advanced-theorems-prover test-cpm-tomie-annsim-theorems-11-15-prover test-auncient-teddy-bear-heart-leed-prover test-auncient-teddy-pageturner-bridge test-auncient-clayscape-usda-leed-theorems-21-25-prover test-auncient-leed-master-certification-theorems-1-25 test-auncient-renderman-usda-theorems-26-30 test-auncient-built-pdca-theorems-31-35 test-auncient-schuurman-living-lab-theorems-36-40 test-auncient-clayscape-living-lab-theorems-41-45 test-auncient-leed-platinum-usda-theorems-46-50 test-auncient-usda-gas-economics-theorems-51-55 test-auncient-hogan-diyat-via6522-theorems-56-60 test-auncient-enoll-living-lab-theorems-61-65 test-auncient-enoll-advanced-theorems-66-70 test-auncient-usda-stanag-p2p-theorems-71-75 test-auncient-usda-mutual-affirmation-theorems-76-80 test-auncient-cpm-quadtree-prover-xcom-theorems-81-85 test-auncient-neuron-mesh-competitive-theorems-86-90 test-auncient-leed-master-grand-proof-theorems-1-30
+	@echo "All 90 Formal Theorems & RenderMan USDA Digital Twin test suites successfully verified."
 
 test-cpm-tomie-annsim-5theorems-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_annsim_5theorems_prover.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tests/test_cpm_tomie_annsim_5theorems_prover -lm

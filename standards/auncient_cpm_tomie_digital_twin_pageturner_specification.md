@@ -149,3 +149,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 83: In-Memory TPA ALGOL 61 Expression Evaluation Convergence (Zero dynamic heap allocations).
     * Theorem 84: XCOM Binary Bus Dispatch & Zero-Copy Register Bridging ($\text{Reg}_{XDC} \equiv \text{Witness}$).
     * Theorem 85: Unbiased Non-Preferential Recurrence Checksum Parity ($0\text{x000018CC}$).
+
+18. **Tier 18 (Theorems 86–90: Nested CP/M-Tomie Neuron Mesh Competitive Proving)**:
+    * Theorem 86: Nested Neuron Mesh State Isolation & TPA Encapsulation ($\text{Mesh\_Size} = 440\text{ bytes} \le 64\text{KB}$).
+    * Theorem 87: Adversarial Prover-Verifier Nash Equilibrium Convergence ($\mathcal{L}^* = 0.15 \le 0.20$).
+    * Theorem 88: Synaptic Weight Plasticity & Proof Fitness Gradient Descent ($\Delta w = +0.0425$).
+    * Theorem 89: In-Engine Quadtree Canonical Strategy Promotion & Atomic Rollback ($\text{Strat\_ID} = 102$).
+    * Theorem 90: WinchesterMQ SCSI Inter-Neuron Handshake & Rule 18 Parity ($0\text{x000000D3}$).
