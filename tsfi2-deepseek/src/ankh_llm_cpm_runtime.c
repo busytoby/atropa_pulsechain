@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPGQ",
+        .opcode_signature = 0x43504751,
+        .title = "CPMTOMIE-GERCHBERG-QUADTREE-CORPS",
+        .theorem_descriptions = {
+            "Parseval Holographic Energy Conservation Invariance",
+            "Phase-Curvature Adaptive Quadtree Subdivision",
+            "24-Bit Morton Binary Quadtree Serialization",
+            "Sub-Millisecond Hierarchical FFT Dispatch",
+            "Sovereign Gerchberg Quadtree Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPHW",
         .opcode_signature = 0x43504857,
         .title = "CPMTOMIE-HOLOGRAPHIC-WAVEFRONT-CORPS",
