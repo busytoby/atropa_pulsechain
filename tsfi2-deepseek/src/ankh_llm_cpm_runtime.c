@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSZ",
+        .opcode_signature = 0x4350535A,
+        .title = "CPMTOMIE-SKINZ-B4-PINZ-CORPS",
+        .theorem_descriptions = {
+            "skinZ b4 pinZ Precedence Pipeline Invariance",
+            "Stress Singularity Elimination & Volume Defense",
+            "Non-Preferential Deferred Pinning Gating",
+            "Sub-Millisecond Precedence Pipeline Latency",
+            "Sovereign skinZ b4 pinZ Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPSA",
         .opcode_signature = 0x43505341,
         .title = "CPMTOMIE-SEMANTIC-AFFORDANCE-CORPS",
