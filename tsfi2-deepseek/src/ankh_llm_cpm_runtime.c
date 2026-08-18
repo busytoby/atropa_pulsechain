@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPSQ",
+        .opcode_signature = 0x43505351,
+        .title = "CPMTOMIE-SQUID-MAGNETOMETRY-CORPS",
+        .theorem_descriptions = {
+            "Josephson Junction Magnetic Flux Quantization Invariance",
+            "Sub-Femtotesla Biomimetic Motor Intent Inversion",
+            "Spherical Joint High-Gradient Magnetic Shielding",
+            "Sub-Millisecond Minimum-Norm Neural Source Dispatch",
+            "Sovereign SQUID Magnetoencephalography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTT",
         .opcode_signature = 0x43505454,
         .title = "CPMTOMIE-THERMAL-SHEAROGRAPHY-CORPS",
