@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPKO",
+        .opcode_signature = 0x43504B4F,
+        .title = "CPMTOMIE-KINOFORM-QUADTREE-HOLOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Gerchberg-Saxton Random Phase Mask Holographic Modulation Invariance",
+            "Superposed Phase-Only Kinoform Fourier Signal Preservation",
+            "Odd-Harmonic High-Frequency Noise Diffusion Invariance",
+            "Sub-Millisecond 24-Bit Morton Quadtree Kinoform Tiling Dispatch",
+            "Sovereign Kinoform Quadtree Holography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPCF",
         .opcode_signature = 0x43504346,
         .title = "CPMTOMIE-CONFOCAL-FABRY-PEROT-CORPS",
