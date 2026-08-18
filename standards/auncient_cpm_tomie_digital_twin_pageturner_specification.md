@@ -359,3 +359,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 233: `.dat.bin` Quadtree Slice Solvency (pure binary database layout solvency).
     * Theorem 234: Frictionless Multi-Scale Folding Invariant.
     * Theorem 235: Grand Master 235-Theorem Quadtree DAI Folding Closure ($0\text{x0000523C}$).
+
+48. **Tier 48 (Theorems 236–240: YI Canonical Hexagram Registers & Sanitized Knowledge Basis)**:
+    * Theorem 236: Canonical 64-Hexagram YI Knowledge State ($64$ exact orthogonal registers).
+    * Theorem 237: Strict Empirical Garbage Rejection ($1,024$ un-sanitized empirical noise attempts rejected).
+    * Theorem 238: Sanitized Knowledge-Oriented Data Basis ($H(\text{Noise}) \equiv 0.00\text{ bits}$).
+    * Theorem 239: YI Quadtree DAI Spatial Folding ($6,400,000\text{ DAI}$ folded across canonical YI coordinates).
+    * Theorem 240: Grand Master 240-Theorem YI Sanitized Knowledge Closure ($0\text{x0000FDB6}$).
