@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCX",
+        .opcode_signature = 0x43504358,
+        .title = "CPMTOMIE-COAXIAL-KERMIT-CORPS",
+        .theorem_descriptions = {
+            "Coaxial TEM Mode Nanosecond Transport Primacy",
+            "50-Ohm Characteristic Impedance Z_0 Invariance",
+            "Dual-Servo Cavity Tuning Decoupling Invariance",
+            "Sub-Nanosecond Coaxial CRC16 Dispatch",
+            "Sovereign Pure Coaxial Kermit Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTM",
         .opcode_signature = 0x4350544D,
         .title = "CPMTOMIE-WIFI-TELEMETRY-CORPS",
