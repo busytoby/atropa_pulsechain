@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPE1",
+        .opcode_signature = 0x43504531,
+        .title = "CPMTOMIE-IO1-TOTIENT-FACTORING-CORPS",
+        .theorem_descriptions = {
+            "EDSAC Initial Orders 1 Opcode Audit Invariance",
+            "Algebraic Totient Residue State Decomposition",
+            "Non-Preferential Relocatable Address Alignment",
+            "Sub-Millisecond IO1 Compiler Firewall Latency",
+            "Sovereign Initial Orders 1 Totient Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDM",
         .opcode_signature = 0x4350444D,
         .title = "CPMTOMIE-DIFFERENTIAL-METRIC-CORPS",
