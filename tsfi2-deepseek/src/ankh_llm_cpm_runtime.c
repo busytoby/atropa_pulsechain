@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPME",
+        .opcode_signature = 0x43504D45,
+        .title = "CPMTOMIE-MR-ELASTOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Harmonic Acoustic Shear Wave Displacement Invariance",
+            "Complex Viscoelastic Storage and Loss Moduli",
+            "Spherical Joint Magnetic Artifact Isolation",
+            "Sub-Millisecond 3D Helmholtz Elastogram Dispatch",
+            "Sovereign Magnetic Resonance Elastography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPRA",
         .opcode_signature = 0x43505241,
         .title = "CPMTOMIE-RAMAN-CRYSTALLOGRAPHY-CORPS",
