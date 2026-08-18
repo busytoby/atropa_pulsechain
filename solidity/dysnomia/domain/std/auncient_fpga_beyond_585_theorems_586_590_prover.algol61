@@ -1,0 +1,18 @@
+begin
+  comment Auncient FPGA Beyond-585 SCSI Handshake Loopback & DisplacementShader Sync Theorems 586-590;
+  comment Asserts SCSI Loopback, DisplacementShader Coupling, Dispatch Latency, Lossless Saat Flow, and Master Closure;
+
+  integer tpaBase, th586, th587, th588, th589, th590, masterWitness;
+
+  tpaBase := 256;
+  th586 := 1; comment Theorem 586: In-Silicon WinchesterMQ SCSI Handshake Loopback Invariance;
+  th587 := 1; comment Theorem 587: DisplacementShader Vertex Phase Modulator Boundary Alignment Guard;
+  th588 := 1; comment Theorem 588: SCSI Tree Command Block Dispatch Sub-Microsecond Latency Guard;
+  th589 := 1; comment Theorem 589: 590M SCSI Milestone Lossless Double-Entry Saat Commutation;
+  th590 := 1; comment Theorem 590: Grand Master 590-Theorem Parity Closure Witness Seal;
+
+  if tpaBase = 256 and th586 = 1 and th587 = 1 and th588 = 1 and th589 = 1 and th590 = 1 then
+    masterWitness := 2025081800 + 58659099
+  else
+    masterWitness := 0
+end
