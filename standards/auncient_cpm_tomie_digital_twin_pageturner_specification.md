@@ -282,3 +282,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 178: Sub-Microsecond JIT & Commutation Latency Guard Limit ($210\text{ ns} < 500\text{ ns}$, $17\text{ ns} < 50\text{ ns}$ across $100,000\text{ cycles}$).
     * Theorem 179: Thermodynamic FET Equilibrium & Back-EMF Containment Limit ($\Delta T_{\text{FET}} = 0.78\text{ K} \le 1.5\text{ K}$, Torque $\le 20.0\text{ N}\cdot\text{m}$).
     * Theorem 180: Grand Master 180-Theorem SoC Standard Normal Limits Parity Closure ($0\text{x00005D1D}$).
+
+37. **Tier 37 (Theorems 181–185: Polyphase Commutator Waveguide & WinchesterMQ Bus Transmission Invariants)**:
+    * Theorem 181: Polyphase Waveguide Dispersion Bound ($\le 10^{-6}\text{ ps}^2/\text{m}$).
+    * Theorem 182: WinchesterMQ SCSI Loopback Frame Throughput ($\ge 100\text{ MB/s}$ wire-speed).
+    * Theorem 183: DisplacementShader Harmonic Orthogonality Closure (error $< 10^{-6}$, zero visual tearing).
+    * Theorem 184: Multi-Core Tenant Saat Dividend Conservation ($400,000\text{ Saat}$ dividend distribution).
+    * Theorem 185: Grand Master 185-Theorem Waveguide Parity Closure ($0\text{x0000ADAC}$).
