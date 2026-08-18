@@ -72,3 +72,10 @@ This standard formalizes the clean-room, pure C architecture for the Living Lab 
 ### 4. Non-Preferential 3-Term Recurrence Checksum Standard (Rule 18)
 $$P_n = \left( (d_n + \alpha_n) P_{n-1} - \beta_n P_{n-2} \right) \pmod{65535}$$
 where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$.
+
+7. **Tier 7 (Theorems 31–35: Built-PDCA Continuous Improvement & Observational Validity)**:
+   * Theorem 31: Built-PDCA Monotonic Convergence ($\mathcal{L}_{k+1} \le \mathcal{L}_k - \alpha \|\nabla \mathcal{L}\|^2$).
+   * Theorem 32: Multi-Disciplinary Metric-Preserving Telemetry Normalization Isometry.
+   * Theorem 33: Bilateral Physical-Digital State Synchronization Banach Contraction ($\|\mathbf{e}(t)\| \le \|\mathbf{e}(0)\| e^{-\gamma t}$).
+   * Theorem 34: In-Situ Passive Sensing Non-Perturbation Zero-Commutator ($[\mathcal{M}, \mathcal{B}] = 0$).
+   * Theorem 35: Pixar RenderMan Photometric Daylight SSIM Validation Metric ($\text{SSIM} \ge 0.95$).

@@ -1548,6 +1548,11 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-auncient-built-pdca-theorems-31-35:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_built_pdca_theorems_31_35.c tsfi2-deepseek/src/auncient_built_pdca_theorems_31_35.c -o tests/test_auncient_built_pdca_theorems_31_35 -lm
+	./tests/test_auncient_built_pdca_theorems_31_35
+	@rm -f tests/test_auncient_built_pdca_theorems_31_35
+
 test-auncient-leed-master-grand-proof-theorems-1-30:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_leed_master_grand_proof_theorems_1_30.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c tsfi2-deepseek/src/auncient_clayscape_usda_digital_twin.c tsfi2-deepseek/src/auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c tsfi2-deepseek/src/auncient_renderman_usda_rib_prover.c -o tests/test_auncient_leed_master_grand_proof_theorems_1_30 -lm
 	./tests/test_auncient_leed_master_grand_proof_theorems_1_30
@@ -1588,8 +1593,8 @@ test-cpm-tomie-annsim-advanced-theorems-prover:
 	./tests/test_cpm_tomie_annsim_advanced_theorems_prover
 	@rm -f tests/test_cpm_tomie_annsim_advanced_theorems_prover
 
-test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover test-cpm-tomie-annsim-advanced-theorems-prover test-cpm-tomie-annsim-theorems-11-15-prover test-auncient-teddy-bear-heart-leed-prover test-auncient-teddy-pageturner-bridge test-auncient-clayscape-usda-leed-theorems-21-25-prover test-auncient-leed-master-certification-theorems-1-25 test-auncient-renderman-usda-theorems-26-30
-	@echo "All 30 Formal Theorems & RenderMan USDA Digital Twin test suites successfully verified."
+test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover test-cpm-tomie-annsim-advanced-theorems-prover test-cpm-tomie-annsim-theorems-11-15-prover test-auncient-teddy-bear-heart-leed-prover test-auncient-teddy-pageturner-bridge test-auncient-clayscape-usda-leed-theorems-21-25-prover test-auncient-leed-master-certification-theorems-1-25 test-auncient-renderman-usda-theorems-26-30 test-auncient-built-pdca-theorems-31-35 test-auncient-leed-master-grand-proof-theorems-1-30
+	@echo "All 35 Formal Theorems & RenderMan USDA Digital Twin test suites successfully verified."
 
 test-cpm-tomie-annsim-5theorems-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_annsim_5theorems_prover.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tests/test_cpm_tomie_annsim_5theorems_prover -lm
