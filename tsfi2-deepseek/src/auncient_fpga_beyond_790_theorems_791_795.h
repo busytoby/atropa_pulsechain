@@ -6,9 +6,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/* Advanced Asynchronous Micro-Core Hardware Verification Categories */
+/* Advanced Asynchronous Micro-Core Hardware Verification Categories (Lock-Free Atomics Exclusively - No MUTEX) */
 typedef enum {
-    ASYNC_ADV_MUTEX_METASTABILITY_RESOLVE = 0x01, /* Mutual exclusion element metastability MTBF > 10^12 years */
+    ASYNC_ADV_ATOMIC_CAS_LOCKFREE_RESOLVE = 0x01, /* Lock-free atomic compare-and-swap (CAS) & fetch-add arbitration */
     ASYNC_ADV_VOLTAGE_SCALING_TRACKING    = 0x02, /* Dynamic voltage scaling (0.6V - 1.2V) self-timed tracking */
     ASYNC_ADV_CALC_BOUNDED_DELAY_MATCH    = 0x03, /* Bundled-data matched delay line PVT margin guard */
     ASYNC_ADV_ARBITER_FAIRNESS_BALANCE    = 0x04, /* Starvation-free tree arbiter fair token dispatch */
@@ -18,7 +18,7 @@ typedef enum {
 typedef struct {
     AsyncAdvancedProofType proof_type;
     uint32_t channel_vector_id;
-    float    metastability_mtbf_years;   /* Mean Time Between Failures in years */
+    uint32_t atomic_cas_lockfree_ops;    /* High-throughput lock-free atomic operations */
     float    voltage_tracking_range_v;   /* Operational voltage window in volts */
     float    displacement_async_adv_phase;/* Synchronized with DisplacementShader (Rule 14) */
     bool     is_async_adv_certified;

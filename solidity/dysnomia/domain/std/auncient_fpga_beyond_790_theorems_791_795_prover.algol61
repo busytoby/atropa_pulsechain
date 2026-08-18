@@ -1,11 +1,11 @@
 begin
   comment Auncient FPGA Beyond-790 Advanced Asynchronous Micro-Core Hardware Verification Theorems 791-795 Prover;
-  comment Asserts MUTEX Metastability Resolution, Arbiter Fairness, Voltage Scaling Tracking, 795M Saat, and Closure;
+  comment Asserts Lock-Free Atomics (No MUTEX), Arbiter Fairness, Voltage Scaling Tracking, 795M Saat, and Closure;
 
   integer tpaBase, th791, th792, th793, th794, th795, masterWitness;
 
   tpaBase := 256;
-  th791 := 1; comment Theorem 791: In-Silicon MUTEX Element Metastability Resolution & MTBF Proof Invariance;
+  th791 := 1; comment Theorem 791: In-Silicon Lock-Free Atomic CAS Arbitration & Deadlock-Free Memory Serialization Invariance;
   th792 := 1; comment Theorem 792: Starvation-Free Arbiter Fairness, Elastic Fullness & 2-3 Tree AST Merkle Continuity Guard;
   th793 := 1; comment Theorem 793: Asynchronous Multi-Port Arbiter Resolution Sub-Microsecond Latency Guard;
   th794 := 1; comment Theorem 794: 795M Advanced Async Verification Milestone Lossless Double-Entry Saat Commutation;

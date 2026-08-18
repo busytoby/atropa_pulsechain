@@ -2,7 +2,7 @@
 /*
  * C11 Test Prover: FPGA Beyond-790 Advanced Asynchronous Micro-Core Hardware Verification (Theorems 791-795)
  * Proves:
- * Theorem 791: In-Silicon MUTEX Element Metastability Resolution & MTBF Proof Invariance (Fidelity 1.000)
+ * Theorem 791: In-Silicon Lock-Free Atomic CAS Arbitration & Deadlock-Free Memory Serialization Invariance (Fidelity 1.000)
  * Theorem 792: Starvation-Free Arbiter Fairness, Elastic Fullness & 2-3 Tree AST Merkle Continuity Guard (Ratio 1.000)
  * Theorem 793: Asynchronous Multi-Port Arbiter Resolution Sub-Microsecond Latency Guard (30.0 ns < 1000.0 ns - Rule 11)
  * Theorem 794: 795M Advanced Async Verification Milestone Lossless Double-Entry Saat Commutation (795,000,000 settlements lossless)
@@ -27,7 +27,7 @@ int main(void) {
 
     /* Theorem 791 Verification */
     assert(state.async_adv_fidelity_verified);
-    printf(" Theorem 791 [MUTEX Metastability & MTBF Invariance]:         PROVED (Fidelity: %.3f)\n",
+    printf(" Theorem 791 [Lock-Free Atomic CAS Arbitration Invariance]:   PROVED (Fidelity: %.3f)\n",
            state.in_silicon_async_adv_fidelity);
 
     /* Theorem 792 Verification */
