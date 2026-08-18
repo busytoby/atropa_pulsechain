@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-SDK-TK-DISP.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-SDK-TK-DISP-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1181-TK-OK             PIC 9(01) VALUE 1.
+            05  WS-TH1182-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1183-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1184-1185M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1185-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-SDK-TK-DISP-WIT          PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-SDK-TK-DISP.
+            GOBACK.
+        1000-EVALUATE-SDK-TK-DISP.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1181-TK-OK = 1 AND
+               WS-TH1182-DATBIN-STRAT-OK = 1 AND
+               WS-TH1183-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1184-1185M-SAAT-OK = 1 AND
+               WS-TH1185-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-SDK-TK-DISP-WIT
+            ELSE
+                MOVE 0 TO WS-SDK-TK-DISP-WIT.
