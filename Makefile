@@ -1548,6 +1548,16 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-auncient-leed-master-certification-theorems-1-25:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_leed_master_certification_theorems_1_25.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c tsfi2-deepseek/src/auncient_clayscape_usda_digital_twin.c tsfi2-deepseek/src/auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c -o tests/test_auncient_leed_master_certification_theorems_1_25 -lm
+	./tests/test_auncient_leed_master_certification_theorems_1_25
+	@rm -f tests/test_auncient_leed_master_certification_theorems_1_25
+
+test-auncient-clayscape-usda-leed-theorems-21-25-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_clayscape_usda_leed_theorems_21_25_prover.c tsfi2-deepseek/src/auncient_clayscape_usda_digital_twin.c -o tests/test_auncient_clayscape_usda_leed_theorems_21_25_prover -lm
+	./tests/test_auncient_clayscape_usda_leed_theorems_21_25_prover
+	@rm -f tests/test_auncient_clayscape_usda_leed_theorems_21_25_prover
+
 test-auncient-teddy-pageturner-bridge:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c -o tests/test_auncient_teddy_pageturner_bridge -lm
 	./tests/test_auncient_teddy_pageturner_bridge
