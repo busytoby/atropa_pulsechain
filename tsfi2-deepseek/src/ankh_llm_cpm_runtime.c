@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPX",
+        .opcode_signature = 0x43505058,
+        .title = "CPMTOMIE-PHOTOACOUSTIC-TOMOGRAPHY-CORPS",
+        .theorem_descriptions = {
+            "Thermoelastic Photoacoustic Pressure Invariance",
+            "Piezoelectric Ultrasound Transduction Array",
+            "Universal Back-Projection Tomographic Inversion",
+            "Sub-Millisecond Photoacoustic Frame Dispatch",
+            "Sovereign Photoacoustic Tomography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPGQ",
         .opcode_signature = 0x43504751,
         .title = "CPMTOMIE-GERCHBERG-QUADTREE-CORPS",
