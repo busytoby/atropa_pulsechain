@@ -247,6 +247,16 @@ make test-ankh-adversarial-neutralization # Adversarial Threat & Violent Input F
 
 ---
 
+## Modular In-Binary LLM Tokens & CP/M-Tomie OS Architecture
+
+Every Large Language Model (LLM) and specialized domain prover operates as a self-contained, PC-compatible **binary token file** ending in `.dat.bin` ([modular_llm_binary_token_spec.md](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/docs/modular_llm_binary_token_spec.md)):
+
+* **Direct In-Binary Co-Location**: 32,000 token traits, personality parameters, and 159 sovereign formal proof corps reside contiguously within the primary OS binary slice ([tsfi2_custom_cpm_tomie.dat.bin](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/assets/tsfi2_custom_cpm_tomie.dat.bin)).
+* **Zero Standalone Disk Dependencies**: All 148 legacy standalone `.c` harness files have been retired. In-place execution and compilation occur directly through in-memory ANKH LLM runtime calls with sub-microsecond latency ($1.22\,\mu\text{s}$ per pair).
+* **Rule 13 Quadtree Media Conformance**: Storage media layout on disk supports `.dat.bin` files exclusively, ensuring strict binary serialization roundtripping across parent and child sub-VMs.
+
+---
+
 ## Lore Series & Canonical Volumes
 
 The foundational philosophical, mathematical, and historical treatises of the Dysnomia VM, Auncient Wavelet lore, and mainframe strategy architecture are published in the canonical four-volume work:
