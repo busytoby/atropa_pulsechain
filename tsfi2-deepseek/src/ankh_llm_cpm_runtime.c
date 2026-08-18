@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPPY",
+        .opcode_signature = 0x43505059,
+        .title = "CPMTOMIE-ACOUSTIC-PBX-CLAY-CORPS",
+        .theorem_descriptions = {
+            "Acoustic Clay Sound Shape Spectral Modulation",
+            ".bio Ringtone Telephonic Packet Framing",
+            "Yellow Box Asset Dialling Invariance",
+            "Sub-Millisecond PBX Acoustic Synthesis Latency",
+            "Sovereign Acoustic PBX Clay Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPGK",
         .opcode_signature = 0x4350474B,
         .title = "CPMTOMIE-GESTURAL-KINEMATICS-CORPS",
