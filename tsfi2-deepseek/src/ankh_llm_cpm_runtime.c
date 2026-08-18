@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPXF",
+        .opcode_signature = 0x43505846,
+        .title = "CPMTOMIE-MICRO-XRF-CORPS",
+        .theorem_descriptions = {
+            "Moseley Characteristic Emission Invariance",
+            "Fundamental Parameter Quantitative Matrix Inversion",
+            "Spherical Joint Metallic Core Boundary Demarcation",
+            "Sub-Millisecond SDD Multi-Channel Analyzer Dispatch",
+            "Sovereign Micro-XRF Spectroscopy Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPLU",
         .opcode_signature = 0x43504C55,
         .title = "CPMTOMIE-LASER-ULTRASONICS-CORPS",
