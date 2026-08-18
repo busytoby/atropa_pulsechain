@@ -605,7 +605,8 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
             "WinchesterMQ Register State Synchronization",
             "Sovereign Tune Channel Grand Seal"
         }
-    }
+    },
+#include "extracted_entries.inc"
 };
 
 static size_t g_cpm_entry_count = sizeof(g_cpm_entries) / sizeof(g_cpm_entries[0]);
