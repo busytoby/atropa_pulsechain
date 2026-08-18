@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPLU",
+        .opcode_signature = 0x43504C55,
+        .title = "CPMTOMIE-LASER-ULTRASONICS-CORPS",
+        .theorem_descriptions = {
+            "Laser Thermoelastic Broadband Ultrasonic Launch Invariance",
+            "Fabry-Perot Confocal Optical Interferometry",
+            "21-Parameter Anisotropic Elasticity Inversion",
+            "Sub-Millisecond Christoffel Acoustic Tensor Dispatch",
+            "Sovereign Laser Ultrasonics Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDW",
         .opcode_signature = 0x43504457,
         .title = "CPMTOMIE-DUAL-WAVELENGTH-HOLO-CORPS",
