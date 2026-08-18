@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDT",
+        .opcode_signature = 0x43504454,
+        .title = "CPMTOMIE-DTMF-PBX-MATRIX-CORPS",
+        .theorem_descriptions = {
+            "Discrete Goertzel Filter Tone Energy Extraction",
+            "Dual-Tone PBX Key Matrix In-Band Dialling",
+            "Non-Preferential Yellow Box Trunk Authorization",
+            "Sub-Millisecond DTMF Tone Detection Latency",
+            "Sovereign Coaxial DTMF PBX Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CP3F",
         .opcode_signature = 0x43503346,
         .title = "CPMTOMIE-SE3-FEYNMAN-POINT-CORPS",
