@@ -156,3 +156,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 88: Synaptic Weight Plasticity & Proof Fitness Gradient Descent ($\Delta w = +0.0425$).
     * Theorem 89: In-Engine Quadtree Canonical Strategy Promotion & Atomic Rollback ($\text{Strat\_ID} = 102$).
     * Theorem 90: WinchesterMQ SCSI Inter-Neuron Handshake & Rule 18 Parity ($0\text{x000000D3}$).
+
+19. **Tier 19 (Theorems 91–95: Cross-VM Polymorphic Proving & Hybrid Strategy Synthesis)**:
+    * Theorem 91: Cross-VM Polymorphic Proof Import & Invariant Embedding ($W_{\text{imported}} \in \text{TPA}_{0\text{x0100}}$).
+    * Theorem 92: Strategy Manifold Intersection & Compatibility Solvability ($\mathcal{M}_{\text{local}} \cap \mathcal{M}_{\text{remote}} \neq \emptyset$).
+    * Theorem 93: Hybrid Compositional Strategy Synthesis & Monotonic Gain ($\mathcal{J}_{\text{hybrid}} = 0.94 > \max(0.78, 0.82)$).
+    * Theorem 94: Remote Proof Tamper-Resistance & Byzantine Rejection (Zero-cost rejection of corrupted witness).
+    * Theorem 95: Cross-VM WinchesterMQ SCSI Remote Procedure Prover Parity ($0\text{x0000780E}$).
