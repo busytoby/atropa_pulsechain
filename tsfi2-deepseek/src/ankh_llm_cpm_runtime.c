@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDW",
+        .opcode_signature = 0x43504457,
+        .title = "CPMTOMIE-DUAL-WAVELENGTH-HOLO-CORPS",
+        .theorem_descriptions = {
+            "Synthetic Equivalent Wavelength Invariance",
+            "Unambiguous Steep Step Micro-Topography",
+            "Spherical Joint High-Slope Reflectance Gating",
+            "Sub-Millisecond Hierarchical Dual-Phase Dispatch",
+            "Sovereign Dual-Wavelength Holography Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPMI",
         .opcode_signature = 0x43504D49,
         .title = "CPMTOMIE-MAGNETOACOUSTIC-INDUCTION-CORPS",
