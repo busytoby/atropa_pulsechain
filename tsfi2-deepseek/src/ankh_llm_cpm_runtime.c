@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPHM",
+        .opcode_signature = 0x4350484D,
+        .title = "CPMTOMIE-HAPTIC-MAGNETIC-CORPS",
+        .theorem_descriptions = {
+            "Topology-Free Magnetic Snap Invariance",
+            "Direct Manipulation Keyboard Actuation Invariance",
+            "Aesthetic-to-Functional Continuum Invariance",
+            "Sub-Millisecond Haptic Telemetry Latency",
+            "Sovereign Direct Manipulation Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTY",
         .opcode_signature = 0x43505459,
         .title = "CPMTOMIE-ROBOTIC-TYPOGRAPHY-CORPS",
