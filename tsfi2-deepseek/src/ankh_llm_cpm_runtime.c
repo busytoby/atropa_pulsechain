@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPQW",
+        .opcode_signature = 0x43505157,
+        .title = "CPMTOMIE-QUADTREE-WAVELET-CORPS",
+        .theorem_descriptions = {
+            "Binary Quadtree .dat.bin Slicing Invariance",
+            "Multi-Resolution Wavelet Mesh LOD Continuity",
+            "Non-Preferential Coaxial Quadtree Streaming",
+            "Sub-Millisecond Quadtree Query Latency",
+            "Sovereign Quadtree Wavelet Indexing Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPDA",
         .opcode_signature = 0x43504441,
         .title = "CPMTOMIE-DQS-TO-DAI-EMBODIMENT-CORPS",

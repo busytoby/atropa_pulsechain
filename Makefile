@@ -1742,6 +1742,7 @@ test-cpm-tomie-se3-feynman-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-dtmf-pbx-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-dual-quaternion-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-dqs-to-dai-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-quadtree-wavelet-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
