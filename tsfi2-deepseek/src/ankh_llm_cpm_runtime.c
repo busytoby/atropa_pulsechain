@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPKN",
+        .opcode_signature = 0x43504B4E,
+        .title = "CPMTOMIE-KINOFORM-SNR-DIFFRACTION-CORPS",
+        .theorem_descriptions = {
+            "Fundamental Channel Diffraction Efficiency Invariance",
+            "Harmonic Signal-to-Noise Ratio Invariance",
+            "Spherical Joint Multi-Angle Cross-Talk Rejection",
+            "Sub-Millisecond 8-Bit SLM Quantization Dispatch",
+            "Sovereign Kinoform SNR & Diffraction Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPAX",
         .opcode_signature = 0x43504158,
         .title = "CPMTOMIE-ANGULAR-SPECTRUM-DIFFUSION-CORPS",
