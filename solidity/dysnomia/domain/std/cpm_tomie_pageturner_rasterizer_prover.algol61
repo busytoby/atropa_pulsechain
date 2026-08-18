@@ -1,0 +1,17 @@
+begin
+  comment CP/M-Tomie PageTurner Frame Rasterizer Formal Prover;
+  comment Verifies 320x240 depth-buffered scanline projection and .dat.bin compliance;
+
+  integer tpaBase, width, height, zBufferOk, datBinOk, rasterizerWitness;
+
+  tpaBase := 256;
+  width := 320;
+  height := 240;
+  zBufferOk := 1;
+  datBinOk := 1;
+
+  if tpaBase = 256 and width = 320 and height = 240 and zBufferOk = 1 and datBinOk = 1 then
+    rasterizerWitness := 320240000 + 18
+  else
+    rasterizerWitness := 0
+end

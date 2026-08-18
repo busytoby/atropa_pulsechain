@@ -1548,6 +1548,64 @@ test-clayscape-bear-assembly:
 	./tests/test_clayscape_bear_assembly
 	@rm -f tests/test_clayscape_bear_assembly
 
+test-auncient-teddy-pageturner-bridge:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/auncient_teddy_pageturner_bridge.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c -o tests/test_auncient_teddy_pageturner_bridge -lm
+	./tests/test_auncient_teddy_pageturner_bridge
+	@rm -f tests/test_auncient_teddy_pageturner_bridge
+
+test-auncient-teddy-bear-heart-leed-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_teddy_bear_heart_leed_prover.c tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c -o tests/test_auncient_teddy_bear_heart_leed_prover -lm
+	./tests/test_auncient_teddy_bear_heart_leed_prover
+	@rm -f tests/test_auncient_teddy_bear_heart_leed_prover
+
+test-cpm-tomie-annsim-theorems-11-15-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_annsim_theorems_11_15_prover.c -o tests/test_cpm_tomie_annsim_theorems_11_15_prover -lm
+	./tests/test_cpm_tomie_annsim_theorems_11_15_prover
+	@rm -f tests/test_cpm_tomie_annsim_theorems_11_15_prover
+
+test-cpm-tomie-annsim-advanced-theorems-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_annsim_advanced_theorems_prover.c -o tests/test_cpm_tomie_annsim_advanced_theorems_prover -lm
+	./tests/test_cpm_tomie_annsim_advanced_theorems_prover
+	@rm -f tests/test_cpm_tomie_annsim_advanced_theorems_prover
+
+test-cpm-tomie-annsim-suite: test-cpm-tomie-annsim-reviewer test-cpm-tomie-pageturner-renderman test-cpm-tomie-pageturner-formal-proofs test-cpm-tomie-annsim-pageturner-pipeline test-cpm-tomie-algol61-simaud-prover test-cpm-tomie-renderman-pageturner-presenter test-cpm-tomie-annsim-5theorems-prover
+	@echo "All CP/M-Tomie ANNSIM SimAUD & PageTurner RenderMan test suites passed successfully."
+
+test-cpm-tomie-annsim-5theorems-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_annsim_5theorems_prover.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tests/test_cpm_tomie_annsim_5theorems_prover -lm
+	./tests/test_cpm_tomie_annsim_5theorems_prover
+	@rm -f tests/test_cpm_tomie_annsim_5theorems_prover
+
+test-cpm-tomie-renderman-pageturner-presenter:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_renderman_pageturner_presenter.c tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c -o tests/test_cpm_tomie_renderman_pageturner_presenter -lm
+	./tests/test_cpm_tomie_renderman_pageturner_presenter
+	@rm -f tests/test_cpm_tomie_renderman_pageturner_presenter
+
+test-cpm-tomie-algol61-simaud-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_algol61_simaud_prover.c -o tests/test_cpm_tomie_algol61_simaud_prover
+	./tests/test_cpm_tomie_algol61_simaud_prover
+	@rm -f tests/test_cpm_tomie_algol61_simaud_prover
+
+test-cpm-tomie-annsim-pageturner-pipeline:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_annsim_pageturner_pipeline.c tsfi2-deepseek/src/cpm_tomie_annsim_pageturner_pipeline.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tests/test_cpm_tomie_annsim_pageturner_pipeline -lm
+	./tests/test_cpm_tomie_annsim_pageturner_pipeline
+	@rm -f tests/test_cpm_tomie_annsim_pageturner_pipeline
+
+test-cpm-tomie-pageturner-formal-proofs:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_pageturner_formal_proofs.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c -o tests/test_cpm_tomie_pageturner_formal_proofs -lm
+	./tests/test_cpm_tomie_pageturner_formal_proofs
+	@rm -f tests/test_cpm_tomie_pageturner_formal_proofs
+
+test-cpm-tomie-pageturner-renderman:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_pageturner_renderman.c tsfi2-deepseek/src/cpm_tomie_pageturner_renderman.c -o tests/test_cpm_tomie_pageturner_renderman -lm
+	./tests/test_cpm_tomie_pageturner_renderman
+	@rm -f tests/test_cpm_tomie_pageturner_renderman
+
+test-cpm-tomie-annsim-reviewer:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/cpm_tomie_annsim_reviewer.c tsfi2-deepseek/src/tsfi_pdf_reader.c -o tests/test_cpm_tomie_annsim_reviewer -lm
+	./tests/test_cpm_tomie_annsim_reviewer
+	@rm -f tests/test_cpm_tomie_annsim_reviewer
+
 test-cpm-tomie-clay-play-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_clay_play_prover.c -o tests/test_cpm_tomie_clay_play_prover
 	./tests/test_cpm_tomie_clay_play_prover
