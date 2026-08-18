@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPDM",
+        .opcode_signature = 0x4350444D,
+        .title = "CPMTOMIE-DIFFERENTIAL-METRIC-CORPS",
+        .theorem_descriptions = {
+            "First Fundamental Form Metric Tensor Invariance",
+            "Theorema Egregium Intrinsic Gaussian Curvature",
+            "Non-Preferential Principal Curvatures Bounds",
+            "Sub-Millisecond Differential Metric Latency",
+            "Sovereign Differential Geometric Metric Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPGP",
         .opcode_signature = 0x43504750,
         .title = "CPMTOMIE-GESTURAL-PHONETICS-CORPS",

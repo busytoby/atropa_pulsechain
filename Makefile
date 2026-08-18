@@ -1733,6 +1733,7 @@ test-cpm-tomie-affordance-field-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-viscoelastic-clay-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-morphological-geodesics-suite: test-ankh-llm-cpm-suite
 test-cpm-tomie-gestural-phonetics-suite: test-ankh-llm-cpm-suite
+test-cpm-tomie-differential-metric-suite: test-ankh-llm-cpm-suite
 
 test-cpm-tomie-haptic-force-feedback-prover:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_cpm_tomie_haptic_force_feedback_prover.c -o tests/test_cpm_tomie_haptic_force_feedback_prover
