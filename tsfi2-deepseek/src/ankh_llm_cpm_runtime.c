@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPCL",
+        .opcode_signature = 0x4350434C,
+        .title = "CPMTOMIE-CLAY-ALU-MONISM-CORPS",
+        .theorem_descriptions = {
+            "Clay Material Monism Foundation Invariance",
+            "First-Class ALU Register Bus Parity",
+            "WinchesterMQ Hardware SCSI Loopback Bridge",
+            "Non-Preferential Accumulator Continuity Dispatch",
+            "Sovereign Clay-ALU Material Monism Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPFT",
         .opcode_signature = 0x43504654,
         .title = "CPMTOMIE-SUPER8-FILM-TRANSPORT-CORPS",
