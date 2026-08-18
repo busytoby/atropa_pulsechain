@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPMG",
+        .opcode_signature = 0x43504D47,
+        .title = "CPMTOMIE-MORPHOLOGICAL-GEODESICS-CORPS",
+        .theorem_descriptions = {
+            "Geodesic Morphological Streamline Flow Invariance",
+            "Multi-Resolution Wavelet Detail Synthesis",
+            "Non-Preferential Curvature Smoothing Invariance",
+            "Sub-Millisecond Geodesic Wavelet Latency",
+            "Sovereign Morphological Geodesic Grand Seal"
+        }
+    },
+    {
         .fourcc_str = "CPVC",
         .opcode_signature = 0x43505643,
         .title = "CPMTOMIE-VISCOELASTIC-CLAY-CORPS",
