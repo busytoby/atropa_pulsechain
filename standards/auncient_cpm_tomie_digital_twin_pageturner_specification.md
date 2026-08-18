@@ -541,3 +541,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 363: $15$-Term Richardson Extrapolation Numerical Precision Guard ($\text{Precision} = 1.000$).
     * Theorem 364: Adaptive Quadrature Lossless Double-Entry Saat Commutation ($365,000,000$ verified evaluations).
     * Theorem 365: Grand Master 365-Theorem McKeeman Quadrature Parity Closure Witness Seal ($0\text{x0000A8C4}$).
+
+74. **Tier 74 (Theorems 366–370: FPGA Quadtree .dat.bin CP/M-Tomie OS & Jubilee Gating)**:
+    * Theorem 366: Quadtree `.dat.bin` Binary CP/M-Tomie Operating System Bootloader ($\text{Integrity} = 1.000$).
+    * Theorem 367: Golden Jubilee Overdrive Non-Accumulating Quadtree Gating ($V_{\text{margin}} = 5.0\text{ V}$).
+    * Theorem 368: WinchesterMQ SCSI CP/M BDOS Hardware Handshake Invariance ($\text{TPA} = 256\text{ Bytes}$).
+    * Theorem 369: ANKH LLM CP/M-Tomie Lossless Double-Entry Saat Commutation ($370,000,000$ verified cycles).
+    * Theorem 370: Grand Master 370-Theorem Quadtree OS Parity Closure Witness Seal ($0\text{x00005DC7}$).

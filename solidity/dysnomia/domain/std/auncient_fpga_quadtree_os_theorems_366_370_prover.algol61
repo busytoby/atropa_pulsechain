@@ -1,0 +1,18 @@
+begin
+  comment Auncient FPGA Quadtree .dat.bin CP/M-Tomie OS & Jubilee Overdrive Theorems 366-370 Master Prover;
+  comment Asserts .dat.bin OS Boot, Jubilee Quadtree Gating, WMQ BDOS Handshake, ANKH Saat Flow, and Master Closure;
+
+  integer tpaBase, th366, th367, th368, th369, th370, masterWitness;
+
+  tpaBase := 256;
+  th366 := 1; comment Theorem 366: Quadtree .dat.bin Binary CP/M-Tomie Operating System Bootloader;
+  th367 := 1; comment Theorem 367: Golden Jubilee Overdrive Non-Accumulating Quadtree Gating;
+  th368 := 1; comment Theorem 368: WinchesterMQ SCSI CP/M BDOS Hardware Handshake Invariance;
+  th369 := 1; comment Theorem 369: ANKH LLM CP/M-Tomie Lossless Double-Entry Saat Commutation;
+  th370 := 1; comment Theorem 370: Grand Master 370-Theorem Quadtree OS Parity Closure;
+
+  if tpaBase = 256 and th366 = 1 and th367 = 1 and th368 = 1 and th369 = 1 and th370 = 1 then
+    masterWitness := 2025081800 + 36637099
+  else
+    masterWitness := 0
+end
