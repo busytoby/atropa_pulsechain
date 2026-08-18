@@ -7,6 +7,18 @@
 
 static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
+        .fourcc_str = "CPHW",
+        .opcode_signature = 0x43504857,
+        .title = "CPMTOMIE-HOLOGRAPHIC-WAVEFRONT-CORPS",
+        .theorem_descriptions = {
+            "2pi Liquid Crystal Phase Modulation Invariance",
+            "Gerchberg-Saxton Holographic Phase Reconstruction",
+            "Time-Averaged Speckle Contrast Suppression",
+            "Sub-Millisecond 2D Fourier Diffraction Dispatch",
+            "Sovereign Holographic Wavefront Grand Master Seal"
+        }
+    },
+    {
         .fourcc_str = "CPTH",
         .opcode_signature = 0x43505448,
         .title = "CPMTOMIE-TERAHERTZ-HYDRATION-CORPS",
