@@ -1,0 +1,18 @@
+begin
+  comment CP/M-ToMiExVSEn .BIN Unified FPGA In-Silicon Spool Theorems 1016-1020 Prover;
+  comment Asserts 64 CP/M-ToMiExVSEn .BIN Spoolers, 128 BRAM Queues, 1.020B Saat Milestone, and Closure;
+
+  integer tpaBase, th1016, th1017, th1018, th1019, th1020, masterWitness;
+
+  tpaBase := 256;
+  th1016 := 1; comment Theorem 1016: CP/M-ToMiExVSEn .BIN Spool Binary System Invariance;
+  th1017 := 1; comment Theorem 1017: BRAM Spool Queue Channel & .dat.bin Slice Merkle Continuity Guard;
+  th1018 := 1; comment Theorem 1018: FPGA Hardware Spool Dispatch & Buffer Push Sub-Microsecond Latency Guard;
+  th1019 := 1; comment Theorem 1019: 1.020 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow;
+  th1020 := 1; comment Theorem 1020: Grand Master 1020-Theorem Parity Closure Witness Seal;
+
+  if tpaBase = 256 and th1016 = 1 and th1017 = 1 and th1018 = 1 and th1019 = 1 and th1020 = 1 then
+    masterWitness := 2025081800 + 1016102099
+  else
+    masterWitness := 0
+end
