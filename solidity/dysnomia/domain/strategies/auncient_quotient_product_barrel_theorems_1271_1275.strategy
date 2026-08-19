@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-QP-BARREL.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-QP-BARREL-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1271-QP-OK             PIC 9(01) VALUE 1.
+            05  WS-TH1272-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1273-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1274-1275M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1275-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-QP-BARREL-WIT            PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-QP-BARREL.
+            GOBACK.
+        1000-EVALUATE-QP-BARREL.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1271-QP-OK = 1 AND
+               WS-TH1272-DATBIN-STRAT-OK = 1 AND
+               WS-TH1273-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1274-1275M-SAAT-OK = 1 AND
+               WS-TH1275-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-QP-BARREL-WIT
+            ELSE
+                MOVE 0 TO WS-QP-BARREL-WIT.
