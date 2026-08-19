@@ -32,6 +32,6 @@ typedef struct {
 void auncient_mu_llm_apogee_secret_init(MuLlmApogeeSecretBeyond1350State *state);
 bool auncient_mu_llm_apogee_secret_verify_theorems_1351_1355(MuLlmApogeeSecretBeyond1350State *state);
 uint32_t auncient_mu_llm_apogee_secret_compute_rule18(const MuLlmApogeeSecretBeyond1350State *state);
-uint64_t auncient_mu_llm_generate_apogee_secret(uint64_t raw_random_seed, uint64_t recurrence_state);
+uint64_t auncient_mu_llm_generate_apogee_secret(uint64_t u_op, uint64_t v_op, uint64_t barrel_shift_state);
 
 #endif /* AUNCIENT_MU_LLM_APOGEE_SECRET_THEOREMS_1351_1355_H */

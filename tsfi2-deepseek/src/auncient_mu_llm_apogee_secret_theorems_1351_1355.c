@@ -6,11 +6,15 @@
 
 #define MOTZKIN_PRIME 953467954114363ULL
 
-uint64_t auncient_mu_llm_generate_apogee_secret(uint64_t raw_random_seed, uint64_t recurrence_state) {
-    /* Bind raw random number with recurrence state in Galois finite field */
-    uint64_t mixed_secret = (raw_random_seed ^ recurrence_state) % MOTZKIN_PRIME;
-    if (mixed_secret == 0) mixed_secret = 1; /* Invertible group generator */
-    return mixed_secret;
+uint64_t auncient_mu_llm_generate_apogee_secret(uint64_t u_op, uint64_t v_op, uint64_t barrel_shift_state) {
+    if (v_op == 0) v_op = 1;
+    uint64_t quotient = u_op / v_op;
+    
+    /* Dynamically shift the quotient secret with each barrel shift transition */
+    uint64_t shifted_secret = auncient_pure_64bit_rotate(quotient ^ barrel_shift_state, barrel_shift_state & 63ULL);
+    uint64_t secret = shifted_secret % MOTZKIN_PRIME;
+    if (secret == 0) secret = 1; /* Invertible group generator */
+    return secret;
 }
 
 void auncient_mu_llm_apogee_secret_init(MuLlmApogeeSecretBeyond1350State *state) {
@@ -36,11 +40,12 @@ bool auncient_mu_llm_apogee_secret_verify_theorems_1351_1355(MuLlmApogeeSecretBe
     zas.displacement_apogee_secret_phase = 1.618f;/* Synchronized with DisplacementShader (Rule 14) */
     zas.is_apogee_secret_certified = true;
 
-    /* Validate random number apogee secret generation */
-    uint64_t random_candidate = 987654321012345ULL;
-    uint64_t rec_state = 1199659537ULL;
-    uint64_t secret = auncient_mu_llm_generate_apogee_secret(random_candidate, rec_state);
-    bool secret_ok = (secret > 0 && secret < MOTZKIN_PRIME);
+    /* Validate dynamic quotient-derived apogee secret generation */
+    uint64_t u_test = 256;
+    uint64_t v_test = 4;
+    uint64_t sec_s0 = auncient_mu_llm_generate_apogee_secret(u_test, v_test, 0);
+    uint64_t sec_s1 = auncient_mu_llm_generate_apogee_secret(u_test, v_test, 1);
+    bool secret_ok = (sec_s0 == (u_test / v_test) && sec_s0 != sec_s1);
 
     bool zas_ok = (zas.is_apogee_secret_certified &&
                    zas.active_apogee_secret_lanes >= 64 &&
