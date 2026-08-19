@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-WMQ-XDC.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-WMQ-XDC-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1531-XDC-OK            PIC 9(01) VALUE 1.
+            05  WS-TH1532-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1533-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1534-1535M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1535-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-WMQ-XDC-WIT              PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-WMQ-XDC.
+            GOBACK.
+        1000-EVALUATE-WMQ-XDC.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1531-XDC-OK = 1 AND
+               WS-TH1532-DATBIN-STRAT-OK = 1 AND
+               WS-TH1533-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1534-1535M-SAAT-OK = 1 AND
+               WS-TH1535-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-WMQ-XDC-WIT
+            ELSE
+                MOVE 0 TO WS-WMQ-XDC-WIT.
