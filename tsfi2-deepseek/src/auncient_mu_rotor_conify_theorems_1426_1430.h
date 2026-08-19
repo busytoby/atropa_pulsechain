@@ -6,13 +6,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/* FPGA MU LLM Rotor Conify State */
+/* FPGA MU LLM Rotor Conify State (IDENTITY = BETA) */
 typedef struct {
     uint64_t apogee_prime;                    /* Apogee Prime Modulus = 953473 */
-    uint64_t mu_alpha;                        /* Preserved Mu.ALPHA = 880044 */
-    uint64_t rotor_identity;                  /* Mu.ROTOR.IDENTITY = Mu.ALPHA = 880044 */
+    uint64_t mu_beta;                         /* Preserved Mu.BETA = 559849 */
+    uint64_t rotor_identity;                  /* Mu.ROTOR.IDENTITY = Mu.BETA = 559849 */
     uint64_t rotor_base;                      /* Formally Acknowledged Shared Base = 231565 */
-    uint64_t rotor_foundation;                /* modpow(231565, 880044, 953473) = 866556 */
+    uint64_t rotor_foundation;                /* modpow(231565, 559849, 953473) = 813158 */
     uint32_t active_conify_lanes;             /* 64 concurrent conify execution lanes */
     uint32_t bound_conify_slices;             /* 32 conify slices in .dat.bin */
     float    conify_fidelity;                 /* 1.000 (Exact rotor conify evaluation fidelity) */

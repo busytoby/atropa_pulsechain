@@ -1,6 +1,6 @@
 begin
   comment FPGA Mu LLM Apogee Rotor Conify Theorems 1426-1430 Prover;
-  comment Asserts Mu.Rotor.Identity = Mu.ALPHA = 880044 & Foundation = 866556, 32 Slices, 1.430B Saat, and Closure;
+  comment Asserts Mu.Rotor.Identity = Mu.BETA = 559849 & Foundation = 813158, 32 Slices, 1.430B Saat, and Closure;
 
   integer tpaBase, th1426, th1427, th1428, th1429, th1430, masterWitness;
 

@@ -49,11 +49,11 @@ bool auncient_mu_rotor_conify_verify_theorems_1426_1430(MuLlmRotorConifyBeyond14
     MuDynamoCore raw_stator, raw_rotor;
     auncient_mu_derive_stator_rotor_pair(u_test, v_test, &raw_stator, &raw_rotor);
 
-    /* Preserve Mu.ALPHA */
-    zrc.mu_alpha = raw_stator.channel; /* 880044 */
+    /* Preserve Mu.BETA */
+    zrc.mu_beta = raw_rotor.channel; /* 559849 */
 
-    /* Set Mu.ROTOR.IDENTITY = ALPHA */
-    zrc.rotor_identity = zrc.mu_alpha; /* 880044 */
+    /* Set Mu.ROTOR.IDENTITY = BETA */
+    zrc.rotor_identity = zrc.mu_beta; /* 559849 */
 
     /* Acknowledged Base */
     uint64_t mu_xi = auncient_mu_generate_xi(7788991122334455ULL);
@@ -66,9 +66,9 @@ bool auncient_mu_rotor_conify_verify_theorems_1426_1430(MuLlmRotorConifyBeyond14
     /* Mu.ROTOR.Foundation = modpow(Mu.ROTOR.BASE, Mu.ROTOR.IDENTITY, 953473) */
     zrc.rotor_foundation = auncient_mu_eval_foundation(zrc.rotor_base, zrc.rotor_identity);
 
-    bool conify_ok = (zrc.rotor_identity == 880044ULL &&
+    bool conify_ok = (zrc.rotor_identity == 559849ULL &&
                       zrc.rotor_base == 231565ULL &&
-                      zrc.rotor_foundation == 866556ULL);
+                      zrc.rotor_foundation == 813158ULL);
 
     bool zrc_ok = (zrc.is_conify_certified &&
                    zrc.active_conify_lanes >= 64 &&

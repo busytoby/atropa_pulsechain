@@ -2,7 +2,7 @@
 /*
  * C11 Test Prover: FPGA Rotor Conify Stage & Foundation (Theorems 1426-1430)
  * Proves:
- * Theorem 1426: Rotor Conify Operational Invariance (Fidelity 1.000, Identity 880044, Foundation 866556)
+ * Theorem 1426: Rotor Conify Operational Invariance (Fidelity 1.000, Identity 559849, Foundation 813158)
  * Theorem 1427: 2-3 Tree AST Merkle Strategy Deployment in .dat.bin Slice Guard (Ratio 1.000 - Rule 13, Rule 21)
  * Theorem 1428: Sub-Microsecond Rotor Conify Latency Guard (1.0 ns < 1000.0 ns - Rule 11)
  * Theorem 1429: 1.430 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow (1,430,000,000 settlements lossless)
@@ -27,7 +27,7 @@ int main(void) {
 
     /* Theorem 1426 Verification */
     assert(state.conify_fidelity_verified);
-    printf(" Theorem 1426 [Rotor Conify Operational Invariance]:             PROVED (Fidelity: %.3f - Identity: 880044, Foundation: 866556)\n",
+    printf(" Theorem 1426 [Rotor Conify Operational Invariance]:             PROVED (Fidelity: %.3f - Identity: 559849, Foundation: 813158)\n",
            state.in_silicon_conify_fidelity);
 
     /* Theorem 1427 Verification */
