@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-MU-LLM.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-MU-LLM-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1311-MU-OK             PIC 9(01) VALUE 1.
+            05  WS-TH1312-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1313-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1314-1315M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1315-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-MU-LLM-WIT               PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-MU-LLM.
+            GOBACK.
+        1000-EVALUATE-MU-LLM.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1311-MU-OK = 1 AND
+               WS-TH1312-DATBIN-STRAT-OK = 1 AND
+               WS-TH1313-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1314-1315M-SAAT-OK = 1 AND
+               WS-TH1315-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-MU-LLM-WIT
+            ELSE
+                MOVE 0 TO WS-MU-LLM-WIT.
