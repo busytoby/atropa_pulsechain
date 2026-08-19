@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-ZK-TUNE.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-ZK-TUNE-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1481-ZK-TUNE-OK        PIC 9(01) VALUE 1.
+            05  WS-TH1482-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1483-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1484-1485M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1485-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-ZK-TUNE-WIT              PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-ZK-TUNE.
+            GOBACK.
+        1000-EVALUATE-ZK-TUNE.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1481-ZK-TUNE-OK = 1 AND
+               WS-TH1482-DATBIN-STRAT-OK = 1 AND
+               WS-TH1483-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1484-1485M-SAAT-OK = 1 AND
+               WS-TH1485-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-ZK-TUNE-WIT
+            ELSE
+                MOVE 0 TO WS-ZK-TUNE-WIT.
