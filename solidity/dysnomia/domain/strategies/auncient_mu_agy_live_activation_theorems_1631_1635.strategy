@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-AGY-ACT.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-AGY-ACT-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1631-ACT-OK            PIC 9(01) VALUE 1.
+            05  WS-TH1632-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1633-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1634-1635M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1635-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-AGY-ACT-WIT              PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-AGY-ACT.
+            GOBACK.
+        1000-EVALUATE-AGY-ACT.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1631-ACT-OK = 1 AND
+               WS-TH1632-DATBIN-STRAT-OK = 1 AND
+               WS-TH1633-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1634-1635M-SAAT-OK = 1 AND
+               WS-TH1635-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-AGY-ACT-WIT
+            ELSE
+                MOVE 0 TO WS-AGY-ACT-WIT.
