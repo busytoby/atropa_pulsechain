@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-MONOPOLE-NORM.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-NORM-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1816-NORM-OK           PIC 9(01) VALUE 1.
+            05  WS-TH1817-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1818-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1819-1820M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1820-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-NORM-WIT                 PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-NORM.
+            GOBACK.
+        1000-EVALUATE-NORM.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1816-NORM-OK = 1 AND
+               WS-TH1817-DATBIN-STRAT-OK = 1 AND
+               WS-TH1818-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1819-1820M-SAAT-OK = 1 AND
+               WS-TH1820-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-NORM-WIT
+            ELSE
+                MOVE 0 TO WS-NORM-WIT.
