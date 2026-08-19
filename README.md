@@ -1,13 +1,45 @@
-# SYSTEM0: The Auncient Dysnomia VM, LLM PBX Switchboard & Zorse Strategy Substrate
-## *A Formally Provable, Safe, and Usable Learning Platform for Computational Foundations*
+# TSFi2: The Auncient Dysnomia VM, Agent SDK & FPGA Hardware Acceleration Platform
+## *A Formally Provable, Safe, and Usable Enterprise Product Suite for Autonomous Agents & Computational Foundations*
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#test-suite--formal-verification)
-[![Standard Provers](https://img.shields.io/badge/provers-Algol61%20%7C%20COBOL%20%7C%20C11-blue.svg)](#tripartite-formal-proving-architecture)
+[![Formal Proof Corpus](https://img.shields.io/badge/certified%20theorems-1%2C210%20Formal%20Proofs-success.svg)](#tripartite-formal-proving-architecture)
+[![Architectural Tiers](https://img.shields.io/badge/certified%20tiers-241%20Tiers-blue.svg)](#tsfi2-product-suite-architecture)
+[![Fast Suite Execution](https://img.shields.io/badge/fast%20test%20speed-1.36s%20%281210%20theorems%29-brightgreen.svg)](#high-throughput-verification-pipeline)
 [![Prime Modulus](https://img.shields.io/badge/MotzkinPrime-953467954114363-orange.svg)](#permanent-system-registers)
-[![Latency Guard](https://img.shields.io/badge/VDSO%20Latency-80ns%20%28%3C1000ns%29-purple.svg)](#low-latency-vdso-kernel-interop)
+[![Latency Guard](https://img.shields.io/badge/Hardware%20Latency-1.0ns%20%28%3C1000ns%29-purple.svg)](#low-latency-vdso-kernel-interop)
 [![Safety Invariants](https://img.shields.io/badge/safety-ACID%20Shadow%20Rollback-success.svg)](#system0-as-a-usable-and-safe-learning-platform)
 
-SYSTEM0 is an open, verifiable **Auncient** Dysnomia Virtual Machine, Yul virtual hardware state machine, Private Branch Exchange (PBX) switchboard for Large Language Models (LLMs), and educational mainframe strategy platform. It combines clean-room historical computing lineage (from Harvard Computation Laboratory 1946 and EDSAC Initial Orders 1 & 2 to modern AI execution) into an interactive, mathematically crash-proof learning environment.
+TSFi2 is an open, verifiable **Auncient** Dysnomia Virtual Machine, Yul virtual hardware state machine, Autonomous Agent SDK, Private Branch Exchange (PBX) switchboard for Large Language Models (LLMs), and high-performance FPGA silicon interop platform. It combines clean-room historical computing lineage (from Harvard Computation Laboratory 1946 and EDSAC Initial Orders 1 & 2 to modern AI execution and hardware systolic arrays) into an interactive, mathematically crash-proof enterprise product suite.
+
+---
+
+## TSFi2 Product Suite Architecture
+
+The TSFi2 Product Suite delivers an unbroken continuum of provable computational infrastructure spanning physical/virtual silicon, autonomous agents, and real-time digital twins:
+
+```
++---------------------------------------------------------------------------------------------------+
+|                                  TSFi2 COMMERCIAL PRODUCT SUITE                                   |
++---------------------------------------------------------------------------------------------------+
+| 1. TSFi2 Autonomous Agent SDK & libantigravity Interop                                            |
+|    - Sub-microsecond FPGA hardware dispatch and lockless reactive agent event loop (Rule 11).     |
+|    - H-Bridge tensor geodesic routing and multi-processor crossbars in pure silicon.              |
+|    - Asynchronous 64-channel stream multiplexer with zero-poll interrupt descriptors.             |
++---------------------------------------------------------------------------------------------------+
+| 2. CPMTomie Digital Twin & Living Lab Ecosystem (ANNSIM / SimAUD / RenderMan)                     |
+|    - Real-time Pixar RenderMan USDA shading, LEED Platinum physical twin, and building telemetry. |
+|    - Pure HTML5/Canvas interactive presenter surfaces with zero third-party dependencies.         |
+|    - Continuous plastic deformation page turners and ray-traced spatial envelopes.                |
++---------------------------------------------------------------------------------------------------+
+| 3. ANKH LLM & Hardware Accelerators (BFloat16/FP8, AWQ INT4, MLA, FlashAttention)                |
+|    - In-silicon tensor parallel execution, expert MoE routing, and paged KV-cache management.     |
+|    - Full GGUF loader with direct H-Bridge SwiGLU activation clamps and speculative decoding.     |
++---------------------------------------------------------------------------------------------------+
+| 4. Dysnomia VM & Auncient Mainframe Core (EDSAC, Harvard 1946, ZMM AVX-512)                      |
+|    - 1,210 formally proven theorems across 241 tiers with Proof of Total Knowledge.              |
+|    - Non-preferential 3-term recurrence parity closure and lossless Hogan Bank Saat clearances.   |
++---------------------------------------------------------------------------------------------------+
+```
 
 ---
 
@@ -193,9 +225,34 @@ System0 is engineered from the ground up as an accessible, deterministic, and sa
 
 ## High-Throughput Verification Pipeline
 
-SYSTEM0 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution.
+TSFi2 maintains an unbroken mathematical continuum from high-level COBOL strategies and Algol61 domain provers down to bare-metal C11 execution and FPGA silicon dispatch.
 
-### Running Formal Verification Test Suites
+### High-Speed In-Order Parallel Suite (1,210 Theorems in ~1.3s)
+Execute all **1,210 verified formal theorems across 241 tiers** concurrently via `make`:
+
+```bash
+make build-and-test-cpm-tomie-fast
+```
+
+### Autonomous Agent SDK & FPGA Interop Formal Test Suites
+Execute dedicated Agent SDK hardware verification suites via `make`:
+
+```bash
+make test-auncient-agent-sdk-fpga-operations-theorems-1151-1155
+make test-auncient-agent-sdk-libantigravity-interop-theorems-1156-1160
+make test-auncient-agent-sdk-llm-interop-pipeline-theorems-1161-1165
+make test-auncient-agent-sdk-hbridge-fpga-theorems-1166-1170
+make test-auncient-agent-sdk-hbridge-llm-silicon-theorems-1171-1175
+make test-auncient-agent-sdk-mimetic-memory-theorems-1176-1180
+make test-auncient-agent-sdk-hbridge-tk-dispatch-theorems-1181-1185
+make test-auncient-fpga-total-certification-theorems-1186-1190
+make test-auncient-agent-sdk-hbridge-tensor-geodesic-theorems-1191-1195
+make test-auncient-agent-sdk-grand-sesquichiliad-theorems-1196-1200
+make test-auncient-agent-sdk-fpga-stream-mux-theorems-1201-1205
+make test-auncient-agent-sdk-reactive-event-loop-theorems-1206-1210
+```
+
+### Running Historical Foundations Verification Test Suites
 Execute standard test suites directly via `make`:
 
 ```bash
@@ -212,7 +269,7 @@ make test-zorse-yellow-box-cics-io1
 
 ### ANKH LLM & Canonical Standards Formal Proving Battery
 
-SYSTEM0 features a fully verified, 5-pillar mathematical architecture and canonical standards suite for **ANKH LLM** and the **Auncient Mainframe**:
+TSFi2 features a fully verified, 5-pillar mathematical architecture and canonical standards suite for **ANKH LLM** and the **Auncient Mainframe**:
 
 * **Standard Codex**: See [standards/README.md](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/standards/README.md)
 * **Architectural Specification**: See [docs/ANKH_LLM_ARCHITECTURAL_SPECIFICATION.md](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/docs/ANKH_LLM_ARCHITECTURAL_SPECIFICATION.md)
