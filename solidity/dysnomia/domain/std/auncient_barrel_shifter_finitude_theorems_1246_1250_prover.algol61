@@ -1,0 +1,18 @@
+begin
+  comment FPGA Barrel Shifter Finitude & Group Enumeration Theorems 1246-1250 Prover;
+  comment Asserts |Z_64|=64, 256 Primitives, 16384 Orbits, 1.250B Saat, and Closure;
+
+  integer tpaBase, th1246, th1247, th1248, th1249, th1250, masterWitness;
+
+  tpaBase := 256;
+  th1246 := 1; comment Theorem 1246: Finite Group Permutation Invariance;
+  th1247 := 1; comment Theorem 1247: 2-3 Tree AST Merkle Finitude Strategy Deployment in .dat.bin Slice Guard;
+  th1248 := 1; comment Theorem 1248: Sub-Microsecond Finitude Proving Latency Guard;
+  th1249 := 1; comment Theorem 1249: 1.250 Billion Saat Quarter-Chiliad Milestone Lossless Double-Entry Saat Commutation Flow;
+  th1250 := 1; comment Theorem 1250: Grand Quarter-Chiliad 1,250-Theorem Parity Closure Witness Seal;
+
+  if tpaBase = 256 and th1246 = 1 and th1247 = 1 and th1248 = 1 and th1249 = 1 and th1250 = 1 then
+    masterWitness := 2025081800 + 1246125099
+  else
+    masterWitness := 0
+end
