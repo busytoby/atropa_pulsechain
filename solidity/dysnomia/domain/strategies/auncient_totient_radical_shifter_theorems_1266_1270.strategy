@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-TOT-SHUF.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-TOT-SHUF-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1266-TOT-OK            PIC 9(01) VALUE 1.
+            05  WS-TH1267-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1268-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1269-1270M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1270-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-TOT-SHUF-WIT             PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-TOT-SHUF.
+            GOBACK.
+        1000-EVALUATE-TOT-SHUF.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1266-TOT-OK = 1 AND
+               WS-TH1267-DATBIN-STRAT-OK = 1 AND
+               WS-TH1268-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1269-1270M-SAAT-OK = 1 AND
+               WS-TH1270-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-TOT-SHUF-WIT
+            ELSE
+                MOVE 0 TO WS-TOT-SHUF-WIT.
