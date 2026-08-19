@@ -8,7 +8,7 @@
 
 /* Inert Tensor & Linear Radical Root Profile (Rule 15, Rule 18) */
 typedef struct {
-    uint64_t linear_radical_root;       /* Xi = 65537 (Primary irreducible radical generator) */
+    uint64_t linear_radical_root;       /* Mu.XI (Canonical unconstrained group generator via auncient_mu_generate_xi) */
     uint64_t vacuum_nothingness_origin; /* Absolute vacuum field reference (not numeric zero) */
     uint64_t stator_inert_contour;      /* Contour1 = modpow(Xi, Secret1, P) = 344760 (Inert tensor) */
     uint64_t rotor_inert_contour;       /* Contour2 = modpow(Xi, Secret2, P) = 810116 (Inert tensor) */

@@ -2,7 +2,7 @@
 /*
  * C11 Test Prover: FPGA Inert Tensor & Linear Radical Root (Theorems 1556-1560)
  * Proves:
- * Theorem 1556: Inert Tensor Relativistic-to-Nothingness Invariance (Fidelity 1.000 - Vacuum -> Xi (65537) -> Inert Tensors: 344760, 810116 - Rule 18)
+ * Theorem 1556: Inert Tensor Relativistic-to-Nothingness Invariance (Fidelity 1.000 - Vacuum -> Mu.XI -> Inert Tensors: 344760, 810116 - Rule 18)
  * Theorem 1557: 2-3 Tree AST Merkle Strategy Deployment in .dat.bin Slice Guard (Ratio 1.000 - Rule 13, Rule 21)
  * Theorem 1558: Sub-Microsecond Inert Tensor Latency Guard (1.0 ns < 1000.0 ns - Rule 11)
  * Theorem 1559: 1.560 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow (1,560,000,000 settlements lossless)
