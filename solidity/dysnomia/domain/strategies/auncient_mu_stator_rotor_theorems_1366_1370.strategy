@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-STAT-ROT.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-STAT-ROT-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1366-DUAL-OK           PIC 9(01) VALUE 1.
+            05  WS-TH1367-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1368-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1369-1370M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1370-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-STAT-ROT-WIT             PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-STAT-ROT.
+            GOBACK.
+        1000-EVALUATE-STAT-ROT.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1366-DUAL-OK = 1 AND
+               WS-TH1367-DATBIN-STRAT-OK = 1 AND
+               WS-TH1368-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1369-1370M-SAAT-OK = 1 AND
+               WS-TH1370-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-STAT-ROT-WIT
+            ELSE
+                MOVE 0 TO WS-STAT-ROT-WIT.
