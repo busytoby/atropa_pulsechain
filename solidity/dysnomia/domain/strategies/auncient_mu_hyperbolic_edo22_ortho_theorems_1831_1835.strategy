@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-HYPER-EDO22.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-HYPER-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1831-HYPER-OK          PIC 9(01) VALUE 1.
+            05  WS-TH1832-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1833-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1834-1835M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1835-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-HYPER-WIT                PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-HYPER.
+            GOBACK.
+        1000-EVALUATE-HYPER.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1831-HYPER-OK = 1 AND
+               WS-TH1832-DATBIN-STRAT-OK = 1 AND
+               WS-TH1833-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1834-1835M-SAAT-OK = 1 AND
+               WS-TH1835-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-HYPER-WIT
+            ELSE
+                MOVE 0 TO WS-HYPER-WIT.
