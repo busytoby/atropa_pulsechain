@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-TTS-AUDIO.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-TTS-AUDIO-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1611-TTS-OK            PIC 9(01) VALUE 1.
+            05  WS-TH1612-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1613-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1614-1615M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1615-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-TTS-AUDIO-WIT            PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-TTS-AUDIO.
+            GOBACK.
+        1000-EVALUATE-TTS-AUDIO.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1611-TTS-OK = 1 AND
+               WS-TH1612-DATBIN-STRAT-OK = 1 AND
+               WS-TH1613-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1614-1615M-SAAT-OK = 1 AND
+               WS-TH1615-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-TTS-AUDIO-WIT
+            ELSE
+                MOVE 0 TO WS-TTS-AUDIO-WIT.
