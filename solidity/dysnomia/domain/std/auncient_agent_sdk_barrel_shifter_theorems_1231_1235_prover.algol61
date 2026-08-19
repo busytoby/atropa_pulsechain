@@ -1,13 +1,13 @@
 begin
-  comment Agent SDK & libantigravity Interop FPGA Landauer Thermodynamic Limit Theorems 1231-1235 Prover;
-  comment Asserts 64 Reversible Gates, 32 Drain Chambers, 1.235B Saat, and Closure;
+  comment Agent SDK & libantigravity Interop FPGA Reversible Barrel Shifter Theorems 1231-1235 Prover;
+  comment Asserts 64 Shifter Lanes, 32 Shift Banks, 1.235B Saat, and Closure;
 
   integer tpaBase, th1231, th1232, th1233, th1234, th1235, masterWitness;
 
   tpaBase := 256;
-  th1231 := 1; comment Theorem 1231: Agent SDK Landauer Limit Operational Invariance;
-  th1232 := 1; comment Theorem 1232: 2-3 Tree AST Merkle Landauer Strategy Deployment in .dat.bin Slice Guard;
-  th1233 := 1; comment Theorem 1233: Sub-Microsecond Commutation Latency Guard;
+  th1231 := 1; comment Theorem 1231: Agent SDK Barrel Shifter Operational Invariance;
+  th1232 := 1; comment Theorem 1232: 2-3 Tree AST Merkle Shifter Strategy Deployment in .dat.bin Slice Guard;
+  th1233 := 1; comment Theorem 1233: Sub-Microsecond Barrel Shift Latency Guard;
   th1234 := 1; comment Theorem 1234: 1.235 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow;
   th1235 := 1; comment Theorem 1235: Grand Master 1,235-Theorem Parity Closure Witness Seal;
 
