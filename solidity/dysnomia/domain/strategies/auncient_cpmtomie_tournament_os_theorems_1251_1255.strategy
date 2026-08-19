@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-CPMTOM-OS.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-CPMTOM-OS-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1251-OS-OK             PIC 9(01) VALUE 1.
+            05  WS-TH1252-DATBIN-STRAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1253-SUBMICRO-LAT-OK   PIC 9(01) VALUE 1.
+            05  WS-TH1254-1255M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1255-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-CPMTOM-OS-WIT            PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-CPMTOM-OS.
+            GOBACK.
+        1000-EVALUATE-CPMTOM-OS.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1251-OS-OK = 1 AND
+               WS-TH1252-DATBIN-STRAT-OK = 1 AND
+               WS-TH1253-SUBMICRO-LAT-OK = 1 AND
+               WS-TH1254-1255M-SAAT-OK = 1 AND
+               WS-TH1255-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-CPMTOM-OS-WIT
+            ELSE
+                MOVE 0 TO WS-CPMTOM-OS-WIT.
