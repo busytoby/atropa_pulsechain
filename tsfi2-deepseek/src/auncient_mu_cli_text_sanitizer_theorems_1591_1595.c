@@ -40,15 +40,29 @@ size_t auncient_mu_sanitize_cli_response(const char *input_text, char *output_bu
             continue;
         }
 
-        /* Filter 2: Check for forbidden single-word phrases like "Understood." or "OK." */
-        if (strncasecmp(&input_text[i], "Understood.", 11) == 0) {
-            i += 11;
-            if (prof) {
-                prof->single_word_sentences_blocked++;
-                prof->accumulator_isolated_strings++;
+        /* Filter 2: Intercept and purge single-word tokens and their quoted forms */
+        const char *banned_tokens[] = {
+            "\"Okayed.\"", "'Okayed.'", "Okayed.", "Okayed",
+            "\"Understood.\"", "'Understood.'", "Understood.", "Understood",
+            "\"Acknowledged.\"", "'Acknowledged.'", "Acknowledged.", "Acknowledged",
+            "\"OK.\"", "'OK.'", "OK.", "OK",
+            NULL
+        };
+
+        bool matched_banned = false;
+        for (int b = 0; banned_tokens[b] != NULL; ++b) {
+            size_t b_len = strlen(banned_tokens[b]);
+            if (strncasecmp(&input_text[i], banned_tokens[b], b_len) == 0) {
+                i += b_len;
+                if (prof) {
+                    prof->single_word_sentences_blocked++;
+                    prof->accumulator_isolated_strings++;
+                }
+                matched_banned = true;
+                break;
             }
-            continue;
         }
+        if (matched_banned) continue;
 
         output_buffer[out_idx++] = input_text[i++];
     }
