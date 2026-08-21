@@ -46,6 +46,7 @@ static const LoreToken lore_tokens[] = {
     {"0x732CD53BFbBf9E12766D8dBE81BA3737CE2b3B05", "DAIICHI ㉾", "Dai Ichi", "lore/tokens/0x732CD53BFbBf9E12766D8dBE81BA3737CE2b3B05.md"},
     {"0x7d2520C0EfF78c54948600Ec6C68aCc7A2E4D1cf", "SEMIOTIC", "SEMIOTIC (❄️)", "lore/tokens/0x7d2520C0EfF78c54948600Ec6C68aCc7A2E4D1cf.md"},
     {"0x84d317737611feB25Ec3207fBa5945f3cb44C143", "IPO ㋨", "Acquired Taste Coin", "lore/tokens/0x84d317737611feB25Ec3207fBa5945f3cb44C143.md"},
+    {"0x8D4a4EF426c43bd32cb07CCcF00418dacce6D67B", "DOPAMINE ㉾", "The Building Block Number", "lore/tokens/0x8D4a4EF426c43bd32cb07CCcF00418dacce6D67B.md"},
     {"0x901efc77E098ea01066cDb4F32fE60829b97C9b5", "SENIORSHIP ㋨", "Seniorship At The IPO", "lore/tokens/0x901efc77E098ea01066cDb4F32fE60829b97C9b5.md"},
     {"0xC625e30CdD0849163cf0299c920EceD2A487798f", "Twitter/Youtube", "Then We Take Youtube", "lore/tokens/0xC625e30CdD0849163cf0299c920EceD2A487798f.md"},
     {"0xd6e9aD3E6E7Afb468bc5D4fA59b5cBc638f796c4", "BODYGUARD", "No Questions Asked Coin", "lore/tokens/0xd6e9aD3E6E7Afb468bc5D4fA59b5cBc638f796c4.md"},
@@ -138,7 +139,7 @@ static int algol61_verify_treasury_token_holding(
     int k_param
 ) {
     if (k_param != 3) return 1; // INVALID_K_EXPONENT
-    if (token_index < 1 || token_index > 20) return 2; // INVALID_TOKEN_INDEX
+    if (token_index < 1 || token_index > 21) return 2; // INVALID_TOKEN_INDEX
     if (is_zero(supply)) return 3; // SUPPLY_ZERO_VIOLATION
     if (bigint_cmp(bal, supply) > 0) return 4; // BALANCE_EXCEEDS_SUPPLY
     if (decimals != 6 && decimals != 8 && decimals != 18) return 5; // INVALID_DECIMALS
@@ -226,7 +227,7 @@ int main(void) {
     }
 
     printf("\n========================================================================================\n");
-    printf("ALL 20 LORE TOKENS PROVEN & BINARY CACHED WITH SUB-MICROSECOND LATENCY (20/20 PASSED)\n");
+    printf("ALL 21 LORE TOKENS PROVEN & BINARY CACHED WITH SUB-MICROSECOND LATENCY (21/21 PASSED)\n");
     printf("========================================================================================\n");
 
     return 0;
