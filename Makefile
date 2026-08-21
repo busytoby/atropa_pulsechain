@@ -4784,6 +4784,11 @@ test-vaesen-emotional-trauma-solver:
 	./tests/test_vaesen_emotional_trauma_solver
 	@rm -f tests/test_vaesen_emotional_trauma_solver
 
+test-vaesen-sight-solver:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_vaesen_sight_solver.c tsfi2-deepseek/src/tsfi_vaesen_sight_solver.c -o tests/test_vaesen_sight_solver -lrt
+	./tests/test_vaesen_sight_solver
+	@rm -f tests/test_vaesen_sight_solver
+
 test-tsfi-montecarlo:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi_montecarlo.c tsfi2-deepseek/src/tsfi_montecarlo.c -o tests/test_tsfi_montecarlo -lm -lrt
 	./tests/test_tsfi_montecarlo
