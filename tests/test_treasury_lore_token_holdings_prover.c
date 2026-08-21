@@ -60,8 +60,9 @@ static const LoreToken lore_tokens[] = {
     {"0xC625e30CdD0849163cf0299c920EceD2A487798f", "Twitter/Youtube", "Then We Take Youtube", "lore/tokens/0xC625e30CdD0849163cf0299c920EceD2A487798f.md"},
     {"0xd6e9aD3E6E7Afb468bc5D4fA59b5cBc638f796c4", "BODYGUARD", "No Questions Asked Coin", "lore/tokens/0xd6e9aD3E6E7Afb468bc5D4fA59b5cBc638f796c4.md"},
     {"0xdd0d66dff1e8231dbc7e8d4f46014a82d6c56af2", "PLP", "PulseX LP (Finvesta / FINVESTIBLE)", "lore/tokens/0xdd0d66dff1e8231dbc7e8d4f46014a82d6c56af2.md"},
-    {"0xe5aA3B2Cfa151f41337bf75Dc5B4181E83e6D041", "TERMS OF SERVICE ㋨", "Like Asian Dogs On Youtube", "lore/tokens/0xe5aA3B2Cfa151f41337bf75Dc5B4181E83e6D041.md"},
-    {"0xfAF4F9d646c6B50a4fc4562Dd620BD3661Bb9b85", "ASSOCIATION", "Maybe All Of It", "lore/tokens/0xfAF4F9d646c6B50a4fc4562Dd620BD3661Bb9b85.md"}
+    {"0xe5aA3B2Cfa151f41337bf75Dc5B4181E83e6D041", "TERMS OF SERVICE ㋨", "Terms Of Service Coin", "lore/tokens/0xe5aA3B2Cfa151f41337bf75Dc5B4181E83e6D041.md"},
+    {"0xf7029312cadE04b3264f54a31E1E1C011B88E65B", "GLASNOST ㉾", "pow(pow(pow(MotzkinPrime,5)...)+23348", "lore/tokens/0xf7029312cadE04b3264f54a31E1E1C011B88E65B.md"},
+    {"0xfAF4F9d646c6B50a4fc4562Dd620BD3661Bb9b85", "ASSOCIATION", "Sovereign Association Coin", "lore/tokens/0xfAF4F9d646c6B50a4fc4562Dd620BD3661Bb9b85.md"}
 };
 
 // BigInt representation (256-bit)
@@ -148,7 +149,7 @@ static int algol61_verify_treasury_token_holding(
     int k_param
 ) {
     if (k_param != 3) return 1; // INVALID_K_EXPONENT
-    if (token_index < 1 || token_index > 30) return 2; // INVALID_TOKEN_INDEX
+    if (token_index < 1 || token_index > 31) return 2; // INVALID_TOKEN_INDEX
     if (is_zero(supply)) return 3; // SUPPLY_ZERO_VIOLATION
     if (bigint_cmp(bal, supply) > 0) return 4; // BALANCE_EXCEEDS_SUPPLY
     if (decimals != 6 && decimals != 8 && decimals != 18) return 5; // INVALID_DECIMALS
@@ -236,7 +237,7 @@ int main(void) {
     }
 
     printf("\n========================================================================================\n");
-    printf("ALL 30 LORE TOKENS PROVEN & BINARY CACHED WITH SUB-MICROSECOND LATENCY (30/30 PASSED)\n");
+    printf("ALL 31 LORE TOKENS PROVEN & BINARY CACHED WITH SUB-MICROSECOND LATENCY (31/31 PASSED)\n");
     printf("========================================================================================\n");
 
     return 0;

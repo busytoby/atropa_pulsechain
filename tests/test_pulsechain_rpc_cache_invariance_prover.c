@@ -69,6 +69,7 @@ static const char *test_tokens[] = {
     "0xd6e9aD3E6E7Afb468bc5D4fA59b5cBc638f796c4", // BODYGUARD
     "0xdd0d66dff1e8231dbc7e8d4f46014a82d6c56af2", // PLP Finvesta
     "0xe5aA3B2Cfa151f41337bf75Dc5B4181E83e6D041", // TERMS OF SERVICE
+    "0xf7029312cadE04b3264f54a31E1E1C011B88E65B", // GLASNOST (Motzkin Polynomial)
     "0xfAF4F9d646c6B50a4fc4562Dd620BD3661Bb9b85"  // ASSOCIATION
 };
 
