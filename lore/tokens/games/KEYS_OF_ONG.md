@@ -42,6 +42,27 @@
 
 ---
 
+## Historical Win Records & Most Recent Token Win
+
+On-chain transaction logs record continuous public gameplay interactions and successful prediction mints:
+
+```
+[Latest Game Win Audit Record]
++-----------------------------------------------------------------------------------+
+| Transaction Hash : 0xd9082aba66cf820232d384ce444061e24b2cf4b7ce474b76d985e196ebfa1013
+| Block Number     : 26,125,925                                                     |
+| Timestamp (UTC)  : 2026-03-27 02:45:35 UTC                                        |
+| Winning Player   : 0x142133Ba22D2480d6B76073Fe0eC0ea1c70a6BC0                     |
+| Submitted Guess  : 0x1a869e14b229b (466,634,809,769,627)                          |
+| Gas Consumed     : 155,455 gas                                                    |
+| Reward Emitted   : 1.000000000000000000 ARCADIA                                   |
++-----------------------------------------------------------------------------------+
+```
+
+* **Simultaneous Math & RNG Inflow**: Each win simultaneously mints `1.0` [`dynamic_0xb680f0cc810317933f234f67eb6a9e923407f05d`](https://scan.pulsechain.com/address/0xB680F0cc810317933F234f67EB6A9E923407f05D) (`MATH`) and `1.0` [`dynamic_0xa96bcbed7f01de6ceed14fc86d90f21a36de2143`](https://scan.pulsechain.com/address/0xa96BcbeD7F01de6CEEd14fC86d90F21a36dE2143) (`RNG`), maintaining synchronization across the entropy network.
+
+---
+
 ## System Role in Dysnomia VM & Empirical Entropy Auditing
 
 1. **Benchmarking Constant-Entropy Resilience**:
