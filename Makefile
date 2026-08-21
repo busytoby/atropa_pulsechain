@@ -58,6 +58,11 @@ test-vaesen-fpga-mistral-ext:
 	./tests/test_vaesen_fpga_mistral_ext
 	@rm -f tests/test_vaesen_fpga_mistral_ext
 
+test-vaesen-spatial-vision:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek/inc tests/test_vaesen_spatial_vision.c tsfi2-deepseek/src/tsfi_vaesen_spatial_vision.c tsfi2-deepseek/src/tsfi_vaesen_device_slice.c -o tests/test_vaesen_spatial_vision -lm -lrt
+	./tests/test_vaesen_spatial_vision
+	@rm -f tests/test_vaesen_spatial_vision
+
 test-lasalle-lfm-cpm-advanced:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_lasalle_lfm_cpm_advanced.c -o tests/test_lasalle_lfm_cpm_advanced
 	./tests/test_lasalle_lfm_cpm_advanced
