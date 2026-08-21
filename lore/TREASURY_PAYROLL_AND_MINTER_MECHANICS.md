@@ -149,7 +149,7 @@ The payroll token `㈞` is anchored into the decentralized financial ecosystem t
         +---> [Pillar 1: Direct Sovereign Debt Liquidity]
         |     Paired with TREASURY BILL ㉾ (0x463413c579D29c26D59a65312657DFCe30D545A1)
         |     Pool: 0x30655F1915ab39E06931aa3be10AD1A430982DD7 (PLP)
-        |     Treasury holds 99.5630% of LP shares.
+        |     Treasury holds 99.7324% of LP shares (105,925,001.51 PLP).
         |
         +---> [Pillar 2: Institutional Credit Vault]
               Paired with Mutual Bond ⑦ (0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38)

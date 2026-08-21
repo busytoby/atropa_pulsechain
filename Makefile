@@ -4729,6 +4729,11 @@ test-algol61-subordinate-strategy-composition:
 	./tests/test_algol61_subordinate_strategy_composition
 	@rm -f tests/test_algol61_subordinate_strategy_composition
 
+test-treasury-lore-token-holdings-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_treasury_lore_token_holdings_prover.c -o tests/test_treasury_lore_token_holdings_prover
+	./tests/test_treasury_lore_token_holdings_prover
+	@rm -f tests/test_treasury_lore_token_holdings_prover
+
 test-tsfi-montecarlo:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi_montecarlo.c tsfi2-deepseek/src/tsfi_montecarlo.c -o tests/test_tsfi_montecarlo -lm -lrt
 	./tests/test_tsfi_montecarlo
