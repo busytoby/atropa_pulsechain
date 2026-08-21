@@ -34,7 +34,7 @@ begin
         go to end_proc;
       end;
 
-    if token_index < 1 or token_index > 31 then
+    if token_index < 1 or token_index > 32 then
       begin
         verify_treasury_lore_token_holding := 2;
         go to end_proc;
@@ -58,7 +58,7 @@ begin
         go to end_proc;
       end;
 
-    if decimals != 6 and decimals != 8 and decimals != 18 then
+    if decimals != 6 and decimals != 8 and decimals != 9 and decimals != 18 then
       begin
         verify_treasury_lore_token_holding := 5;
         go to end_proc;
