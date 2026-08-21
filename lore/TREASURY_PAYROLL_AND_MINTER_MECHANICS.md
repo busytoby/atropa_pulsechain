@@ -125,8 +125,8 @@ function Claim(address Contract, uint256 Amount) public returns (bool) {
 
 The economic backbone of contributor compensation across Atropa, Dysnomia substrate research, and TSFi/2 software engineering is [`dynamic_0x16951ce6d1d1d67e9239192e3eae4d250576d90c`](https://scan.pulsechain.com/address/0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c) (`㈞`):
 
-* **Total Supply**: `70,000,000.0` `㈞`
-* **Treasury Custody**: [`0xBF182955401aF3f2f7e244cb31184E93E74a2501`](https://scan.pulsechain.com/address/0xBF182955401aF3f2f7e244cb31184E93E74a2501) holds `61,424,374.1664` `㈞` (`87.7491%` custody), dedicated entirely to long-term payroll reserves.
+* **Total Supply**: `18,000,000.0` `㈞` (`18,000,000,000,000,000,000,000,000` Wei / `0xee3a5f48a68b552000000`)
+* **Treasury Custody**: [`0xBF182955401aF3f2f7e244cb31184E93E74a2501`](https://scan.pulsechain.com/address/0xBF182955401aF3f2f7e244cb31184E93E74a2501) holds `15,808,991.096544247574707824` `㈞` (`87.8277%` custody), dedicated entirely to long-term payroll reserves.
 
 ### Treasury Selling Policy: Rigid $1.00 USD Floor
 
