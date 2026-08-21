@@ -84,4 +84,6 @@ int  tsfi_vaesen_conference_synthesize_stanag_frame(
     TsfiVaesenStanagFrame *out_frame
 );
 
+int  tsfi_vaesen_conference_populate_canonical_taxonomy(TsfiVaesenConferenceRoom *room);
+
 #endif /* TSFI_VAESEN_CONFERENCE_H */

@@ -121,6 +121,28 @@ int main(void) {
     printf("\n[BENCHMARK] Average conference step latency: %.2f ns (Target: < 1000 ns)\n", avg_latency);
     assert(avg_latency < 1000.0);
 
+    /* 7. Canonical Full Taxonomy Test (21 Entities across 5 Clans) */
+    TsfiVaesenConferenceRoom taxonomy_room;
+    int pop_res = tsfi_vaesen_conference_populate_canonical_taxonomy(&taxonomy_room);
+    printf("\n[TAXONOMY] Populating Canonical Roster: %s (Count: %u entities)\n",
+           pop_res == 0 ? "SUCCESS" : "FAIL", taxonomy_room.num_entities);
+    assert(pop_res == 0);
+    assert(taxonomy_room.num_entities == 21);
+
+    /* Introduce multiple cross-clan pairings */
+    tsfi_vaesen_conference_introduce_pair(&taxonomy_room, 0, 7);  /* Linnea <-> Gårdstomte */
+    tsfi_vaesen_conference_introduce_pair(&taxonomy_room, 0, 12); /* Linnea <-> Teddy Bear */
+    tsfi_vaesen_conference_introduce_pair(&taxonomy_room, 2, 17); /* Father Thomas <-> Näcken */
+    tsfi_vaesen_conference_introduce_pair(&taxonomy_room, 4, 18); /* Kasper <-> Troll */
+    tsfi_vaesen_conference_introduce_pair(&taxonomy_room, 6, 15); /* Sally <-> Nattramn */
+
+    tsfi_vaesen_conference_run_full(&taxonomy_room, 64, 0.05f);
+
+    const char *tax_dat_path = "assets/vaesen_llm_taxonomy.dat.bin";
+    int tax_save = tsfi_vaesen_conference_save_dat_bin(&taxonomy_room, tax_dat_path);
+    printf("[TAXONOMY STORAGE] Saved to %s: %s\n", tax_dat_path, tax_save == 0 ? "SUCCESS" : "FAIL");
+    assert(tax_save == 0);
+
     printf("\n>>> VAESEN VERLET-PLL CONFERENCE SIMULATION FORMALLY VERIFIED <<<\n");
     return 0;
 }

@@ -192,3 +192,49 @@ int tsfi_vaesen_conference_synthesize_stanag_frame(
     }
     return 0;
 }
+
+int tsfi_vaesen_conference_populate_canonical_taxonomy(TsfiVaesenConferenceRoom *room) {
+    if (!room) return -1;
+    tsfi_vaesen_conference_init(room);
+
+    static const TsfiVaesenEntity canonical_roster[] = {
+        /* The Society Clan */
+        { .name = "Linnea Elfvestam",   .clan_id = TSFI_CLAN_SOCIETY, .physique = 1, .precision = 2, .logic = 5, .fervour = 4, .dogma = 3, .caste = 5, .fear_level = 1, .edo22_freq = 8,  .mathieu_q = 850 },
+        { .name = "Dr. Albert Victor",  .clan_id = TSFI_CLAN_SOCIETY, .physique = 2, .precision = 5, .logic = 4, .fervour = 2, .dogma = 4, .caste = 4, .fear_level = 1, .edo22_freq = 12, .mathieu_q = 920 },
+        { .name = "Father Thomas",      .clan_id = TSFI_CLAN_SOCIETY, .physique = 2, .precision = 2, .logic = 3, .fervour = 5, .dogma = 5, .caste = 4, .fear_level = 2, .edo22_freq = 14, .mathieu_q = 1950 },
+        { .name = "Astrid Lilja",       .clan_id = TSFI_CLAN_SOCIETY, .physique = 1, .precision = 3, .logic = 4, .fervour = 5, .dogma = 2, .caste = 3, .fear_level = 2, .edo22_freq = 17, .mathieu_q = 2100 },
+        { .name = "Kasper Wallin",      .clan_id = TSFI_CLAN_SOCIETY, .physique = 4, .precision = 5, .logic = 2, .fervour = 3, .dogma = 2, .caste = 2, .fear_level = 1, .edo22_freq = 4,  .mathieu_q = 780 },
+        { .name = "Baron von Essen",    .clan_id = TSFI_CLAN_SOCIETY, .physique = 2, .precision = 3, .logic = 3, .fervour = 3, .dogma = 5, .caste = 5, .fear_level = 1, .edo22_freq = 16, .mathieu_q = 890 },
+        { .name = "Sally G. Larsen",    .clan_id = TSFI_CLAN_SOCIETY, .physique = 1, .precision = 4, .logic = 5, .fervour = 4, .dogma = 1, .caste = 3, .fear_level = 1, .edo22_freq = 6,  .mathieu_q = 600 },
+
+        /* The Warden Clan */
+        { .name = "Gårdstomte",         .clan_id = TSFI_CLAN_WARDEN,  .physique = 2, .precision = 5, .logic = 3, .fervour = 4, .dogma = 5, .caste = 2, .fear_level = 1, .edo22_freq = 2,  .mathieu_q = 650 },
+        { .name = "Skogsrå",            .clan_id = TSFI_CLAN_WARDEN,  .physique = 2, .precision = 4, .logic = 3, .fervour = 4, .dogma = 2, .caste = 2, .fear_level = 2, .edo22_freq = 5,  .mathieu_q = 1450 },
+        { .name = "Gruvrå",             .clan_id = TSFI_CLAN_WARDEN,  .physique = 4, .precision = 3, .logic = 4, .fervour = 3, .dogma = 4, .caste = 3, .fear_level = 2, .edo22_freq = 9,  .mathieu_q = 1800 },
+        { .name = "Askefroa",           .clan_id = TSFI_CLAN_WARDEN,  .physique = 3, .precision = 2, .logic = 4, .fervour = 4, .dogma = 4, .caste = 3, .fear_level = 2, .edo22_freq = 7,  .mathieu_q = 1750 },
+        { .name = "Vättar",             .clan_id = TSFI_CLAN_WARDEN,  .physique = 2, .precision = 4, .logic = 4, .fervour = 3, .dogma = 4, .caste = 2, .fear_level = 2, .edo22_freq = 1,  .mathieu_q = 1200 },
+
+        /* The Teddy Bear Clan */
+        { .name = "Teddy Bear Citizen", .clan_id = TSFI_CLAN_TEDDY_BEAR, .physique = 3, .precision = 4, .logic = 4, .fervour = 5, .dogma = 1, .caste = 3, .fear_level = 1, .edo22_freq = 10, .mathieu_q = 500 },
+
+        /* The Undead Clan */
+        { .name = "Myling",             .clan_id = TSFI_CLAN_UNDEAD,  .physique = 1, .precision = 2, .logic = 2, .fervour = 5, .dogma = 2, .caste = 1, .fear_level = 4, .edo22_freq = 19, .mathieu_q = 4500 },
+        { .name = "Gengångare",         .clan_id = TSFI_CLAN_UNDEAD,  .physique = 4, .precision = 2, .logic = 1, .fervour = 5, .dogma = 3, .caste = 1, .fear_level = 3, .edo22_freq = 20, .mathieu_q = 3600 },
+        { .name = "Nattramn",           .clan_id = TSFI_CLAN_UNDEAD,  .physique = 2, .precision = 4, .logic = 3, .fervour = 4, .dogma = 3, .caste = 2, .fear_level = 3, .edo22_freq = 13, .mathieu_q = 2800 },
+        { .name = "Kyrkogrim",          .clan_id = TSFI_CLAN_UNDEAD,  .physique = 4, .precision = 3, .logic = 2, .fervour = 5, .dogma = 5, .caste = 4, .fear_level = 3, .edo22_freq = 15, .mathieu_q = 3100 },
+
+        /* The Outcast / Mythic Clan */
+        { .name = "Näcken",             .clan_id = TSFI_CLAN_OUTCAST, .physique = 3, .precision = 4, .logic = 3, .fervour = 5, .dogma = 1, .caste = 1, .fear_level = 3, .edo22_freq = 11, .mathieu_q = 3250 },
+        { .name = "Troll",              .clan_id = TSFI_CLAN_OUTCAST, .physique = 5, .precision = 1, .logic = 1, .fervour = 3, .dogma = 4, .caste = 1, .fear_level = 2, .edo22_freq = 3,  .mathieu_q = 1100 },
+        { .name = "Bäckahäst",          .clan_id = TSFI_CLAN_OUTCAST, .physique = 4, .precision = 3, .logic = 2, .fervour = 4, .dogma = 1, .caste = 1, .fear_level = 3, .edo22_freq = 18, .mathieu_q = 3400 },
+        { .name = "Varulv",             .clan_id = TSFI_CLAN_OUTCAST, .physique = 5, .precision = 3, .logic = 1, .fervour = 5, .dogma = 1, .caste = 1, .fear_level = 4, .edo22_freq = 21, .mathieu_q = 4850 }
+    };
+
+    uint32_t count = sizeof(canonical_roster) / sizeof(canonical_roster[0]);
+    for (uint32_t i = 0; i < count; ++i) {
+        if (tsfi_vaesen_conference_add_entity(room, &canonical_roster[i]) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
