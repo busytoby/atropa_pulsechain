@@ -4730,7 +4730,7 @@ test-algol61-subordinate-strategy-composition:
 	@rm -f tests/test_algol61_subordinate_strategy_composition
 
 test-treasury-lore-token-holdings-prover:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_treasury_lore_token_holdings_prover.c -o tests/test_treasury_lore_token_holdings_prover
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_treasury_lore_token_holdings_prover.c tsfi2-deepseek/src/tsfi_lore_token_cache.c tsfi2-deepseek/src/tsfi_pulsechain_rpc.c tsfi2-deepseek/src/tsfi_pulsechain.c tsfi2-deepseek/src/tsfi_tls.c -o tests/test_treasury_lore_token_holdings_prover -lssl -lcrypto -lrt
 	./tests/test_treasury_lore_token_holdings_prover
 	@rm -f tests/test_treasury_lore_token_holdings_prover
 

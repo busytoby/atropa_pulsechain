@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
 #include "tsfi_pulsechain_rpc.h"
 #include "tsfi_tls.h"
 #include <stdio.h>
