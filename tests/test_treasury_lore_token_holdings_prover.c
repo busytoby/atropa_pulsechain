@@ -19,6 +19,7 @@ typedef struct {
 } LoreToken;
 
 static const LoreToken lore_tokens[] = {
+    {"0x069F475eFF71A0C8268E0D094D47a560E866A587", "TREASURY SHARE", "Treasury Share ㉾", "lore/tokens/0x069F475eFF71A0C8268E0D094D47a560E866A587.md"},
     {"0x09a0Ba06D1d49e4B23017C76105dD5BC4a798Ac5", "ASIAN DOGS ㋨", "That You Have Never Seen In Your Life, A", "lore/tokens/0x09a0Ba06D1d49e4B23017C76105dD5BC4a798Ac5.md"},
     {"0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", "㈞", "㈞", "lore/tokens/0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c.md"},
     {"0x20D8F92b889d2846c1551C8CEfc0a5674e4bf20e", "Finvesta ㉾", "Bride Of Finvestible ㉾", "lore/tokens/0x20D8F92b889d2846c1551C8CEfc0a5674e4bf20e.md"},
@@ -138,7 +139,7 @@ static int algol61_verify_treasury_token_holding(
     int k_param
 ) {
     if (k_param != 3) return 1; // INVALID_K_EXPONENT
-    if (token_index < 1 || token_index > 16) return 2; // INVALID_TOKEN_INDEX
+    if (token_index < 1 || token_index > 17) return 2; // INVALID_TOKEN_INDEX
     if (is_zero(supply)) return 3; // SUPPLY_ZERO_VIOLATION
     if (bigint_cmp(bal, supply) > 0) return 4; // BALANCE_EXCEEDS_SUPPLY
     if (decimals != 6 && decimals != 8 && decimals != 18) return 5; // INVALID_DECIMALS
