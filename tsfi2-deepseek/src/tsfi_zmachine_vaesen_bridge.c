@@ -94,6 +94,11 @@ int tsfi_zmachine_execute_wmq_interact(
     tsfi_vaesen_slice_interact(&player_slice, &entity_slice, &dist, &phase, &is_locked, dialogue_buf, sizeof(dialogue_buf));
     strncpy(out_result->dialogue_output, dialogue_buf, sizeof(out_result->dialogue_output));
 
+    /* Attach Mistral Entropy, Guardrails, and Certainty Telemetry */
+    out_result->entropy = tsfi_vaesen_compute_acoustic_entropy(&entity_slice);
+    out_result->guardrails = tsfi_vaesen_get_lore_guardrail_mask(&entity_slice);
+    out_result->certainty = tsfi_vaesen_compute_acoustic_certainty(phase);
+
     /* 5. Synthesize 5-Byte Vector Line Drawing Segments (getVectorScene) */
     if (is_locked) {
         /* Balanced, harmonic perspective room */

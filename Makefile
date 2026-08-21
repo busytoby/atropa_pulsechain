@@ -39,7 +39,7 @@ test-vaesen-device-slice:
 	@rm -f tests/test_vaesen_device_slice
 
 test-zmachine-vaesen-bridge:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek/inc tests/test_zmachine_vaesen_bridge.c tsfi2-deepseek/src/tsfi_zmachine_vaesen_bridge.c tsfi2-deepseek/src/tsfi_vaesen_device_slice.c -o tests/test_zmachine_vaesen_bridge -lm -lrt
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek/inc tests/test_zmachine_vaesen_bridge.c tsfi2-deepseek/src/tsfi_zmachine_vaesen_bridge.c tsfi2-deepseek/src/tsfi_vaesen_device_slice.c tsfi2-deepseek/src/tsfi_vaesen_fpga_mistral_ext.c tsfi2-deepseek/src/tsfi_vaesen_mistral_guardrails.c -o tests/test_zmachine_vaesen_bridge -lm -lrt
 	./tests/test_zmachine_vaesen_bridge
 	@rm -f tests/test_zmachine_vaesen_bridge
 

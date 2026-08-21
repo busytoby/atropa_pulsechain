@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "tsfi_vaesen_device_slice.h"
+#include "tsfi_vaesen_fpga_mistral_ext.h"
+#include "tsfi_vaesen_mistral_guardrails.h"
 
 #define TSFI_ZMACHINE_OPCODE_WMQ_INTERACT 0xD4
 #define TSFI_ZMACHINE_MAX_VECTOR_LINES    32
@@ -29,6 +31,9 @@ typedef struct {
     TsfiZMachineVectorLine lines[TSFI_ZMACHINE_MAX_VECTOR_LINES];
     char     dialogue_output[256];
     bool     ritual_banishment_success;
+    TsfiAcousticCertaintyScore certainty;
+    TsfiLoreGuardrailMask      guardrails;
+    TsfiAcousticEntropyConfig  entropy;
 } TsfiZMachineInteractionResult;
 
 /* Z-Machine Opcode Handler */
