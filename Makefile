@@ -48,6 +48,11 @@ test-fpga-vaesen-operator:
 	./tests/test_fpga_vaesen_operator
 	@rm -f tests/test_fpga_vaesen_operator
 
+test-vaesen-flash-decoder:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek/inc tests/test_vaesen_flash_decoder.c tsfi2-deepseek/src/tsfi_vaesen_flash_decoder.c tsfi2-deepseek/src/tsfi_vaesen_device_slice.c -o tests/test_vaesen_flash_decoder -lm -lrt
+	./tests/test_vaesen_flash_decoder
+	@rm -f tests/test_vaesen_flash_decoder
+
 test-lasalle-lfm-cpm-advanced:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_lasalle_lfm_cpm_advanced.c -o tests/test_lasalle_lfm_cpm_advanced
 	./tests/test_lasalle_lfm_cpm_advanced
