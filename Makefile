@@ -33,6 +33,11 @@ test-vaesen-conference:
 	./tests/test_vaesen_conference
 	@rm -f tests/test_vaesen_conference
 
+test-vaesen-device-slice:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek/inc tests/test_vaesen_device_slice.c tsfi2-deepseek/src/tsfi_vaesen_device_slice.c -o tests/test_vaesen_device_slice -lm -lrt
+	./tests/test_vaesen_device_slice
+	@rm -f tests/test_vaesen_device_slice
+
 test-lasalle-lfm-cpm-advanced:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_lasalle_lfm_cpm_advanced.c -o tests/test_lasalle_lfm_cpm_advanced
 	./tests/test_lasalle_lfm_cpm_advanced
