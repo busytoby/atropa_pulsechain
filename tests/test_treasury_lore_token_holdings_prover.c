@@ -39,6 +39,7 @@ static const LoreToken lore_tokens[] = {
     {"0x20D8F92b889d2846c1551C8CEfc0a5674e4bf20e", "Finvesta ㉾", "Bride Of Finvestible ㉾", "lore/tokens/0x20D8F92b889d2846c1551C8CEfc0a5674e4bf20e.md"},
     {"0x236776e1c6BA13641f39b4920c4D77d3e746C233", "Elton John Coin", "Ayatollah Mr Bailey Khomeini", "lore/tokens/0x236776e1c6BA13641f39b4920c4D77d3e746C233.md"},
     {"0x30655F1915ab39E06931aa3be10AD1A430982DD7", "PLP", "PulseX LP (BILL / ㈞)", "lore/tokens/0x30655F1915ab39E06931aa3be10AD1A430982DD7.md"},
+    {"0x36d4Ac3DF7Bf8aa3843Ad40C8b3eB67e3d18b4e1", "มิติ", "มิติ (ไมิติซส์ / Metis)", "lore/tokens/0x36d4Ac3DF7Bf8aa3843Ad40C8b3eB67e3d18b4e1.md"},
     {"0x3EcfDFAE860aB8Eb90d6232fEF9614CDc06a98f0", "Shar Chiu ㋨", "Shar Chiu", "lore/tokens/0x3EcfDFAE860aB8Eb90d6232fEF9614CDc06a98f0.md"},
     {"0x4a19fb19B90676c16E6C1a39DE94AEB58B0b3595", "INSTINCT", "INSTINCT (ᱥᱤᱨᱡᱚᱱ ㉾)", "lore/tokens/0x4a19fb19B90676c16E6C1a39DE94AEB58B0b3595.md"},
     {"0x4E496dB9f67B59C0277cc69aB0E0372ff0768C13", "TRIGLYCERIDE", "TRIGLYCERIDE (ᱴᱨᱟᱭᱜᱞᱤᱥᱮᱨᱟᱭᱤᱰ ㉾)", "lore/tokens/0x4E496dB9f67B59C0277cc69aB0E0372ff0768C13.md"},
@@ -145,7 +146,7 @@ static int algol61_verify_treasury_token_holding(
     int k_param
 ) {
     if (k_param != 3) return 1; // INVALID_K_EXPONENT
-    if (token_index < 1 || token_index > 27) return 2; // INVALID_TOKEN_INDEX
+    if (token_index < 1 || token_index > 28) return 2; // INVALID_TOKEN_INDEX
     if (is_zero(supply)) return 3; // SUPPLY_ZERO_VIOLATION
     if (bigint_cmp(bal, supply) > 0) return 4; // BALANCE_EXCEEDS_SUPPLY
     if (decimals != 6 && decimals != 8 && decimals != 18) return 5; // INVALID_DECIMALS
@@ -233,7 +234,7 @@ int main(void) {
     }
 
     printf("\n========================================================================================\n");
-    printf("ALL 27 LORE TOKENS PROVEN & BINARY CACHED WITH SUB-MICROSECOND LATENCY (27/27 PASSED)\n");
+    printf("ALL 28 LORE TOKENS PROVEN & BINARY CACHED WITH SUB-MICROSECOND LATENCY (28/28 PASSED)\n");
     printf("========================================================================================\n");
 
     return 0;
