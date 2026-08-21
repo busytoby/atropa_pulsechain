@@ -4779,6 +4779,11 @@ test-ramac-fourier-dirichlet-solver:
 	./tests/test_ramac_fourier_dirichlet_solver
 	@rm -f tests/test_ramac_fourier_dirichlet_solver
 
+test-vaesen-emotional-trauma-solver:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_vaesen_emotional_trauma_solver.c tsfi2-deepseek/src/tsfi_vaesen_emotional_trauma_solver.c -o tests/test_vaesen_emotional_trauma_solver -lrt
+	./tests/test_vaesen_emotional_trauma_solver
+	@rm -f tests/test_vaesen_emotional_trauma_solver
+
 test-tsfi-montecarlo:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi_montecarlo.c tsfi2-deepseek/src/tsfi_montecarlo.c -o tests/test_tsfi_montecarlo -lm -lrt
 	./tests/test_tsfi_montecarlo
