@@ -43,6 +43,11 @@ test-zmachine-vaesen-bridge:
 	./tests/test_zmachine_vaesen_bridge
 	@rm -f tests/test_zmachine_vaesen_bridge
 
+test-fpga-vaesen-operator:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek/inc tests/test_fpga_vaesen_operator.c tsfi2-deepseek/src/tsfi_fpga_vaesen_operator_solver.c -o tests/test_fpga_vaesen_operator -lrt
+	./tests/test_fpga_vaesen_operator
+	@rm -f tests/test_fpga_vaesen_operator
+
 test-lasalle-lfm-cpm-advanced:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_lasalle_lfm_cpm_advanced.c -o tests/test_lasalle_lfm_cpm_advanced
 	./tests/test_lasalle_lfm_cpm_advanced
