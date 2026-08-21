@@ -4739,6 +4739,11 @@ test-pulsechain-rpc-cache-invariance-prover:
 	./tests/test_pulsechain_rpc_cache_invariance_prover
 	@rm -f tests/test_pulsechain_rpc_cache_invariance_prover
 
+test-keys-of-ong-entropy-invariant-prover:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_keys_of_ong_entropy_invariant_prover.c tsfi2-deepseek/src/tsfi_lore_token_cache.c tsfi2-deepseek/src/tsfi_pulsechain_rpc.c tsfi2-deepseek/src/tsfi_pulsechain.c tsfi2-deepseek/src/tsfi_http_client.c tsfi2-deepseek/src/tsfi_tls.c -o tests/test_keys_of_ong_entropy_invariant_prover -lssl -lcrypto -lrt
+	./tests/test_keys_of_ong_entropy_invariant_prover
+	@rm -f tests/test_keys_of_ong_entropy_invariant_prover
+
 test-tsfi-montecarlo:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -I. -Itsfi2-deepseek -Itsfi2-deepseek/inc tests/test_tsfi_montecarlo.c tsfi2-deepseek/src/tsfi_montecarlo.c -o tests/test_tsfi_montecarlo -lm -lrt
 	./tests/test_tsfi_montecarlo
