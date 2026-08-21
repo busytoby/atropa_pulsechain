@@ -15,9 +15,18 @@ typedef enum {
     TSFI_PLL_STATE_FRACTURED = 3
 } TsfiPllLockState;
 
+typedef enum {
+    TSFI_CLAN_OUTCAST     = 0,
+    TSFI_CLAN_SOCIETY     = 1,
+    TSFI_CLAN_WARDEN      = 2,
+    TSFI_CLAN_TEDDY_BEAR  = 3,
+    TSFI_CLAN_UNDEAD      = 4
+} TsfiVaesenClanId;
+
 typedef struct {
     uint16_t id;
     char     name[32];
+    uint8_t  clan_id;    /* TsfiVaesenClanId */
     uint8_t  physique;   /* [1..5] */
     uint8_t  precision;  /* [1..5] */
     uint8_t  logic;      /* [1..5] */
@@ -28,6 +37,15 @@ typedef struct {
     uint8_t  edo22_freq; /* [1..22] */
     uint16_t mathieu_q;  /* milli-units */
 } TsfiVaesenEntity;
+
+typedef struct {
+    uint8_t  clan_id;
+    uint16_t sender_id;
+    uint16_t target_id;
+    uint16_t phase_offset_deg;
+    uint8_t  fervour_drive;
+    char     message[128];
+} TsfiVaesenStanagFrame;
 
 typedef struct {
     uint16_t source_id;
@@ -59,5 +77,11 @@ void tsfi_vaesen_conference_run_full(TsfiVaesenConferenceRoom *room, uint32_t nu
 
 int  tsfi_vaesen_conference_save_dat_bin(const TsfiVaesenConferenceRoom *room, const char *filepath);
 int  tsfi_vaesen_conference_load_dat_bin(TsfiVaesenConferenceRoom *room, const char *filepath);
+
+int  tsfi_vaesen_conference_synthesize_stanag_frame(
+    const TsfiVaesenConferenceRoom *room,
+    uint32_t connection_idx,
+    TsfiVaesenStanagFrame *out_frame
+);
 
 #endif /* TSFI_VAESEN_CONFERENCE_H */

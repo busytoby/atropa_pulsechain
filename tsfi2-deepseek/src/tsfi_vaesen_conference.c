@@ -159,3 +159,36 @@ int tsfi_vaesen_conference_load_dat_bin(TsfiVaesenConferenceRoom *room, const ch
     fclose(fp);
     return (r3 == room->num_entities && r4 == room->num_connections) ? 0 : -1;
 }
+
+int tsfi_vaesen_conference_synthesize_stanag_frame(
+    const TsfiVaesenConferenceRoom *room,
+    uint32_t connection_idx,
+    TsfiVaesenStanagFrame *out_frame
+) {
+    if (!room || !out_frame || connection_idx >= room->num_connections) return -1;
+
+    const TsfiVaesenConnectionEdge *edge = &room->connections[connection_idx];
+    const TsfiVaesenEntity *ea = &room->entities[edge->source_id];
+    const TsfiVaesenEntity *eb = &room->entities[edge->target_id];
+
+    out_frame->clan_id = ea->clan_id;
+    out_frame->sender_id = ea->id;
+    out_frame->target_id = eb->id;
+    out_frame->phase_offset_deg = edge->pll_phase_deg;
+    out_frame->fervour_drive = ea->fervour;
+
+    if (edge->pll_lock_state == TSFI_PLL_STATE_LOCKED) {
+        snprintf(out_frame->message, sizeof(out_frame->message),
+                 "[STANAG-5066] %s affirms mutual covenant with %s across EDO-22 carrier %u.",
+                 ea->name, eb->name, ea->edo22_freq);
+    } else if (edge->pll_lock_state == TSFI_PLL_STATE_TRACKING) {
+        snprintf(out_frame->message, sizeof(out_frame->message),
+                 "[STANAG-5066] %s evaluates %s at distance %.1f: maybe mutual terms can harmonize.",
+                 ea->name, eb->name, edge->verlet_pos);
+    } else {
+        snprintf(out_frame->message, sizeof(out_frame->message),
+                 "[STANAG-5066] %s rejects %s: phase fractured, dogmatic boundaries unyielding.",
+                 ea->name, eb->name);
+    }
+    return 0;
+}

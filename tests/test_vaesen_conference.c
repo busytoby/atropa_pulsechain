@@ -23,6 +23,7 @@ int main(void) {
     /* 1. Add Conference Participants */
     TsfiVaesenEntity linnea = {
         .name = "Linnea Elfvestam",
+        .clan_id = TSFI_CLAN_SOCIETY,
         .physique = 1, .precision = 2, .logic = 5, .fervour = 4, .dogma = 3, .caste = 5,
         .fear_level = 1, .edo22_freq = 8, .mathieu_q = 850
     };
@@ -31,6 +32,7 @@ int main(void) {
 
     TsfiVaesenEntity tomte = {
         .name = "Gårdstomte",
+        .clan_id = TSFI_CLAN_WARDEN,
         .physique = 2, .precision = 5, .logic = 3, .fervour = 4, .dogma = 5, .caste = 2,
         .fear_level = 1, .edo22_freq = 2, .mathieu_q = 650
     };
@@ -39,6 +41,7 @@ int main(void) {
 
     TsfiVaesenEntity nacken = {
         .name = "Näcken",
+        .clan_id = TSFI_CLAN_OUTCAST,
         .physique = 3, .precision = 4, .logic = 3, .fervour = 5, .dogma = 1, .caste = 1,
         .fear_level = 3, .edo22_freq = 11, .mathieu_q = 3250
     };
@@ -47,6 +50,7 @@ int main(void) {
 
     TsfiVaesenEntity priest = {
         .name = "Father Thomas",
+        .clan_id = TSFI_CLAN_SOCIETY,
         .physique = 2, .precision = 2, .logic = 3, .fervour = 5, .dogma = 5, .caste = 4,
         .fear_level = 2, .edo22_freq = 14, .mathieu_q = 1950
     };
@@ -82,13 +86,22 @@ int main(void) {
         }
     }
 
-    /* 4. Serialize to .dat.bin (Rule 13 Compliance) */
+    /* 4. Synthesize STANAG 5066 Dialogue Frames */
+    printf("\n[STANAG 5066 DIALOGUE BROADCAST FRAMES]\n");
+    for (uint32_t c = 0; c < room.num_connections; ++c) {
+        TsfiVaesenStanagFrame frame;
+        int frame_res = tsfi_vaesen_conference_synthesize_stanag_frame(&room, c, &frame);
+        assert(frame_res == 0);
+        printf("  Frame %u (Clan %u): %s\n", c, frame.clan_id, frame.message);
+    }
+
+    /* 5. Serialize to .dat.bin (Rule 13 Compliance) */
     const char *dat_path = "assets/vaesen_llm_conference.dat.bin";
     int save_res = tsfi_vaesen_conference_save_dat_bin(&room, dat_path);
     printf("\n[STORAGE] Saving to %s: %s\n", dat_path, save_res == 0 ? "SUCCESS (.dat.bin)" : "FAIL");
     assert(save_res == 0);
 
-    /* 5. Load and Verify Roundtrip Invariance */
+    /* 6. Load and Verify Roundtrip Invariance */
     TsfiVaesenConferenceRoom loaded_room;
     int load_res = tsfi_vaesen_conference_load_dat_bin(&loaded_room, dat_path);
     printf("[STORAGE] Loading from %s: %s\n", dat_path, load_res == 0 ? "SUCCESS" : "FAIL");
