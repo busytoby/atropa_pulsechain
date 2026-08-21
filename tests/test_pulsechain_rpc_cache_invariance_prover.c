@@ -42,6 +42,7 @@ static int algol61_verify_pulsechain_rpc_cache_invariance(
 static const char *test_tokens[] = {
     "0x069F475eFF71A0C8268E0D094D47a560E866A587", // TREASURY SHARE
     "0x09a0Ba06D1d49e4B23017C76105dD5BC4a798Ac5", // ASIAN DOGS
+    "0x09E3710CDef8AcF6C5833a832238FCB24420A210", // ZZ Top Coin
     "0x16951Ce6D1D1D67E9239192e3eaE4d250576d90c", // ㈞
     "0x20D8F92b889d2846c1551C8CEfc0a5674e4bf20e", // Finvesta
     "0x236776e1c6BA13641f39b4920c4D77d3e746C233", // Elton John

@@ -34,7 +34,7 @@ begin
         go to end_proc;
       end;
 
-    if token_index < 1 or token_index > 17 then
+    if token_index < 1 or token_index > 18 then
       begin
         verify_treasury_lore_token_holding := 2;
         go to end_proc;
