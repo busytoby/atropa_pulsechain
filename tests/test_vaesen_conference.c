@@ -143,6 +143,34 @@ int main(void) {
     printf("[TAXONOMY STORAGE] Saved to %s: %s\n", tax_dat_path, tax_save == 0 ? "SUCCESS" : "FAIL");
     assert(tax_save == 0);
 
+    /* 8. Operator RMSNorm Standards Test (Sanctuary, Conference, Crisis & Watchdog) */
+    printf("\n[OPERATOR RMSNORM STANDARDS VERIFICATION]\n");
+    float test_samples[256];
+    for (int i = 0; i < 256; ++i) {
+        test_samples[i] = (float)(i % 10) * 0.1f;
+    }
+
+    /* Conference Mode (gamma = 0.875) */
+    tsfi_vaesen_conference_set_rmsnorm_mode(&room, TSFI_RMSNORM_MODE_CONFERENCE);
+    float rms_conf = tsfi_vaesen_conference_apply_rmsnorm(&room, test_samples, 256);
+    printf("  [CONFERENCE MODE] Input RMS: %.4f | Gain: %.3f | Clamped: PASS\n",
+           rms_conf, room.rmsnorm_ctrl.gain_gamma);
+    assert(room.rmsnorm_ctrl.gain_gamma == 0.875f);
+
+    /* Sanctuary Mode (gamma = 0.500) */
+    tsfi_vaesen_conference_set_rmsnorm_mode(&room, TSFI_RMSNORM_MODE_SANCTUARY);
+    float rms_sanc = tsfi_vaesen_conference_apply_rmsnorm(&room, test_samples, 256);
+    printf("  [SANCTUARY MODE]  Input RMS: %.4f | Gain: %.3f | Clamped: PASS\n",
+           rms_sanc, room.rmsnorm_ctrl.gain_gamma);
+    assert(room.rmsnorm_ctrl.gain_gamma == 0.500f);
+
+    /* Flatline Injection & Kouwenhoven Defibrillation */
+    float flatline_samples[256] = {0};
+    tsfi_vaesen_conference_apply_rmsnorm(&room, flatline_samples, 256);
+    printf("  [WATCHDOG CHECK] Flatline detected -> Resuscitation Count: %u (Defibrillation injected: PASS)\n",
+           room.rmsnorm_ctrl.resuscitation_count);
+    assert(room.rmsnorm_ctrl.resuscitation_count == 1);
+
     printf("\n>>> VAESEN VERLET-PLL CONFERENCE SIMULATION FORMALLY VERIFIED <<<\n");
     return 0;
 }

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define TSFI_VAESEN_MAX_ENTITIES 32
 #define TSFI_VAESEN_MAX_CONNECTIONS (TSFI_VAESEN_MAX_ENTITIES * TSFI_VAESEN_MAX_ENTITIES)
@@ -61,9 +62,24 @@ typedef struct {
     uint64_t engram_weight_saat;
 } __attribute__((packed)) TsfiVaesenConnectionEdge;
 
+typedef enum {
+    TSFI_RMSNORM_MODE_SANCTUARY  = 0,
+    TSFI_RMSNORM_MODE_CONFERENCE = 1,
+    TSFI_RMSNORM_MODE_CRISIS     = 2
+} TsfiOperatorRmsNormMode;
+
+typedef struct {
+    uint8_t  mode;                 /* TsfiOperatorRmsNormMode */
+    float    gain_gamma;           /* Lyapunov gain bounded by gamma* = 0.875f */
+    float    epsilon_floor;        /* Vitality floor (1e-6f) */
+    float    max_rail_amplitude;   /* Dynamic range limiter */
+    uint32_t resuscitation_count;  /* Telemetry counter for flatline defibrillations */
+} TsfiOperatorRmsNormStandard;
+
 typedef struct {
     uint32_t num_entities;
     uint32_t num_connections;
+    TsfiOperatorRmsNormStandard rmsnorm_ctrl;
     TsfiVaesenEntity entities[TSFI_VAESEN_MAX_ENTITIES];
     TsfiVaesenConnectionEdge connections[TSFI_VAESEN_MAX_CONNECTIONS];
 } TsfiVaesenConferenceRoom;
@@ -74,6 +90,9 @@ int  tsfi_vaesen_conference_add_entity(TsfiVaesenConferenceRoom *room, const Tsf
 void tsfi_vaesen_conference_introduce_pair(TsfiVaesenConferenceRoom *room, uint16_t id_a, uint16_t id_b);
 void tsfi_vaesen_conference_step(TsfiVaesenConferenceRoom *room, float dt);
 void tsfi_vaesen_conference_run_full(TsfiVaesenConferenceRoom *room, uint32_t num_steps, float dt);
+
+void tsfi_vaesen_conference_set_rmsnorm_mode(TsfiVaesenConferenceRoom *room, TsfiOperatorRmsNormMode mode);
+float tsfi_vaesen_conference_apply_rmsnorm(TsfiVaesenConferenceRoom *room, float *samples, size_t count);
 
 int  tsfi_vaesen_conference_save_dat_bin(const TsfiVaesenConferenceRoom *room, const char *filepath);
 int  tsfi_vaesen_conference_load_dat_bin(TsfiVaesenConferenceRoom *room, const char *filepath);

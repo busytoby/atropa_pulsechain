@@ -7,6 +7,61 @@
 void tsfi_vaesen_conference_init(TsfiVaesenConferenceRoom *room) {
     if (!room) return;
     memset(room, 0, sizeof(TsfiVaesenConferenceRoom));
+    room->rmsnorm_ctrl.mode = TSFI_RMSNORM_MODE_CONFERENCE;
+    room->rmsnorm_ctrl.gain_gamma = 0.875f;
+    room->rmsnorm_ctrl.epsilon_floor = 1e-6f;
+    room->rmsnorm_ctrl.max_rail_amplitude = 2.0f;
+    room->rmsnorm_ctrl.resuscitation_count = 0;
+}
+
+void tsfi_vaesen_conference_set_rmsnorm_mode(TsfiVaesenConferenceRoom *room, TsfiOperatorRmsNormMode mode) {
+    if (!room) return;
+    room->rmsnorm_ctrl.mode = (uint8_t)mode;
+    if (mode == TSFI_RMSNORM_MODE_SANCTUARY) {
+        room->rmsnorm_ctrl.gain_gamma = 0.500f;
+        room->rmsnorm_ctrl.max_rail_amplitude = 1.000f;
+    } else if (mode == TSFI_RMSNORM_MODE_CONFERENCE) {
+        room->rmsnorm_ctrl.gain_gamma = 0.875f; /* BMRC Lyapunov limit */
+        room->rmsnorm_ctrl.max_rail_amplitude = 2.000f;
+    } else if (mode == TSFI_RMSNORM_MODE_CRISIS) {
+        room->rmsnorm_ctrl.gain_gamma = 1.000f;
+        room->rmsnorm_ctrl.max_rail_amplitude = 3.500f;
+    }
+}
+
+float tsfi_vaesen_conference_apply_rmsnorm(TsfiVaesenConferenceRoom *room, float *samples, size_t count) {
+    if (!room || !samples || count == 0) return 0.0f;
+
+    float sum_sq = 0.0f;
+    for (size_t i = 0; i < count; ++i) {
+        sum_sq += samples[i] * samples[i];
+    }
+    float mean_sq = sum_sq / (float)count;
+
+    /* Kouwenhoven Resuscitation Watchdog check for flatline */
+    if (mean_sq < room->rmsnorm_ctrl.epsilon_floor) {
+        room->rmsnorm_ctrl.resuscitation_count++;
+        /* Inject defibrillation waveform */
+        for (size_t i = 0; i < count; ++i) {
+            samples[i] = sinf((float)i * 0.1f) * 0.5f;
+        }
+        mean_sq = 0.125f; /* Mean squared of 0.5 amplitude sine wave */
+    }
+
+    float rms = sqrtf(mean_sq + room->rmsnorm_ctrl.epsilon_floor);
+    float scale = (1.0f / rms) * room->rmsnorm_ctrl.gain_gamma;
+    for (size_t i = 0; i < count; ++i) {
+        float normalized = samples[i] * scale;
+        /* Dynamic range rail clamping */
+        if (normalized > room->rmsnorm_ctrl.max_rail_amplitude) {
+            normalized = room->rmsnorm_ctrl.max_rail_amplitude;
+        } else if (normalized < -room->rmsnorm_ctrl.max_rail_amplitude) {
+            normalized = -room->rmsnorm_ctrl.max_rail_amplitude;
+        }
+        samples[i] = normalized;
+    }
+
+    return rms;
 }
 
 int tsfi_vaesen_conference_add_entity(TsfiVaesenConferenceRoom *room, const TsfiVaesenEntity *entity) {
