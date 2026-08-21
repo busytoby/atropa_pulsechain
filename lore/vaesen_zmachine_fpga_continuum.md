@@ -45,6 +45,28 @@ Every Vaesen entity is synthesized directly into FPGA silicon fabric as a **`TSF
 
 ---
 
-## 4. DisplacementShader Synchronization (Rule 14)
+## 4. Hardware Mistral Extensions on Silicon
+
+The First-Class FPGA Vaesen Operator incorporates advanced capabilities adapted from the **Mistral** architectural suite:
+
+1. **Hardware Action & Tool Execution Protocol**:
+   * Emits typed `TsfiHardwareToolCall` packets over the WinchesterMQ SCSI queue, writing directly to 6502 Zero-Page and memory-mapped I/O addresses (e.g. `0xD405` for offering porridge or striking church bells) to alter environmental and ritual states in single-cycle execution.
+2. **Dynamic Acoustic Entropy & Temperature Scaling**:
+   * Derives generation temperature $T \in [0.0, 1.0]$ and nucleus cutoff $\text{top\_p}$ directly from the entity's six-dimensional attribute slice:
+     $$T_{\text{acoustic}} = \left( \frac{\text{Fervour} + \text{Fear}}{10.0} \right) \times \left( 1.0 - \frac{\text{Dogma}}{6.0} \right)$$
+   * **High Dogma ($Do = 5$)**: Clamps temperature to $T = 0.083$ (yielding rigid, doctrinal, predictable ritual speech).
+   * **High Fervour/Fear ($Fr = 4, Fe = 5, Do = 2$)**: Elevates temperature to $T = 0.600$ (yielding erratic, emotional, high-jitter acoustic haunting).
+3. **Speculative Decoding Token Draft Verification**:
+   * Evaluates $K = 4$ candidate draft tokens across on-chip BRAM systolic DSP lanes in parallel, verifying harmonic frequency compatibility against the EDO-22 carrier tone in single-cycle execution.
+4. **2D Vector Spatial Vision Evaluator (Pixtral 2D RoPE)**:
+   * Ingests the 5-byte vector drawing stream (`getVectorScene`) into the creature's spatial attention register ($\mathbf{LineSegment} \in [0..255]^5$), enabling creatures to physically react to drawn running water, direct sunlight, and consecrated thresholds.
+5. **On-Chip BRAM Memory Partitioning**:
+   * **Static Folklore ROM**: Pins immutable mythic rules to prevent behavioral drift.
+   * **Volatile Session RAM**: Holds live spatial coordinates $(X, Y)$, reaction states, and fear transient spikes.
+
+---
+
+## 5. DisplacementShader Synchronization (Rule 14)
 
 Whenever WinchesterMQ or `wm` queue operations are dispatched, the graphics pipeline returns to the **`DisplacementShader`** to scale vertex coordinate math in synchronization with hardware register boundary constraints (`Chin`, `Monopole`, `Identity`), preserving visual geometry accuracy across all displays.
+
