@@ -12,7 +12,7 @@ TsfiTotientZeroRuling tsfi_verify_totient_zero_nullstellensatz(const TsfiTotient
         return TSFI_NULLSTELLENSATZ_INVALID_POWER;
     }
 
-    if (params->accumulator_energy < 0 || params->accumulator_energy > 100000) {
+    if (params->accumulator_energy < 0 || (uint64_t)params->accumulator_energy > MOTZKIN_PRIME_SYS) {
         return TSFI_NULLSTELLENSATZ_NEGATIVE_ACCUMULATOR;
     }
 

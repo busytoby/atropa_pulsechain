@@ -46,7 +46,7 @@ begin
         go to end_totient_null_proc;
       end;
 
-    if accumulator_energy < 0 or accumulator_energy > 100000 then
+    if accumulator_energy < 0 or accumulator_energy > 953467954114363 then
       begin
         verify_totient_zero_nullstellensatz := 3;
         go to end_totient_null_proc;
