@@ -16,6 +16,7 @@
 static TsfiTokenRecordBin g_cache_table[MAX_CACHE_RECORDS];
 static uint32_t g_cache_count = 0;
 static bool g_cache_initialized = false;
+static uint64_t g_network_query_counter = 0;
 
 static void hex_to_bigint_raw(const char *hex, uint32_t *out_d) {
     memset(out_d, 0, 8 * sizeof(uint32_t));
@@ -41,7 +42,6 @@ bool tsfi_lore_cache_init(void) {
 
     FILE *fp = fopen(TSFI_LORE_CACHE_PATH, "rb");
     if (!fp) {
-        // Try creating empty cache
         g_cache_initialized = true;
         return true;
     }
@@ -134,15 +134,17 @@ bool tsfi_lore_cache_flush(void) {
     return true;
 }
 
-bool tsfi_lore_token_fetch_and_cache(const char *token_address, const char *treasury_wallet, TsfiTokenRecordBin *out_record) {
+bool tsfi_lore_token_fetch_with_policy(const char *token_address, const char *treasury_wallet, bool force_refresh, TsfiTokenRecordBin *out_record) {
     if (!token_address || !out_record) return false;
 
-    // 1. Check in-memory binary cache first
-    if (tsfi_lore_cache_lookup(token_address, out_record)) {
-        return true;
+    // 1. Check in-memory binary cache first unless force_refresh is explicitly requested
+    if (!force_refresh) {
+        if (tsfi_lore_cache_lookup(token_address, out_record)) {
+            return true;
+        }
     }
 
-    // 2. Query via native clean-room C RPC (zero curl or system commands)
+    // 2. Query via native clean-room C RPC (zero curl or external tools)
     char bal_call_data[256];
     const char *clean_wallet = (strncmp(treasury_wallet, "0x", 2) == 0) ? treasury_wallet + 2 : treasury_wallet;
     snprintf(bal_call_data, sizeof(bal_call_data), "0x70a08231000000000000000000000000%s", clean_wallet);
@@ -150,6 +152,8 @@ bool tsfi_lore_token_fetch_and_cache(const char *token_address, const char *trea
     char bal_hex[512] = {0};
     char supply_hex[512] = {0};
     char dec_hex[512] = {0};
+
+    g_network_query_counter++;
 
     if (!tsfi_pulse_rpc_call(token_address, bal_call_data, bal_hex, sizeof(bal_hex))) {
         return false;
@@ -177,9 +181,27 @@ bool tsfi_lore_token_fetch_and_cache(const char *token_address, const char *trea
     rec.decimals = (uint8_t)(dec_d[0] == 0 ? 18 : dec_d[0]);
     rec.last_queried_timestamp = (uint64_t)time(NULL);
 
-    // Store in binary cache
+    // Store in binary cache immediately
     tsfi_lore_cache_store(&rec);
 
     memcpy(out_record, &rec, sizeof(TsfiTokenRecordBin));
     return true;
+}
+
+bool tsfi_lore_token_fetch_and_cache(const char *token_address, const char *treasury_wallet, TsfiTokenRecordBin *out_record) {
+    return tsfi_lore_token_fetch_with_policy(token_address, treasury_wallet, false, out_record);
+}
+
+uint64_t tsfi_lore_cache_get_network_query_count(void) {
+    return g_network_query_counter;
+}
+
+void tsfi_lore_cache_reset_query_counters(void) {
+    g_network_query_counter = 0;
+}
+
+void tsfi_lore_cache_clear_in_memory(void) {
+    memset(g_cache_table, 0, sizeof(g_cache_table));
+    g_cache_count = 0;
+    g_cache_initialized = true;
 }

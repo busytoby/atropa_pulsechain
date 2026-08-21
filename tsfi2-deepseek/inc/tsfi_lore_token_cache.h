@@ -42,8 +42,16 @@ bool tsfi_lore_cache_lookup(const char *token_address, TsfiTokenRecordBin *out_r
 // Update or insert a token record into memory and flush to .dat.bin
 bool tsfi_lore_cache_store(const TsfiTokenRecordBin *record);
 
-// Query on-chain state via pure clean-room C RPC (no external curl/exec), populating cache
+// Query on-chain state via pure clean-room C RPC, populating cache on first query
 bool tsfi_lore_token_fetch_and_cache(const char *token_address, const char *treasury_wallet, TsfiTokenRecordBin *out_record);
+
+// Query with explicit policy: if !force_refresh and cached, zero network packets emitted
+bool tsfi_lore_token_fetch_with_policy(const char *token_address, const char *treasury_wallet, bool force_refresh, TsfiTokenRecordBin *out_record);
+
+// Telemetry counters for formal proving of zero redundant network queries
+uint64_t tsfi_lore_cache_get_network_query_count(void);
+void tsfi_lore_cache_reset_query_counters(void);
+void tsfi_lore_cache_clear_in_memory(void);
 
 // Flush memory table to .dat.bin file
 bool tsfi_lore_cache_flush(void);
