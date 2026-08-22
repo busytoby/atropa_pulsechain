@@ -2458,15 +2458,35 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-attention-steering-mimetic-memory-theorems-1806-1810:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810.c tsfi2-deepseek/src/auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810.c -o tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810 -lm
+	./tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810
+	@rm -f tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810
+
+test-auncient-vsen-4quadrant-geometric-embedding-theorems-1801-1805:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_4quadrant_geometric_embedding_theorems_1801_1805.c tsfi2-deepseek/src/auncient_vsen_4quadrant_geometric_embedding_theorems_1801_1805.c -o tests/test_auncient_vsen_4quadrant_geometric_embedding_theorems_1801_1805 -lm
+	./tests/test_auncient_vsen_4quadrant_geometric_embedding_theorems_1801_1805
+	@rm -f tests/test_auncient_vsen_4quadrant_geometric_embedding_theorems_1801_1805
+
+test-auncient-vsen-kermit-vfio-file-transfer-theorems-1796-1800:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_kermit_vfio_file_transfer_theorems_1796_1800.c tsfi2-deepseek/src/auncient_vsen_kermit_vfio_file_transfer_theorems_1796_1800.c -o tests/test_auncient_vsen_kermit_vfio_file_transfer_theorems_1796_1800 -lm
+	./tests/test_auncient_vsen_kermit_vfio_file_transfer_theorems_1796_1800
+	@rm -f tests/test_auncient_vsen_kermit_vfio_file_transfer_theorems_1796_1800
+
+test-auncient-vsen-edo22-voice-synthesis-theorems-1791-1795:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_edo22_voice_synthesis_theorems_1791_1795.c tsfi2-deepseek/src/auncient_vsen_edo22_voice_synthesis_theorems_1791_1795.c -o tests/test_auncient_vsen_edo22_voice_synthesis_theorems_1791_1795 -lm
+	./tests/test_auncient_vsen_edo22_voice_synthesis_theorems_1791_1795
+	@rm -f tests/test_auncient_vsen_edo22_voice_synthesis_theorems_1791_1795
+
 test-auncient-vsen-stanag-spool-to-presenter-integration-theorems-1786-1790:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790.c tsfi2-deepseek/src/auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790.c -o tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790 -lm
 	./tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790
 	@rm -f tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790
 
-test-auncient-vsen-teddy-ssa-hogan-payroll-theorems-1781-1785:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.c tsfi2-deepseek/src/auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.c -o tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785 -lm
-	./tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785
-	@rm -f tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785
+test-auncient-vsen-teddy-bear-ssa-hogan-payroll-theorems-1781-1785:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_teddy_bear_ssa_hogan_payroll_theorems_1781_1785.c tsfi2-deepseek/src/auncient_vsen_teddy_bear_ssa_hogan_payroll_theorems_1781_1785.c -o tests/test_auncient_vsen_teddy_bear_ssa_hogan_payroll_theorems_1781_1785 -lm
+	./tests/test_auncient_vsen_teddy_bear_ssa_hogan_payroll_theorems_1781_1785
+	@rm -f tests/test_auncient_vsen_teddy_bear_ssa_hogan_payroll_theorems_1781_1785
 
 test-auncient-vsen-gguf-empathy-datbin-slicing-theorems-1776-1780:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780.c tsfi2-deepseek/src/auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780.c -o tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780 -lm

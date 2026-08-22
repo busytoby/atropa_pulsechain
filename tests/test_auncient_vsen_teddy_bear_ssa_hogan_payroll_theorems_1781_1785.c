@@ -9,20 +9,20 @@
  * Theorem 1785: Citizen Genesis and Account Ledger Consensus Parity Closure Witness Seal (0x0000XXXX > 0)
  */
 
-#include "auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.h"
+#include "auncient_vsen_teddy_bear_ssa_hogan_payroll_theorems_1781_1785.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
 
 int main(void) {
     printf("=================================================================\n");
-    printf("TEST PROVER: VSEN TEDDY SSA GENESIS & HOGAN PAYROLL (1781-1785)  \n");
+    printf("TEST PROVER: VSEN TEDDY BEAR SSA & HOGAN PAYROLL (1781-1785)     \n");
     printf("=================================================================\n");
 
-    VsenTeddyBeyond1780State state;
-    auncient_vsen_teddy_ssa_hogan_payroll_init(&state);
+    VsenBearBeyond1780State state;
+    auncient_vsen_teddy_bear_ssa_hogan_payroll_init(&state);
 
-    bool ok = auncient_vsen_teddy_ssa_hogan_payroll_verify_theorems_1781_1785(&state);
+    bool ok = auncient_vsen_teddy_bear_ssa_hogan_payroll_verify_theorems_1781_1785(&state);
     assert(ok);
 
     /* Theorem 1781 Verification */
@@ -54,7 +54,7 @@ int main(void) {
     printf(" Rule 18 Non-Preferential Parity Checksum:                   PROVED (0x%08X)\n", state.rule18_parity_checksum);
 
     printf("=================================================================\n");
-    printf("VSEN TEDDY SSA GENESIS & HOGAN PAYROLL FULLY CERTIFIED!          \n");
+    printf("VSEN TEDDY BEAR SSA & HOGAN PAYROLL FULLY CERTIFIED!             \n");
     printf("=================================================================\n");
     return 0;
 }
