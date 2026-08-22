@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-reyes-efl-evas-canvas-theorems-2481-2485:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_reyes_efl_evas_canvas_theorems_2481_2485.c tsfi2-deepseek/src/auncient_renderman_reyes_efl_evas_canvas_theorems_2481_2485.c -o tests/test_auncient_renderman_reyes_efl_evas_canvas_theorems_2481_2485 -lm
+	./tests/test_auncient_renderman_reyes_efl_evas_canvas_theorems_2481_2485
+	@rm -f tests/test_auncient_renderman_reyes_efl_evas_canvas_theorems_2481_2485
+
 test-auncient-renderman-reyes-dicing-micropoly-theorems-2476-2480:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_reyes_dicing_micropoly_theorems_2476_2480.c tsfi2-deepseek/src/auncient_renderman_reyes_dicing_micropoly_theorems_2476_2480.c -o tests/test_auncient_renderman_reyes_dicing_micropoly_theorems_2476_2480 -lm
 	./tests/test_auncient_renderman_reyes_dicing_micropoly_theorems_2476_2480
