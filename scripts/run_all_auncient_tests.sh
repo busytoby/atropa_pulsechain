@@ -821,4 +821,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_hybrid_sprite_voxel_theorems_1891_1895
 rm -f tests/test_auncient_vsen_hybrid_sprite_voxel_theorems_1891_1895
 
+# Compile and run Auncient VSEn Master Animator Grand Closure & 1.900 Billion Saat Milestone (Theorems 1896-1900)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900.c tsfi2-deepseek/src/auncient_vsen_master_animator_closure_theorems_1896_1900.c -o tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900 -lm
+./tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900
+rm -f tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

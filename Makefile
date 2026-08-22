@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-master-animator-closure-theorems-1896-1900:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900.c tsfi2-deepseek/src/auncient_vsen_master_animator_closure_theorems_1896_1900.c -o tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900 -lm
+	./tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900
+	@rm -f tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900
+
 test-auncient-vsen-hybrid-sprite-voxel-theorems-1891-1895:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_hybrid_sprite_voxel_theorems_1891_1895.c tsfi2-deepseek/src/auncient_vsen_hybrid_sprite_voxel_theorems_1891_1895.c -o tests/test_auncient_vsen_hybrid_sprite_voxel_theorems_1891_1895 -lm
 	./tests/test_auncient_vsen_hybrid_sprite_voxel_theorems_1891_1895
