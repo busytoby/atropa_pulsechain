@@ -906,4 +906,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_photorealism_theorems_1976_1980
 rm -f tests/test_auncient_vsen_photorealism_theorems_1976_1980
 
+# Compile and run Auncient VSEn Master Tripartite 12-Scene CBT Tape Demo & 7-Instrument .bio Animator (Theorems 1981-1985)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985.c tsfi2-deepseek/src/auncient_vsen_master_tripartite_demo_theorems_1981_1985.c -o tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985 -lm
+./tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985
+rm -f tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

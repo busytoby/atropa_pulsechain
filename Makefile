@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-master-tripartite-demo-theorems-1981-1985:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985.c tsfi2-deepseek/src/auncient_vsen_master_tripartite_demo_theorems_1981_1985.c -o tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985 -lm
+	./tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985
+	@rm -f tests/test_auncient_vsen_master_tripartite_demo_theorems_1981_1985
+
 test-auncient-vsen-photorealism-theorems-1976-1980:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_photorealism_theorems_1976_1980.c tsfi2-deepseek/src/auncient_vsen_photorealism_theorems_1976_1980.c -o tests/test_auncient_vsen_photorealism_theorems_1976_1980 -lm
 	./tests/test_auncient_vsen_photorealism_theorems_1976_1980
