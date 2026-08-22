@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-cdc6600-vsen-spool-safety-theorems-2121-2125:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_vsen_spool_safety_theorems_2121_2125.c tsfi2-deepseek/src/auncient_cdc6600_vsen_spool_safety_theorems_2121_2125.c -o tests/test_auncient_cdc6600_vsen_spool_safety_theorems_2121_2125 -lm
+	./tests/test_auncient_cdc6600_vsen_spool_safety_theorems_2121_2125
+	@rm -f tests/test_auncient_cdc6600_vsen_spool_safety_theorems_2121_2125
+
 test-auncient-renderman-radiosity-form-factors-theorems-2116-2120:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120.c tsfi2-deepseek/src/auncient_renderman_radiosity_form_factors_theorems_2116_2120.c -o tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120 -lm
 	./tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120
