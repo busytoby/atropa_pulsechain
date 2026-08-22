@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-netsearch-ccso-retained-total-knowledge-theorems-2466-2470:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470.c tsfi2-deepseek/src/auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470.c -o tests/test_auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470 -lm
+	./tests/test_auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470
+	@rm -f tests/test_auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470
+
 test-auncient-fpga-ramac-cloud-closure-theorems-2461-2465:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465.c tsfi2-deepseek/src/auncient_fpga_ramac_cloud_closure_theorems_2461_2465.c -o tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465 -lm
 	./tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465
