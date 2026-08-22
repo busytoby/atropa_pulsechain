@@ -1629,6 +1629,101 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-total-enlightenment-harmonic-spectrum-theorems-2621-2625:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625.c tsfi2-deepseek/src/evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625.c -o tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625 -lm
+	./tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625
+	@rm -f tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625
+
+test-evas-smart-hal1961-anamorphic-lens-teapot-theorems-2616-2620:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_anamorphic_lens_teapot_theorems_2616_2620.c tsfi2-deepseek/src/evas_smart_hal1961_anamorphic_lens_teapot_theorems_2616_2620.c -o tests/test_evas_smart_hal1961_anamorphic_lens_teapot_theorems_2616_2620 -lm
+	./tests/test_evas_smart_hal1961_anamorphic_lens_teapot_theorems_2616_2620
+	@rm -f tests/test_evas_smart_hal1961_anamorphic_lens_teapot_theorems_2616_2620
+
+test-evas-smart-ultra-stable-edje-base-membrane-theorems-2611-2615:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_ultra_stable_edje_base_membrane_theorems_2611_2615.c tsfi2-deepseek/src/evas_smart_ultra_stable_edje_base_membrane_theorems_2611_2615.c -o tests/test_evas_smart_ultra_stable_edje_base_membrane_theorems_2611_2615 -lm
+	./tests/test_evas_smart_ultra_stable_edje_base_membrane_theorems_2611_2615
+	@rm -f tests/test_evas_smart_ultra_stable_edje_base_membrane_theorems_2611_2615
+
+test-evas-smart-total-enlightenment-canvas-theorems-2606-2610:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_total_enlightenment_canvas_theorems_2606_2610.c tsfi2-deepseek/src/evas_smart_total_enlightenment_canvas_theorems_2606_2610.c -o tests/test_evas_smart_total_enlightenment_canvas_theorems_2606_2610 -lm
+	./tests/test_evas_smart_total_enlightenment_canvas_theorems_2606_2610
+	@rm -f tests/test_evas_smart_total_enlightenment_canvas_theorems_2606_2610
+
+test-evas-smart-grand-unified-hal1961-colossus-super8-theorems-2601-2605:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_grand_unified_hal1961_colossus_super8_theorems_2601_2605.c tsfi2-deepseek/src/evas_smart_grand_unified_hal1961_colossus_super8_theorems_2601_2605.c -o tests/test_evas_smart_grand_unified_hal1961_colossus_super8_theorems_2601_2605 -lm
+	./tests/test_evas_smart_grand_unified_hal1961_colossus_super8_theorems_2601_2605
+	@rm -f tests/test_evas_smart_grand_unified_hal1961_colossus_super8_theorems_2601_2605
+
+test-evas-smart-edje-base-membrane-stabilization-theorems-2596-2600:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_edje_base_membrane_stabilization_theorems_2596_2600.c tsfi2-deepseek/src/evas_smart_edje_base_membrane_stabilization_theorems_2596_2600.c -o tests/test_evas_smart_edje_base_membrane_stabilization_theorems_2596_2600 -lm
+	./tests/test_evas_smart_edje_base_membrane_stabilization_theorems_2596_2600
+	@rm -f tests/test_evas_smart_edje_base_membrane_stabilization_theorems_2596_2600
+
+test-evas-smart-enlightenment-edje-layout-theorems-2591-2595:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_enlightenment_edje_layout_theorems_2591_2595.c tsfi2-deepseek/src/evas_smart_enlightenment_edje_layout_theorems_2591_2595.c -o tests/test_evas_smart_enlightenment_edje_layout_theorems_2591_2595 -lm
+	./tests/test_evas_smart_enlightenment_edje_layout_theorems_2591_2595
+	@rm -f tests/test_evas_smart_enlightenment_edje_layout_theorems_2591_2595
+
+test-evas-smart-colossus-permalight-hal1961-super8-theorems-2586-2590:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_colossus_permalight_hal1961_super8_theorems_2586_2590.c tsfi2-deepseek/src/evas_smart_colossus_permalight_hal1961_super8_theorems_2586_2590.c -o tests/test_evas_smart_colossus_permalight_hal1961_super8_theorems_2586_2590 -lm
+	./tests/test_evas_smart_colossus_permalight_hal1961_super8_theorems_2586_2590
+	@rm -f tests/test_evas_smart_colossus_permalight_hal1961_super8_theorems_2586_2590
+
+test-evas-smart-enlightenment-canvas-theorems-2581-2585:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_enlightenment_canvas_theorems_2581_2585.c tsfi2-deepseek/src/evas_smart_enlightenment_canvas_theorems_2581_2585.c -o tests/test_evas_smart_enlightenment_canvas_theorems_2581_2585 -lm
+	./tests/test_evas_smart_enlightenment_canvas_theorems_2581_2585
+	@rm -f tests/test_evas_smart_enlightenment_canvas_theorems_2581_2585
+
+test-evas-smart-bionika-base-membrane-stabilization-theorems-2576-2580:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_bionika_base_membrane_stabilization_theorems_2576_2580.c tsfi2-deepseek/src/evas_smart_bionika_base_membrane_stabilization_theorems_2576_2580.c -o tests/test_evas_smart_bionika_base_membrane_stabilization_theorems_2576_2580 -lm
+	./tests/test_evas_smart_bionika_base_membrane_stabilization_theorems_2576_2580
+	@rm -f tests/test_evas_smart_bionika_base_membrane_stabilization_theorems_2576_2580
+
+test-evas-smart-bionika-membrane-potential-theorems-2571-2575:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_bionika_membrane_potential_theorems_2571_2575.c tsfi2-deepseek/src/evas_smart_bionika_membrane_potential_theorems_2571_2575.c -o tests/test_evas_smart_bionika_membrane_potential_theorems_2571_2575 -lm
+	./tests/test_evas_smart_bionika_membrane_potential_theorems_2571_2575
+	@rm -f tests/test_evas_smart_bionika_membrane_potential_theorems_2571_2575
+
+test-evas-smart-hal1961-super8-teapot-tk-pov-theorems-2566-2570:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_super8_teapot_tk_pov_theorems_2566_2570.c tsfi2-deepseek/src/evas_smart_hal1961_super8_teapot_tk_pov_theorems_2566_2570.c -o tests/test_evas_smart_hal1961_super8_teapot_tk_pov_theorems_2566_2570 -lm
+	./tests/test_evas_smart_hal1961_super8_teapot_tk_pov_theorems_2566_2570
+	@rm -f tests/test_evas_smart_hal1961_super8_teapot_tk_pov_theorems_2566_2570
+
+test-evas-smart-super8-renderman-teapot-tk-pov-theorems-2561-2565:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_super8_renderman_teapot_tk_pov_theorems_2561_2565.c tsfi2-deepseek/src/evas_smart_super8_renderman_teapot_tk_pov_theorems_2561_2565.c -o tests/test_evas_smart_super8_renderman_teapot_tk_pov_theorems_2561_2565 -lm
+	./tests/test_evas_smart_super8_renderman_teapot_tk_pov_theorems_2561_2565
+	@rm -f tests/test_evas_smart_super8_renderman_teapot_tk_pov_theorems_2561_2565
+
+test-evas-smart-renderman-teapot-tk-pov-theorems-2556-2560:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_renderman_teapot_tk_pov_theorems_2556_2560.c tsfi2-deepseek/src/evas_smart_renderman_teapot_tk_pov_theorems_2556_2560.c -o tests/test_evas_smart_renderman_teapot_tk_pov_theorems_2556_2560 -lm
+	./tests/test_evas_smart_renderman_teapot_tk_pov_theorems_2556_2560
+	@rm -f tests/test_evas_smart_renderman_teapot_tk_pov_theorems_2556_2560
+
+test-evas-smart-total-knowledge-pov-theorems-2551-2555:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_total_knowledge_pov_theorems_2551_2555.c tsfi2-deepseek/src/evas_smart_total_knowledge_pov_theorems_2551_2555.c -o tests/test_evas_smart_total_knowledge_pov_theorems_2551_2555 -lm
+	./tests/test_evas_smart_total_knowledge_pov_theorems_2551_2555
+	@rm -f tests/test_evas_smart_total_knowledge_pov_theorems_2551_2555
+
+test-evas-smart-anaglyph-stereo-projection-theorems-2546-2550:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_anaglyph_stereo_projection_theorems_2546_2550.c tsfi2-deepseek/src/evas_smart_anaglyph_stereo_projection_theorems_2546_2550.c -o tests/test_evas_smart_anaglyph_stereo_projection_theorems_2546_2550 -lm
+	./tests/test_evas_smart_anaglyph_stereo_projection_theorems_2546_2550
+	@rm -f tests/test_evas_smart_anaglyph_stereo_projection_theorems_2546_2550
+
+test-evas-smart-persistence-of-vision-theorems-2541-2545:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_persistence_of_vision_theorems_2541_2545.c tsfi2-deepseek/src/evas_smart_persistence_of_vision_theorems_2541_2545.c -o tests/test_evas_smart_persistence_of_vision_theorems_2541_2545 -lm
+	./tests/test_evas_smart_persistence_of_vision_theorems_2541_2545
+	@rm -f tests/test_evas_smart_persistence_of_vision_theorems_2541_2545
+
+test-evas-smart-ramac-frame-buffer-persistence-theorems-2536-2540:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_ramac_frame_buffer_persistence_theorems_2536_2540.c tsfi2-deepseek/src/evas_smart_ramac_frame_buffer_persistence_theorems_2536_2540.c -o tests/test_evas_smart_ramac_frame_buffer_persistence_theorems_2536_2540 -lm
+	./tests/test_evas_smart_ramac_frame_buffer_persistence_theorems_2536_2540
+	@rm -f tests/test_evas_smart_ramac_frame_buffer_persistence_theorems_2536_2540
+
+test-evas-smart-fet-discharge-thermal-shading-theorems-2531-2535:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_fet_discharge_thermal_shading_theorems_2531_2535.c tsfi2-deepseek/src/evas_smart_fet_discharge_thermal_shading_theorems_2531_2535.c -o tests/test_evas_smart_fet_discharge_thermal_shading_theorems_2531_2535 -lm
+	./tests/test_evas_smart_fet_discharge_thermal_shading_theorems_2531_2535
+	@rm -f tests/test_evas_smart_fet_discharge_thermal_shading_theorems_2531_2535
+
 test-evas-smart-ncsa-mosaic-viewport-theorems-2526-2530:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530.c tsfi2-deepseek/src/evas_smart_ncsa_mosaic_viewport_theorems_2526_2530.c -o tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530 -lm
 	./tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530
