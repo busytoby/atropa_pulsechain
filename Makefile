@@ -1629,10 +1629,40 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
-test-auncient-historic-2500-sovereign-consensus-seal-theorems-2496-2500:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500.c tsfi2-deepseek/src/auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500.c -o tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500 -lm
-	./tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500
-	@rm -f tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500
+test-evas-smart-ncsa-mosaic-viewport-theorems-2526-2530:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530.c tsfi2-deepseek/src/evas_smart_ncsa_mosaic_viewport_theorems_2526_2530.c -o tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530 -lm
+	./tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530
+	@rm -f tests/test_evas_smart_ncsa_mosaic_viewport_theorems_2526_2530
+
+test-evas-smart-tartan-hud-cockpit-theorems-2521-2525:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_tartan_hud_cockpit_theorems_2521_2525.c tsfi2-deepseek/src/evas_smart_tartan_hud_cockpit_theorems_2521_2525.c -o tests/test_evas_smart_tartan_hud_cockpit_theorems_2521_2525 -lm
+	./tests/test_evas_smart_tartan_hud_cockpit_theorems_2521_2525
+	@rm -f tests/test_evas_smart_tartan_hud_cockpit_theorems_2521_2525
+
+test-evas-smart-scsi-interactive-camera-theorems-2516-2520:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_scsi_interactive_camera_theorems_2516_2520.c tsfi2-deepseek/src/evas_smart_scsi_interactive_camera_theorems_2516_2520.c -o tests/test_evas_smart_scsi_interactive_camera_theorems_2516_2520 -lm
+	./tests/test_evas_smart_scsi_interactive_camera_theorems_2516_2520
+	@rm -f tests/test_evas_smart_scsi_interactive_camera_theorems_2516_2520
+
+test-evas-smart-multi-plane-alpha-compositing-theorems-2511-2515:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_multi_plane_alpha_compositing_theorems_2511_2515.c tsfi2-deepseek/src/evas_smart_multi_plane_alpha_compositing_theorems_2511_2515.c -o tests/test_evas_smart_multi_plane_alpha_compositing_theorems_2511_2515 -lm
+	./tests/test_evas_smart_multi_plane_alpha_compositing_theorems_2511_2515
+	@rm -f tests/test_evas_smart_multi_plane_alpha_compositing_theorems_2511_2515
+
+test-evas-smart-dipole-sss-diffusion-theorems-2506-2510:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_dipole_sss_diffusion_theorems_2506_2510.c tsfi2-deepseek/src/evas_smart_dipole_sss_diffusion_theorems_2506_2510.c -o tests/test_evas_smart_dipole_sss_diffusion_theorems_2506_2510 -lm
+	./tests/test_evas_smart_dipole_sss_diffusion_theorems_2506_2510
+	@rm -f tests/test_evas_smart_dipole_sss_diffusion_theorems_2506_2510
+
+test-evas-smart-anisotropic-surface-shading-theorems-2501-2505:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_anisotropic_surface_shading_theorems_2501_2505.c tsfi2-deepseek/src/evas_smart_anisotropic_surface_shading_theorems_2501_2505.c -o tests/test_evas_smart_anisotropic_surface_shading_theorems_2501_2505 -lm
+	./tests/test_evas_smart_anisotropic_surface_shading_theorems_2501_2505
+	@rm -f tests/test_evas_smart_anisotropic_surface_shading_theorems_2501_2505
+
+test-auncient-evas-spatial-grid-rebar-blit-theorems-2496-2500:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_evas_spatial_grid_rebar_blit_theorems_2496_2500.c tsfi2-deepseek/src/auncient_evas_spatial_grid_rebar_blit_theorems_2496_2500.c -o tests/test_auncient_evas_spatial_grid_rebar_blit_theorems_2496_2500 -lm
+	./tests/test_auncient_evas_spatial_grid_rebar_blit_theorems_2496_2500
+	@rm -f tests/test_auncient_evas_spatial_grid_rebar_blit_theorems_2496_2500
 
 test-auncient-evas-smart-object-caustic-primitive-theorems-2491-2495:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495.c tsfi2-deepseek/src/auncient_evas_smart_object_caustic_primitive_theorems_2491_2495.c -o tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495 -lm
