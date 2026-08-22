@@ -1622,16 +1622,22 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
                                           test-auncient-uiuc-ordvac-math-theorems-1976-1980 \
                                           test-auncient-ordvac-thacher-solver-theorems-1981-1985 \
                                           test-auncient-ordvac-eniac-edsac-io1-theorems-1986-1990 \
-                                          test-auncient-uiuc-2000-grand-synthesis-theorems-1991-2000
+                                          test-auncient-uiuc-heterogeneous-network-interop-theorems-1991-1995 \
+                                          test-auncient-uiuc-parallel-compute-mesh-theorems-1996-2000
 	@echo "================================================================="
 	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-2000 FULLY CERTIFIED!   "
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
-test-auncient-uiuc-2000-grand-synthesis-theorems-1991-2000:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000.c tsfi2-deepseek/src/auncient_uiuc_2000_grand_synthesis_theorems_1991_2000.c -o tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000 -lm
-	./tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000
-	@rm -f tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000
+test-auncient-uiuc-parallel-compute-mesh-theorems-1996-2000:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000.c tsfi2-deepseek/src/auncient_uiuc_parallel_compute_mesh_theorems_1996_2000.c -o tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000 -lm
+	./tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000
+	@rm -f tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000
+
+test-auncient-uiuc-heterogeneous-network-interop-theorems-1991-1995:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_heterogeneous_network_interop_theorems_1991_1995.c tsfi2-deepseek/src/auncient_uiuc_heterogeneous_network_interop_theorems_1991_1995.c -o tests/test_auncient_uiuc_heterogeneous_network_interop_theorems_1991_1995 -lm
+	./tests/test_auncient_uiuc_heterogeneous_network_interop_theorems_1991_1995
+	@rm -f tests/test_auncient_uiuc_heterogeneous_network_interop_theorems_1991_1995
 
 test-auncient-ordvac-eniac-edsac-io1-theorems-1986-1990:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ordvac_eniac_edsac_io1_theorems_1986_1990.c tsfi2-deepseek/src/auncient_ordvac_eniac_edsac_io1_theorems_1986_1990.c -o tests/test_auncient_ordvac_eniac_edsac_io1_theorems_1986_1990 -lm
