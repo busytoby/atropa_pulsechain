@@ -1629,6 +1629,16 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-hal1961-biotika-eye-of-the-tiger-theorems-2646-2650:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650.c tsfi2-deepseek/src/evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650.c -o tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650 -lm
+	./tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650
+	@rm -f tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650
+
+test-evas-smart-hal1961-aea-radar-warping-theorems-2641-2645:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_aea_radar_warping_theorems_2641_2645.c tsfi2-deepseek/src/evas_smart_hal1961_aea_radar_warping_theorems_2641_2645.c -o tests/test_evas_smart_hal1961_aea_radar_warping_theorems_2641_2645 -lm
+	./tests/test_evas_smart_hal1961_aea_radar_warping_theorems_2641_2645
+	@rm -f tests/test_evas_smart_hal1961_aea_radar_warping_theorems_2641_2645
+
 test-evas-smart-hal1961-speech-synth-theorems-2636-2640:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640.c tsfi2-deepseek/src/evas_smart_hal1961_speech_synth_theorems_2636_2640.c -o tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640 -lm
 	./tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640
