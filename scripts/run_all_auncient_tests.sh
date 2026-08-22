@@ -846,4 +846,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_paw_friction_theorems_1916_1920
 rm -f tests/test_auncient_vsen_paw_friction_theorems_1916_1920
 
+# Compile and run Auncient VSEn Multi-Agent Swarm Choreography & Gestural Mimicry Animator (Theorems 1921-1925)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925.c tsfi2-deepseek/src/auncient_vsen_swarm_choreography_theorems_1921_1925.c -o tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925 -lm
+./tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925
+rm -f tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

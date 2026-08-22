@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-swarm-choreography-theorems-1921-1925:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925.c tsfi2-deepseek/src/auncient_vsen_swarm_choreography_theorems_1921_1925.c -o tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925 -lm
+	./tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925
+	@rm -f tests/test_auncient_vsen_swarm_choreography_theorems_1921_1925
+
 test-auncient-vsen-paw-friction-theorems-1916-1920:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_paw_friction_theorems_1916_1920.c tsfi2-deepseek/src/auncient_vsen_paw_friction_theorems_1916_1920.c -o tests/test_auncient_vsen_paw_friction_theorems_1916_1920 -lm
 	./tests/test_auncient_vsen_paw_friction_theorems_1916_1920
