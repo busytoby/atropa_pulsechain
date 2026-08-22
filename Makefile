@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-teapot-demo-theorems-2001-2005:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_teapot_demo_theorems_2001_2005.c tsfi2-deepseek/src/auncient_renderman_teapot_demo_theorems_2001_2005.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_renderman_teapot_demo_theorems_2001_2005 -lm
+	./tests/test_auncient_renderman_teapot_demo_theorems_2001_2005
+	@rm -f tests/test_auncient_renderman_teapot_demo_theorems_2001_2005
+
 test-auncient-uiuc-parallel-compute-mesh-theorems-1996-2000:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000.c tsfi2-deepseek/src/auncient_uiuc_parallel_compute_mesh_theorems_1996_2000.c -o tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000 -lm
 	./tests/test_auncient_uiuc_parallel_compute_mesh_theorems_1996_2000
