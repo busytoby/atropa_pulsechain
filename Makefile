@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-renderman-porcelain-glaze-theorems-2676-2680:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680.c tsfi2-deepseek/src/evas_smart_renderman_porcelain_glaze_theorems_2676_2680.c -o tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680 -lm
+	./tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680
+	@rm -f tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680
+
 test-evas-smart-optical-star-gate-pll-membrane-theorems-2671-2675:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675.c tsfi2-deepseek/src/evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675.c -o tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675 -lm
 	./tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675
