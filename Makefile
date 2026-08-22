@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-foundation-displacement-theorems-2191-2195:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195.c tsfi2-deepseek/src/auncient_renderman_foundation_displacement_theorems_2191_2195.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195 -lm
+	./tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195
+	@rm -f tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195
+
 test-auncient-efl-vaesenn-mosaic-neural-theorems-2186-2190:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_efl_vaesenn_mosaic_neural_theorems_2186_2190.c tsfi2-deepseek/src/auncient_efl_vaesenn_mosaic_neural_theorems_2186_2190.c -o tests/test_auncient_efl_vaesenn_mosaic_neural_theorems_2186_2190 -lm
 	./tests/test_auncient_efl_vaesenn_mosaic_neural_theorems_2186_2190
