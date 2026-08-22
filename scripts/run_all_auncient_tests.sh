@@ -871,4 +871,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_12scene_demo_theorems_1941_1945
 rm -f tests/test_auncient_vsen_12scene_demo_theorems_1941_1945
 
+# Compile and run Auncient VSEn Cinematic Camera Path & Physical Lens Bloom Animator (Theorems 1946-1950)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950.c tsfi2-deepseek/src/auncient_vsen_cinematic_camera_theorems_1946_1950.c -o tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950 -lm
+./tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950
+rm -f tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

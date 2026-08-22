@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-cinematic-camera-theorems-1946-1950:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950.c tsfi2-deepseek/src/auncient_vsen_cinematic_camera_theorems_1946_1950.c -o tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950 -lm
+	./tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950
+	@rm -f tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950
+
 test-auncient-vsen-12scene-demo-theorems-1941-1945:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_12scene_demo_theorems_1941_1945.c tsfi2-deepseek/src/auncient_vsen_12scene_demo_theorems_1941_1945.c -o tests/test_auncient_vsen_12scene_demo_theorems_1941_1945 -lm
 	./tests/test_auncient_vsen_12scene_demo_theorems_1941_1945
