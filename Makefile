@@ -1598,6 +1598,11 @@ test-auncient-mu-complete-alignment-closure-theorems-1826-1830:
 	./tests/test_auncient_mu_complete_alignment_closure_theorems_1826_1830
 	@rm -f tests/test_auncient_mu_complete_alignment_closure_theorems_1826_1830
 
+test-auncient-netfind-cross-protocol-theorems-1906-1910:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netfind_cross_protocol_theorems_1906_1910.c tsfi2-deepseek/src/auncient_netfind_cross_protocol_theorems_1906_1910.c -o tests/test_auncient_netfind_cross_protocol_theorems_1906_1910 -lm
+	./tests/test_auncient_netfind_cross_protocol_theorems_1906_1910
+	@rm -f tests/test_auncient_netfind_cross_protocol_theorems_1906_1910
+
 test-auncient-netfind-fabric-failover-theorems-1901-1905:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netfind_fabric_failover_theorems_1901_1905.c tsfi2-deepseek/src/auncient_netfind_fabric_failover_theorems_1901_1905.c -o tests/test_auncient_netfind_fabric_failover_theorems_1901_1905 -lm
 	./tests/test_auncient_netfind_fabric_failover_theorems_1901_1905
