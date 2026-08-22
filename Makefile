@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-hal1961-star-gate-transcendence-theorems-2661-2665:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665.c tsfi2-deepseek/src/evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665.c -o tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665 -lm
+	./tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665
+	@rm -f tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665
+
 test-evas-smart-hal1961-logic-core-shutdown-theorems-2656-2660:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660.c tsfi2-deepseek/src/evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660.c -o tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660 -lm
 	./tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660
