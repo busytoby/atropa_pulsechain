@@ -1629,10 +1629,10 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
-test-auncient-renderman-deep-shadow-map-theorems-2471-2475:
-	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_deep_shadow_map_theorems_2471_2475.c tsfi2-deepseek/src/auncient_renderman_deep_shadow_map_theorems_2471_2475.c -o tests/test_auncient_renderman_deep_shadow_map_theorems_2471_2475 -lm
-	./tests/test_auncient_renderman_deep_shadow_map_theorems_2471_2475
-	@rm -f tests/test_auncient_renderman_deep_shadow_map_theorems_2471_2475
+test-auncient-netsearch-ccso-cloud-shadow-map-layer-theorems-2471-2475:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netsearch_ccso_cloud_shadow_map_layer_theorems_2471_2475.c tsfi2-deepseek/src/auncient_netsearch_ccso_cloud_shadow_map_layer_theorems_2471_2475.c -o tests/test_auncient_netsearch_ccso_cloud_shadow_map_layer_theorems_2471_2475 -lm
+	./tests/test_auncient_netsearch_ccso_cloud_shadow_map_layer_theorems_2471_2475
+	@rm -f tests/test_auncient_netsearch_ccso_cloud_shadow_map_layer_theorems_2471_2475
 
 test-auncient-netsearch-ccso-retained-total-knowledge-theorems-2466-2470:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470.c tsfi2-deepseek/src/auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470.c -o tests/test_auncient_netsearch_ccso_retained_total_knowledge_theorems_2466_2470 -lm
