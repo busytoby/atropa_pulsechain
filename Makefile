@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-teapot-illiac-pll-theorems-2296-2300:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_teapot_illiac_pll_theorems_2296_2300.c tsfi2-deepseek/src/auncient_renderman_teapot_illiac_pll_theorems_2296_2300.c -o tests/test_auncient_renderman_teapot_illiac_pll_theorems_2296_2300 -lm
+	./tests/test_auncient_renderman_teapot_illiac_pll_theorems_2296_2300
+	@rm -f tests/test_auncient_renderman_teapot_illiac_pll_theorems_2296_2300
+
 test-auncient-illiac1-vsen-8way-fabric-theorems-2291-2295:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295.c tsfi2-deepseek/src/auncient_illiac1_vsen_8way_fabric_theorems_2291_2295.c -o tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295 -lm
 	./tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295
