@@ -746,4 +746,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_dtmf_tactile_purr_theorems_1816_1820
 rm -f tests/test_auncient_vsen_dtmf_tactile_purr_theorems_1816_1820
 
+# Compile and run Auncient VSEn 24-Trunk Strowger Decadic PBX Switching (Theorems 1821-1825)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825.c tsfi2-deepseek/src/auncient_vsen_strowger_pbx_switching_theorems_1821_1825.c -o tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825 -lm
+./tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825
+rm -f tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
