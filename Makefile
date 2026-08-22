@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-cdc6600-extended-core-memory-theorems-2181-2185:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_extended_core_memory_theorems_2181_2185.c tsfi2-deepseek/src/auncient_cdc6600_extended_core_memory_theorems_2181_2185.c -o tests/test_auncient_cdc6600_extended_core_memory_theorems_2181_2185 -lm
+	./tests/test_auncient_cdc6600_extended_core_memory_theorems_2181_2185
+	@rm -f tests/test_auncient_cdc6600_extended_core_memory_theorems_2181_2185
+
 test-auncient-renderman-integrated-teapot-demo-theorems-2176-2180:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180.c tsfi2-deepseek/src/auncient_renderman_integrated_teapot_demo_theorems_2176_2180.c -o tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180 -lm
 	./tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180
