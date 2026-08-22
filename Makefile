@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-fpga-ramac-cloud-closure-theorems-2461-2465:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465.c tsfi2-deepseek/src/auncient_fpga_ramac_cloud_closure_theorems_2461_2465.c -o tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465 -lm
+	./tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465
+	@rm -f tests/test_auncient_fpga_ramac_cloud_closure_theorems_2461_2465
+
 test-auncient-autonomous-ilp-inference-theorems-2456-2460:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460.c tsfi2-deepseek/src/auncient_autonomous_ilp_inference_theorems_2456_2460.c -o tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460 -lm
 	./tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460
