@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-historic-2500-sovereign-consensus-seal-theorems-2496-2500:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500.c tsfi2-deepseek/src/auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500.c -o tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500 -lm
+	./tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500
+	@rm -f tests/test_auncient_historic_2500_sovereign_consensus_seal_theorems_2496_2500
+
 test-auncient-evas-smart-object-caustic-primitive-theorems-2491-2495:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495.c tsfi2-deepseek/src/auncient_evas_smart_object_caustic_primitive_theorems_2491_2495.c -o tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495 -lm
 	./tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495
