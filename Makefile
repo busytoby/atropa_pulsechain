@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-photon-caustic-accumulator-theorems-2386-2390:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_photon_caustic_accumulator_theorems_2386_2390.c tsfi2-deepseek/src/auncient_renderman_photon_caustic_accumulator_theorems_2386_2390.c -o tests/test_auncient_renderman_photon_caustic_accumulator_theorems_2386_2390 -lm
+	./tests/test_auncient_renderman_photon_caustic_accumulator_theorems_2386_2390
+	@rm -f tests/test_auncient_renderman_photon_caustic_accumulator_theorems_2386_2390
+
 test-auncient-vaesen-teddy-shadow-immunity-theorems-2381-2385:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_vaesen_teddy_shadow_immunity_theorems_2381_2385.c tsfi2-deepseek/src/auncient_vaesen_teddy_shadow_immunity_theorems_2381_2385.c -o tests/test_auncient_vaesen_teddy_shadow_immunity_theorems_2381_2385 -lm
 	./tests/test_auncient_vaesen_teddy_shadow_immunity_theorems_2381_2385
