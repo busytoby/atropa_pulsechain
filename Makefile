@@ -1602,9 +1602,10 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
                                     test-auncient-zorse-netfind-llm-theorems-1896-1900 \
                                     test-auncient-netfind-fabric-failover-theorems-1901-1905 \
                                     test-auncient-netfind-cross-protocol-theorems-1906-1910 \
-                                    test-auncient-thacher-stanag-search-theorems-1911-1915
+                                    test-auncient-thacher-stanag-search-theorems-1911-1915 \
+                                    test-auncient-netfind-kvcache-search-theorems-1916-1920
 	@echo "================================================================="
-	@echo "ALL NETFIND FORMAL THEOREMS 1891-1915 FULLY VERIFIED & CERTIFIED!"
+	@echo "ALL NETFIND FORMAL THEOREMS 1891-1920 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
 test-auncient-netfind-kvcache-search-theorems-1916-1920:
