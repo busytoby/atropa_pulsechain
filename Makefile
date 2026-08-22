@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-amd-data-fabric-8way-bus-theorems-2141-2145:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_amd_data_fabric_8way_bus_theorems_2141_2145.c tsfi2-deepseek/src/auncient_amd_data_fabric_8way_bus_theorems_2141_2145.c -o tests/test_auncient_amd_data_fabric_8way_bus_theorems_2141_2145 -lm
+	./tests/test_auncient_amd_data_fabric_8way_bus_theorems_2141_2145
+	@rm -f tests/test_auncient_amd_data_fabric_8way_bus_theorems_2141_2145
+
 test-auncient-canary-tripwire-fatal-exit-theorems-2136-2140:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_canary_tripwire_fatal_exit_theorems_2136_2140.c tsfi2-deepseek/src/auncient_canary_tripwire_fatal_exit_theorems_2136_2140.c -o tests/test_auncient_canary_tripwire_fatal_exit_theorems_2136_2140 -lm
 	./tests/test_auncient_canary_tripwire_fatal_exit_theorems_2136_2140
