@@ -1622,6 +1622,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-1970 FULLY CERTIFIED!   "
 	@echo "================================================================="
 
+test-auncient-ordvac-thacher-solver-theorems-1981-1985:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ordvac_thacher_solver_theorems_1981_1985.c tsfi2-deepseek/src/auncient_ordvac_thacher_solver_theorems_1981_1985.c -o tests/test_auncient_ordvac_thacher_solver_theorems_1981_1985 -lm
+	./tests/test_auncient_ordvac_thacher_solver_theorems_1981_1985
+	@rm -f tests/test_auncient_ordvac_thacher_solver_theorems_1981_1985
+
 test-auncient-uiuc-ordvac-math-theorems-1976-1980:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_ordvac_math_theorems_1976_1980.c tsfi2-deepseek/src/auncient_uiuc_ordvac_math_theorems_1976_1980.c -o tests/test_auncient_uiuc_ordvac_math_theorems_1976_1980 -lm
 	./tests/test_auncient_uiuc_ordvac_math_theorems_1976_1980
