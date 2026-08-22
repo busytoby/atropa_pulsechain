@@ -876,4 +876,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950
 rm -f tests/test_auncient_vsen_cinematic_camera_theorems_1946_1950
 
+# Compile and run Auncient VSEn Temporal Reprojected Path-Tracing Denoiser Animator (Theorems 1951-1955)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_temporal_denoiser_theorems_1951_1955.c tsfi2-deepseek/src/auncient_vsen_temporal_denoiser_theorems_1951_1955.c -o tests/test_auncient_vsen_temporal_denoiser_theorems_1951_1955 -lm
+./tests/test_auncient_vsen_temporal_denoiser_theorems_1951_1955
+rm -f tests/test_auncient_vsen_temporal_denoiser_theorems_1951_1955
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
