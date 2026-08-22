@@ -139,12 +139,12 @@ void render_puppet_at(uint8_t *depth, uint8_t *pose, float cx, float cy, float t
     
     float wave = p ? 0.0f : sin(time_t * 5.0f + (float)id) * 15.0f;
     float s = p ? p->scale : 0.5f; 
-    uint32_t type = p ? p->animal_type : PUPPET_TYPE_TEDDY;
+    uint32_t type = p ? p->animal_type : PUPPET_TYPE_TEDDY_BEAR;
     float base_head_size = p ? (p->head_size > 0.0f ? p->head_size : 1.0f) : 1.0f;
     float base_arm_len   = p ? (p->arm_length > 0.0f ? p->arm_length : 1.0f) : 1.0f;
     float base_leg_len   = p ? (p->leg_length > 0.0f ? p->leg_length : 1.0f) : 1.0f;
     float base_ear_size  = p ? (p->ear_size > 0.0f ? p->ear_size : 1.0f) : 1.0f;
-    float limb_stuffing  = (type == PUPPET_TYPE_TEDDY) ? (p ? (p->stuffing > 0.0f ? p->stuffing : 1.5f) : 1.5f) : 1.0f;
+    float limb_stuffing  = (type == PUPPET_TYPE_TEDDY_BEAR) ? (p ? (p->stuffing > 0.0f ? p->stuffing : 1.5f) : 1.5f) : 1.0f;
 
     Vec3 head, body, l_shoulder, l_hand, r_shoulder, r_hand;
     Vec3 l_hip, l_foot, r_hip, r_foot;
@@ -317,7 +317,7 @@ void render_puppet_at(uint8_t *depth, uint8_t *pose, float cx, float cy, float t
         render_sphere_depth(depth, head, 22 * s * 2.0f * limb_stuffing * base_head_size);
         render_sphere_depth(depth, body, 32 * s * 2.0f * limb_stuffing);
         
-        // Add Teddy Ears
+        // Add TeddyBear Ears
         Vec3 l_ear = { head.x - 12*s*base_head_size, head.y - 15*s*base_head_size, head.z - 10 };
         Vec3 r_ear = { head.x + 12*s*base_head_size, head.y - 15*s*base_head_size, head.z - 10 };
         render_sphere_depth(depth, l_ear, 8 * s * 2.0f * base_ear_size);

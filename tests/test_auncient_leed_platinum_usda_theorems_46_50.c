@@ -20,14 +20,14 @@ int main(void) {
     printf("TEST PROVER: LEED PLATINUM USDA CLAYSCAPE THEOREMS 46 THROUGH 50 \n");
     printf("=================================================================\n");
 
-    TeddyBearHeartUsdaAsset teddy;
-    auncient_teddy_bear_heart_init(&teddy, 0xABCDEF01);
-    auncient_teddy_bear_heart_update_environment(&teddy, 22.5f, 48.0f, 650.0f, 0.12f);
+    TeddyBearHeartUsdaAsset teddy_bear;
+    auncient_teddy_bear_heart_init(&teddy_bear, 0xABCDEF01);
+    auncient_teddy_bear_heart_update_environment(&teddy_bear, 22.5f, 48.0f, 650.0f, 0.12f);
 
     LeedPlatinumEvaluationState state;
     auncient_leed_platinum_init(&state);
 
-    bool ok = auncient_leed_platinum_verify_theorems_46_50(&state, &teddy);
+    bool ok = auncient_leed_platinum_verify_theorems_46_50(&state, &teddy_bear);
     assert(ok);
 
     /* Theorem 46 Verification */

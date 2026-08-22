@@ -14,7 +14,7 @@ typedef enum {
     PERSONALITY_AGGRESSIVE,   // Narrow head, almond eyes, medium eye size
     PERSONALITY_EERIE,         // Narrow head, almond eyes, large eye size
     PERSONALITY_SKEPTICAL      // Narrow head, crooked-face symmetry
-} teddy_personality_t;
+} teddy_bear_personality_t;
 
 typedef struct {
     double head_fwhr;        // Facial Width-to-Height Ratio (0.7 narrow, 1.0 round)
@@ -118,12 +118,12 @@ typedef struct {
     double command_authority;        // Perceived command authority (0.0 collaborative, 1.0 high command authority)
     double partner_caregiving;       // Perceived caregiving support (0.0 lower support, 1.0 high caregiving support)
     double relationship_permanence_strategy; // Perceived permanence strategy (0.0 lower effort, 1.0 high partner retention)
-} teddy_geometry_t;
+} teddy_bear_geometry_t;
 
 // ACID Transaction container for evaluation stability.
 typedef struct {
-    teddy_geometry_t *target;
-    teddy_geometry_t backup;
+    teddy_bear_geometry_t *target;
+    teddy_bear_geometry_t backup;
     bool active;
 } evaluation_tx_t;
 
@@ -131,12 +131,12 @@ typedef struct {
 typedef struct {
     uint32_t sdk_state;          // SDK typestate transition tracker
     uint64_t dna_seed;           // FNV-1a DNA signature seed
-    teddy_geometry_t geometry;   // Geometric and dynamic physics variables
+    teddy_bear_geometry_t geometry;   // Geometric and dynamic physics variables
     char usd_path[256];          // Target output USD asset path
 } agent_avatar_t;
 
 // Maps abstract traits to geometric parameters based on study results
-void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom);
+void resolve_teddy_bear_geometry(teddy_bear_personality_t trait, teddy_bear_geometry_t *geom);
 
 
 typedef struct {

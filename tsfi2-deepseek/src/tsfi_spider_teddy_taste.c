@@ -5,10 +5,10 @@
 #include <math.h>
 
 /**
- * --- TASTE_TEDDY_FUR ---
+ * --- TASTE_TEDDY_BEAR_FUR ---
  * Exercises "Fuzzy" taste using MIN-resolve and ICPC variance math.
  */
-static void solve_teddy_fur(TsfiSubjectiveAwareness *out) {
+static void solve_teddy_bear_fur(TsfiSubjectiveAwareness *out) {
     for (int i = 0; i < 16; i++) {
         // High-variance matted texture secrets
         out->atom.secrets[i] = (float)(i % 4) * 0.414f;
@@ -21,10 +21,10 @@ static void solve_teddy_fur(TsfiSubjectiveAwareness *out) {
 }
 
 /**
- * --- TASTE_TEDDY_EYES ---
+ * --- TASTE_TEDDY_BEAR_EYES ---
  * Exercises "Rigid" taste for extreme intensity.
  */
-static void solve_teddy_eyes(TsfiSubjectiveAwareness *out) {
+static void solve_teddy_bear_eyes(TsfiSubjectiveAwareness *out) {
     for (int i = 0; i < 16; i++) {
         out->atom.secrets[i] = 1.0f; // Max intensity
     }
@@ -34,19 +34,19 @@ static void solve_teddy_eyes(TsfiSubjectiveAwareness *out) {
     out->msaa_samples = 1;        // Sharp eyes don't need MSAA softness
 }
 
-void tsfi_spider_fill_teddy_tastes(const char *cache_path) {
+void tsfi_spider_fill_teddy_bear_tastes(const char *cache_path) {
     tsfi_taste_cache_init(cache_path);
 
-    // 1. TASTE_TEDDY_FUR (Layer-0)
+    // 1. TASTE_TEDDY_BEAR_FUR (Layer-0)
     TsfiSubjectiveAwareness fur = {0};
-    solve_teddy_fur(&fur);
-    uint64_t fur_hash = tsfi_taste_hash(PUPPET_TYPE_TEDDY, 0x999, 0xF);
+    solve_teddy_bear_fur(&fur);
+    uint64_t fur_hash = tsfi_taste_hash(PUPPET_TYPE_TEDDY_BEAR, 0x999, 0xF);
     tsfi_taste_cache_persist(fur_hash, &fur);
 
-    // 2. TASTE_TEDDY_EYES (Layer-0)
+    // 2. TASTE_TEDDY_BEAR_EYES (Layer-0)
     TsfiSubjectiveAwareness eyes = {0};
-    solve_teddy_eyes(&eyes);
-    uint64_t eye_hash = tsfi_taste_hash(PUPPET_TYPE_TEDDY, 0x999, 0xE);
+    solve_teddy_bear_eyes(&eyes);
+    uint64_t eye_hash = tsfi_taste_hash(PUPPET_TYPE_TEDDY_BEAR, 0x999, 0xE);
     tsfi_taste_cache_persist(eye_hash, &eyes);
 
     tsfi_taste_cache_teardown();
@@ -58,6 +58,6 @@ int main(int argc, char **argv) {
     if (argc > 1) path = argv[1];
     
     printf("[SPIDER] Initializing Teddy Bear Subjective Realization Protocol...\n");
-    tsfi_spider_fill_teddy_tastes(path);
+    tsfi_spider_fill_teddy_bear_tastes(path);
     return 0;
 }

@@ -21,25 +21,25 @@ Below are the synthesized MP4 demoscene loop formats presenting 4D rotating tess
 ---
 
 ### Quaternion Teddy Bear Speech Presentation (8.0s)
-![Teddy Speech Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_speech_demo.mp4)
+![TeddyBear Speech Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_bear_speech_demo.mp4)
 
 *   **Audio Synthesis:** Uses the Verlet double-mass glottal vocal fold simulation to drive peak formant sweeps (simulating vowel transitions EE $\to$ AH $\to$ OO $\to$ EE).
 *   **3D GFX Animation:** A 3D wireframe teddy bear model rotated in real-time using quaternion multipliers, with its jaw vertices translated dynamically in sync with the simulated glottal flow amplitudes.
 
 ### Complete Progressive 93-Second Demo (93s)
-![93s Progressive Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_93s_demo.mp4)
+![93s Progressive Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_bear_93s_demo.mp4)
 
 *   **Structure & Composition:** A multi-phase progressive demoscene loop combining a 174 BPM Drum and Bass rhythm section, L-system melody arpeggiation, sub-bass with Germanium Fuzz waveshaping, Philicorda organ pads, and vocal tract formants.
 *   **Audio-Visual Mapping:** The wireframe teddy bear rotates on dual axes via Auncient quaternion math, its jaw movements are driven by vocal fold glottal flow, and the side margins render real-time equalizer spectrum bands synced to the beat.
 
 ### Complete 13/8 Dubstep Complex Meter Demo (93s)
-![13/8 Dubstep Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_13_8_dubstep.mp4)
+![13/8 Dubstep Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_bear_13_8_dubstep.mp4)
 
 *   **Structure & Composition:** Synthesized Dubstep soundtrack written entirely in a complex 13/8 time signature (combining alternating 6/8 and 7/8 measures) at 140 BPM. Features a sequenced rhythm section, L-system melody arpeggiation, and heavy wobble bass whose LFO speed transitions dynamically between slow sweeps and fast triplets matching the meter's phrasing.
-*   **Audio-Visual Mapping:** The 3D teddy wireframe is rendered with **Auncient** quaternion math, updating colors and rotation speed/axes based on the 13/8 measure transitions (6/8 vs 7/8). Stars and margin equalizer bars pulse to downbeat triggers.
+*   **Audio-Visual Mapping:** The 3D teddy_bear wireframe is rendered with **Auncient** quaternion math, updating colors and rotation speed/axes based on the 13/8 measure transitions (6/8 vs 7/8). Stars and margin equalizer bars pulse to downbeat triggers.
 
 ### Complete 3-Minute Coupled-Syrinx Performance Session (180s)
-![3m Performance Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_3m_performance.mp4)
+![3m Performance Presentation](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_bear_3m_performance.mp4)
 
 *   **Structure & Composition:** A progressive 3-minute demonstration loop combining all synthesis breakthroughs. Features coupled-syrinx vocalization, consonant aspiration (S, SH, T), 13/8 sequenced rhythms, arpeggiator leads, and wobble bass under dynamic post-filter spectral sharpening to project rich formant peaks during modulation.
 *   **Audio-Visual Mapping:** The wireframe teddy bear moves via **Auncient** quaternion math, dynamically changing colors, speed, and jaw displacement to match the performance section (ambient introduction, 13/8 development, drop peak, and outro resolution).
@@ -52,16 +52,16 @@ Below are the synthesized MP4 demoscene loop formats presenting 4D rotating tess
     2.  **Song Thrush Phase (25s–50s):** Low syrinx coupling modeling rapid, decoupled bilateral melodic whistles.
     3.  **Pigeon Phase (50s–75s):** High damping and symmetric spring stiffness for smooth, resonant cooing.
     4.  **Chaotic Arpeggiator Phase (75s–100s):** Coupled oscillators undergoing rapid pitch leaps to simulate unstable register boundaries.
-*   **Audio-Visual Mapping:** The 3D teddy wireframe updates its structural color at each phase shift. Movement speed, starfield velocity, and perspective scale pulse dynamically to the 120 BPM downbeats, with the teddy jaw tracking the syrinx amplitude.
+*   **Audio-Visual Mapping:** The 3D teddy_bear wireframe updates its structural color at each phase shift. Movement speed, starfield velocity, and perspective scale pulse dynamically to the 120 BPM downbeats, with the teddy_bear jaw tracking the syrinx amplitude.
 
 ### Wing Flaps, Flutters & Double Claps House Performer (60s)
-![Flaps & Flutters Performer](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_flaps_flutters.mp4)
+![Flaps & Flutters Performer](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_bear_flaps_flutters.mp4)
 
 *   **Structure & Composition:** 120 BPM House beat featuring low-pass swept white noise representing low-frequency wing flapping turbulence (4Hz–12Hz envelope sweeps), double-clap wing snaps on beats 2 & 4 (22ms separated double-impact impulses), and coupled syrinx bird caws.
-*   **Audio-Visual Mapping:** The 3D teddy wireframe moves via **Auncient** quaternion rotations. Visuals incorporate Verlet squash-and-stretch physical deformation (scaling $X$ and $Y$ dimensions dynamically upon wing clap impacts) and arm mesh translations that sync to wing flap rates. Starfield velocity reacts to wing woosh envelopes.
+*   **Audio-Visual Mapping:** The 3D teddy_bear wireframe moves via **Auncient** quaternion rotations. Visuals incorporate Verlet squash-and-stretch physical deformation (scaling $X$ and $Y$ dimensions dynamically upon wing clap impacts) and arm mesh translations that sync to wing flap rates. Starfield velocity reacts to wing woosh envelopes.
 
 ### Level 2: Aeroelastic Feather Flutter House Performer (60s)
-![Level 2 Flutter Performer](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_level2_flutter.mp4)
+![Level 2 Flutter Performer](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/teddy_bear_level2_flutter.mp4)
 
 *   **Structure & Composition:** 124 BPM House beat highlighting Level 2 wing dynamics: high-frequency feather shaft aeroelastic flutter modeled using a cascade of multi-pole biquad bandpass resonators (tuned to 2.2kHz, 3.8kHz, and 5.5kHz with a high Q factor of 25.0). Resonator excitation is driven dynamically by the air velocity envelope of wing flapping cycles.
 *   **Audio-Visual Mapping:** The 3D wireframe teddy bear moves via **Auncient** quaternion rotations, with its scale coordinates ($X$ and $Y$) squashing and stretching dynamically to track the flutter resonance. The wing vertices execute micro-vibrations mapping the biquad filter sweeps, and the starfield velocity responds to the high-frequency turbulence envelopes.
@@ -70,7 +70,7 @@ Below are the synthesized MP4 demoscene loop formats presenting 4D rotating tess
 ![Osiris TFP Performer](/home/mariarahel/.gemini/antigravity-cli/brain/7445a817-72b7-467a-ae12-acda8b6b2353/osiris_tfp_performer.mp4)
 
 *   **Structure & Composition:** Hypnotic 126 BPM House track integrating Level 1 turbulence sweeps, Level 2 biquad feather flutter resonators, and double-clap wing snaps on beats 2 & 4 into a single cohesive performance.
-*   **Audio-Visual Mapping:** The 3D teddy wireframe rotates via **Auncient** quaternion calculations, applying Verlet squash-and-stretch deformations to its geometry based on the double-clap percussion impacts. Wing vertices deform dynamically to map both the Level 1 bulk turbulence envelopes and Level 2 aeroelastic flutters. The starfield and margin EQ bars react to the combined energy streams.
+*   **Audio-Visual Mapping:** The 3D teddy_bear wireframe rotates via **Auncient** quaternion calculations, applying Verlet squash-and-stretch deformations to its geometry based on the double-clap percussion impacts. Wing vertices deform dynamically to map both the Level 1 bulk turbulence envelopes and Level 2 aeroelastic flutters. The starfield and margin EQ bars react to the combined energy streams.
 
 
 

@@ -33,7 +33,7 @@ This review evaluates the correctness, completeness, robustness, and interface c
 ## Verified Claims
 
 - **GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE scrubbing** → verified via code inspection of `post-commit` lines 20-22 → **PASS** (correctly unsets all three variables before executing compiling and benchmarking commands).
-- **Benchmark Suite compilation and execution** → verified via code inspection of `post-commit` and `Makefile` → **PASS** (triggers compilation via `make bin/test_vulkan_teddy` and runs the benchmarks script and report generator).
+- **Benchmark Suite compilation and execution** → verified via code inspection of `post-commit` and `Makefile` → **PASS** (triggers compilation via `make bin/test_vulkan_teddy_bear` and runs the benchmarks script and report generator).
 - **Graceful Failure Handling** → verified via code inspection of `post-commit` lines 32-35 → **PASS** (returns exit code 0 and prints warnings, ensuring Git operations are never blocked).
 - **ASCII table clean output** → verified via code inspection of `post-commit` lines 96-104 → **PASS** (correctly formatted ASCII table matching 55 characters in width).
 - **Test suite count** → verified via code inspection of `tests/e2e/run_e2e_tests.py` → **PASS** (contains exactly 49 tests across Tiers 1-4).

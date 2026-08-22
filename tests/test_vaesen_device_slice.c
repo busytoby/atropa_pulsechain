@@ -23,11 +23,11 @@ int main(void) {
     assert(build_res == 0);
 
     /* 2. Load individual slices */
-    TsfiVaesenDeviceSliceBin nacken, linnea, myling, teddy;
+    TsfiVaesenDeviceSliceBin nacken, linnea, myling, teddy_bear;
     assert(tsfi_vaesen_slice_load("assets/vaesen/nacken.dat.bin", &nacken) == 0);
     assert(tsfi_vaesen_slice_load("assets/vaesen/linnea.dat.bin", &linnea) == 0);
     assert(tsfi_vaesen_slice_load("assets/vaesen/myling.dat.bin", &myling) == 0);
-    assert(tsfi_vaesen_slice_load("assets/vaesen/teddy_bear.dat.bin", &teddy) == 0);
+    assert(tsfi_vaesen_slice_load("assets/vaesen/teddy_bear.dat.bin", &teddy_bear) == 0);
 
     printf("[LOAD] Successfully loaded autonomous device slices:\n");
     printf("  - %s (WMQ: %s | Clan: %u | EDO-22 Carrier: %u | q0: %u mU)\n",
@@ -37,7 +37,7 @@ int main(void) {
     printf("  - %s (WMQ: %s | Clan: %u | EDO-22 Carrier: %u | q0: %u mU)\n",
            myling.name, myling.wmq_address, myling.clan_id, myling.edo22_carrier_freq, myling.mathieu_q0_milli);
     printf("  - %s (WMQ: %s | Clan: %u | EDO-22 Carrier: %u | q0: %u mU)\n",
-           teddy.name, teddy.wmq_address, teddy.clan_id, teddy.edo22_carrier_freq, teddy.mathieu_q0_milli);
+           teddy_bear.name, teddy_bear.wmq_address, teddy_bear.clan_id, teddy_bear.edo22_carrier_freq, teddy_bear.mathieu_q0_milli);
 
     /* 3. Test [WMQ:WMQ] Interaction: Linnea Elfvestam <-> Näcken */
     float dist1;
@@ -68,7 +68,7 @@ int main(void) {
     double t_start = get_time_ns();
     for (int i = 0; i < benchmark_count; ++i) {
         float d; uint16_t p; bool l;
-        tsfi_vaesen_slice_interact(&linnea, &teddy, &d, &p, &l, NULL, 0);
+        tsfi_vaesen_slice_interact(&linnea, &teddy_bear, &d, &p, &l, NULL, 0);
     }
     double t_end = get_time_ns();
     double avg_latency = (t_end - t_start) / (double)benchmark_count;

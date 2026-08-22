@@ -62,7 +62,7 @@ static Vec3 calc_normal(Vec3 p) {
 }
 
 int main(int argc, char **argv) {
-    const char *out_ppm = (argc > 1) ? argv[1] : "vaesen_cartoon_teddy_frame.ppm";
+    const char *out_ppm = (argc > 1) ? argv[1] : "vaesen_cartoon_teddy_bear_frame.ppm";
 
     printf("=================================================================\n");
     printf("CP/M-TOMIE PROCEDURAL CARTOON CEL SHADING RENDERER\n");
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     Vec3 light_dir = v_norm((Vec3){0.577, 0.577, -0.577});
     Vec3 cam_pos = {0.0, 0.0, -3.2};
 
-    // Cartoon Cel-Shading Palette (Warm Golden Teddy Honey Tone)
+    // Cartoon Cel-Shading Palette (Warm Golden TeddyBear Honey Tone)
     PixelRGB base_color = {245, 185, 95};
     PixelRGB shadow_color = {195, 120, 45};
     PixelRGB ink_outline = {25, 15, 10};

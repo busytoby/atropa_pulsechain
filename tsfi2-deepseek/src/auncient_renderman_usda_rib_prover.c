@@ -13,24 +13,24 @@ void auncient_renderman_rib_init(RenderManRibState *rib) {
     rib->photometric_lux_scale = 500.0f;
 }
 
-bool auncient_renderman_emit_teddy_heart_rib(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy) {
-    if (!rib || !teddy) return false;
+bool auncient_renderman_emit_teddy_bear_heart_rib(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy_bear) {
+    if (!rib || !teddy_bear) return false;
 
-    float temp_factor = (teddy->room_temperature_c - 20.0f) * 0.05f;
+    float temp_factor = (teddy_bear->room_temperature_c - 20.0f) * 0.05f;
     float diffuse_r = 0.82f + temp_factor * 0.08f;
     float diffuse_g = 0.55f;
     float diffuse_b = 0.35f - temp_factor * 0.05f;
-    float pulse_disp = 0.04f + 0.02f * (teddy->heart.heart_rate_bpm / 100.0f);
+    float pulse_disp = 0.04f + 0.02f * (teddy_bear->heart.heart_rate_bpm / 100.0f);
 
     int n = snprintf(rib->rib_buffer, sizeof(rib->rib_buffer),
         "##RenderMan RIB-Structure 1.1\n"
         "##Creator Dysnomia VM Pixar RenderMan Bridge\n"
-        "RiDisplay \"teddy_heart.dat.bin\" \"framebuffer\" \"rgba\"\n"
+        "RiDisplay \"teddy_bear_heart.dat.bin\" \"framebuffer\" \"rgba\"\n"
         "RiFormat 320 240 1\n"
         "RiProjection \"perspective\" \"fov\" [45.0]\n"
         "RiWorldBegin\n"
         "  RiAttribute \"displacementbound\" \"sphere\" [%.4f]\n"
-        "  RiBxdf \"PxrSurface\" \"TeddyFleeceClay\"\n"
+        "  RiBxdf \"PxrSurface\" \"TeddyBearFleeceClay\"\n"
         "    \"color diffuseColor\" [%.3f %.3f %.3f]\n"
         "    \"float diffuseGain\" [0.85]\n"
         "    \"float bssrdfGain\" [0.65]\n"
@@ -54,11 +54,11 @@ bool auncient_renderman_emit_teddy_heart_rib(RenderManRibState *rib, const Teddy
     return false;
 }
 
-bool auncient_renderman_verify_theorems_26_30(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy) {
-    if (!rib || !teddy) return false;
+bool auncient_renderman_verify_theorems_26_30(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy_bear) {
+    if (!rib || !teddy_bear) return false;
 
     /* Theorem 26: Valid RIB Scenegraph Emission */
-    bool rib_ok = auncient_renderman_emit_teddy_heart_rib(rib, teddy);
+    bool rib_ok = auncient_renderman_emit_teddy_bear_heart_rib(rib, teddy_bear);
     if (!rib_ok) return false;
     bool has_world_begin = (strstr(rib->rib_buffer, "RiWorldBegin") != NULL);
     bool has_world_end = (strstr(rib->rib_buffer, "RiWorldEnd") != NULL);
@@ -71,7 +71,7 @@ bool auncient_renderman_verify_theorems_26_30(RenderManRibState *rib, const Tedd
     rib->energy_conservation_verified = (rib->bsdf_albedo_integral <= 1.0f);
 
     /* Theorem 28: DisplacementBound Bounded Micropolygon Containment */
-    float max_pulse_disp = 0.04f + 0.02f * (teddy->heart.heart_rate_bpm / 100.0f);
+    float max_pulse_disp = 0.04f + 0.02f * (teddy_bear->heart.heart_rate_bpm / 100.0f);
     rib->crack_free_tessellation_verified = (max_pulse_disp <= rib->displacement_bound_radius);
 
     /* Theorem 29: Subsurface Scattering (BSSRDF) Thermal Diffusion Flux Conservation */
@@ -80,7 +80,7 @@ bool auncient_renderman_verify_theorems_26_30(RenderManRibState *rib, const Tedd
     rib->bssrdf_flux_conserved = ((bssrdf_absorption + bssrdf_scattering) <= 1.0f);
 
     /* Theorem 30: WinchesterMQ SCSI Hardware Register Mapping Handshake */
-    rib->winchester_scsi_handshake_verified = (teddy->profile.ssa_qualification_verified && teddy->profile.hogan_account_saat == 1000000ULL);
+    rib->winchester_scsi_handshake_verified = (teddy_bear->profile.ssa_qualification_verified && teddy_bear->profile.hogan_account_saat == 1000000ULL);
 
     return (rib->energy_conservation_verified &&
             rib->crack_free_tessellation_verified &&

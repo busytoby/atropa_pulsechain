@@ -24,7 +24,7 @@ int main(void) {
     bool registered = auncient_hogan_register_account(999, dna_payload, sizeof(dna_payload), &active_ledger[0]);
     assert(registered);
 
-    const char *db_path = "tests/recalled_teddy_ledger.dat.bin";
+    const char *db_path = "tests/recalled_teddy_bear_ledger.dat.bin";
     bool saved = auncient_hogan_save_ledger(active_ledger, 1, db_path);
     assert(saved);
 

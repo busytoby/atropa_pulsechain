@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         accessories: { glasses: false, bowtie: false, hat: false },
         // Phenotype parameter composition registry
         phenotypeDefinitions: {
-            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0, imageSrc: "assets/teddy_render.jpg", accessories: { glasses: false, bowtie: false, hat: false } },
+            brown: { fur_r: 120, fur_g: 120, fur_b: 120, fur_len: 150, scale: 120, twitch_intensity: 10, sickness_intensity: 0, imageSrc: "assets/teddy_bear_render.jpg", accessories: { glasses: false, bowtie: false, hat: false } },
             crimson: { fur_r: 180, fur_g: 20, fur_b: 20, fur_len: 180, scale: 135, twitch_intensity: 80, sickness_intensity: 0, imageSrc: "assets/crimson_bear.jpg", accessories: { glasses: false, bowtie: false, hat: false } },
             gray: { fur_r: 80, fur_g: 80, fur_b: 80, fur_len: 45, scale: 90, twitch_intensity: 0, sickness_intensity: 40, imageSrc: "assets/gray_bear.jpg", accessories: { glasses: false, bowtie: false, hat: false } }
         },
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (state.phenotype === 'gray') {
                 elements.bear_image.src = "assets/gray_bear.jpg";
             } else {
-                elements.bear_image.src = "assets/teddy_render.jpg";
+                elements.bear_image.src = "assets/teddy_bear_render.jpg";
             }
         }
 
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.select_phenotype.appendChild(opt);
 
         // Update state to use new phenotype and save its complete parameter and accessory composition
-        const activeImage = elements.bear_image.getAttribute('src') || "assets/teddy_render.jpg";
+        const activeImage = elements.bear_image.getAttribute('src') || "assets/teddy_bear_render.jpg";
         state.phenotypeDefinitions[cleanKey] = {
             fur_r: state.fur_r,
             fur_g: state.fur_g,

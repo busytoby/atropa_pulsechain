@@ -78,7 +78,7 @@ int main(void) {
     assert(sif_scene.primitives[0].color.z == 1.0f); // Blue
 
     // Load multi-primitive Teddy Bear model
-    const char *teddy_sif[] = {
+    const char *teddy_bear_sif[] = {
         "SIF_SPHERE X:0.0 Y:1.5 Z:8.0 R:1.5 COLOR:G",   // Head
         "SIF_SPHERE X:0.0 Y:-0.5 Z:8.0 R:2.0 COLOR:G",  // Body
         "SIF_SPHERE X:-1.2 Y:2.7 Z:8.0 R:0.6 COLOR:B",  // Left Ear
@@ -92,7 +92,7 @@ int main(void) {
         "SIF_SPHERE X:1.2 Y:-2.2 Z:8.0 R:0.9 COLOR:G"   // Right Leg
     };
     for (int i = 0; i < 11; i++) {
-        int res = tsfi_mf_sif_parse(teddy_sif[i], &sif_scene);
+        int res = tsfi_mf_sif_parse(teddy_bear_sif[i], &sif_scene);
         assert(res == 0);
     }
     assert(sif_scene.primitive_count == 12);

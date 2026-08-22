@@ -8,53 +8,53 @@
 #endif
 
 // Forward declarations of link, diagnostics, and models functions
-int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
-bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
-bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
-bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
-bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out);
-bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
-bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
-bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
-bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
-bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
-bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out);
-bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out);
-bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out);
-bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
-bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
-bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out);
-bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
-bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out);
-bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double lag_seconds, double *latency_uncanny_out);
-bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out);
-bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out);
-bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double *roundness_out);
-bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out);
-bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out);
-bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
-bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out);
-bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out);
-bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
-bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
-bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
-bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
-bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out);
-bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
-bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
-bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
-bool evaluate_cellarius_heliocentric_alignment(const teddy_geometry_t *geom, double orbital_phase, double *alignment_offset_out);
-bool evaluate_cellarius_constellation_boundary(const teddy_geometry_t *geom, double celestial_longitude, double *boundary_limit_out);
-bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latency_jitter_sec, double *naturalness_out);
-bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out);
-bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_value, double *dominance_out);
-bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
-bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out);
-bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double lip_height_ratio, double *submissiveness_out);
+int evaluate_ordinal_cloglog_rating(const teddy_bear_geometry_t *geom);
+bool evaluate_keating_brow_dominance(const teddy_bear_geometry_t *geom, double brow_height, double *brow_dominance_out);
+bool evaluate_kramer_ward_human_face_elongation(const teddy_bear_geometry_t *geom, double elongation_val, double *elongation_score_out);
+bool evaluate_surrogate_residuals(const teddy_bear_geometry_t *geom, int observed_rating, double *residual_out);
+bool evaluate_scarpi_hedonic_orientation(const teddy_bear_geometry_t *geom, double playfulness_scale, double *hedonic_out);
+bool evaluate_cellarius_planetary_eccentricity(const teddy_bear_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
+bool evaluate_hyde_vocal_warmth_pitch(const teddy_bear_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
+bool evaluate_hyde_vocal_tremor_index(const teddy_bear_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
+bool evaluate_keating_mouth_curvature(const teddy_bear_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
+bool evaluate_keating_babyfacedness_index(const teddy_bear_geometry_t *geom, double *babyfacedness_out);
+bool evaluate_keating_posture_pitch(const teddy_bear_geometry_t *geom, double pitch_angle, double *submissiveness_out);
+bool evaluate_keating_chin_asymmetry(const teddy_bear_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out);
+bool evaluate_keating_sclera_size(const teddy_bear_geometry_t *geom, double sclera_ratio, double *submissiveness_out);
+bool evaluate_keating_lip_trustworthiness(const teddy_bear_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out);
+bool evaluate_keating_brow_gesture(const teddy_bear_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out);
+bool evaluate_keating_torso_head_ratio(const teddy_bear_geometry_t *geom, double torso_span, double *ratio_dominance_out);
+bool evaluate_keating_width_asymmetry(const teddy_bear_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out);
+bool evaluate_keating_brow_chin_proportion(const teddy_bear_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out);
+bool evaluate_hyde_conversational_latency(const teddy_bear_geometry_t *geom, double lag_seconds, double *latency_uncanny_out);
+bool evaluate_hyde_vocal_size_mismatch(const teddy_bear_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out);
+bool evaluate_geniole_fwhr_dilation_map(const teddy_bear_geometry_t *geom, double base_dilation, double *mapped_dilation_out);
+bool evaluate_keating_head_roundness_index(const teddy_bear_geometry_t *geom, double *roundness_out);
+bool evaluate_keating_symmetry_trust(const teddy_bear_geometry_t *geom, double *trust_out);
+bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_bear_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out);
+bool evaluate_geniole_fwhr_jitter_mod(const teddy_bear_geometry_t *geom, double base_jitter, double *mapped_jitter_out);
+bool evaluate_keating_gaze_dominance(const teddy_bear_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out);
+bool evaluate_hyde_turn_interruption(const teddy_bear_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out);
+bool evaluate_keating_eye_dilation_sync(const teddy_bear_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out);
+bool evaluate_hyde_tremor_frequency_sync(const teddy_bear_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out);
+bool evaluate_hyde_pitch_range_engagement(const teddy_bear_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out);
+bool evaluate_geniole_fwhr_boundary_map(const teddy_bear_geometry_t *geom, double threshold_scale, double *mapped_boundary_out);
+bool evaluate_keating_chin_asymmetry_dilation(const teddy_bear_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out);
+bool evaluate_geniole_fwhr_retaliation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out);
+bool evaluate_scarpi_aesthetic_trust(const teddy_bear_geometry_t *geom, double base_trust, double *aesthetic_trust_out);
+bool evaluate_scarpi_utilitarian_orientation(const teddy_bear_geometry_t *geom, double efficiency_scale, double *utilitarian_out);
+bool evaluate_cellarius_heliocentric_alignment(const teddy_bear_geometry_t *geom, double orbital_phase, double *alignment_offset_out);
+bool evaluate_cellarius_constellation_boundary(const teddy_bear_geometry_t *geom, double celestial_longitude, double *boundary_limit_out);
+bool evaluate_hyde_av_latency_jitter(const teddy_bear_geometry_t *geom, double latency_jitter_sec, double *naturalness_out);
+bool evaluate_hyde_vocal_energy_variance(const teddy_bear_geometry_t *geom, double energy_variance, double *engagement_out);
+bool evaluate_keating_fwhr_dominance(const teddy_bear_geometry_t *geom, double fwhr_value, double *dominance_out);
+bool evaluate_keating_mouth_width_ratio(const teddy_bear_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out);
+bool evaluate_keating_width_symmetry_trust(const teddy_bear_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out);
+bool evaluate_keating_lip_submissiveness(const teddy_bear_geometry_t *geom, double lip_height_ratio, double *submissiveness_out);
 
-void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t personality) {
-    teddy_geometry_t geom;
-    resolve_teddy_geometry(personality, &geom);
+void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_bear_personality_t personality) {
+    teddy_bear_geometry_t geom;
+    resolve_teddy_bear_geometry(personality, &geom);
     
     // Evaluate brow dominance gestural pitch shift
     double brow_dominance = 0.0;
@@ -264,20 +264,20 @@ void tsfi_speech_synth_init(tsfi_speech_model_t *model, teddy_personality_t pers
 bool evaluate_wald_nominal_test(const double *beta_vector, const double *covariance_matrix, int df, double *wald_stat_out, double *p_value_out);
 
 // Forward declarations of link, diagnostics, and models functions
-int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom);
-bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out);
-bool evaluate_kramer_ward_human_face_elongation(const teddy_geometry_t *geom, double elongation_val, double *elongation_score_out);
-bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out);
-bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out);
-bool evaluate_cellarius_planetary_eccentricity(const teddy_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
-bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
-bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
-bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
-bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out);
-bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out);
+int evaluate_ordinal_cloglog_rating(const teddy_bear_geometry_t *geom);
+bool evaluate_keating_brow_dominance(const teddy_bear_geometry_t *geom, double brow_height, double *brow_dominance_out);
+bool evaluate_kramer_ward_human_face_elongation(const teddy_bear_geometry_t *geom, double elongation_val, double *elongation_score_out);
+bool evaluate_surrogate_residuals(const teddy_bear_geometry_t *geom, int observed_rating, double *residual_out);
+bool evaluate_scarpi_hedonic_orientation(const teddy_bear_geometry_t *geom, double playfulness_scale, double *hedonic_out);
+bool evaluate_cellarius_planetary_eccentricity(const teddy_bear_geometry_t *geom, double eccentricity_ratio, double *translation_offset_out);
+bool evaluate_hyde_vocal_warmth_pitch(const teddy_bear_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out);
+bool evaluate_hyde_vocal_tremor_index(const teddy_bear_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out);
+bool evaluate_keating_mouth_curvature(const teddy_bear_geometry_t *geom, double upturn_curvature, double *warmth_rating_out);
+bool evaluate_keating_babyfacedness_index(const teddy_bear_geometry_t *geom, double *babyfacedness_out);
+bool evaluate_hyde_mouth_speed_synchrony(const teddy_bear_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out);
 
 // Forward declarations of system transaction controls
-evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
+evaluation_tx_t begin_evaluation_transaction(teddy_bear_geometry_t *target);
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 void rollback_evaluation_transaction(evaluation_tx_t *tx);
 
@@ -289,7 +289,7 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
     uint32_t total_samples = (uint32_t)(duration * sample_rate);
     
     // Cast away const to begin evaluation transaction safeguard
-    teddy_geometry_t dummy_geom;
+    teddy_bear_geometry_t dummy_geom;
     dummy_geom.vocal_pitch = model->base_frequency;
     
     // Aligned settings for simulated synchrony evaluation
@@ -349,7 +349,7 @@ bool tsfi_speech_synth_generate(const tsfi_speech_model_t *model,
     return true;
 }
 
-teddy_personality_t tsfi_speech_classify_pitch(double pitch_frequency) {
+teddy_bear_personality_t tsfi_speech_classify_pitch(double pitch_frequency) {
     // Classification logic mapping pitch boundaries to profile sets
     if (pitch_frequency > 220.0) {
         return PERSONALITY_TRUSTWORTHY;

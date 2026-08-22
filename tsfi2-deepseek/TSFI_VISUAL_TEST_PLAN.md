@@ -85,7 +85,7 @@ This document outlines display-specific test cases to verify the integration of 
 
 *   **Logic:**
     1.  Renders the Crow and Teddy Bear side-by-side using the 720p realizer.
-    2.  Exercises **`TASTE_CROW_FEATHERS`** (Anisotropic) and **`TASTE_TEDDY_FUR`** (Isotropic).
+    2.  Exercises **`TASTE_CROW_FEATHERS`** (Anisotropic) and **`TASTE_TEDDY_BEAR_FUR`** (Isotropic).
     3.  Path-tracer samples the 256 KiB **Packed Shading Manifold** (Normal, AO, Rim).
 *   **Visual Outcome (Success):** The Crow shows a dynamic "oil-slick" sheen that shifts with the light, while the Teddy Bear exhibits soft, occluded fur depth.
 *   **Visual Outcome (Failure):** Flat, non-material shading; both entities look like grey plastic.

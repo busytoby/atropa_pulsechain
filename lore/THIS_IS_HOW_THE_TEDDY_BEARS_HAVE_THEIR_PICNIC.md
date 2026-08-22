@@ -9,7 +9,7 @@ The teddy bears do not pack conventional wicker baskets. Instead, their picnic b
 +---------------------------------------------------------------------------------------------------+
 | THE TEDDY BEAR PICNIC GROUND (CLAYSCAPE ZONE A-100)                                               |
 |                                                                                                   |
-|   [ Teddy Barnaby ]  <=== STANAG 5066/4586 PDU ===>  [ Teddy Paddington ]                         |
+|   [ TeddyBear Barnaby ]  <=== STANAG 5066/4586 PDU ===>  [ TeddyBear Paddington ]                         |
 |   - TPA Base: 0x0100                                  - TPA Base: 0x0100                          |
 |   - Hogan: 1,000,100 Saat                             - Hogan: 999,900 Saat                       |
 |   - Authored: Strategy 707                            - Verified: Secondary Proof 101-105         |

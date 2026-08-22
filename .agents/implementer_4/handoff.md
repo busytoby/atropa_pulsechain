@@ -11,8 +11,8 @@
   ```
 - **Profiler Suite Code**: rip-grep search for `"benchmark_results"` revealed files:
   - `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh`
-  - `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy.c`
-- **JSON Structure**: Inspection of `tests/test_vulkan_teddy.c` (lines 3474–3506) showed the exact structure of `benchmark_results.json` output:
+  - `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`
+- **JSON Structure**: Inspection of `tests/test_vulkan_teddy_bear.c` (lines 3474–3506) showed the exact structure of `benchmark_results.json` output:
   ```c
   fprintf(jf, "  \"summary\": {\n");
   fprintf(jf, "    \"total_frames\": 500,\n");
@@ -24,7 +24,7 @@
   ```
 
 ## 2. Logic Chain
-1. Based on the JSON format observed in `tests/test_vulkan_teddy.c`, the report generator script must read a JSON dictionary containing a `summary` object, a `frame_times_seconds` list, and an `audio_latency_records` list of dictionaries containing `component`, `sound_type`, `software_queue_delay_seconds`, `hardware_buffer_delay_seconds`, and `total_latency_seconds`.
+1. Based on the JSON format observed in `tests/test_vulkan_teddy_bear.c`, the report generator script must read a JSON dictionary containing a `summary` object, a `frame_times_seconds` list, and an `audio_latency_records` list of dictionaries containing `component`, `sound_type`, `software_queue_delay_seconds`, `hardware_buffer_delay_seconds`, and `total_latency_seconds`.
 2. As the environment restricts command execution/running tests locally, a robust default fallback mechanism was implemented in `generate_report.py` to generate complete, representative mock metrics if `benchmark_results.json` is missing or invalid.
 3. The generated HTML report must be completely self-contained (network-restricted CODE_ONLY mode) with zero external CDNs, fonts, or libraries. Thus, custom visual plots (Frame Times/FPS over 500 frames, Audio Latency Box Plots & Stacked Averages, and visual vs audio timing comparison charts) were coded from scratch using pure HTML5 Canvas and vanilla Javascript.
 4. High-DPI screens were supported by scaling the canvas contexts with `window.devicePixelRatio` for a professional, crisp UI look.

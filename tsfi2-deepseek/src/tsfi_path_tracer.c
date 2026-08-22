@@ -10,7 +10,7 @@
 #include "tsfi_hair.h"
 #include "tsfi_c_math.h"
 #include "tsfi_montecarlo.h"
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include "tsfi_personality_models_adv.h"
 #include "tsfi_zorse_eval.h"
 #include "tsfi_lnr_solvers.h"
@@ -27,7 +27,7 @@ static inline Vector3 v_normalize(Vector3 v) {
     return (Vector3){v.x / mag, v.y / mag, v.z / mag};
 }
 
-static float calculate_personality_guidance_weight(const teddy_geometry_t *geom, float base_emot, float db, float jitter, float elevation, float t, int fear_level) {
+static float calculate_personality_guidance_weight(const teddy_bear_geometry_t *geom, float base_emot, float db, float jitter, float elevation, float t, int fear_level) {
     char type_buf[64];
     char status_buf[64];
     int risk = 0;
@@ -109,8 +109,8 @@ void tsfi_svdag_path_trace(uint32_t *pixels, float *depth_buffer, const TSFiHelm
     int fear_level = 0;
     tsfi_vsen_vaesen_get_aggregate_fear("Upsala", &fear_level);
 
-    teddy_geometry_t geom;
-    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
+    teddy_bear_geometry_t geom;
+    resolve_teddy_bear_geometry(PERSONALITY_TRUSTWORTHY, &geom);
 
     TSFiMCAuxFeatures *aux_features = malloc(sizeof(TSFiMCAuxFeatures) * w * h);
 

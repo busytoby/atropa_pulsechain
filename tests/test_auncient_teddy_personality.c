@@ -1,4 +1,4 @@
-#include "../tsfi2-deepseek/inc/auncient_teddy_personality.h"
+#include "../tsfi2-deepseek/inc/auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
@@ -32,10 +32,10 @@ int main(void) {
     printf("AUNCIENT RENDERMAN TEDDY BEAR PERSONALITY CONFIGURATION TEST\n");
     printf("=============================================================\n");
 
-    teddy_geometry_t geom;
+    teddy_bear_geometry_t geom;
 
     // Test Trustworthy Mapping
-    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
+    resolve_teddy_bear_geometry(PERSONALITY_TRUSTWORTHY, &geom);
     assert(geom.head_fwhr == 1.0);
     assert(geom.eye_eccentricity == 1.0);
     assert(geom.eye_scale == 1.0);
@@ -43,21 +43,21 @@ int main(void) {
     printf("   ✓ Trustworthy parameters resolved: Round Head (1.0), Soft Dynamics (Stiffness: 0.3)\n");
 
     // Test Aggressive Mapping
-    resolve_teddy_geometry(PERSONALITY_AGGRESSIVE, &geom);
+    resolve_teddy_bear_geometry(PERSONALITY_AGGRESSIVE, &geom);
     assert(geom.head_fwhr == 0.7);
     assert(geom.eye_eccentricity == 0.5);
     assert(geom.stiffness == 0.9);
     printf("   ✓ Aggressive parameters resolved: Narrow Head (0.7), Rigid Dynamics (Stiffness: 0.9)\n");
 
     // Test Eerie Mapping
-    resolve_teddy_geometry(PERSONALITY_EERIE, &geom);
+    resolve_teddy_bear_geometry(PERSONALITY_EERIE, &geom);
     assert(geom.head_fwhr == 0.7);
     assert(geom.eye_scale == 1.8);
     assert(geom.damping == 0.1);
     printf("   ✓ Eerie parameters resolved: Narrow Head (0.7), Eerie Dynamics (Damping: 0.1)\n");
 
     // Test Skeptical Mapping
-    resolve_teddy_geometry(PERSONALITY_SKEPTICAL, &geom);
+    resolve_teddy_bear_geometry(PERSONALITY_SKEPTICAL, &geom);
     assert(geom.head_fwhr == 0.8);
     assert(geom.symmetry == 0.6);
     assert(geom.naivety_index == 0.0);
@@ -95,11 +95,11 @@ int main(void) {
     printf("   ✓ Cloglog-modulated Verlet soft-body physics verified successfully\n");
 
     // Test Christensen ordinal link model implementation
-    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &geom);
+    resolve_teddy_bear_geometry(PERSONALITY_TRUSTWORTHY, &geom);
     int rating_trust = evaluate_ordinal_link_rating(&geom);
     assert(rating_trust >= 1 && rating_trust <= 7);
 
-    resolve_teddy_geometry(PERSONALITY_AGGRESSIVE, &geom);
+    resolve_teddy_bear_geometry(PERSONALITY_AGGRESSIVE, &geom);
     int rating_aggr = evaluate_ordinal_link_rating(&geom);
     assert(rating_aggr >= 1 && rating_aggr <= 7);
     printf("   ✓ R H B Christensen cumulative ordinal link rating verified successfully\n");
@@ -2298,7 +2298,7 @@ int main(void) {
     double test_t_space = 2.2;
     double test_s_decay = 3.3;
     // Create invalid geometry (e.g. negative or zero symmetry) to trigger validation failure
-    teddy_geometry_t invalid_geom = geom;
+    teddy_bear_geometry_t invalid_geom = geom;
     invalid_geom.symmetry = -0.5;
     bool status_iz = evaluate_izotope_constrained_parameters(&invalid_geom, 1, &test_t_space, &test_s_decay);
     assert(status_iz == false);

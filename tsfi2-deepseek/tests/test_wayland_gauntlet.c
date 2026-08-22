@@ -203,7 +203,7 @@ static inline float smin(float a, float b, float k) {
     return fminf(a, b) - h * h * k * 0.25f;
 }
 
-static float sdf_teddy(float x, float y, float z) {
+static float sdf_teddy_bear(float x, float y, float z) {
     float d_body = sqrtf(x*x*1.2f + y*y*0.8f + z*z*1.2f) - 0.35f;
     float d_head = sqrtf(x*x + (y - 0.35f)*(y - 0.35f) + z*z) - 0.25f;
     float ex = fabsf(x) - 0.2f, ey = y - 0.55f, ez = z;
@@ -241,7 +241,7 @@ static float eval_sdf(const char *query, float x, float y, float z) {
     if (strcasestr(query, "crow") || strcasestr(query, "bird")) {
         return sdf_crow(x, y, z);
     }
-    return sdf_teddy(x, y, z);
+    return sdf_teddy_bear(x, y, z);
 }
 
 static uint32_t get_sdf_color(const char *query, float x, float y, float z, float intensity) {
@@ -908,7 +908,7 @@ int main() {
 
         // Draw Player as 3D Teddy Bear Puppet
         if (px > 0.0f && py > 0.0f) {
-            draw_3d_stuffed_animal((uint32_t*)pixels, W, H, (int)px, (int)py, 36, "teddy", g_frame_counter);
+            draw_3d_stuffed_animal((uint32_t*)pixels, W, H, (int)px, (int)py, 36, "teddy_bear", g_frame_counter);
             draw_radial_glow(pixels, W, H, px, py, 22.0f, make_ab4h_pixel(0.0f, 0.8f, 1.2f, 0.3f));
         }
 

@@ -26,7 +26,7 @@ typedef struct {
 } LeedPlatinumEvaluationState;
 
 void auncient_leed_platinum_init(LeedPlatinumEvaluationState *state);
-bool auncient_leed_platinum_verify_theorems_46_50(LeedPlatinumEvaluationState *state, const TeddyBearHeartUsdaAsset *teddy);
+bool auncient_leed_platinum_verify_theorems_46_50(LeedPlatinumEvaluationState *state, const TeddyBearHeartUsdaAsset *teddy_bear);
 uint32_t auncient_leed_platinum_compute_rule18(const LeedPlatinumEvaluationState *state);
 
 #endif /* AUNCIENT_LEED_PLATINUM_USDA_THEOREMS_46_50_H */

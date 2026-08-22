@@ -102,7 +102,7 @@ function main() {
     }
 
     // Write WAV file
-    const wavPath = path.join(__dirname, "../teddy303_acid_synthesis.wav");
+    const wavPath = path.join(__dirname, "../teddy_bear303_acid_synthesis.wav");
     const buffer = writeWavFile(audioBuffer);
     fs.writeFileSync(wavPath, buffer);
     console.log(`WAV file successfully generated at: ${wavPath}`);

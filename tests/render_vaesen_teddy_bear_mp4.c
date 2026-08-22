@@ -46,9 +46,9 @@ typedef struct {
 	double stiffness;       /* Soft Body FET Discharge Stiffness */
 	double fur_roughness;   /* Material Roughness */
 	double rgb_tint[3];     /* Color Palette Tint */
-} teddy_geometry_t;
+} teddy_bear_geometry_t;
 
-static void resolve_teddy_personality(tomie_personality_type_t p_type, teddy_geometry_t *geom)
+static void resolve_teddy_bear_personality(tomie_personality_type_t p_type, teddy_bear_geometry_t *geom)
 {
 	switch (p_type) {
 	case PERSONALITY_TRUSTWORTHY:
@@ -129,8 +129,8 @@ int main(void)
 		
 		/* Cycle personality every 1.5 seconds */
 		tomie_personality_type_t p_type = (tomie_personality_type_t)((int)(t / 1.5) % 4);
-		teddy_geometry_t geom;
-		resolve_teddy_personality(p_type, &geom);
+		teddy_bear_geometry_t geom;
+		resolve_teddy_bear_personality(p_type, &geom);
 
 		/* Evaluate CPM 3D Frame Diffusion Latch */
 		uint64_t diffusion_latch = cpm_unet_vae_clip_diffusion_eval(frame, 0x7777);

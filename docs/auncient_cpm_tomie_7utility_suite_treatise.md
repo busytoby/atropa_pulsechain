@@ -51,7 +51,7 @@ Synthesized directly by the **ANKH LLM Compiler & Antigravity Agent SDK** withou
 ### 3.2. `DIR.BIN` (Directory Catalogue & Hasher — 150 Bytes)
 - **Role**: Reads the disk directory extent table, asserting 11-byte 8.3 filename formatting and computing bijective FNV directory hashes with zero collisions.
 - **Opcode Signature**: `0x44495253` (`"DIRS"`).
-- **Console Output**: `A: HELLO   .BIN : TUNE    .BIN : TEDDY   .BIN : STAT    .BIN`.
+- **Console Output**: `A: HELLO   .BIN : TUNE    .BIN : TEDDY_BEAR   .BIN : STAT    .BIN`.
 
 ### 3.3. `PIP.BIN` (Peripheral Interchange & DMA Burst Streamer — 86 Bytes)
 - **Role**: Directs multi-sector DMA burst transfers ($16\text{ sectors} = 2048\text{ bytes}$) across local drives, serial TTY loopbacks, and coaxial network ports.

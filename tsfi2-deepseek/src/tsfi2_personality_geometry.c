@@ -1,8 +1,8 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-void resolve_teddy_geometry(teddy_personality_t trait, teddy_geometry_t *geom) {
+void resolve_teddy_bear_geometry(teddy_bear_personality_t trait, teddy_bear_geometry_t *geom) {
     switch (trait) {
         case PERSONALITY_TRUSTWORTHY:
             geom->head_fwhr = 1.0;        // Round head shape is rated most trustworthy

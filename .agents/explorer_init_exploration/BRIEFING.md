@@ -1,7 +1,7 @@
 # BRIEFING — 2026-06-14T16:31:00Z
 
 ## Mission
-Explore the codebase to identify how `test_vulkan_teddy` is built, how benchmarks are run, where the HTML generator is located, and the Git setup.
+Explore the codebase to identify how `test_vulkan_teddy_bear` is built, how benchmarks are run, where the HTML generator is located, and the Git setup.
 
 ## 🔒 My Identity
 - Archetype: explorer
@@ -20,15 +20,15 @@ Explore the codebase to identify how `test_vulkan_teddy` is built, how benchmark
 
 ## Investigation State
 - **Explored paths**:
-  - `tsfi2-deepseek/tests/test_vulkan_teddy.c`
+  - `tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`
   - `tsfi2-deepseek/Makefile`
   - `tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh`
   - `tsfi2-deepseek/benchmarks/profiler_suite/generate_report.py`
   - `tsfi2-deepseek/benchmarks/profiler_suite/benchmark_results.json`
   - `.git/hooks/`
 - **Key findings**:
-  - Target `bin/test_vulkan_teddy` is compiled via `make bin/test_vulkan_teddy` inside `tsfi2-deepseek`.
-  - `run_benchmarks.sh` runs `./bin/test_vulkan_teddy --benchmark` and generates `benchmark_results.json`.
+  - Target `bin/test_vulkan_teddy_bear` is compiled via `make bin/test_vulkan_teddy_bear` inside `tsfi2-deepseek`.
+  - `run_benchmarks.sh` runs `./bin/test_vulkan_teddy_bear --benchmark` and generates `benchmark_results.json`.
   - `generate_report.py` visualizes metrics into `benchmark_report.html`.
   - Git hooks reside in `.git/hooks` and are currently inactive (.sample).
 - **Unexplored areas**:

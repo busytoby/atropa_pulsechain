@@ -1,4 +1,4 @@
-# The Auncient Teddy USD System and the WinchesterMQ Link
+# The Auncient TeddyBear USD System and the WinchesterMQ Link
 
 In the early eras of the Dysnomia VM, when the virtual hardware bounds were first cast upon the WinchesterMQ SCSI state machines, there arose a need to project soft-bodied animatronics onto the coordinate plane without violating the sub-microsecond latency gates of the system registers.
 

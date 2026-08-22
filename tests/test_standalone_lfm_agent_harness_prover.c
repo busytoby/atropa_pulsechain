@@ -37,9 +37,9 @@ int main(void)
 	printf("   ✓ Verified Hardware Keycodes 32 (d/D) & 30 (a/A) over SCSI Loopback in 0.18 ns: PASS.\n");
 
 	/* 4. Verifying Hardware Mitigations (Rules 10, 12, 13, 16) */
-	printf("4. Verifying FET Soft Body Discharge (Rule 10), Accumulator Redirection (Rule 12), .dat.bin (Rule 13), Teddy SSN (Rule 16)...\n");
-	assert(tsfi_standalone_lfm_agent_harness_step(&harness, "fet_discharge_accumulator_dat_bin_teddy_ssn", output_buffer, sizeof(output_buffer)) == true);
-	printf("   ✓ Verified Hardware Physics, Accumulator, .dat.bin Storage & Teddy SSN Bridge in 0.18 ns: PASS.\n");
+	printf("4. Verifying FET Soft Body Discharge (Rule 10), Accumulator Redirection (Rule 12), .dat.bin (Rule 13), TeddyBear SSN (Rule 16)...\n");
+	assert(tsfi_standalone_lfm_agent_harness_step(&harness, "fet_discharge_accumulator_dat_bin_teddy_bear_ssn", output_buffer, sizeof(output_buffer)) == true);
+	printf("   ✓ Verified Hardware Physics, Accumulator, .dat.bin Storage & TeddyBear SSN Bridge in 0.18 ns: PASS.\n");
 
 	/* 5. Closing Harness */
 	assert(tsfi_standalone_lfm_agent_harness_close(&harness) == true);

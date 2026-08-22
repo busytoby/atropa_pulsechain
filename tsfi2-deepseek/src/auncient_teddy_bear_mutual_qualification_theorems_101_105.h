@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TEDDY_QUAL_TPA_BASE 0x0100
+#define TEDDY_BEAR_QUAL_TPA_BASE 0x0100
 
 typedef struct {
     float leed_platinum_score;
@@ -17,8 +17,8 @@ typedef struct {
 } CertifiedSharedStandards;
 
 typedef struct {
-    uint32_t author_teddy_dna;
-    uint32_t verifier_teddy_dna;
+    uint32_t author_teddy_bear_dna;
+    uint32_t verifier_teddy_bear_dna;
     CertifiedSharedStandards author_standards;
     CertifiedSharedStandards verifier_standards;
     uint32_t challenge_nonce;
@@ -33,12 +33,12 @@ typedef struct {
     uint32_t rule18_parity_checksum;
 } TeddyBearMutualQualificationState;
 
-void auncient_teddy_qual_init(TeddyBearMutualQualificationState *state, uint32_t author_dna, uint32_t verifier_dna);
-bool auncient_teddy_qual_issue_challenge(TeddyBearMutualQualificationState *state, uint32_t nonce);
-bool auncient_teddy_qual_solve_challenge(TeddyBearMutualQualificationState *state);
-bool auncient_teddy_qual_verify_author(TeddyBearMutualQualificationState *state);
-bool auncient_teddy_qual_settle_compensation(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier);
-bool auncient_teddy_qual_verify_theorems_101_105(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier);
-uint32_t auncient_teddy_qual_compute_rule18(const TeddyBearMutualQualificationState *state);
+void auncient_teddy_bear_qual_init(TeddyBearMutualQualificationState *state, uint32_t author_dna, uint32_t verifier_dna);
+bool auncient_teddy_bear_qual_issue_challenge(TeddyBearMutualQualificationState *state, uint32_t nonce);
+bool auncient_teddy_bear_qual_solve_challenge(TeddyBearMutualQualificationState *state);
+bool auncient_teddy_bear_qual_verify_author(TeddyBearMutualQualificationState *state);
+bool auncient_teddy_bear_qual_settle_compensation(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier);
+bool auncient_teddy_bear_qual_verify_theorems_101_105(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier);
+uint32_t auncient_teddy_bear_qual_compute_rule18(const TeddyBearMutualQualificationState *state);
 
 #endif /* AUNCIENT_TEDDY_BEAR_MUTUAL_QUALIFICATION_THEOREMS_101_105_H */

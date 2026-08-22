@@ -2,7 +2,7 @@ begin
   comment Auncient Dysnomia VM Master LEED Platinum Digital Twin Certificate Prover;
   comment Synthesizes Theorems 1 through 25 and Auncient Teddy Bear Heart USDA Qualification;
 
-  integer tpaBase, tier1, tier2, tier3, tier4, tier5, teddyValid, masterSeal;
+  integer tpaBase, tier1, tier2, tier3, tier4, tier5, teddy_bearValid, masterSeal;
 
   tpaBase := 256;
   tier1 := 1; comment Theorems 1-5: Spatio-BIM, Liveness, Thermal Lyapunov, k-Anonymity, Rule 18;
@@ -10,10 +10,10 @@ begin
   tier3 := 1; comment Theorems 11-15: Kirchhoff Flux, Neyman-Pearson, LEED EUI, Sandbox, .dat.bin Paging;
   tier4 := 1; comment Theorems 16-20: Heat Exchanger, CO2 Transfer, Stack Effect, TMR Voting, Granger Causality;
   tier5 := 1; comment Theorems 21-25: Daylight Harvesting, Carnot Reset, Psychrometric, Economizer, NC-30;
-  teddyValid := 1; comment Teddy Bear Heart USDA Participant Qualification;
+  teddy_bearValid := 1; comment Teddy Bear Heart USDA Participant Qualification;
 
   if tpaBase = 256 and tier1 = 1 and tier2 = 1 and tier3 = 1 and
-     tier4 = 1 and tier5 = 1 and teddyValid = 1 then
+     tier4 = 1 and tier5 = 1 and teddy_bearValid = 1 then
     masterSeal := 2025081800 + 125777888
   else
     masterSeal := 0

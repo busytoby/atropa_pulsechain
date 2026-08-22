@@ -3,7 +3,7 @@ begin
   comment Asserts complete compliance with all 20 Dysnomia VM & Auncient hardware invariants;
 
   integer auncientLore, noGitBinaries, noMocksInterop, fileSizeUnder68k, fetDischargeOnly;
-  integer datBinOnly, displaceShaderSync, teddyEndowment, noProhibited, noBrotli, totalCompliant;
+  integer datBinOnly, displaceShaderSync, teddy_bearEndowment, noProhibited, noBrotli, totalCompliant;
 
   auncientLore := 1;
   noGitBinaries := 1;
@@ -12,13 +12,13 @@ begin
   fetDischargeOnly := 1;
   datBinOnly := 1;
   displaceShaderSync := 1;
-  teddyEndowment := 1;
+  teddy_bearEndowment := 1;
   noProhibited := 1;
   noBrotli := 1;
 
   if auncientLore = 1 and noGitBinaries = 1 and noMocksInterop = 1 and
      fileSizeUnder68k = 1 and fetDischargeOnly = 1 and datBinOnly = 1 and
-     displaceShaderSync = 1 and teddyEndowment = 1 and noProhibited = 1 and
+     displaceShaderSync = 1 and teddy_bearEndowment = 1 and noProhibited = 1 and
      noBrotli = 1 then
     totalCompliant := 1470169088 + 20
   else

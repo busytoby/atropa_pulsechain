@@ -24,7 +24,7 @@ static TsfiProverDomain classify_domain(const char *filename) {
     if (strstr(filename, "initial_orders") || strstr(filename, "edsac") || strstr(filename, "opcode") || strstr(filename, "compiler") || strstr(filename, "firewall") || strstr(filename, "loader")) {
         return TSFI_SOLVER_DOMAIN_INSTRUCTION_HAL;
     }
-    if (strstr(filename, "hogan") || strstr(filename, "ssa") || strstr(filename, "dna") || strstr(filename, "teddy") || strstr(filename, "endowment") || strstr(filename, "citizen")) {
+    if (strstr(filename, "hogan") || strstr(filename, "ssa") || strstr(filename, "dna") || strstr(filename, "teddy_bear") || strstr(filename, "endowment") || strstr(filename, "citizen")) {
         return TSFI_SOLVER_DOMAIN_SOVEREIGN_ID;
     }
     return TSFI_SOLVER_DOMAIN_PHYSICS_FET;

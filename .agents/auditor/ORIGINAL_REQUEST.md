@@ -3,7 +3,7 @@ You are a forensic auditor agent (teamwork_preview_auditor). Your working direct
 
 Your task:
 Perform integrity forensics on the newly implemented benchmark suite and report generator. The files changed/created are:
-1. `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy.c` (benchmarking timings and ALSA latency calculations)
+1. `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy_bear.c` (benchmarking timings and ALSA latency calculations)
 2. `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/generate_report.py` (HTML visualizer generator script)
 3. `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/benchmark_report.html` (visual report output dashboard)
 4. `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh` (runner script)

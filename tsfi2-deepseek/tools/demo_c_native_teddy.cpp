@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     gen_params.control_strength = 0.9f;
     gen_params.auto_resize_ref_image = true;
 
-    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -vcodec rawvideo -s 512x512 -pix_fmt rgb24 -r 5 -i - -c:v libx264 -preset fast -pix_fmt yuv420p native_evolution_teddy.mp4 2>/dev/null", "w");
+    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -vcodec rawvideo -s 512x512 -pix_fmt rgb24 -r 5 -i - -c:v libx264 -preset fast -pix_fmt yuv420p native_evolution_teddy_bear.mp4 2>/dev/null", "w");
     
     sd_image_t last_frame = {0, 0, 0, NULL};
 
@@ -226,6 +226,6 @@ int main(int argc, char **argv) {
     pclose(ffmpeg_pipe);
     free_sd_ctx(ctx);
     
-    printf("\n[SUCCESS] Evolution Video saved to native_evolution_teddy.mp4\n");
+    printf("\n[SUCCESS] Evolution Video saved to native_evolution_teddy_bear.mp4\n");
     return 0;
 }

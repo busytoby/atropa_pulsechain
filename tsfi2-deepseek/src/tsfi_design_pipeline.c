@@ -16,8 +16,8 @@ typedef struct {
     int generation;
 } TsfiDesignMeta;
 
-// Evaluates the "Teddy Fitness" based on Visual Symmetry and ZMM Mass Density
-float tsfi_eval_teddy_fitness(const TSFiResonanceAnalysis *vision, float mass_density) {
+// Evaluates the "TeddyBear Fitness" based on Visual Symmetry and ZMM Mass Density
+float tsfi_eval_teddy_bear_fitness(const TSFiResonanceAnalysis *vision, float mass_density) {
     if (!vision) return 0.0f;
     
     // Weighted fitness: 40% Symmetry, 30% Complexity, 30% ZMM Stability

@@ -21,7 +21,7 @@ The [xplos_architecture_manifesto.md](file:///home/mariarahel/src/tsfi2/atropa_p
 Per **Rule 13 (Quadtree Media Formatting)**, the system restricts database slices, block-ledgers, and index coordinates to the `.dat.bin` format on disk. No `.json` storage layout is permitted for quadtree media.
 
 *   **Nadler Skeletonizer:** Deployed in [tsfi_nadler_skeletonizer.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_nadler_skeletonizer.c). It uses the Zhang-Suen thinning iteration helper, measures soft-body FET discharge curves under Rule 10, and writes coordinate outputs using the `.dat.bin` layout pattern (e.g., `NADLER_SKELETON_[Pixels].dat.bin`).
-*   **Teddy Skeleton Pipeline:** Deployed in [tsfi_teddy_skeleton.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_teddy_skeleton.c). It renders kinematic bones and coordinates to shared memory frames, integrating continuous Fourier-G contours for complex models (e.g. `PUPPET_TYPE_CROW`).
+*   **TeddyBear Skeleton Pipeline:** Deployed in [tsfi_teddy_bear_skeleton.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/src/tsfi_teddy_bear_skeleton.c). It renders kinematic bones and coordinates to shared memory frames, integrating continuous Fourier-G contours for complex models (e.g. `PUPPET_TYPE_CROW`).
 *   **Syntax Reduction Tests:** Located in [test_xpl_skeleton.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_xpl_skeleton.c), which tests the parser's shift-reduction steps (`BYTE(address) = value;`) and interacts with the ZMM VM.
 
 ---

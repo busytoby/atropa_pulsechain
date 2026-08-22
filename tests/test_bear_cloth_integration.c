@@ -1,4 +1,4 @@
-#include "../../../ds/apEx-public/apEx/Phoenix/dna_teddy_sculptor_c.h"
+#include "../../../ds/apEx-public/apEx/Phoenix/dna_teddy_bear_sculptor_c.h"
 #include "../tsfi2-deepseek/src/cloth_simulator.h"
 #include <stdio.h>
 #include <assert.h>
@@ -14,8 +14,8 @@ int main(void) {
 
     // 1. Initialize Bear DNA & Mesh
     uint8_t dna_bytes[8] = {0x80, 0x80, 0x80, 0x80, 0x01, 0x00, 0x00, 0x00};
-    DNATeddySculptDesc bear_desc;
-    dna_teddy_decode_dna(&bear_desc, dna_bytes);
+    DNATeddyBearSculptDesc bear_desc;
+    dna_teddy_bear_decode_dna(&bear_desc, dna_bytes);
 
     // Verify SSA lot registration for newly born teddy bear
     MaterialUniformBlock bear_mat;
@@ -27,7 +27,7 @@ int main(void) {
     assert(strcmp(site_out, "Vermont") == 0);
     printf("   ✓ Newly born teddy bear successfully allocated SSN %s in Area Lot (%s).\n", ssn_out, site_out);
 
-    static DNATeddyVertex bear_vertices[5000];
+    static DNATeddyBearVertex bear_vertices[5000];
     static int bear_indices[30000];
     int bear_v_count = 0;
     int bear_i_count = 0;
@@ -40,7 +40,7 @@ int main(void) {
     for (int frame = 0; frame < 30; frame++) {
         // Update walk cycle animation timeline
         bear_desc.time = (float)frame * 0.05f;
-        dna_teddy_generate_mesh(bear_vertices, bear_indices, &bear_v_count, &bear_i_count, &bear_desc);
+        dna_teddy_bear_generate_mesh(bear_vertices, bear_indices, &bear_v_count, &bear_i_count, &bear_desc);
 
         // Find shoulder vertices (for example, first vertex of left arm and right arm)
         // Arms sit at indices around the mesh generation offsets

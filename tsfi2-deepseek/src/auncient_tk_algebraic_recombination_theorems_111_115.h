@@ -11,7 +11,7 @@
 typedef struct {
     uint32_t lemma_id;
     float    entropy_weight;
-    uint32_t contributor_teddy_dna;
+    uint32_t contributor_teddy_bear_dna;
     uint32_t allocated_reward_saat;
 } SubLemmaContribution;
 

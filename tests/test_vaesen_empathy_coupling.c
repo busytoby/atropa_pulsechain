@@ -80,7 +80,7 @@ int main(void) {
     printf("FORMAL PROOF TEST: VAESEN N-BODY SYMPLECTIC EMPATHY COUPLING\n");
     printf("=============================================================\n");
 
-    // Test 1: Clean 4-Body Vaesen Empathy Interaction (Faun, Teddy, Nisse, Spirit)
+    // Test 1: Clean 4-Body Vaesen Empathy Interaction (Faun, TeddyBear, Nisse, Spirit)
     uint64_t clean_out = 0;
     uint32_t clean_disp = 0;
     int clean_ruling = algol61_verify_vaesen_empathy_coupling(

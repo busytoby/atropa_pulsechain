@@ -10,7 +10,7 @@
 * **Build time**: 394,876,510 ns
 * **Search latency**: 258,605,848 ns
 
-### Headless Vulkan Teddy Renderer
+### Headless Vulkan TeddyBear Renderer
 * **Throughput**: 6,544.91 FPS
 * **Frame latency**: 0.000153 seconds/frame
 

@@ -21,19 +21,19 @@ Analyze tsfi2-deepseek codebase to identify binaries, rendering loop structure, 
 ## Investigation State
 - **Explored paths**:
   - `tsfi2-deepseek/Makefile`
-  - `tsfi2-deepseek/src/tsfi_teddy_editor.c`
-  - `tsfi2-deepseek/tests/test_vulkan_teddy.c`
+  - `tsfi2-deepseek/src/tsfi_teddy_bear_editor.c`
+  - `tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`
   - `tsfi2-deepseek/tests/test_wayland_terminal_shell.c`
-  - `tsfi2-deepseek/tests/test_teddy_benchmark.c`
-  - `tsfi2-deepseek/tests/test_teddy_benchmark_avx.c`
-  - `tsfi2-deepseek/tests/test_teddy_benchmark_avx_fast.c`
+  - `tsfi2-deepseek/tests/test_teddy_bear_benchmark.c`
+  - `tsfi2-deepseek/tests/test_teddy_bear_benchmark_avx.c`
+  - `tsfi2-deepseek/tests/test_teddy_bear_benchmark_avx_fast.c`
   - `tsfi2-deepseek/tests/benchmark_topography_latency.c`
   - `tsfi2-deepseek/tools/kr0wz_infinite_benchmark_engine.py`
 - **Key findings**:
-  - `tsfi_teddy_editor` is the interactive editor (no CLI headless capability).
-  - `test_vulkan_teddy` is a developer Vulkan tool with `--headless` and `--render-once` command-line options, containing a 7-track ALSA audio step sequencer.
+  - `tsfi_teddy_bear_editor` is the interactive editor (no CLI headless capability).
+  - `test_vulkan_teddy_bear` is a developer Vulkan tool with `--headless` and `--render-once` command-line options, containing a 7-track ALSA audio step sequencer.
   - `test_wayland_terminal_shell` contains a text-only, simulated drum sequencer ("Rhythmic Bits") with no PCM audio output.
-  - ALSA audio in `test_vulkan_teddy.c` is managed by a dedicated mixer thread writing U8 samples at 8 kHz mono with 20 ms buffer latency.
+  - ALSA audio in `test_vulkan_teddy_bear.c` is managed by a dedicated mixer thread writing U8 samples at 8 kHz mono with 20 ms buffer latency.
   - Latency measurement is possible by tracking timestamps in `struct Voice` (queue/software delay) and querying `snd_pcm_delay` (driver/hardware delay).
 - **Unexplored areas**: None relevant to the requested questions.
 

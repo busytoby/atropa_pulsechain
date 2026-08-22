@@ -42,7 +42,7 @@ void k0rn_add_arc(K0RnStream *s, float cx, float cy, float r, float a1, float a2
 }
 
 // --- The Teddy Bear Genome ---
-K0RnStream* tsfi_k0rn_compile_teddy(void) {
+K0RnStream* tsfi_k0rn_compile_teddy_bear(void) {
     K0RnStream *s = (K0RnStream*)lau_malloc_wired(sizeof(K0RnStream));
     s->stream_capacity = 16;
     s->op_count = 8;
@@ -70,7 +70,7 @@ K0RnStream* tsfi_k0rn_compile_teddy(void) {
     return s;
 }
 
-void tsfi_k0rn_animate_teddy(K0RnStream *s, float t) {
+void tsfi_k0rn_animate_teddy_bear(K0RnStream *s, float t) {
     if (!s || s->op_count < 8) return;
     s->ops[4].z = -0.4f + cosf(t * 5.0f) * 0.1f;
     s->ops[4].w = 0.1f + sinf(t * 5.0f) * 0.1f;

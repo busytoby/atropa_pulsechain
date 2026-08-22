@@ -20,15 +20,15 @@ typedef struct {
     uint8_t light_angle_deg; // Specular light angle index (0-255)
     uint8_t breathing_freq;  // Bessel breathing speed multiplier
     uint8_t twitch_intensity;// Muscle twitch relaxation factor
-} TsfiTeddyDna;
+} TsfiTeddyBearDna;
 ```
 
 *   **Compiler:** [compile_small_dna.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/compile_small_dna.py) parses query texts and compiles them directly into `bear_genome.dna` (exactly 12 bytes).
-*   **Renderer:** [test_vulkan_teddy.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy.c) loads the genome at startup and procedurally generates the animation frames (Bessel breathing, Biotika spiking twitches) on-the-fly.
+*   **Renderer:** [test_vulkan_teddy_bear.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy_bear.c) loads the genome at startup and procedurally generates the animation frames (Bessel breathing, Biotika spiking twitches) on-the-fly.
 
 ## 👁️ OpenCV Query Tokenizer & Validator
 
-To eliminate heavy local VLM/Ollama server dependencies, we implemented [opencv_teddy_evaluator.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/opencv_teddy_evaluator.py):
+To eliminate heavy local VLM/Ollama server dependencies, we implemented [opencv_teddy_bear_evaluator.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/opencv_teddy_bear_evaluator.py):
 1.  **Tokenizer:** Scans queries for structural keywords (colors, sickness, styles) and maps them to target values.
 2.  **Symmetry Evaluation:** Calculates vertical pixel-diff symmetry to check for sickness-induced asymmetric mutations.
 3.  **Contour & Hue Analysis:** Uses HSV thresholding and contour detection to verify the quantity and color of glowing eyes.
@@ -36,7 +36,7 @@ To eliminate heavy local VLM/Ollama server dependencies, we implemented [opencv_
 
 ## 🔄 Closed-Loop Synthesizer Feedback Loop
 
-We developed [genetic_teddy_optimizer.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/genetic_teddy_optimizer.py), which automates the optimization process:
+We developed [genetic_teddy_bear_optimizer.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/genetic_teddy_bear_optimizer.py), which automates the optimization process:
 
 ```mermaid
 graph TD

@@ -78,7 +78,7 @@ Key findings from source code analysis:
 1. The mandate requires confirming that the metrics rendering queries the iframe content dynamically and that no test results are hardcoded or facades.
 2. In all modified HTML files, `onDiagnosticsIframeLoad` queries the iframe's content document (`iframeDoc`) or its window variables (`iframeWin.BENCHMARK_DATA`) dynamically upon loading. It traverses the DOM tree to extract live FPS and audio latency information.
 3. No hardcoded values (e.g. constant strings of test results like "60.0 FPS") are assigned directly to the UI elements without querying the iframe.
-4. No dummy/facade implementations or bypasses were found in the C codebase (`test_vulkan_teddy.c`), report generator (`generate_report.py`), or testing scripts (`run_e2e_tests.py`).
+4. No dummy/facade implementations or bypasses were found in the C codebase (`test_vulkan_teddy_bear.c`), report generator (`generate_report.py`), or testing scripts (`run_e2e_tests.py`).
 5. The integrity check requirements under Benchmark mode are fully satisfied.
 
 ## 3. Caveats

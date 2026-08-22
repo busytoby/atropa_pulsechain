@@ -815,8 +815,8 @@ static float g_head_vertices[128][3];
 static int g_head_vertex_count = 0;
 
 void load_usd_head_vertices(void) {
-    FILE *f = fopen("tsfi2-deepseek/assets/teddy_head.usda", "r");
-    if (!f) f = fopen("assets/teddy_head.usda", "r");
+    FILE *f = fopen("tsfi2-deepseek/assets/teddy_bear_head.usda", "r");
+    if (!f) f = fopen("assets/teddy_bear_head.usda", "r");
     if (!f) return;
     char line[256];
     while (fgets(line, sizeof(line), f)) {

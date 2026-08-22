@@ -10,7 +10,7 @@ void auncient_teddy_bear_heart_init(TeddyBearHeartUsdaAsset *asset, uint32_t dna
 
     /* Rule 16: Participant qualification, DNA-to-SSA mapping, and Hogan account endowment */
     asset->profile.dna_seed = dna_seed;
-    asset->profile.hogan_account_saat = TEDDY_DEFAULT_ENDOWMENT_SAAT;
+    asset->profile.hogan_account_saat = TEDDY_BEAR_DEFAULT_ENDOWMENT_SAAT;
     asset->profile.ssa_qualification_verified = true;
 
     /* Deterministic SSN translation */

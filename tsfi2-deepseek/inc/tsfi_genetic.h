@@ -38,7 +38,7 @@ void Fourier_UniversalCrossover_InPlace(GeneticNode* A, GeneticNode* B, GeneticN
 #include "tsfi_vision.h"
 
 // Factory
-K0RnStream* tsfi_k0rn_compile_teddy(void);
+K0RnStream* tsfi_k0rn_compile_teddy_bear(void);
 K0RnStream* tsfi_k0rn_compile_char(uint32_t c);
 
 // Mutates a single K0Rn stream based on a mutation rate (0.0 - 1.0)

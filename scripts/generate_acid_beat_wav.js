@@ -417,7 +417,7 @@ function main() {
     }
 
     // Write combined Stereo WAV file
-    const wavPath = path.join(__dirname, "../teddy303_808_acid_beat.wav");
+    const wavPath = path.join(__dirname, "../teddy_bear303_808_acid_beat.wav");
     const buffer = writeStereoWavFile(leftBuffer, rightBuffer);
     fs.writeFileSync(wavPath, buffer);
     console.log(`Acid Beat WAV successfully generated at: ${wavPath}`);

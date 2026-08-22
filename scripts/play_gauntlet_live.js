@@ -73,7 +73,7 @@ try {
 let sewnHeartVertices = [];
 let sewnHeartIndices = [];
 try {
-    const heartPath = path.join(__dirname, "../tsfi2-deepseek/assets/teddy_sewnheart.usda");
+    const heartPath = path.join(__dirname, "../tsfi2-deepseek/assets/teddy_bear_sewnheart.usda");
     if (fs.existsSync(heartPath)) {
         const content = fs.readFileSync(heartPath, "utf8");
         // Extract points

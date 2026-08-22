@@ -26,6 +26,6 @@ Click any pool row in the table to display the Details panel:
 
 ## 2. Interactive Setup Wizard
 Use the on-screen Setup Wizard tab to configure application profiles:
-1. **Step 1 (Select Presets)**: Choose target tokens or presets (e.g. `slugcat` / `teddy`).
+1. **Step 1 (Select Presets)**: Choose target tokens or presets (e.g. `slugcat` / `teddy_bear`).
 2. **Step 2 (Parameters)**: Fine-tune parameters that modulate coordinate scaling or visual styles.
 3. **Step 3 (Sealing)**: Confirm configuration bounds to update local cache files and refresh dashboards.

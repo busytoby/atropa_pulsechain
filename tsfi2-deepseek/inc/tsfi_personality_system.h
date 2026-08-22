@@ -6,7 +6,7 @@
 // Commits an izotope H-bridge flyback transaction under ACID safety constraints.
 bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_frequency, double max_safe_voltage);
 
-evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target);
+evaluation_tx_t begin_evaluation_transaction(teddy_bear_geometry_t *target);
 
 bool commit_evaluation_transaction(evaluation_tx_t *tx);
 
@@ -20,7 +20,7 @@ bool commit_avatar_transaction(avatar_tx_t *tx, const char *bin_filepath);
 void rollback_avatar_transaction(avatar_tx_t *tx);
 
 // Engages systems via the SDK typestate and calculates parameters.
-bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality);
+bool engage_system_boundary(agent_avatar_t *avatar, teddy_bear_personality_t personality);
 
 // Authorizes the system boundary via GOST-encrypted state payloads when USD is not linked.
 bool authorize_boundary_via_gost(agent_avatar_t *avatar, const uint32_t *key_8words, uint32_t token_left, uint32_t token_right);

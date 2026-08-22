@@ -26,8 +26,8 @@ This E2E test suite and post-commit hook pipeline demonstrate a highly structure
 ### [Minor] Finding 2: Redundant Compilation of Benchmark Binary
 - **What**: The benchmark binary is compiled twice during a successful hook execution.
 - **Where**: 
-  - `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit` (line 32): `make bin/test_vulkan_teddy`
-  - `tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh` (line 13): `make bin/test_vulkan_teddy`
+  - `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit` (line 32): `make bin/test_vulkan_teddy_bear`
+  - `tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh` (line 13): `make bin/test_vulkan_teddy_bear`
 - **Why**: While `make` optimizes this by checking file modifications, running the compile phase twice adds unnecessary shell overhead and duplicate log outputs to stdout/stderr.
 - **Suggestion**: Remove compilation from `run_benchmarks.sh` and assume the binary is already built by the post-commit hook, or keep it as a standalone fallback only when run directly (e.g. check if the binary exists first).
 

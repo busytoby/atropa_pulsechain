@@ -19,7 +19,7 @@ typedef struct {
     bool     total_access_polyphase_stator;   /* 100% access to 128-Phase Superconducting Stator */
     bool     total_access_deepseek_mla;       /* 100% access to Multi-Head Latent Attention Coder */
     bool     total_access_kermit_vsen;        /* 100% access to Kermit VFIO VSEN DMA subsystems */
-    bool     total_access_teddy_hogan;        /* 100% access to Hogan Bank & Teddy Bear SSN Endowments (Rule 16) */
+    bool     total_access_teddy_bear_hogan;        /* 100% access to Hogan Bank & Teddy Bear SSN Endowments (Rule 16) */
     uint32_t canonical_yi_hexagram_nodes;     /* 64 canonical YI knowledge coordinates (Rule 21) */
     uint32_t nonpref_accumulator_partitions;  /* 32,768 non-preferential state cells (Rule 12) */
     bool     io1_formal_pass_verified;        /* 100% passed EDSAC Initial Orders 1 */

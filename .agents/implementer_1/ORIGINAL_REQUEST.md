@@ -16,7 +16,7 @@ Instructions:
 2. Create the post-commit hook script source at `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit` (create directory if needed). The script must:
    - Scrub (unset) `GIT_DIR`, `GIT_WORK_TREE`, and `GIT_INDEX_FILE` environment variables.
    - Navigate to the repository root and into `tsfi2-deepseek`.
-   - Compile the Vulkan benchmark target: `make bin/test_vulkan_teddy`.
+   - Compile the Vulkan benchmark target: `make bin/test_vulkan_teddy_bear`.
    - If compilation fails, output an error warning message, but exit with 0 (do not block Git).
    - If compilation succeeds, change directories to `benchmarks/profiler_suite` and run the benchmark runner script `./run_benchmarks.sh` and the HTML report generator `python3 generate_report.py`.
    - Parse `benchmark_results.json` and print a formatted ASCII metrics table summary to stdout. Ensure formatting handles the cases where JSON is missing or corrupted gracefully.

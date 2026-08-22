@@ -54,5 +54,5 @@ By LaSalle's Invariance Principle, all behavioral trajectories converge to the m
 | N-Body Empathy Coupling | `solidity/dysnomia/domain/std/vaesen_empathy_coupling_prover.algol61` | `solidity/dysnomia/domain/strategies/vaesen_empathy_coupling.strategy` | `make test-vaesen-empathy-coupling` |
 | EDO-22 Mood Resonator | `solidity/dysnomia/domain/std/vaesen_mood_edo22_prover.algol61` | `solidity/dysnomia/domain/strategies/vaesen_mood_edo22.strategy` | `make test-vaesen-mood-edo22` |
 | GGUF Empathy Storage | `solidity/dysnomia/domain/std/ankh_gguf_empathy_storage_prover.algol61` | `solidity/dysnomia/domain/strategies/ankh_gguf_empathy_storage.strategy` | `make test-ankh-gguf-empathy-storage` |
-| Teddy Bear Genesis | `solidity/dysnomia/domain/std/vaesen_teddy_genesis_prover.algol61` | `solidity/dysnomia/domain/strategies/vaesen_teddy_genesis.strategy` | `make test-vaesen-teddy-genesis` |
+| Teddy Bear Genesis | `solidity/dysnomia/domain/std/vaesen_teddy_bear_genesis_prover.algol61` | `solidity/dysnomia/domain/strategies/vaesen_teddy_bear_genesis.strategy` | `make test-vaesen-teddy_bear-genesis` |
 | 4-Quadrant Action | `solidity/dysnomia/domain/std/vaesen_action_commutation_prover.algol61` | `solidity/dysnomia/domain/strategies/vaesen_action_commutation.strategy` | `make test-vaesen-action-commutation` |

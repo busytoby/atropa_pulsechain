@@ -18,7 +18,7 @@ int main(void) {
     assert(index.prim_count == 0);
 
     // 1. Register a primitive
-    bool ok = tsfi_renderindex_register_prim(&index, "/auncient/assets/teddy");
+    bool ok = tsfi_renderindex_register_prim(&index, "/auncient/assets/teddy_bear");
     assert(ok == true);
     assert(index.prim_count == 1);
     assert(index.primitives[0].is_dirty == true);
@@ -34,7 +34,7 @@ int main(void) {
     assert(ok == false); // No sync occurred
 
     // 4. Dirty the primitive and sync again
-    ok = tsfi_renderindex_register_prim(&index, "/auncient/assets/teddy");
+    ok = tsfi_renderindex_register_prim(&index, "/auncient/assets/teddy_bear");
     assert(ok == true);
     assert(index.primitives[0].is_dirty == true);
     ok = tsfi_renderindex_sync(&index);

@@ -9,7 +9,7 @@ begin
   comment 4. Sub-Millisecond BDOS Live Intermittent Optical Sync (Theorem 1644): Rotary shutter exposure and photodiode demodulation synchronize in loop latency (<= 220 us),;
   comment 5. Sovereign Live Fabry-Pérot Super 8 Grand Master Seal (Theorem 1645): Complete live optical cavity capture closure ratified.;
 
-  integer procedure verify_teddy_live_cavity_invariance(
+  integer procedure verify_teddy_bear_live_cavity_invariance(
     live_cavity_latency_us,
     cavity_transmission_fidelity_milli,
     doppler_demod_fidelity_milli,
@@ -36,37 +36,37 @@ begin
 
     if k_param != 3 and k_param != 4 then
       begin
-        verify_teddy_live_cavity_invariance := 1;
+        verify_teddy_bear_live_cavity_invariance := 1;
         go to end_p8f_proc;
       end;
 
     if live_cavity_latency_us < 30 or live_cavity_latency_us > 220 then
       begin
-        verify_teddy_live_cavity_invariance := 2;
+        verify_teddy_bear_live_cavity_invariance := 2;
         go to end_p8f_proc;
       end;
 
     if cavity_transmission_fidelity_milli < 900 or cavity_transmission_fidelity_milli > 1000 then
       begin
-        verify_teddy_live_cavity_invariance := 3;
+        verify_teddy_bear_live_cavity_invariance := 3;
         go to end_p8f_proc;
       end;
 
     if doppler_demod_fidelity_milli < 900 or doppler_demod_fidelity_milli > 1000 then
       begin
-        verify_teddy_live_cavity_invariance := 4;
+        verify_teddy_bear_live_cavity_invariance := 4;
         go to end_p8f_proc;
       end;
 
     if cavity_finesse_milli < 900 or cavity_finesse_milli > 1000 then
       begin
-        verify_teddy_live_cavity_invariance := 6;
+        verify_teddy_bear_live_cavity_invariance := 6;
         go to end_p8f_proc;
       end;
 
     if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 16385 then
       begin
-        verify_teddy_live_cavity_invariance := 5;
+        verify_teddy_bear_live_cavity_invariance := 5;
         go to end_p8f_proc;
       end;
 
@@ -75,11 +75,11 @@ begin
 
     if simulate_fault = 1 then
       begin
-        verify_teddy_live_cavity_invariance := 0;
+        verify_teddy_bear_live_cavity_invariance := 0;
         go to end_p8f_proc;
       end;
 
-    verify_teddy_live_cavity_invariance := 0;
+    verify_teddy_bear_live_cavity_invariance := 0;
 
   end_p8f_proc:
   end;

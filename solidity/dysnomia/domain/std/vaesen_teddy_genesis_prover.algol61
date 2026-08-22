@@ -9,15 +9,15 @@ begin
   comment 5. SwiGLU Gating Modulation: Clamps endowment potential within 7/8..8/8 operational bounds (G_gate in [875..1000]),;
   comment 6. Zero-Flux Shadow Isolation & Lossless Rollback: Genesis validation fault or unverified citizen attempt restores shadow baseline identically (delta_Saat = 0).;
 
-  integer procedure verify_vaesen_teddy_genesis(
-    teddy_dna_seed_coord,
+  integer procedure verify_vaesen_teddy_bear_genesis(
+    teddy_bear_dna_seed_coord,
     expected_site_index_1to9,
     cics_writer_id,
     simulate_genesis_fault,
     k_param
   );
-  value teddy_dna_seed_coord, expected_site_index_1to9, cics_writer_id, simulate_genesis_fault, k_param;
-  integer teddy_dna_seed_coord, expected_site_index_1to9, cics_writer_id, simulate_genesis_fault, k_param;
+  value teddy_bear_dna_seed_coord, expected_site_index_1to9, cics_writer_id, simulate_genesis_fault, k_param;
+  integer teddy_bear_dna_seed_coord, expected_site_index_1to9, cics_writer_id, simulate_genesis_fault, k_param;
   begin
     comment Classification Ruling:
             0 = QUALIFIED_ORBITAL_HANDSHAKE (Teddy Bear DNA-to-SSN Genesis Formally Proven)
@@ -40,42 +40,42 @@ begin
 
     if k_param != 3 then
       begin
-        verify_vaesen_teddy_genesis := 1;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 1;
+        go to end_teddy_bear_proc;
       end;
 
-    if teddy_dna_seed_coord <= 0 then
+    if teddy_bear_dna_seed_coord <= 0 then
       begin
-        verify_vaesen_teddy_genesis := 2;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 2;
+        go to end_teddy_bear_proc;
       end;
 
     if expected_site_index_1to9 < 1 or expected_site_index_1to9 > 9 then
       begin
-        verify_vaesen_teddy_genesis := 3;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 3;
+        go to end_teddy_bear_proc;
       end;
 
     comment Validate Qualifying CICS SSA Citizen (555=TeddyBear, 888=FederalWorker, 99=Agent99, 42=Agent42);
     if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
       begin
-        verify_vaesen_teddy_genesis := 4;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 4;
+        go to end_teddy_bear_proc;
       end;
 
     comment Step 1: Execute Bijective DNA-to-SSN Translation (Rule 16);
     comment FNV1a hash reduction modulo 10^9;
-    resolved_ssn_digits := teddy_dna_seed_coord - ((teddy_dna_seed_coord / 1000000000) * 1000000000);
+    resolved_ssn_digits := teddy_bear_dna_seed_coord - ((teddy_bear_dna_seed_coord / 1000000000) * 1000000000);
     if resolved_ssn_digits < 0 then resolved_ssn_digits := resolved_ssn_digits + 1000000000;
 
     comment Step 2: Resolve Regional SSA Site Index via Modular Congruence (Rule 15 Recall Mapping);
     comment Site_Index = (DNA_hash mod 9) + 1;
-    resolved_site_idx := (teddy_dna_seed_coord - ((teddy_dna_seed_coord / 9) * 9)) + 1;
+    resolved_site_idx := (teddy_bear_dna_seed_coord - ((teddy_bear_dna_seed_coord / 9) * 9)) + 1;
 
     if resolved_site_idx != expected_site_index_1to9 then
       begin
-        verify_vaesen_teddy_genesis := 5;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 5;
+        go to end_teddy_bear_proc;
       end;
 
     comment Step 3: Endow Hogan Account with exactly 1,000,000 Saat (Rule 16);
@@ -89,8 +89,8 @@ begin
     g_gate_factor := 875 + ((125 * (resolved_site_idx - ((resolved_site_idx / 8) * 8))) / 8);
     if g_gate_factor < 875 or g_gate_factor > 1000 then
       begin
-        verify_vaesen_teddy_genesis := 6;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 6;
+        go to end_teddy_bear_proc;
       end;
 
     if simulate_genesis_fault then
@@ -105,22 +105,22 @@ begin
     comment Assert Shadow Baseline Immutability Invariant;
     if shadow_genesis_baseline != ((cics_writer_id * 1000000) + (resolved_site_idx * 10000) + ((resolved_ssn_digits - ((resolved_ssn_digits / 1000) * 1000)) * 10) + (endowed_hogan_balance / 65536)) then
       begin
-        verify_vaesen_teddy_genesis := 7;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 7;
+        go to end_teddy_bear_proc;
       end;
 
     if simulate_genesis_fault and committed_output != shadow_genesis_baseline then
       begin
-        verify_vaesen_teddy_genesis := 8;
-        go to end_teddy_proc;
+        verify_vaesen_teddy_bear_genesis := 8;
+        go to end_teddy_bear_proc;
       end;
 
     disp_wrap := committed_output - ((committed_output / 256) * 256);
     if disp_wrap < 0 then disp_wrap := disp_wrap + 256;
 
-    verify_vaesen_teddy_genesis := 0;
+    verify_vaesen_teddy_bear_genesis := 0;
 
-  end_teddy_proc:
+  end_teddy_bear_proc:
   end;
 
 end

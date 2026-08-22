@@ -230,7 +230,7 @@ static void draw_3d_volumetric_cylinder(uint32_t *fb, float *zbuf, int w, int h,
 }
 
 // -----------------------------------------------------------------------------
-// 3D Volumetric Sewn Heart Mesh (Pixar USDA Prim from teddy_sewnheart.usda)
+// 3D Volumetric Sewn Heart Mesh (Pixar USDA Prim from teddy_bear_sewnheart.usda)
 // -----------------------------------------------------------------------------
 static void draw_3d_volumetric_sewn_heart(uint32_t *fb, float *zbuf, int w, int h,
                                           float cx, float cy, float cz, float scale,

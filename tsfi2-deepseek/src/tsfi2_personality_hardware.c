@@ -1,5 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
@@ -240,7 +240,7 @@ bool hbridge_izotope_black_diode_graph_qr(const double *Tremolo_in, double *Trem
     return false;
 }
 
-bool evaluate_hbridge_izotope_mismatch(const teddy_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out) {
+bool evaluate_hbridge_izotope_mismatch(const teddy_bear_geometry_t *geom, double switching_frequency, double *flyback_mismatch_out) {
     if (!geom || switching_frequency < 1.0 || !flyback_mismatch_out) {
         return false;
     }
@@ -290,7 +290,7 @@ bool commit_izotope_flyback_transaction(evaluation_tx_t *tx, double switching_fr
     return true;
 }
 
-bool calculate_diyat_tax(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double *total_cost_out) {
+bool calculate_diyat_tax(const teddy_bear_geometry_t *geom, double switching_frequency, double base_gas_cost, double *total_cost_out) {
     if (!geom || switching_frequency < 1.0 || base_gas_cost < 0.0 || !total_cost_out) {
         return false;
     }
@@ -307,7 +307,7 @@ bool calculate_diyat_tax(const teddy_geometry_t *geom, double switching_frequenc
     return true;
 }
 
-bool calculate_diyat_tax_with_refractory(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double time_since_last_event, double *total_cost_out) {
+bool calculate_diyat_tax_with_refractory(const teddy_bear_geometry_t *geom, double switching_frequency, double base_gas_cost, double time_since_last_event, double *total_cost_out) {
     if (!geom || switching_frequency < 1.0 || base_gas_cost < 0.0 || !total_cost_out) {
         return false;
     }
@@ -325,7 +325,7 @@ bool calculate_diyat_tax_with_refractory(const teddy_geometry_t *geom, double sw
     return true;
 }
 
-bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double switching_frequency, double base_gas_cost, double tremolo_freq, double sustain_time, double *total_cost_out) {
+bool calculate_diyat_tax_with_envelope(const teddy_bear_geometry_t *geom, double switching_frequency, double base_gas_cost, double tremolo_freq, double sustain_time, double *total_cost_out) {
     if (!geom || switching_frequency < 1.0 || base_gas_cost < 0.0 || !total_cost_out) {
         return false;
     }
@@ -343,7 +343,7 @@ bool calculate_diyat_tax_with_envelope(const teddy_geometry_t *geom, double swit
     return true;
 }
 
-bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_angle, double *noise_out) {
+bool simulate_phase_flyback_noise(const teddy_bear_geometry_t *geom, double phase_angle, double *noise_out) {
     if (!geom || !noise_out) {
         return false;
     }
@@ -352,7 +352,7 @@ bool simulate_phase_flyback_noise(const teddy_geometry_t *geom, double phase_ang
     return true;
 }
 
-bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int group_id, double *tremolo_spacing_out, double *sustain_decay_out) {
+bool evaluate_izotope_constrained_parameters(const teddy_bear_geometry_t *geom, int group_id, double *tremolo_spacing_out, double *sustain_decay_out) {
     if (!geom || !tremolo_spacing_out || !sustain_decay_out) {
         return false;
     }
@@ -383,7 +383,7 @@ bool evaluate_izotope_constrained_parameters(const teddy_geometry_t *geom, int g
     return true;
 }
 
-bool evaluate_izotope_ozone_habituation_decay(const teddy_geometry_t *geom, double base_decay, double *decayed_out) {
+bool evaluate_izotope_ozone_habituation_decay(const teddy_bear_geometry_t *geom, double base_decay, double *decayed_out) {
     if (!geom || !decayed_out) {
         return false;
     }
@@ -397,7 +397,7 @@ bool evaluate_izotope_ozone_habituation_decay(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool simulate_cloglog_verlet_physics(const teddy_geometry_t *geom, double scale_covariate, double current_pos, double prev_pos, double time_step, double *next_pos_out) {
+bool simulate_cloglog_verlet_physics(const teddy_bear_geometry_t *geom, double scale_covariate, double current_pos, double prev_pos, double time_step, double *next_pos_out) {
     if (!geom || scale_covariate < 0.0 || !next_pos_out) {
         return false;
     }
@@ -409,7 +409,7 @@ bool simulate_cloglog_verlet_physics(const teddy_geometry_t *geom, double scale_
     return true;
 }
 
-bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out) {
+bool execute_hbridge_thunk_with_feedback(const teddy_bear_geometry_t *geom, double switching_frequency, double (*thunk_fn)(void), double *safety_margin_out) {
     if (!geom || switching_frequency < 1.0 || !thunk_fn || !safety_margin_out) {
         return false;
     }
@@ -433,7 +433,7 @@ bool execute_hbridge_thunk_with_feedback(const teddy_geometry_t *geom, double sw
     return true;
 }
 
-bool execute_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double scale_covariate, double (*callback)(void), double *safety_margin_out) {
+bool execute_cloglog_thunk_with_feedback(const teddy_bear_geometry_t *geom, double scale_covariate, double (*callback)(void), double *safety_margin_out) {
     if (!geom || !callback || !safety_margin_out) {
         return false;
     }
@@ -446,7 +446,7 @@ bool execute_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double sc
     return true;
 }
 
-bool execute_maturity_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, double (*callback)(void), double *safety_margin_out) {
+bool execute_maturity_cloglog_thunk_with_feedback(const teddy_bear_geometry_t *geom, double (*callback)(void), double *safety_margin_out) {
     if (!geom || !callback || !safety_margin_out) {
         return false;
     }
@@ -457,7 +457,7 @@ bool execute_maturity_cloglog_thunk_with_feedback(const teddy_geometry_t *geom, 
     return execute_cloglog_thunk_with_feedback(geom, scale, callback, safety_margin_out);
 }
 
-bool execute_cloglog_gated_thunk_with_maturity(const teddy_geometry_t *geom, double scale_covariate, double age_months, double (*thunk_fn)(void), double *result_out) {
+bool execute_cloglog_gated_thunk_with_maturity(const teddy_bear_geometry_t *geom, double scale_covariate, double age_months, double (*thunk_fn)(void), double *result_out) {
     if (!geom || scale_covariate < 0.0 || age_months < 0.0 || !thunk_fn || !result_out) {
         return false;
     }
@@ -469,7 +469,7 @@ bool execute_cloglog_gated_thunk_with_maturity(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool execute_cooperative_wald_gated_thunk(const teddy_geometry_t *geom, const double *beta_vector, const double *covariance_matrix, int df, double (*thunk_fn)(void), double *result_out) {
+bool execute_cooperative_wald_gated_thunk(const teddy_bear_geometry_t *geom, const double *beta_vector, const double *covariance_matrix, int df, double (*thunk_fn)(void), double *result_out) {
     if (!geom || !beta_vector || !covariance_matrix || df < 1 || !thunk_fn || !result_out) {
         return false;
     }
@@ -484,7 +484,7 @@ bool execute_cooperative_wald_gated_thunk(const teddy_geometry_t *geom, const do
     return false;
 }
 
-evaluation_tx_t begin_evaluation_transaction(teddy_geometry_t *target) {
+evaluation_tx_t begin_evaluation_transaction(teddy_bear_geometry_t *target) {
     evaluation_tx_t tx;
     tx.target = target;
     tx.active = false;
@@ -572,7 +572,7 @@ void rollback_avatar_transaction(avatar_tx_t *tx) {
     }
 }
 
-bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personality) {
+bool engage_system_boundary(agent_avatar_t *avatar, teddy_bear_personality_t personality) {
     if (!avatar) return false;
 
     // 1. Transition through SDK typestate sequences (Unlocked -> Locked -> Executing)
@@ -580,7 +580,7 @@ bool engage_system_boundary(agent_avatar_t *avatar, teddy_personality_t personal
     avatar->sdk_state = 2; // Executing
 
     // 2. Resolve geometry and dynamic stiffness constraints
-    resolve_teddy_geometry(personality, &avatar->geometry);
+    resolve_teddy_bear_geometry(personality, &avatar->geometry);
 
     // 3. Verify and bind DNA signature hash
     avatar->dna_seed = 0x811C9DC5; // FNV-1a offset basis

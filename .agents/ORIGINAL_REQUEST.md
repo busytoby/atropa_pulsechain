@@ -33,7 +33,7 @@ Integrity mode: benchmark
 ## Requirements
 
 ### R1. Git post-commit Hook Script
-The script must hook into local git lifecycle and trigger automatically after a commit. It must navigate to the deepseek directory, build `test_vulkan_teddy`, and execute `run_benchmarks.sh`.
+The script must hook into local git lifecycle and trigger automatically after a commit. It must navigate to the deepseek directory, build `test_vulkan_teddy_bear`, and execute `run_benchmarks.sh`.
 
 ### R2. Automated Report Compilation
 Following execution, the pipeline must run the Python generator to update `benchmark_report.html` and output a summary table in the shell containing final run statistics (average FPS, average frame time, audio latency records).
@@ -108,7 +108,7 @@ Integrity mode: benchmark
 ## Requirements
 
 ### R1. Git post-commit Hook Script
-The script must hook into local git lifecycle and trigger automatically after a commit. It must navigate to the deepseek directory, build `test_vulkan_teddy`, and execute `run_benchmarks.sh`.
+The script must hook into local git lifecycle and trigger automatically after a commit. It must navigate to the deepseek directory, build `test_vulkan_teddy_bear`, and execute `run_benchmarks.sh`.
 
 ### R2. Automated Report Compilation
 Following execution, the pipeline must run the Python generator to update `benchmark_report.html` and output a summary table in the shell containing final run statistics (average FPS, average frame time, audio latency records).

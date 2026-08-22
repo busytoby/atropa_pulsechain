@@ -50,9 +50,9 @@ typedef struct {
 	double stiffness;
 	double fur_roughness;
 	double rgb_tint[3];
-} teddy_geometry_t;
+} teddy_bear_geometry_t;
 
-static void resolve_teddy_personality(tomie_personality_type_t p_type, teddy_geometry_t *geom)
+static void resolve_teddy_bear_personality(tomie_personality_type_t p_type, teddy_bear_geometry_t *geom)
 {
 	switch (p_type) {
 	case PERSONALITY_TRUSTWORTHY:
@@ -186,8 +186,8 @@ int main(void)
 
 		/* Step 2 & 6: ToMiE Personality & DeepSeek MoE Routing */
 		tomie_personality_type_t p_type = (tomie_personality_type_t)((int)(t / 2.0) % 4);
-		teddy_geometry_t geom;
-		resolve_teddy_personality(p_type, &geom);
+		teddy_bear_geometry_t geom;
+		resolve_teddy_bear_personality(p_type, &geom);
 
 		uint64_t moe_latch = deepseek_moe_mann_eval(frame, 0x1000);
 

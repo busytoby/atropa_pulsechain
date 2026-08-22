@@ -29,7 +29,7 @@ cd "${REPO_ROOT}/tsfi2-deepseek" || {
 
 # Compile the Vulkan benchmark target
 echo "[INFO] Compiling Vulkan benchmark..."
-if ! make bin/test_vulkan_teddy; then
+if ! make bin/test_vulkan_teddy_bear; then
     echo "[WARNING] Compilation of Vulkan benchmark failed."
     exit 0
 fi

@@ -17,12 +17,12 @@ int main() {
     assert(class_genome == TSFI_CLASS_GLYPH);
 
     // 2. Teddy Bear Verification (The Original K0Rn)
-    K0RnStream *teddy = tsfi_k0rn_compile_teddy();
-    assert(teddy != NULL);
-    assert(teddy->classify != NULL);
-    int class_teddy = teddy->classify();
-    printf("[RESULT] Teddy Class: %d (Expected: %d)\n", class_teddy, TSFI_CLASS_TEDDY);
-    assert(class_teddy == TSFI_CLASS_TEDDY);
+    K0RnStream *teddy_bear = tsfi_k0rn_compile_teddy_bear();
+    assert(teddy_bear != NULL);
+    assert(teddy_bear->classify != NULL);
+    int class_teddy_bear = teddy_bear->classify();
+    printf("[RESULT] TeddyBear Class: %d (Expected: %d)\n", class_teddy_bear, TSFI_CLASS_TEDDY_BEAR);
+    assert(class_teddy_bear == TSFI_CLASS_TEDDY_BEAR);
 
     // 3. Manifestation Verification (VISA Tagged)
     void *vis_buf = lau_malloc_wired(1024);
@@ -42,10 +42,10 @@ int main() {
     printf("[RESULT] Manifestation Class: %d (Expected: %d)\n", class_macro, TSFI_CLASS_LATIN_A);
     assert(class_macro == TSFI_CLASS_LATIN_A);
 
-    printf("[SUCCESS] Mapped classify() and Teddy Identity verified.\n");
+    printf("[SUCCESS] Mapped classify() and TeddyBear Identity verified.\n");
 
     lau_free(s);
-    lau_free(teddy);
+    lau_free(teddy_bear);
     lau_free(vis_buf);
         extern void lau_registry_teardown(void);
     lau_registry_teardown();

@@ -1,5 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 

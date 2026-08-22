@@ -77,7 +77,7 @@ int main(void) {
             }
         }
     }
-    printf("   ✓ Power In (500..8000) x Decay (100..2000) x Teddy Endowments (1M..5M Saat) verified.\n");
+    printf("   ✓ Power In (500..8000) x Decay (100..2000) x TeddyBear Endowments (1M..5M Saat) verified.\n");
 
     /* Pass 3: Fault Isolation and ReBAR Shadow Rollback */
     uint64_t rollback_out = 0;

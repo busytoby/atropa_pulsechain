@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include "tsfi_displacementshader.h"
 
 #ifndef M_PI
@@ -57,7 +57,7 @@ typedef struct {
     double angle;
     uint8_t color[3];
     int x, y;
-    teddy_geometry_t geom;
+    teddy_bear_geometry_t geom;
 } bear_node_t;
 
 static double note_to_freq(const char* note) {
@@ -178,11 +178,11 @@ int main() {
     bears[4].angle = 1.6 * M_PI;
     bears[4].color[0] = 30; bears[4].color[1] = 220; bears[4].color[2] = 100;
     
-    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &bears[0].geom);
-    resolve_teddy_geometry(PERSONALITY_AGGRESSIVE, &bears[1].geom);
-    resolve_teddy_geometry(PERSONALITY_SKEPTICAL, &bears[2].geom);
-    resolve_teddy_geometry(PERSONALITY_EERIE, &bears[3].geom);
-    resolve_teddy_geometry(PERSONALITY_TRUSTWORTHY, &bears[4].geom);
+    resolve_teddy_bear_geometry(PERSONALITY_TRUSTWORTHY, &bears[0].geom);
+    resolve_teddy_bear_geometry(PERSONALITY_AGGRESSIVE, &bears[1].geom);
+    resolve_teddy_bear_geometry(PERSONALITY_SKEPTICAL, &bears[2].geom);
+    resolve_teddy_bear_geometry(PERSONALITY_EERIE, &bears[3].geom);
+    resolve_teddy_bear_geometry(PERSONALITY_TRUSTWORTHY, &bears[4].geom);
     bears[4].geom.symmetry = 0.95;
     
     int cX = WIDTH / 2, cY = HEIGHT / 2, rad = 140;

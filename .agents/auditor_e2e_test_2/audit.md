@@ -5,7 +5,7 @@
 **Verdict**: CLEAN
 
 ### Phase Results
-- **Hardcoded output detection**: PASS — Hook (`post-commit`) and report generator (`generate_report.py`) dynamically parse `benchmark_results.json` and generate values. The C benchmark program (`test_vulkan_teddy.c`) executes a real headless render loop and computes performance metrics dynamically.
+- **Hardcoded output detection**: PASS — Hook (`post-commit`) and report generator (`generate_report.py`) dynamically parse `benchmark_results.json` and generate values. The C benchmark program (`test_vulkan_teddy_bear.c`) executes a real headless render loop and computes performance metrics dynamically.
 - **Facade detection**: PASS — No placeholder functions or empty/facade interfaces were found. All components contain robust logic with error handling, environment scrubbing, and HTML/canvas rendering.
 - **Pre-populated artifact detection**: PASS — Tests are executed in isolated, dynamically created temporary Git sandboxes (`tempfile.TemporaryDirectory`), preventing reliance on pre-populated artifacts.
 - **Build and run**: PASS — Makefile targets and Python test suites are fully configured.
@@ -30,8 +30,8 @@ The following snippet from `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commi
     avg_frame_time = summary.get('average_frame_render_time_seconds', 'N/A')
 ```
 
-#### 2. Pure Standard Library & Offscreen Benchmark Execution in test_vulkan_teddy.c
-The C code in `tsfi2-deepseek/tests/test_vulkan_teddy.c` uses monotonic clock timing to profile frame renders and outputs results to JSON:
+#### 2. Pure Standard Library & Offscreen Benchmark Execution in test_vulkan_teddy_bear.c
+The C code in `tsfi2-deepseek/tests/test_vulkan_teddy_bear.c` uses monotonic clock timing to profile frame renders and outputs results to JSON:
 ```c
             for (int frame = 0; frame < 500; frame++) {
                 struct timespec f_start, f_end;

@@ -13,7 +13,7 @@ cd "${WORKSPACE_DIR}"
 
 # 1. Ensure binaries are built
 echo "[BUILD] Compiling profiler binaries..."
-make -j$(nproc) bin/test_vulkan_teddy libtsfi2.so > /dev/null 2>&1
+make -j$(nproc) bin/test_vulkan_teddy_bear libtsfi2.so > /dev/null 2>&1
 
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native -fopenmp tests/bench_aho_corasick_wavelet.c -o tests/bench_aho_corasick_wavelet -L. -ltsfi2 -lm -lrt -lpthread -ldl -lgomp -lpulse-simple -lpulse -Wl,-rpath,. &
 gcc -Wall -Wextra -Werror -std=c11 -D_POSIX_C_SOURCE=200809L -Iinc -Isrc -O3 -g -march=native tests/bench_yang_fast.c -o tests/bench_yang_fast -L. -ltsfi2 -lm -lrt -lpthread -ldl -lpulse-simple -lpulse -Wl,-rpath,. &
@@ -99,9 +99,9 @@ wait
 echo "[RUN] Aho-Corasick Wavelet Arena Benchmark..."
 ./tests/bench_aho_corasick_wavelet > "${TMP_DIR}/bench_ac.log"
 
-# 3. Run Vulkan Teddy Headless Benchmark
+# 3. Run Vulkan TeddyBear Headless Benchmark
 echo "[RUN] Vulkan Headless Teddy Bear Benchmark..."
-./bin/test_vulkan_teddy --benchmark > "${TMP_DIR}/bench_vk.log"
+./bin/test_vulkan_teddy_bear --benchmark > "${TMP_DIR}/bench_vk.log"
 
 # 4. Run AVX-512 Yang Synthesis Benchmark
 echo "[RUN] Fast AVX-512 Yang Synthesis Benchmark..."

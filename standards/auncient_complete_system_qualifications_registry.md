@@ -14,7 +14,7 @@ This registry documents the complete formal qualification matrix across all **20
 | :--- | :--- | :--- | :--- | :--- |
 | **Rules 1, 3, 7, 18** | Linguistic & Interop Protocol (Auncient spelling, Wanna, No single words, Zero mocks) | `cpm_exec_lexicon_qual` | **QUALIFIED & CERTIFIED** | `0x0000C666` |
 | **Rules 2, 4, 6, 9, 14** | Process Lifecycle & ZMM Resolution (No Git binaries, No Puppeteer, PID tracking, Address ZMM) | `cpm_exec_proc_qual` | **QUALIFIED & CERTIFIED** | `0x00003EEF` |
-| **Rules 5, 10, 11, 12, 16**| Hardware & Physical Protocols (Keycodes 30/32, FET Verlet solvers, Sub-us cache, Teddy endowment) | `cpm_exec_hardware_qual` | **QUALIFIED & CERTIFIED** | `0x00006171` |
+| **Rules 5, 10, 11, 12, 16**| Hardware & Physical Protocols (Keycodes 30/32, FET Verlet solvers, Sub-us cache, TeddyBear endowment) | `cpm_exec_hardware_qual` | **QUALIFIED & CERTIFIED** | `0x00006171` |
 | **Rules 8, 13, 17, 19, 20**| Media & Data Layout Protocols (<68KB, .dat.bin quadtrees, Text only, No RDF, RFC 1951) | `cpm_exec_media_qual` | **QUALIFIED & CERTIFIED** | `0x0000837C` |
 | **Rule 15** | Permanent Tripartite Glossary (Part 1 Register, Part 2 Math, Part 3 Geometry) | `cpm_exec_glossary_qual` | **QUALIFIED & CERTIFIED** | `0x0000C16B` |
 | **Phases 1–5 Formal Review**| Master Review Audit & Initial Orders 1 Gating (Soundness, Semantics, Security, Grand Seal) | `cpm_exec_review_phase5` | **QUALIFIED & CERTIFIED** | `0x0000D855` |

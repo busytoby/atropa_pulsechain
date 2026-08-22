@@ -35,7 +35,7 @@ int main(void) {
 
     /* Theorem 148 Verification */
     assert(state.enoll_leed_closed_loop_verified);
-    printf(" Theorem 148 [Closed-Loop Living Lab Closure]:  PROVED (ENoLL, LEED Platinum, Teddy Heart Unified)\n");
+    printf(" Theorem 148 [Closed-Loop Living Lab Closure]:  PROVED (ENoLL, LEED Platinum, TeddyBear Heart Unified)\n");
 
     /* Theorem 149 Verification */
     assert(state.rule18_universal_invariance_verified);

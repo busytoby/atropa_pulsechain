@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
-static int verify_teddy_ballet_choreography_c(
+static int verify_teddy_bear_ballet_choreography_c(
     int joint_angle_deg,
     int pirouette_spin_rpm_q16,
     int dancer_count_k,
@@ -53,23 +53,23 @@ static int verify_teddy_ballet_choreography_c(
 
 int main(void) {
     printf("=============================================================\n");
-    printf("FORMAL PROOF TEST: TEDDY BALLET CHOREOGRAPHY & KINEMATICS\n");
+    printf("FORMAL PROOF TEST: TEDDY_BEAR BALLET CHOREOGRAPHY & KINEMATICS\n");
     printf("=============================================================\n");
 
     uint64_t out = 0;
     int disp = 0;
 
     /* Pass 1: Clean Execution */
-    int r1 = verify_teddy_ballet_choreography_c(180, 32768, 4, 500, 555, 0, 3, &out, &disp);
+    int r1 = verify_teddy_bear_ballet_choreography_c(180, 32768, 4, 500, 555, 0, 3, &out, &disp);
     assert(r1 == 0);
-    printf("   ✓ Clean Teddy Ballet Choreography verified (Ruling=0, Out=%lu, DispMod=%d).\n", out, disp);
+    printf("   ✓ Clean TeddyBear Ballet Choreography verified (Ruling=0, Out=%lu, DispMod=%d).\n", out, disp);
 
     /* Pass 2: Parameter Sweeps across Joint Angles (0..360 deg), Dancers (1..8) and Stage X (0..1000) */
     for (int d = 1; d <= 8; d++) {
         for (int a = 0; a <= 360; a += 45) {
             uint64_t sweep_out = 0;
             int sweep_disp = 0;
-            int r_sweep = verify_teddy_ballet_choreography_c(a, 4096 * d, d, 100 * d, 555, 0, 3, &sweep_out, &sweep_disp);
+            int r_sweep = verify_teddy_bear_ballet_choreography_c(a, 4096 * d, d, 100 * d, 555, 0, 3, &sweep_out, &sweep_disp);
             assert(r_sweep == 0);
         }
     }
@@ -78,21 +78,21 @@ int main(void) {
     /* Pass 3: Fault Isolation and ReBAR Shadow Rollback */
     uint64_t rollback_out = 0;
     int rollback_disp = 0;
-    int r_fault = verify_teddy_ballet_choreography_c(180, 32768, 4, 500, 555, 1, 3, &rollback_out, &rollback_disp);
+    int r_fault = verify_teddy_bear_ballet_choreography_c(180, 32768, 4, 500, 555, 1, 3, &rollback_out, &rollback_disp);
     assert(r_fault == 0);
     printf("   ✓ Ballet Fault Isolation Rollback verified (Ruling=0, Rollback=%lu, DispMod=%d).\n", rollback_out, rollback_disp);
 
     /* Pass 4: Guard Gate Classification (All 6 Invalid Cases Intercepted) */
-    assert(verify_teddy_ballet_choreography_c(180, 32768, 4, 500, 555, 0, 2, NULL, NULL) == 1);
-    assert(verify_teddy_ballet_choreography_c(361, 32768, 4, 500, 555, 0, 3, NULL, NULL) == 2);
-    assert(verify_teddy_ballet_choreography_c(180, 70000, 4, 500, 555, 0, 3, NULL, NULL) == 3);
-    assert(verify_teddy_ballet_choreography_c(180, 32768, 9, 500, 555, 0, 3, NULL, NULL) == 4);
-    assert(verify_teddy_ballet_choreography_c(180, 32768, 4, 500, 777, 0, 3, NULL, NULL) == 5);
-    assert(verify_teddy_ballet_choreography_c(180, 32768, 4, 1001, 555, 0, 3, NULL, NULL) == 6);
+    assert(verify_teddy_bear_ballet_choreography_c(180, 32768, 4, 500, 555, 0, 2, NULL, NULL) == 1);
+    assert(verify_teddy_bear_ballet_choreography_c(361, 32768, 4, 500, 555, 0, 3, NULL, NULL) == 2);
+    assert(verify_teddy_bear_ballet_choreography_c(180, 70000, 4, 500, 555, 0, 3, NULL, NULL) == 3);
+    assert(verify_teddy_bear_ballet_choreography_c(180, 32768, 9, 500, 555, 0, 3, NULL, NULL) == 4);
+    assert(verify_teddy_bear_ballet_choreography_c(180, 32768, 4, 500, 777, 0, 3, NULL, NULL) == 5);
+    assert(verify_teddy_bear_ballet_choreography_c(180, 32768, 4, 1001, 555, 0, 3, NULL, NULL) == 6);
     printf("   ✓ Classification and Guard Gates verified (6/6 invalid cases intercepted).\n");
 
     printf("=============================================================\n");
-    printf("ALL TEDDY BALLET CHOREOGRAPHY PROOFS PASSED (4/4)\n");
+    printf("ALL TEDDY_BEAR BALLET CHOREOGRAPHY PROOFS PASSED (4/4)\n");
     printf("=============================================================\n");
     return 0;
 }

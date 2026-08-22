@@ -2,7 +2,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "inc/hathitrust_lore_interop.h"
-#include "inc/hathitrust_teddy_bridge.h"
+#include "inc/hathitrust_teddy_bear_bridge.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +39,7 @@ static void test_lore_registry(void) {
 }
 
 static void test_ssa_translation(void) {
-    printf("[Test] Running Teddy DNA-to-SSA Bridge tests...\n");
+    printf("[Test] Running TeddyBear DNA-to-SSA Bridge tests...\n");
     
     unsigned char seed[4] = { 0xDE, 0xAD, 0xBE, 0xEF };
     char *ssn = auncient_bridge_dna_to_ssa(seed, 4);
@@ -57,7 +57,7 @@ static void test_ssa_translation(void) {
     
     free(ssn);
     free(ssn2);
-    printf("[Test] Teddy DNA-to-SSA Bridge tests passed.\n");
+    printf("[Test] TeddyBear DNA-to-SSA Bridge tests passed.\n");
 }
 
 static void test_hogan_endowment(void) {
@@ -76,10 +76,10 @@ static void test_hogan_endowment(void) {
 }
 
 int main(void) {
-    printf("[Test] Running HathiTrust Auncient Interop & Teddy Bridge tests...\n");
+    printf("[Test] Running HathiTrust Auncient Interop & TeddyBear Bridge tests...\n");
     test_lore_registry();
     test_ssa_translation();
     test_hogan_endowment();
-    printf("[Test] All Interop & Teddy tests completed successfully.\n");
+    printf("[Test] All Interop & TeddyBear tests completed successfully.\n");
     return 0;
 }

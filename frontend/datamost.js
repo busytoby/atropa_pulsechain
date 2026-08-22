@@ -336,7 +336,7 @@ let provider, signer;
                     osc.start(now);
                     osc.stop(now + 0.3);
                 } else if (type === 'voice') {
-                    const phrases = ["Auncient", "Atropa", "Pulsechain", "Cartridge", "Teddy", "Danger", "Victory", "Ready"];
+                    const phrases = ["Auncient", "Atropa", "Pulsechain", "Cartridge", "TeddyBear", "Danger", "Victory", "Ready"];
                     const phrase = phrases[val % phrases.length] || "Auncient";
                     if ('speechSynthesis' in window) {
                         const utterance = new SpeechSynthesisUtterance(phrase);

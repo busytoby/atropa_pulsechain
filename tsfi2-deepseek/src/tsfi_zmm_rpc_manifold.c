@@ -382,7 +382,7 @@ int tsfi_zmm_rpc_dispatch_manifold(TsfiZmmVmState *state, int method_type, const
     }
     if (method_type == 27) { // flow.trigger_choreography
         // Launch the Google Labs Flow unified masterpiece matrix in the background
-        int sys_ret = system("nohup python3 tools/tsfi_ipomoea_teddy_matrix.py > /tmp/tsfi_choreography.log 2>&1 &");
+        int sys_ret = system("nohup python3 tools/tsfi_ipomoea_teddy_bear_matrix.py > /tmp/tsfi_choreography.log 2>&1 &");
         if (sys_ret == 0) {
             snprintf(output_buf, out_max, "{\"jsonrpc\": \"2.0\", \"result\": \"Atropa/999 Sovereign Choreography Matrix Initiated (Background).\", \"id\": %d}\n", id);
         } else {

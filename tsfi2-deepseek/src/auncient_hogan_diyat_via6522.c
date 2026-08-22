@@ -4,10 +4,10 @@
 #include <string.h>
 #include <math.h>
 
-void auncient_hogan_diyat_init(HoganDiyatVia6522Engine *engine, TeddyBearHeartUsdaAsset *teddy) {
+void auncient_hogan_diyat_init(HoganDiyatVia6522Engine *engine, TeddyBearHeartUsdaAsset *teddy_bear) {
     if (!engine) return;
     memset(engine, 0, sizeof(HoganDiyatVia6522Engine));
-    engine->teddy = teddy;
+    engine->teddy_bear = teddy_bear;
 
     /* VIA 6522 default reset state */
     engine->via.ddra = 0xFF; /* Port A output */
@@ -23,17 +23,17 @@ void auncient_hogan_diyat_init(HoganDiyatVia6522Engine *engine, TeddyBearHeartUs
 }
 
 bool auncient_hogan_diyat_charge_fee(HoganDiyatVia6522Engine *engine, uint64_t fee_saat) {
-    if (!engine || !engine->teddy) return false;
+    if (!engine || !engine->teddy_bear) return false;
 
     /* ACID Pre-Condition: Verify solvent balance */
-    uint64_t current_balance = engine->teddy->profile.hogan_account_saat;
+    uint64_t current_balance = engine->teddy_bear->profile.hogan_account_saat;
     if (current_balance < fee_saat) {
         /* ACID Rollback: Reject transaction, zero balance mutation */
         return false;
     }
 
     /* ACID Execution: Atomic debit in Saat currency */
-    engine->teddy->profile.hogan_account_saat -= fee_saat;
+    engine->teddy_bear->profile.hogan_account_saat -= fee_saat;
     engine->total_diyat_fees_charged_saat += fee_saat;
     return true;
 }
@@ -66,14 +66,14 @@ bool auncient_capstan_seek(HoganDiyatVia6522Engine *engine, float distance_meter
 }
 
 bool auncient_hogan_diyat_verify_theorems_56_60(HoganDiyatVia6522Engine *engine) {
-    if (!engine || !engine->teddy) return false;
+    if (!engine || !engine->teddy_bear) return false;
 
-    uint64_t start_balance = engine->teddy->profile.hogan_account_saat;
+    uint64_t start_balance = engine->teddy_bear->profile.hogan_account_saat;
 
     /* Theorem 56: Direct Saat Fee Debit Atomicity */
     bool fee_charged = auncient_hogan_diyat_charge_fee(engine, 100ULL);
     engine->acid_atomicity_verified = fee_charged &&
-        (engine->teddy->profile.hogan_account_saat == (start_balance - 100ULL));
+        (engine->teddy_bear->profile.hogan_account_saat == (start_balance - 100ULL));
 
     /* Theorem 57: Capstan Shaft Kinetic Energy Diyat Scaling */
     bool seek_ok = auncient_capstan_seek(engine, 1.25f);
@@ -84,11 +84,11 @@ bool auncient_hogan_diyat_verify_theorems_56_60(HoganDiyatVia6522Engine *engine)
     engine->via_timer_diyat_verified = io_ok && (engine->via.ora == 0xAA) && (engine->via.orb == 0x55);
 
     /* Theorem 59: Insufficient Balance Reversion & State Rollback */
-    uint64_t excessive_fee = engine->teddy->profile.hogan_account_saat + 50000ULL;
-    uint64_t balance_before_revert = engine->teddy->profile.hogan_account_saat;
+    uint64_t excessive_fee = engine->teddy_bear->profile.hogan_account_saat + 50000ULL;
+    uint64_t balance_before_revert = engine->teddy_bear->profile.hogan_account_saat;
     bool excessive_charged = auncient_hogan_diyat_charge_fee(engine, excessive_fee);
     engine->insipient_balance_revert_verified = (!excessive_charged) &&
-        (engine->teddy->profile.hogan_account_saat == balance_before_revert);
+        (engine->teddy_bear->profile.hogan_account_saat == balance_before_revert);
 
     /* Theorem 60: Non-Preferential Checksum & Hardware Closure */
     engine->rule18_parity_checksum = auncient_hogan_diyat_compute_rule18(engine);

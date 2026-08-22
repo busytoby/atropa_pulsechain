@@ -51,7 +51,7 @@ Orchestrate the design, implementation, and verification of a Git post-commit ho
 |-------|------|-----------|--------|---------|
 | explorer_init | teamwork_preview_explorer | Explore codebase, compile commands, report generator, git hook setup | completed | 30b5333c-398b-4e41-84c6-19953b6f5767 |
 | e2e_testing_orch | self | E2E Testing Orchestrator | completed | dafb10f7-c6f9-4ae1-a4a3-57b9e606c784 |
-| worker_install | teamwork_preview_worker | Install git hook, run E2E, compile test_vulkan_teddy, verify stdout table | completed | 618117b8-9be0-477a-be74-92ac3b00ac0c |
+| worker_install | teamwork_preview_worker | Install git hook, run E2E, compile test_vulkan_teddy_bear, verify stdout table | completed | 618117b8-9be0-477a-be74-92ac3b00ac0c |
 | forensic_auditor | teamwork_preview_auditor | Forensic Integrity Audit of git hook setup and test suite | completed | cb8f5ea1-af13-4f33-8994-57f56a8b0acd |
 
 ## Succession Status

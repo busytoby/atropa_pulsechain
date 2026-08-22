@@ -20,12 +20,12 @@ int main(void) {
     printf("TEST PROVER: HOGAN BANK DIYAT VIA 6522 THEOREMS 56 THROUGH 60    \n");
     printf("=================================================================\n");
 
-    TeddyBearHeartUsdaAsset teddy;
-    auncient_teddy_bear_heart_init(&teddy, 0x19283746);
-    assert(teddy.profile.hogan_account_saat == 1000000ULL);
+    TeddyBearHeartUsdaAsset teddy_bear;
+    auncient_teddy_bear_heart_init(&teddy_bear, 0x19283746);
+    assert(teddy_bear.profile.hogan_account_saat == 1000000ULL);
 
     HoganDiyatVia6522Engine engine;
-    auncient_hogan_diyat_init(&engine, &teddy);
+    auncient_hogan_diyat_init(&engine, &teddy_bear);
 
     bool ok = auncient_hogan_diyat_verify_theorems_56_60(&engine);
     assert(ok);
@@ -33,7 +33,7 @@ int main(void) {
     /* Theorem 56 Verification */
     assert(engine.acid_atomicity_verified);
     printf(" Theorem 56 [Direct Saat Debit Atomicity]:    PROVED (Hogan Balance: %lu Saat)\n",
-           teddy.profile.hogan_account_saat);
+           teddy_bear.profile.hogan_account_saat);
 
     /* Theorem 57 Verification */
     assert(engine.capstan_inertia_diyat_verified);

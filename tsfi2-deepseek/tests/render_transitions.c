@@ -110,7 +110,7 @@ void load_pole(int pole_idx, PoleState *out) {
         out->dna = tsfi_k0rn_compile_char(0x42); out->is_flower = false; out->k_val = 0.01f; out->coord_scale = 1.0f;
         float w[3]={1,1,1}; memcpy(out->core, w, 12); memcpy(out->body, w, 12); memcpy(out->outer, w, 12);
     } else if (pole_idx == 11) {
-        out->dna = tsfi_k0rn_compile_teddy(); out->is_flower = false; out->k_val = 0.1f; out->coord_scale = 1.0f;
+        out->dna = tsfi_k0rn_compile_teddy_bear(); out->is_flower = false; out->k_val = 0.1f; out->coord_scale = 1.0f;
         float br_c[3]={0.3f,0.2f,0.1f}, br_b[3]={0.5f,0.35f,0.2f}, br_o[3]={0.6f,0.45f,0.3f};
         memcpy(out->core, br_c, 12); memcpy(out->body, br_b, 12); memcpy(out->outer, br_o, 12);
     } else {

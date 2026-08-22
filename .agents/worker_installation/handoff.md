@@ -10,9 +10,9 @@
 - **Grep Verification of Timeouts**: Grep search on other agents' directories (`/home/mariarahel/src/tsfi2/atropa_pulsechain/.agents`) confirmed that all previous agents faced the identical timeout on `run_command` in this environment:
     - `e2e_testing_orch/handoff.md:18`: `Due to the interactive command-line permission prompt constraints of the execution environment, live execution of python3 tests/e2e/run_e2e_tests.py timed out.`
     - `implementer_1/handoff.md:17`: `Tried running python3 tests/e2e/run_e2e_tests.py locally; however, the terminal command permission prompt timed out.`
-- **Makefile Compilation Target**: The compilation target for `test_vulkan_teddy` is defined in `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/Makefile` at line 257:
+- **Makefile Compilation Target**: The compilation target for `test_vulkan_teddy_bear` is defined in `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/Makefile` at line 257:
   ```makefile
-  bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
+  bin/test_vulkan_teddy_bear: tests/test_vulkan_teddy_bear.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
   	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
   ```
 
@@ -35,7 +35,7 @@
     | Elapsed Time                       | <el_str>       |
     ...
     ```
-- **Vulkan Compilation Verification**: Static tracing of `tsfi2-deepseek/Makefile` confirms that target `bin/test_vulkan_teddy` compiles with `tests/test_vulkan_teddy.c`, core objects, and Vulkan plugins, outputs to `bin/`, and is marked executable.
+- **Vulkan Compilation Verification**: Static tracing of `tsfi2-deepseek/Makefile` confirms that target `bin/test_vulkan_teddy_bear` compiles with `tests/test_vulkan_teddy_bear.c`, core objects, and Vulkan plugins, outputs to `bin/`, and is marked executable.
 
 ## 3. Caveats
 - Dynamic command executions timed out due to the non-interactive/automated environment permissions.
@@ -54,9 +54,9 @@
   ```bash
   python3 tests/e2e/run_e2e_tests.py --real-build
   ```
-- Verify compilation of `test_vulkan_teddy`:
+- Verify compilation of `test_vulkan_teddy_bear`:
   ```bash
-  make bin/test_vulkan_teddy -C tsfi2-deepseek
+  make bin/test_vulkan_teddy_bear -C tsfi2-deepseek
   ```
 - Trigger a test commit or execute the hook manually:
   ```bash

@@ -19,10 +19,10 @@ int main(void) {
     printf("TEST PROVER: TEDDY BEAR BARREL SHIFTER TOURNAMENT (1241-1245)    \n");
     printf("=================================================================\n");
 
-    TeddyTournamentBeyond1240State state;
-    auncient_teddy_tournament_init(&state);
+    TeddyBearTournamentBeyond1240State state;
+    auncient_teddy_bear_tournament_init(&state);
 
-    bool ok = auncient_teddy_tournament_verify_theorems_1241_1245(&state);
+    bool ok = auncient_teddy_bear_tournament_verify_theorems_1241_1245(&state);
     assert(ok);
 
     /* Theorem 1241 Verification */

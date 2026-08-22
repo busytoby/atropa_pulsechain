@@ -367,7 +367,7 @@
             }
         }
 
-        // Static parsed USD head vertices from teddy_head.usda
+        // Static parsed USD head vertices from teddy_bear_head.usda
         const usdVertices = [
             [0.0000, -0.5500, 0.0000], [0.2386, -0.4955, 0.0000], [0.1687, -0.4955, 0.1534],
             [0.0000, -0.4955, 0.2169], [-0.1687, -0.4955, 0.1534], [-0.2386, -0.4955, 0.0000],
@@ -1156,13 +1156,13 @@
             log("[MAINCHAIN] SSA Identity verification SUCCESS. Writer 555 registered.");
             
             const usdaText = getUSDAText();
-            log("[USD_SAVE] Writing to tsfi2-deepseek/assets/teddy_head.usda...");
+            log("[USD_SAVE] Writing to tsfi2-deepseek/assets/teddy_bear_head.usda...");
             
             fetch('/api/write-file', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: 'tsfi2-deepseek/assets/teddy_head.usda',
+                    path: 'tsfi2-deepseek/assets/teddy_bear_head.usda',
                     content: usdaText
                 })
             })

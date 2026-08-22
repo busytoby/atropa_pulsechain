@@ -36,5 +36,5 @@ The 2-3 Merkle tree acts as a structured gradient encoder:
 ## 3. Direct Parameter Synthesis
 Instead of exploring variations, the model writes the predicted optimal parameters directly to the active genome file:
 1. DeepSeek analyzes the latest ACAB Blockroot.
-2. The model outputs the target 12-byte `TsfiTeddyDna` struct values.
+2. The model outputs the target 12-byte `TsfiTeddyBearDna` struct values.
 3. The C loader writes these bytes to `assets/bear_genome.dna` and triggers `reload_genome()`, rendering the optimized stuffed teddy bear instantly.

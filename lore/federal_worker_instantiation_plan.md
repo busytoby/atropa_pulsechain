@@ -33,12 +33,12 @@ We will update the startup checks in [src/auncient_timeline_autodin.c](file:///h
  bool auncient_autodin_verify_system_start(const HoganAccount *accounts, int count) {
      bool has_bank = false;
      bool has_ssa = false;
-     bool has_teddy = false;
+     bool has_teddy_bear = false;
 +    bool has_worker = false;
  
      for (int i = 0; i < count; i++) {
          if (accounts[i].account_id == 555) { // Singular Teddy Bear
-             has_teddy = true;
+             has_teddy_bear = true;
          }
 +        if (accounts[i].account_id == 888) { // Simulation Federal Worker
 +            has_worker = true;
@@ -48,8 +48,8 @@ We will update the startup checks in [src/auncient_timeline_autodin.c](file:///h
          if (accounts[i].account_id == 2) has_ssa = true;
      }
  
--    return (has_bank && has_ssa && has_teddy);
-+    return (has_bank && has_ssa && has_teddy && has_worker);
+-    return (has_bank && has_ssa && has_teddy_bear);
++    return (has_bank && has_ssa && has_teddy_bear && has_worker);
  }
 ```
 

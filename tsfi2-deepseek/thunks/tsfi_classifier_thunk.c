@@ -3,7 +3,7 @@
 
 // TSFiClassifierMatrix: AVX-Optimized Structural Cascade
 // Returns a confidence score from 0.0 (Total Hallucination) to 1.0 (Perfect Teddy Bear Structure)
-float evaluate_teddy_cascade(const uint8_t* pixels, int w, int h) {
+float evaluate_teddy_bear_cascade(const uint8_t* pixels, int w, int h) {
     long total_brown_mass = 0;
     long total_green_mass = 0;
     long out_of_bounds_mass = 0;

@@ -5,7 +5,7 @@
  * Type 1: ARTIFACT_TEDDY_BEAR (Plush stuffed teddy bear entity with living endowment),
  * Type 2: ARTIFACT_ACRYLIC_STAND (Rigid acrylic figure stand with optical perspective alignment),
  * Type 3: ARTIFACT_ITA_BAG_BADGE (Wearable pin/badge display with IMU kinematics),
- * Type 4: ARTIFACT_NONTEDDY_PUPPET (Non-teddy finger puppet, jointed resin doll, or PVC figurine).
+ * Type 4: ARTIFACT_NONTEDDY_BEAR_PUPPET (Non-teddy_bear finger puppet, jointed resin doll, or PVC figurine).
  * Formally proves sensor binding latency in [10..50] ms (nominal 20 ms),
  * physical synchrony ratio in [850..1000]m (nominal 0.960),
  * detachment recovery latency in [50..200] ms (nominal 110 ms), non-preferential flux conservation, and zero-loss ReBAR rollback.
@@ -21,7 +21,7 @@ enum embodiment_archetype {
     EMBODIMENT_TEDDY_BEAR       = 1,
     EMBODIMENT_ACRYLIC_STAND    = 2,
     EMBODIMENT_ITA_BAG_BADGE    = 3,
-    EMBODIMENT_NONTEDDY_PUPPET  = 4
+    EMBODIMENT_NONTEDDY_BEAR_PUPPET  = 4
 };
 
 static int verify_shared_physical_anchoring_c(
@@ -87,8 +87,8 @@ int main(void) {
     printf("FORMAL PROOF TEST: SHARED PHYSICAL ANCHORING PROVER          \n");
     printf("=============================================================\n");
 
-    /* Pass 1: Clean Execution across All 4 Embodiment Archetypes (Teddy, Acrylic, Badge, Non-Teddy Puppet) */
-    const char *type_names[5] = {"NONE", "TEDDY_BEAR", "ACRYLIC_STAND", "ITA_BAG_BADGE", "NONTEDDY_PUPPET"};
+    /* Pass 1: Clean Execution across All 4 Embodiment Archetypes (TeddyBear, Acrylic, Badge, Non-TeddyBear Puppet) */
+    const char *type_names[5] = {"NONE", "TEDDY_BEAR", "ACRYLIC_STAND", "ITA_BAG_BADGE", "NONTEDDY_BEAR_PUPPET"};
     for (int t = 1; t <= 4; t++) {
         uint64_t arch_out = 0;
         int arch_disp = 0;
@@ -116,9 +116,9 @@ int main(void) {
     /* Pass 3: Fault Isolation and ReBAR Shadow Rollback */
     uint64_t rollback_out = 0;
     int rollback_disp = 0;
-    int r_fault = verify_shared_physical_anchoring_c(EMBODIMENT_NONTEDDY_PUPPET, 20, 960, 110, 555, 1, 3, &rollback_out, &rollback_disp);
+    int r_fault = verify_shared_physical_anchoring_c(EMBODIMENT_NONTEDDY_BEAR_PUPPET, 20, 960, 110, 555, 1, 3, &rollback_out, &rollback_disp);
     assert(r_fault == 0);
-    printf("   ✓ Non-Teddy Fault Isolation Rollback verified (Ruling=0, Rollback=%lu, DispMod=%d).\n", rollback_out, rollback_disp);
+    printf("   ✓ Non-TeddyBear Fault Isolation Rollback verified (Ruling=0, Rollback=%lu, DispMod=%d).\n", rollback_out, rollback_disp);
 
     /* Pass 4: Guard Gate Classification (All 6 Invalid Cases Intercepted) */
     assert(verify_shared_physical_anchoring_c(1, 20, 960, 110, 555, 0, 2, NULL, NULL) == 1);

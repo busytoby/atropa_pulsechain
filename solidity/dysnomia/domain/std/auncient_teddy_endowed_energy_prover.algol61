@@ -9,16 +9,16 @@ begin
   comment 4. Sub-Picosecond Endowment Jitter Contraction: Contracts financial-energetic conversion jitter to delta_tau <= 0.12 ps under BMRC (gamma = 875/1000) across M in [1..16] participant nodes,;
   comment 5. Zero-Loss Shadow Restoration: Unverified non-participant or counterfeit seed triggers LaSalle dynamic braking (u = 0) with delta_Saat_loss = 0.;
 
-  integer procedure verify_auncient_teddy_endowed_energy(
+  integer procedure verify_auncient_teddy_bear_endowed_energy(
     initial_endowment_jitter_ps,
-    teddy_participant_nodes_m,
+    teddy_bear_participant_nodes_m,
     ingestion_cycles_n,
     cics_writer_id,
     simulate_counterfeit_seed_fault,
     k_param
   );
-  value initial_endowment_jitter_ps, teddy_participant_nodes_m, ingestion_cycles_n, cics_writer_id, simulate_counterfeit_seed_fault, k_param;
-  integer initial_endowment_jitter_ps, teddy_participant_nodes_m, ingestion_cycles_n, cics_writer_id, simulate_counterfeit_seed_fault, k_param;
+  value initial_endowment_jitter_ps, teddy_bear_participant_nodes_m, ingestion_cycles_n, cics_writer_id, simulate_counterfeit_seed_fault, k_param;
+  integer initial_endowment_jitter_ps, teddy_bear_participant_nodes_m, ingestion_cycles_n, cics_writer_id, simulate_counterfeit_seed_fault, k_param;
   begin
     comment Classification Ruling:
             0 = QUALIFIED_ORBITAL_HANDSHAKE (Teddy Bear Endowed Energy Ingestion Formally Proven)
@@ -34,40 +34,40 @@ begin
 
     integer current_jitter;
     integer step_idx;
-    integer shadow_teddy_baseline;
+    integer shadow_teddy_bear_baseline;
     integer g_gate_factor;
     integer committed_output;
     integer disp_wrap;
 
     if k_param != 3 then
       begin
-        verify_auncient_teddy_endowed_energy := 1;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 1;
+        go to end_teddy_bear_proc;
       end;
 
     if initial_endowment_jitter_ps < 0 or initial_endowment_jitter_ps > 50000 then
       begin
-        verify_auncient_teddy_endowed_energy := 2;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 2;
+        go to end_teddy_bear_proc;
       end;
 
-    if teddy_participant_nodes_m < 1 or teddy_participant_nodes_m > 16 then
+    if teddy_bear_participant_nodes_m < 1 or teddy_bear_participant_nodes_m > 16 then
       begin
-        verify_auncient_teddy_endowed_energy := 3;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 3;
+        go to end_teddy_bear_proc;
       end;
 
     if ingestion_cycles_n < 1 or ingestion_cycles_n > 64 then
       begin
-        verify_auncient_teddy_endowed_energy := 4;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 4;
+        go to end_teddy_bear_proc;
       end;
 
     comment Validate Qualifying Teddy Bear CICS SSA Citizen (555=TeddyBear, 888=FederalWorker, 99=Agent99, 42=Agent42);
     if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
       begin
-        verify_auncient_teddy_endowed_energy := 5;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 5;
+        go to end_teddy_bear_proc;
       end;
 
     comment Step 1: Execute Endowed Energy Ingestion Jitter Contraction Loop under BMRC;
@@ -80,49 +80,49 @@ begin
 
     if current_jitter > initial_endowment_jitter_ps then
       begin
-        verify_auncient_teddy_endowed_energy := 6;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 6;
+        go to end_teddy_bear_proc;
       end;
 
     comment Step 2: Establish Shadow Baseline in Isolated ZMM Registers (1,000,000 Saat Default Endowment);
-    shadow_teddy_baseline := (cics_writer_id * 1000000) + (ingestion_cycles_n * 10000) + (teddy_participant_nodes_m * 100) + (current_jitter / 16);
+    shadow_teddy_bear_baseline := (cics_writer_id * 1000000) + (ingestion_cycles_n * 10000) + (teddy_bear_participant_nodes_m * 100) + (current_jitter / 16);
 
     comment Step 3: SwiGLU Gating Modulation per Ingestion Step;
-    g_gate_factor := 875 + ((125 * (teddy_participant_nodes_m - ((teddy_participant_nodes_m / 8) * 8))) / 8);
+    g_gate_factor := 875 + ((125 * (teddy_bear_participant_nodes_m - ((teddy_bear_participant_nodes_m / 8) * 8))) / 8);
     if g_gate_factor < 875 or g_gate_factor > 1000 then
       begin
-        verify_auncient_teddy_endowed_energy := 7;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 7;
+        go to end_teddy_bear_proc;
       end;
 
     if simulate_counterfeit_seed_fault then
       begin
-        committed_output := shadow_teddy_baseline;
+        committed_output := shadow_teddy_bear_baseline;
       end
     else
       begin
-        committed_output := shadow_teddy_baseline + ((current_jitter * g_gate_factor) / 1000);
+        committed_output := shadow_teddy_bear_baseline + ((current_jitter * g_gate_factor) / 1000);
       end;
 
     comment Assert Shadow Baseline Immutability Invariant (Durability & Consistency);
-    if shadow_teddy_baseline != ((cics_writer_id * 1000000) + (ingestion_cycles_n * 10000) + (teddy_participant_nodes_m * 100) + (current_jitter / 16)) then
+    if shadow_teddy_bear_baseline != ((cics_writer_id * 1000000) + (ingestion_cycles_n * 10000) + (teddy_bear_participant_nodes_m * 100) + (current_jitter / 16)) then
       begin
-        verify_auncient_teddy_endowed_energy := 8;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 8;
+        go to end_teddy_bear_proc;
       end;
 
-    if simulate_counterfeit_seed_fault and committed_output != shadow_teddy_baseline then
+    if simulate_counterfeit_seed_fault and committed_output != shadow_teddy_bear_baseline then
       begin
-        verify_auncient_teddy_endowed_energy := 9;
-        go to end_teddy_proc;
+        verify_auncient_teddy_bear_endowed_energy := 9;
+        go to end_teddy_bear_proc;
       end;
 
     disp_wrap := committed_output - ((committed_output / 256) * 256);
     if disp_wrap < 0 then disp_wrap := disp_wrap + 256;
 
-    verify_auncient_teddy_endowed_energy := 0;
+    verify_auncient_teddy_bear_endowed_energy := 0;
 
-  end_teddy_proc:
+  end_teddy_bear_proc:
   end;
 
 end

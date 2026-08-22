@@ -1033,7 +1033,7 @@
     {
         .fourcc_str = "TEDY",
         .opcode_signature = 0x54454459,
-        .title = "CPMTOMIE-TEDDY-STANAG-CORPS",
+        .title = "CPMTOMIE-TEDDY_BEAR-STANAG-CORPS",
         .theorem_descriptions = {
             "Deterministic DNA-to-SSA Mapping",
             "Real-World STANAG 4586 Telemetry Deployment",

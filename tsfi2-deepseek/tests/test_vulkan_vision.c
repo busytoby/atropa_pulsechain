@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     if (!s) return 1;
     s->external_render_enabled = true;
     
-    K0RnStream *base_genome = tsfi_k0rn_compile_teddy();
+    K0RnStream *base_genome = tsfi_k0rn_compile_teddy_bear();
     K0RnStream *mutant = (K0RnStream*)lau_malloc_wired(sizeof(K0RnStream));
     mutant->stream_capacity = 32; mutant->op_count = base_genome->op_count;
     mutant->ops = (K0RnOp*)lau_memalign(512, sizeof(K0RnOp) * 32);

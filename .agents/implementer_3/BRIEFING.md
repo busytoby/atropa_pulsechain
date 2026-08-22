@@ -20,7 +20,7 @@ Compile Vulkan test binary and run benchmark suite to produce benchmark results 
 - Updated: 2026-06-14T13:24:45Z
 
 ## Task Summary
-- **What to build**: Compile `bin/test_vulkan_teddy` in `tsfi2-deepseek`. Run `run_benchmarks.sh`.
+- **What to build**: Compile `bin/test_vulkan_teddy_bear` in `tsfi2-deepseek`. Run `run_benchmarks.sh`.
 - **Success criteria**: Valid `benchmark_results.json` generated. Output logged in handoff.md.
 - **Interface contracts**: N/A
 - **Code layout**: N/A

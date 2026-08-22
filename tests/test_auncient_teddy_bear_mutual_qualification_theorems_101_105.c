@@ -24,9 +24,9 @@ int main(void) {
     auncient_teddy_bear_heart_init(&verifier, 0x33334444);
 
     TeddyBearMutualQualificationState state;
-    auncient_teddy_qual_init(&state, 0x11112222, 0x33334444);
+    auncient_teddy_bear_qual_init(&state, 0x11112222, 0x33334444);
 
-    bool ok = auncient_teddy_qual_verify_theorems_101_105(&state, &author, &verifier);
+    bool ok = auncient_teddy_bear_qual_verify_theorems_101_105(&state, &author, &verifier);
     assert(ok);
 
     /* Theorem 101 Verification */
@@ -52,7 +52,7 @@ int main(void) {
 
     /* Theorem 105 Verification */
     assert(state.mesh_qualification_closure_verified);
-    printf(" Theorem 105 [Teddy Mesh Closure & Parity]:    PROVED (Bijective Standards Consensus)\n");
+    printf(" Theorem 105 [TeddyBear Mesh Closure & Parity]:    PROVED (Bijective Standards Consensus)\n");
 
     /* Rule 18 Parity */
     assert(state.rule18_parity_checksum > 0);

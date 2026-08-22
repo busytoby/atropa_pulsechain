@@ -1,8 +1,8 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-bool evaluate_masuda_perceived_naturalness(const teddy_geometry_t *geom, double sync_delay_ms, double smile_intensity, double *naturalness_out) {
+bool evaluate_masuda_perceived_naturalness(const teddy_bear_geometry_t *geom, double sync_delay_ms, double smile_intensity, double *naturalness_out) {
     if (!geom || sync_delay_ms < 0.0 || smile_intensity < 0.0 || !naturalness_out) {
         return false;
     }
@@ -12,7 +12,7 @@ bool evaluate_masuda_perceived_naturalness(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_masuda_conversational_familiarity(const teddy_geometry_t *geom, double reciprocal_gaze_sync, double symmetry_val, double *familiarity_out) {
+bool evaluate_masuda_conversational_familiarity(const teddy_bear_geometry_t *geom, double reciprocal_gaze_sync, double symmetry_val, double *familiarity_out) {
     if (!geom || reciprocal_gaze_sync < 0.0 || symmetry_val < 0.0 || !familiarity_out) {
         return false;
     }
@@ -20,7 +20,7 @@ bool evaluate_masuda_conversational_familiarity(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_masuda_empathic_synchronization(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *empathy_out) {
+bool evaluate_masuda_empathic_synchronization(const teddy_bear_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *empathy_out) {
     if (!geom || blink_sync_rate < 0.0 || pupil_dilation_sync < 0.0 || !empathy_out) {
         return false;
     }
@@ -28,7 +28,7 @@ bool evaluate_masuda_empathic_synchronization(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_masuda_naturalness_attenuation(const teddy_geometry_t *geom, double sync_delay_ms, double *attenuated_naturalness_out) {
+bool evaluate_masuda_naturalness_attenuation(const teddy_bear_geometry_t *geom, double sync_delay_ms, double *attenuated_naturalness_out) {
     if (!geom || sync_delay_ms < 0.0 || !attenuated_naturalness_out) {
         return false;
     }
@@ -36,7 +36,7 @@ bool evaluate_masuda_naturalness_attenuation(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_masuda_conversational_familiarity_decay(const teddy_geometry_t *geom, double initial_familiarity, double duration_sec, double *decayed_familiarity_out) {
+bool evaluate_masuda_conversational_familiarity_decay(const teddy_bear_geometry_t *geom, double initial_familiarity, double duration_sec, double *decayed_familiarity_out) {
     if (!geom || initial_familiarity < 0.0 || duration_sec < 0.0 || !decayed_familiarity_out) {
         return false;
     }
@@ -44,7 +44,7 @@ bool evaluate_masuda_conversational_familiarity_decay(const teddy_geometry_t *ge
     return true;
 }
 
-bool evaluate_masuda_empathic_sync_variance(const teddy_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *sync_variance_out) {
+bool evaluate_masuda_empathic_sync_variance(const teddy_bear_geometry_t *geom, double blink_sync_rate, double pupil_dilation_sync, double *sync_variance_out) {
     if (!geom || blink_sync_rate < 0.0 || pupil_dilation_sync < 0.0 || !sync_variance_out) {
         return false;
     }
@@ -53,7 +53,7 @@ bool evaluate_masuda_empathic_sync_variance(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_masuda_naturalness_variance(const teddy_geometry_t *geom, double reciprocal_gaze_sync, double *naturalness_variance_out) {
+bool evaluate_masuda_naturalness_variance(const teddy_bear_geometry_t *geom, double reciprocal_gaze_sync, double *naturalness_variance_out) {
     if (!geom || reciprocal_gaze_sync < 0.0 || !naturalness_variance_out) {
         return false;
     }
@@ -61,7 +61,7 @@ bool evaluate_masuda_naturalness_variance(const teddy_geometry_t *geom, double r
     return true;
 }
 
-bool evaluate_masuda_reciprocal_gaze_attenuation(const teddy_geometry_t *geom, double gaze_return_delay_ms, double *attenuated_gaze_score_out) {
+bool evaluate_masuda_reciprocal_gaze_attenuation(const teddy_bear_geometry_t *geom, double gaze_return_delay_ms, double *attenuated_gaze_score_out) {
     if (!geom || gaze_return_delay_ms < 0.0 || !attenuated_gaze_score_out) {
         return false;
     }
@@ -69,7 +69,7 @@ bool evaluate_masuda_reciprocal_gaze_attenuation(const teddy_geometry_t *geom, d
     return true;
 }
 
-bool evaluate_masuda_empathic_contagion_interaction(const teddy_geometry_t *geom, double sync_level, double contagion_rate, double *interaction_score_out) {
+bool evaluate_masuda_empathic_contagion_interaction(const teddy_bear_geometry_t *geom, double sync_level, double contagion_rate, double *interaction_score_out) {
     if (!geom || sync_level < 0.0 || contagion_rate < 0.0 || !interaction_score_out) {
         return false;
     }

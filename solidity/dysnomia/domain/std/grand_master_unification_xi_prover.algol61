@@ -11,7 +11,7 @@ begin
   comment 8. MCP Tri-Party Schema Grounding (mcp_triparty_schema_grounding_prover.algol61),;
   comment 9. H-Bridge Lighthouse WCAG Auditing (hbridge_lighthouse_wcag_prover.algol61),;
   comment 10. Governable Situational WCAG Accessibility (governable_situational_wcag_accessibility_prover.algol61),;
-  comment 11. Teddy Protein Weyl STANAG Vote & Universal Weyl Closure (teddy_protein_weyl_stanag_vote_prover.algol61, universal_stanag_weyl_closure_prover.algol61),;
+  comment 11. TeddyBear Protein Weyl STANAG Vote & Universal Weyl Closure (teddy_bear_protein_weyl_stanag_vote_prover.algol61, universal_stanag_weyl_closure_prover.algol61),;
   comment 12. Spontaneous Shared Phantom Hallucination (spontaneous_shared_hallucination_prover.algol61),;
   comment 13. In-Public Calibrated Tripartite Alignment (in_public_calibrated_tripartite_alignment_prover.algol61),;
   comment 14. Periodic Visual Scene Gating & Speech (periodic_visual_scene_gating_prover.algol61),;

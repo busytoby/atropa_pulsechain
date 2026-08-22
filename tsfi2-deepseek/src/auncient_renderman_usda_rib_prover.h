@@ -23,8 +23,8 @@ typedef struct {
 } RenderManRibState;
 
 void auncient_renderman_rib_init(RenderManRibState *rib);
-bool auncient_renderman_emit_teddy_heart_rib(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy);
-bool auncient_renderman_verify_theorems_26_30(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy);
+bool auncient_renderman_emit_teddy_bear_heart_rib(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy_bear);
+bool auncient_renderman_verify_theorems_26_30(RenderManRibState *rib, const TeddyBearHeartUsdaAsset *teddy_bear);
 uint32_t auncient_renderman_compute_rule18_checksum(const RenderManRibState *rib);
 
 #endif /* AUNCIENT_RENDERMAN_USDA_RIB_PROVER_H */

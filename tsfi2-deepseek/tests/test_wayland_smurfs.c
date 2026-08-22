@@ -1335,7 +1335,7 @@ int main(int argc, char **argv) {
             draw_line_aa(pixels, W, H, baby_x - 2, baby_y - 11, baby_x - 1, baby_y - 10, baby_stitch, 0.8f);
             draw_line_aa(pixels, W, H, baby_x + 2, baby_y - 11, baby_x + 1, baby_y - 10, baby_stitch, 0.8f);
 
-            // 3. Body: rounded teddy torso
+            // 3. Body: rounded teddy_bear torso
             draw_radial_glow(pixels, W, H, baby_x, baby_y - 2, 7.0f, baby_brown);
             draw_rect_ab4h(pixels, W, H, baby_x - 4, baby_y - 4, 8, 8, baby_brown);
 

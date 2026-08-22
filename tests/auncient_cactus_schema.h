@@ -110,9 +110,9 @@ typedef struct {
     float sickness;
     int missing_eye;
     float lighting_angle;
-} usd_AuncientTeddySchema_t;
+} usd_AuncientTeddyBearSchema_t;
 
-static inline void usd_init_AuncientTeddySchema(usd_AuncientTeddySchema_t *obj) {
+static inline void usd_init_AuncientTeddyBearSchema(usd_AuncientTeddyBearSchema_t *obj) {
     obj->scale = 1.0f;
     obj->stuffing = 1.5f;
     obj->arm_length = 1.0f;
@@ -124,75 +124,75 @@ static inline void usd_init_AuncientTeddySchema(usd_AuncientTeddySchema_t *obj) 
     obj->lighting_angle = 135.0f;
 }
 
-static inline float usd_physics_api_get_scale(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_scale(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->scale;
 }
 
-static inline void usd_physics_api_set_scale(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_scale(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->scale = val;
 }
 
-static inline float usd_physics_api_get_stuffing(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_stuffing(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->stuffing;
 }
 
-static inline void usd_physics_api_set_stuffing(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_stuffing(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->stuffing = val;
 }
 
-static inline float usd_physics_api_get_arm_length(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_arm_length(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->arm_length;
 }
 
-static inline void usd_physics_api_set_arm_length(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_arm_length(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->arm_length = val;
 }
 
-static inline float usd_physics_api_get_leg_length(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_leg_length(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->leg_length;
 }
 
-static inline void usd_physics_api_set_leg_length(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_leg_length(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->leg_length = val;
 }
 
-static inline float usd_physics_api_get_head_size(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_head_size(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->head_size;
 }
 
-static inline void usd_physics_api_set_head_size(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_head_size(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->head_size = val;
 }
 
-static inline float usd_physics_api_get_ear_size(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_ear_size(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->ear_size;
 }
 
-static inline void usd_physics_api_set_ear_size(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_ear_size(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->ear_size = val;
 }
 
-static inline float usd_physics_api_get_sickness(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_sickness(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->sickness;
 }
 
-static inline void usd_physics_api_set_sickness(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_sickness(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->sickness = val;
 }
 
-static inline int usd_physics_api_get_missing_eye(const usd_AuncientTeddySchema_t *obj) {
+static inline int usd_physics_api_get_missing_eye(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->missing_eye;
 }
 
-static inline void usd_physics_api_set_missing_eye(usd_AuncientTeddySchema_t *obj, int val) {
+static inline void usd_physics_api_set_missing_eye(usd_AuncientTeddyBearSchema_t *obj, int val) {
     obj->missing_eye = val;
 }
 
-static inline float usd_physics_api_get_lighting_angle(const usd_AuncientTeddySchema_t *obj) {
+static inline float usd_physics_api_get_lighting_angle(const usd_AuncientTeddyBearSchema_t *obj) {
     return obj->lighting_angle;
 }
 
-static inline void usd_physics_api_set_lighting_angle(usd_AuncientTeddySchema_t *obj, float val) {
+static inline void usd_physics_api_set_lighting_angle(usd_AuncientTeddyBearSchema_t *obj, float val) {
     obj->lighting_angle = val;
 }
 

@@ -75,14 +75,14 @@ Since command execution was not possible under this restricted/headless environm
 
 - **Git hook (`tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`)**:
   - Successfully unsets `GIT_DIR`, `GIT_WORK_TREE`, and `GIT_INDEX_FILE` to avoid recursive loop triggers during hook commits.
-  - Builds `bin/test_vulkan_teddy` using `make`.
+  - Builds `bin/test_vulkan_teddy_bear` using `make`.
   - Runs benchmarks script `run_benchmarks.sh`.
   - Generates HTML report with `generate_report.py`.
   - Parses `benchmark_results.json` and prints metrics to standard output.
 
 - **Vulkan compiler target (`tsfi2-deepseek/Makefile:257`)**:
   ```make
-  bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
+  bin/test_vulkan_teddy_bear: tests/test_vulkan_teddy_bear.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
   ```
 
 ## 2. Logic Chain

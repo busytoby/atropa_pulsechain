@@ -41,7 +41,7 @@ static void handle_sigint(int sig) {
 }
 
 
-static void render_teddy(uint32_t *px, int W, int H, const TsfiControlNetMap *depth_map, const TsfiControlNetMap *pose_map) {
+static void render_teddy_bear(uint32_t *px, int W, int H, const TsfiControlNetMap *depth_map, const TsfiControlNetMap *pose_map) {
     // Both maps are 256x256 * 3 bytes
     if (!depth_map || !pose_map) return;
     
@@ -133,7 +133,7 @@ static void application_key_hook(void *data, uint32_t serial, uint32_t time, uin
 
 
 #define SKELETON_NO_MAIN
-#include "tsfi_teddy_skeleton.c"
+#include "tsfi_teddy_bear_skeleton.c"
 #undef W
 #undef H
 
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
     if (g_puppet_state) {
         memset(&g_puppet_state->puppets[0], 0, sizeof(TsfiPuppet));
         g_puppet_state->puppets[0].active = 1;
-        g_puppet_state->puppets[0].animal_type = PUPPET_TYPE_TEDDY;
+        g_puppet_state->puppets[0].animal_type = PUPPET_TYPE_TEDDY_BEAR;
         g_puppet_state->puppets[0].scale = 1.0f;
         g_puppet_state->puppets[0].stuffing = 1.5f;
         g_puppet_state->puppets[0].arm_length = 1.0f;
@@ -182,12 +182,12 @@ int main(int argc, char **argv) {
     tsfi_input_set_resize_hook(application_resize_hook);
 
     
-    tsfi_io_printf(stdout, "[TEDDY] Session Active.\n");
+    tsfi_io_printf(stdout, "[TEDDY_BEAR] Session Active.\n");
     TsfiControlNetMap *shm_depth = tsfi_cn_shm_create(TSFI_CN_SHM_DEPTH);
     TsfiControlNetMap *shm_pose  = tsfi_cn_shm_create(TSFI_CN_SHM_POSE);
     
     if (!shm_depth || !shm_pose) {
-        tsfi_io_printf(stderr, "[FRACTURE] Could not create/attach to Teddy Skeleton SHM.\n");
+        tsfi_io_printf(stderr, "[FRACTURE] Could not create/attach to TeddyBear Skeleton SHM.\n");
     }
 
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
 
             uint32_t *px = (uint32_t*)s->paint_buffer->data;
             int W = s->paint_buffer->width, H = s->paint_buffer->height;
-            render_teddy(px, W, H, shm_depth, shm_pose);
+            render_teddy_bear(px, W, H, shm_depth, shm_pose);
             draw_frame(s);
             g_dirty = false;
         }

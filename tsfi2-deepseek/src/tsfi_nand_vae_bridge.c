@@ -58,6 +58,6 @@ void tsfi_establish_vae_on_nand(sd_sample_params_t *params, const NandTrapState 
  */
 float tsfi_nand_get_vae_secret(const NandTrapState *nand) {
     if (!nand) return 1.0f;
-    // Use the first external param as the "Blue" secret for the TeddyResnetBlock
+    // Use the first external param as the "Blue" secret for the TeddyBearResnetBlock
     return nand->external_params[0];
 }

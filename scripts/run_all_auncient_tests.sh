@@ -530,8 +530,8 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/te
 ./tests/test_auncient_xdg_debug_portal
 
 # Compile and run Auncient Teddy Bear Walk-Again Simulation
-gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_teddy_walk_again.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_teddy_walk_again -lm -lrt -lssl -lcrypto
-./tests/test_auncient_teddy_walk_again
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_teddy_bear_walk_again.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_teddy_bear_walk_again -lm -lrt -lssl -lcrypto
+./tests/test_auncient_teddy_bear_walk_again
 
 # Compile and run Auncient EDSAC System Wide Firewall Simulation
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_edsac_system_firewall.c tsfi2-deepseek/src/auncient_edsac_firewall.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c -o tests/test_auncient_edsac_system_firewall -lm -lrt -lssl -lcrypto

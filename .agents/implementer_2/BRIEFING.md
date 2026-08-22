@@ -8,7 +8,7 @@ Address the path isolation defect in run_benchmarks.sh, execute E2E tests, and p
 - Roles: Compiler & Run Verifier
 - Working directory: /home/mariarahel/src/tsfi2/atropa_pulsechain/.agents/implementer_2/
 - Original parent: 43a7e441-4685-4e77-b78f-22697df229cb
-- Milestone: Fix Vulkan Teddy profile logs and compile/verify runner script
+- Milestone: Fix Vulkan TeddyBear profile logs and compile/verify runner script
 
 ## 🔒 Key Constraints
 - CODE_ONLY network mode: no external web access, no curl/wget targeting external URLs.

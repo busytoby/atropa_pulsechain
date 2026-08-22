@@ -5,7 +5,7 @@
 - Subtasks:
   - Locate all relevant source code and binaries.
   - Research how to measure frames per second (FPS), loop iteration times, and ALSA audio latency.
-  - Reconcile the definitions of "teddy bear editor" and "drum sequencer" (e.g. `bin/tsfi_teddy_editor` and `bin/test_wayland_terminal_shell` or `bin/test_vulkan_teddy`).
+  - Reconcile the definitions of "teddy bear editor" and "drum sequencer" (e.g. `bin/tsfi_teddy_bear_editor` and `bin/test_wayland_terminal_shell` or `bin/test_vulkan_teddy_bear`).
   - Output: Exploration report.
 
 ## Milestone 2: Benchmark Engine Implementation

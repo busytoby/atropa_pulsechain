@@ -7,7 +7,7 @@
   ```
 - Checked the directory structure and Makefile for Vulkan benchmark compilation targets:
   ```makefile
-  bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
+  bin/test_vulkan_teddy_bear: tests/test_vulkan_teddy_bear.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
   ```
 - Created the post-commit hook source file at `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`.
 - Created mock results JSON files at:
@@ -18,7 +18,7 @@
 
 ## 2. Logic Chain
 - **Resolving Path Dynamically**: By changing `WORKSPACE_DIR` in `generate_report.py` to be relative to the script's directory (`os.path.abspath(os.path.join(SCRIPT_DIR, "../.."))`), the script can find its dependencies regardless of where the repository is cloned, making it sandbox-compatible.
-- **Post-commit Hook**: The post-commit script unsets `GIT_DIR`, `GIT_WORK_TREE`, and `GIT_INDEX_FILE` to prevent git from being confused when running commands inside the sandbox or subdirectories. It runs `make bin/test_vulkan_teddy` and handles failure by printing a warning but exiting with 0. Upon success, it runs `run_benchmarks.sh` and `generate_report.py`, then parses `benchmark_results.json` using Python and outputs a clean ASCII metrics summary table, handling missing or corrupted JSON files gracefully.
+- **Post-commit Hook**: The post-commit script unsets `GIT_DIR`, `GIT_WORK_TREE`, and `GIT_INDEX_FILE` to prevent git from being confused when running commands inside the sandbox or subdirectories. It runs `make bin/test_vulkan_teddy_bear` and handles failure by printing a warning but exiting with 0. Upon success, it runs `run_benchmarks.sh` and `generate_report.py`, then parses `benchmark_results.json` using Python and outputs a clean ASCII metrics summary table, handling missing or corrupted JSON files gracefully.
 - **E2E Test Runner**: `run_e2e_tests.py` uses `tempfile.TemporaryDirectory` to isolate the repository under testing. By writing a recursive symlink function (`symlink_recursive`), the real workspace files are symlinked as individual files, enabling the test runner to override specific configuration files (like mock Makefiles and runner scripts) dynamically for specific tests without modifying the original repository.
 - **Tiers of Coverage**: We implemented exactly 49 test cases covering:
   - Tier 1: 5 test cases per feature (Installation, Execution, HTML Updates, ASCII Table Summary) = 20 tests.

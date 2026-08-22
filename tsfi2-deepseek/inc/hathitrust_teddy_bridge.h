@@ -1,5 +1,5 @@
-#ifndef HATHITRUST_TEDDY_BRIDGE_H
-#define HATHITRUST_TEDDY_BRIDGE_H
+#ifndef HATHITRUST_TEDDY_BEAR_BRIDGE_H
+#define HATHITRUST_TEDDY_BEAR_BRIDGE_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,4 +32,4 @@ HoganAccount* hathitrust_open_hogan_account(const char *ssn, const char *bear_na
  */
 void hathitrust_free_hogan_account(HoganAccount *account);
 
-#endif /* HATHITRUST_TEDDY_BRIDGE_H */
+#endif /* HATHITRUST_TEDDY_BEAR_BRIDGE_H */

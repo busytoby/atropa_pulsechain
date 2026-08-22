@@ -4,12 +4,12 @@
 #include <string.h>
 #include <math.h>
 
-void auncient_teddy_qual_init(TeddyBearMutualQualificationState *state, uint32_t author_dna, uint32_t verifier_dna) {
+void auncient_teddy_bear_qual_init(TeddyBearMutualQualificationState *state, uint32_t author_dna, uint32_t verifier_dna) {
     if (!state) return;
     memset(state, 0, sizeof(TeddyBearMutualQualificationState));
 
-    state->author_teddy_dna = author_dna;
-    state->verifier_teddy_dna = verifier_dna;
+    state->author_teddy_bear_dna = author_dna;
+    state->verifier_teddy_bear_dna = verifier_dna;
     state->authored_strategy_id = 707;
     state->compensation_fee_saat = 100;
 
@@ -28,21 +28,21 @@ void auncient_teddy_qual_init(TeddyBearMutualQualificationState *state, uint32_t
     state->verifier_standards.rule18_crc16 = 0x3E00;
 }
 
-bool auncient_teddy_qual_issue_challenge(TeddyBearMutualQualificationState *state, uint32_t nonce) {
+bool auncient_teddy_bear_qual_issue_challenge(TeddyBearMutualQualificationState *state, uint32_t nonce) {
     if (!state || nonce == 0) return false;
     state->challenge_nonce = nonce;
     return true;
 }
 
-bool auncient_teddy_qual_solve_challenge(TeddyBearMutualQualificationState *state) {
+bool auncient_teddy_bear_qual_solve_challenge(TeddyBearMutualQualificationState *state) {
     if (!state || state->challenge_nonce == 0) return false;
 
     /* Author computes proof-of-compliance seal */
-    state->challenge_response_seal = state->author_teddy_dna ^ state->challenge_nonce ^ 0x5A5A5A5A;
+    state->challenge_response_seal = state->author_teddy_bear_dna ^ state->challenge_nonce ^ 0x5A5A5A5A;
     return true;
 }
 
-bool auncient_teddy_qual_verify_author(TeddyBearMutualQualificationState *state) {
+bool auncient_teddy_bear_qual_verify_author(TeddyBearMutualQualificationState *state) {
     if (!state) return false;
 
     /* 1. Standards Compliance Bound */
@@ -52,14 +52,14 @@ bool auncient_teddy_qual_verify_author(TeddyBearMutualQualificationState *state)
                          (state->author_standards.hogan_saat_balance >= 500000);
 
     /* 2. Challenge Seal Verification */
-    uint32_t expected_seal = state->author_teddy_dna ^ state->challenge_nonce ^ 0x5A5A5A5A;
+    uint32_t expected_seal = state->author_teddy_bear_dna ^ state->challenge_nonce ^ 0x5A5A5A5A;
     bool seal_ok = (state->challenge_response_seal == expected_seal);
 
     state->author_qualification_verified = standards_ok && seal_ok;
     return state->author_qualification_verified;
 }
 
-bool auncient_teddy_qual_settle_compensation(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier) {
+bool auncient_teddy_bear_qual_settle_compensation(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier) {
     if (!state || !author || !verifier) return false;
     if (!state->author_qualification_verified) return false;
 
@@ -73,13 +73,13 @@ bool auncient_teddy_qual_settle_compensation(TeddyBearMutualQualificationState *
     return false;
 }
 
-bool auncient_teddy_qual_verify_theorems_101_105(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier) {
+bool auncient_teddy_bear_qual_verify_theorems_101_105(TeddyBearMutualQualificationState *state, TeddyBearHeartUsdaAsset *author, TeddyBearHeartUsdaAsset *verifier) {
     if (!state || !author || !verifier) return false;
 
     /* Theorem 101: Certified Shared Standards Qualification Invariant */
-    auncient_teddy_qual_issue_challenge(state, 0x12345678);
-    auncient_teddy_qual_solve_challenge(state);
-    state->zk_challenge_response_verified = auncient_teddy_qual_verify_author(state);
+    auncient_teddy_bear_qual_issue_challenge(state, 0x12345678);
+    auncient_teddy_bear_qual_solve_challenge(state);
+    state->zk_challenge_response_verified = auncient_teddy_bear_qual_verify_author(state);
 
     /* Theorem 102: Zero-Knowledge Interactive Standards Challenge-Response */
     state->author_qualification_verified = state->zk_challenge_response_verified;
@@ -88,11 +88,11 @@ bool auncient_teddy_qual_verify_theorems_101_105(TeddyBearMutualQualificationSta
     state->authored_ast_sandbox_verified = (state->authored_strategy_id == 707);
 
     /* Theorem 104: Reciprocal Hogan Bank Saat Compensation Atomicity */
-    auncient_teddy_qual_settle_compensation(state, author, verifier);
+    auncient_teddy_bear_qual_settle_compensation(state, author, verifier);
 
     /* Theorem 105: Grand Century+ Teddy Bear Mesh Closure & Rule 18 Parity */
     state->mesh_qualification_closure_verified = true;
-    state->rule18_parity_checksum = auncient_teddy_qual_compute_rule18(state);
+    state->rule18_parity_checksum = auncient_teddy_bear_qual_compute_rule18(state);
 
     return (state->author_qualification_verified &&
             state->zk_challenge_response_verified &&
@@ -102,7 +102,7 @@ bool auncient_teddy_qual_verify_theorems_101_105(TeddyBearMutualQualificationSta
             state->rule18_parity_checksum > 0);
 }
 
-uint32_t auncient_teddy_qual_compute_rule18(const TeddyBearMutualQualificationState *state) {
+uint32_t auncient_teddy_bear_qual_compute_rule18(const TeddyBearMutualQualificationState *state) {
     if (!state) return 0;
     const uint8_t *data = (const uint8_t *)state;
     size_t len = sizeof(TeddyBearMutualQualificationState);

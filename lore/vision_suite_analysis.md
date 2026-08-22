@@ -34,7 +34,7 @@ Running the automated vision check using a timed seat keyboard termination trigg
 
 ```
 [VISION] Executing Object Recognition on viewport...
-  [PASS] Object recognized: TSFI_CLASS_TEDDY (Confidence: 0.75)
+  [PASS] Object recognized: TSFI_CLASS_TEDDY_BEAR (Confidence: 0.75)
          Symmetry: 0.8679, Coverage: 1.0000, Complexity: 1.0000
 [SUCCESS] Exported frame to scratch/photorealistic_teddy_bear.ppm
 ```

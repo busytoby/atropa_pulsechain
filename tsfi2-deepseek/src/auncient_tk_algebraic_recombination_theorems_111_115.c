@@ -17,7 +17,7 @@ bool auncient_tk_recomb_add_lemma(TkAlgebraicRecombinationState *state, uint32_t
     uint32_t idx = state->total_contributions++;
     state->contributions[idx].lemma_id = lemma_id;
     state->contributions[idx].entropy_weight = entropy;
-    state->contributions[idx].contributor_teddy_dna = contributor_dna;
+    state->contributions[idx].contributor_teddy_bear_dna = contributor_dna;
     state->contributions[idx].allocated_reward_saat = 0;
     return true;
 }

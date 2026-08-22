@@ -141,7 +141,7 @@ def Xform "BionikaSymphony3D" (
             matrix4d xformOp:transform = ( (1,0,0,0), (0,1,0,0), (0,0,1,0), (0, 40, 0, 1) )
             uniform token[] xformOpOrder = ["xformOp:transform"]
         }
-        rel material:binding = </BionikaSymphony3D/Materials/TeddyFeltFurMaterial>
+        rel material:binding = </BionikaSymphony3D/Materials/TeddyBearFeltFurMaterial>
     }
 
     # -------------------------------------------------------------------------
@@ -215,7 +215,7 @@ def Xform "BionikaSymphony3D" (
                 float inputs:metallic = 0.10
             }
         }
-        def Material "TeddyFeltFurMaterial"
+        def Material "TeddyBearFeltFurMaterial"
         {
             def Shader "PbrPreview"
             {

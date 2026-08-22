@@ -1,8 +1,8 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *babyfacedness_out) {
+bool evaluate_keating_babyfacedness_index(const teddy_bear_geometry_t *geom, double *babyfacedness_out) {
     if (!geom || !babyfacedness_out) {
         return false;
     }
@@ -10,7 +10,7 @@ bool evaluate_keating_babyfacedness_index(const teddy_geometry_t *geom, double *
     return true;
 }
 
-bool evaluate_keating_dominance_cue_index(const teddy_geometry_t *geom, double *dominance_out) {
+bool evaluate_keating_dominance_cue_index(const teddy_bear_geometry_t *geom, double *dominance_out) {
     if (!geom || !dominance_out) {
         return false;
     }
@@ -18,7 +18,7 @@ bool evaluate_keating_dominance_cue_index(const teddy_geometry_t *geom, double *
     return true;
 }
 
-bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_height, double *brow_dominance_out) {
+bool evaluate_keating_brow_dominance(const teddy_bear_geometry_t *geom, double brow_height, double *brow_dominance_out) {
     if (!geom || brow_height < 0.0 || !brow_dominance_out) {
         return false;
     }
@@ -26,7 +26,7 @@ bool evaluate_keating_brow_dominance(const teddy_geometry_t *geom, double brow_h
     return true;
 }
 
-bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out) {
+bool evaluate_keating_lip_trustworthiness(const teddy_bear_geometry_t *geom, double lip_thickness, double *lip_trustworthiness_out) {
     if (!geom || lip_thickness < 0.0 || !lip_trustworthiness_out) {
         return false;
     }
@@ -34,7 +34,7 @@ bool evaluate_keating_lip_trustworthiness(const teddy_geometry_t *geom, double l
     return true;
 }
 
-bool evaluate_keating_brow_eye_ratio(const teddy_geometry_t *geom, double brow_eye_distance, double *ratio_dominance_out) {
+bool evaluate_keating_brow_eye_ratio(const teddy_bear_geometry_t *geom, double brow_eye_distance, double *ratio_dominance_out) {
     if (!geom || brow_eye_distance < 0.0 || !ratio_dominance_out) {
         return false;
     }
@@ -42,7 +42,7 @@ bool evaluate_keating_brow_eye_ratio(const teddy_geometry_t *geom, double brow_e
     return true;
 }
 
-bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double *roundness_out) {
+bool evaluate_keating_head_roundness_index(const teddy_bear_geometry_t *geom, double *roundness_out) {
     if (!geom || !roundness_out) {
         return false;
     }
@@ -50,7 +50,7 @@ bool evaluate_keating_head_roundness_index(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust_out) {
+bool evaluate_keating_symmetry_trust(const teddy_bear_geometry_t *geom, double *trust_out) {
     if (!geom || !trust_out) {
         return false;
     }
@@ -58,7 +58,7 @@ bool evaluate_keating_symmetry_trust(const teddy_geometry_t *geom, double *trust
     return true;
 }
 
-bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out) {
+bool evaluate_keating_brow_chin_proportion(const teddy_bear_geometry_t *geom, double brow_chin_distance, double *proportion_dominance_out) {
     if (!geom || brow_chin_distance < 0.0 || !proportion_dominance_out) {
         return false;
     }
@@ -66,7 +66,7 @@ bool evaluate_keating_brow_chin_proportion(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out) {
+bool evaluate_keating_gaze_dominance(const teddy_bear_geometry_t *geom, double gaze_duration_sec, double aversion_angle, double *gaze_dominance_out) {
     if (!geom || gaze_duration_sec < 0.0 || aversion_angle < 0.0 || !gaze_dominance_out) {
         return false;
     }
@@ -74,7 +74,7 @@ bool evaluate_keating_gaze_dominance(const teddy_geometry_t *geom, double gaze_d
     return true;
 }
 
-bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out) {
+bool evaluate_keating_brow_gesture(const teddy_bear_geometry_t *geom, double brow_raise_amplitude, double *brow_submissiveness_out) {
     if (!geom || brow_raise_amplitude < 0.0 || !brow_submissiveness_out) {
         return false;
     }
@@ -82,7 +82,7 @@ bool evaluate_keating_brow_gesture(const teddy_geometry_t *geom, double brow_rai
     return true;
 }
 
-bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double torso_span, double *ratio_dominance_out) {
+bool evaluate_keating_torso_head_ratio(const teddy_bear_geometry_t *geom, double torso_span, double *ratio_dominance_out) {
     if (!geom || torso_span < 0.0 || !ratio_dominance_out) {
         return false;
     }
@@ -90,7 +90,7 @@ bool evaluate_keating_torso_head_ratio(const teddy_geometry_t *geom, double tors
     return true;
 }
 
-bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out) {
+bool evaluate_keating_eye_dilation_sync(const teddy_bear_geometry_t *geom, double left_dilation, double right_dilation, double *babyface_sync_out) {
     if (!geom || left_dilation < 0.0 || right_dilation < 0.0 || !babyface_sync_out) {
         return false;
     }
@@ -98,7 +98,7 @@ bool evaluate_keating_eye_dilation_sync(const teddy_geometry_t *geom, double lef
     return true;
 }
 
-bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_angle, double *submissiveness_out) {
+bool evaluate_keating_posture_pitch(const teddy_bear_geometry_t *geom, double pitch_angle, double *submissiveness_out) {
     if (!geom || !submissiveness_out) {
         return false;
     }
@@ -106,7 +106,7 @@ bool evaluate_keating_posture_pitch(const teddy_geometry_t *geom, double pitch_a
     return true;
 }
 
-bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out) {
+bool evaluate_keating_chin_asymmetry(const teddy_bear_geometry_t *geom, double left_jaw_width, double right_jaw_width, double *asymmetry_dominance_out) {
     if (!geom || left_jaw_width < 0.0 || right_jaw_width < 0.0 || !asymmetry_dominance_out) {
         return false;
     }
@@ -114,7 +114,7 @@ bool evaluate_keating_chin_asymmetry(const teddy_geometry_t *geom, double left_j
     return true;
 }
 
-bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double upturn_curvature, double *warmth_rating_out) {
+bool evaluate_keating_mouth_curvature(const teddy_bear_geometry_t *geom, double upturn_curvature, double *warmth_rating_out) {
     if (!geom || upturn_curvature < 0.0 || !warmth_rating_out) {
         return false;
     }
@@ -122,7 +122,7 @@ bool evaluate_keating_mouth_curvature(const teddy_geometry_t *geom, double uptur
     return true;
 }
 
-bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out) {
+bool evaluate_keating_chin_asymmetry_dilation(const teddy_bear_geometry_t *geom, double base_dilation, double *asymmetry_dilation_out) {
     if (!geom || base_dilation < 0.0 || !asymmetry_dilation_out) {
         return false;
     }
@@ -130,7 +130,7 @@ bool evaluate_keating_chin_asymmetry_dilation(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ratio, double *submissiveness_out) {
+bool evaluate_keating_sclera_size(const teddy_bear_geometry_t *geom, double sclera_ratio, double *submissiveness_out) {
     if (!geom || sclera_ratio < 0.0 || !submissiveness_out) {
         return false;
     }
@@ -138,7 +138,7 @@ bool evaluate_keating_sclera_size(const teddy_geometry_t *geom, double sclera_ra
     return true;
 }
 
-bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out) {
+bool evaluate_keating_width_asymmetry(const teddy_bear_geometry_t *geom, double left_width, double right_width, double *asymmetry_dominance_out) {
     if (!geom || left_width < 0.0 || right_width < 0.0 || !asymmetry_dominance_out) {
         return false;
     }
@@ -146,7 +146,7 @@ bool evaluate_keating_width_asymmetry(const teddy_geometry_t *geom, double left_
     return true;
 }
 
-bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_value, double *dominance_out) {
+bool evaluate_keating_fwhr_dominance(const teddy_bear_geometry_t *geom, double fwhr_value, double *dominance_out) {
     if (!geom || fwhr_value < 0.0 || !dominance_out) {
         return false;
     }
@@ -154,7 +154,7 @@ bool evaluate_keating_fwhr_dominance(const teddy_geometry_t *geom, double fwhr_v
     return true;
 }
 
-bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out) {
+bool evaluate_keating_mouth_width_ratio(const teddy_bear_geometry_t *geom, double mouth_width, double jaw_width, double *submissiveness_out) {
     if (!geom || mouth_width < 0.0 || jaw_width < 0.0 || !submissiveness_out) {
         return false;
     }
@@ -162,7 +162,7 @@ bool evaluate_keating_mouth_width_ratio(const teddy_geometry_t *geom, double mou
     return true;
 }
 
-bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out) {
+bool evaluate_keating_width_symmetry_trust(const teddy_bear_geometry_t *geom, double symmetry_ratio, double *trustworthiness_out) {
     if (!geom || symmetry_ratio < 0.0 || !trustworthiness_out) {
         return false;
     }
@@ -170,7 +170,7 @@ bool evaluate_keating_width_symmetry_trust(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double lip_height_ratio, double *submissiveness_out) {
+bool evaluate_keating_lip_submissiveness(const teddy_bear_geometry_t *geom, double lip_height_ratio, double *submissiveness_out) {
     if (!geom || lip_height_ratio < 0.0 || !submissiveness_out) {
         return false;
     }
@@ -178,7 +178,7 @@ bool evaluate_keating_lip_submissiveness(const teddy_geometry_t *geom, double li
     return true;
 }
 
-bool evaluate_keating_gaze_shift_dominance(const teddy_geometry_t *geom, double shift_frequency, double *dominance_out) {
+bool evaluate_keating_gaze_shift_dominance(const teddy_bear_geometry_t *geom, double shift_frequency, double *dominance_out) {
     if (!geom || shift_frequency < 0.0 || !dominance_out) {
         return false;
     }
@@ -186,7 +186,7 @@ bool evaluate_keating_gaze_shift_dominance(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double compression_ratio, double *trustworthiness_out) {
+bool evaluate_keating_lip_compression_trust(const teddy_bear_geometry_t *geom, double compression_ratio, double *trustworthiness_out) {
     if (!geom || compression_ratio < 0.0 || !trustworthiness_out) {
         return false;
     }
@@ -194,7 +194,7 @@ bool evaluate_keating_lip_compression_trust(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_keating_width_asymmetry_dominance(const teddy_geometry_t *geom, double width_asymmetry_val, double *dominance_out) {
+bool evaluate_keating_width_asymmetry_dominance(const teddy_bear_geometry_t *geom, double width_asymmetry_val, double *dominance_out) {
     if (!geom || width_asymmetry_val < 0.0 || !dominance_out) {
         return false;
     }
@@ -202,7 +202,7 @@ bool evaluate_keating_width_asymmetry_dominance(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_decay(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_decay_out) {
+bool evaluate_keating_mouth_asymmetry_decay(const teddy_bear_geometry_t *geom, double mouth_asymmetry_val, double *trust_decay_out) {
     if (!geom || mouth_asymmetry_val < 0.0 || !trust_decay_out) {
         return false;
     }
@@ -210,7 +210,7 @@ bool evaluate_keating_mouth_asymmetry_decay(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_keating_width_asymmetry_trust(const teddy_geometry_t *geom, double width_asymmetry_val, double *trustworthiness_out) {
+bool evaluate_keating_width_asymmetry_trust(const teddy_bear_geometry_t *geom, double width_asymmetry_val, double *trustworthiness_out) {
     if (!geom || width_asymmetry_val < 0.0 || !trustworthiness_out) {
         return false;
     }
@@ -218,7 +218,7 @@ bool evaluate_keating_width_asymmetry_trust(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_dominance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *dominance_out) {
+bool evaluate_keating_mouth_asymmetry_dominance(const teddy_bear_geometry_t *geom, double mouth_asymmetry_val, double *dominance_out) {
     if (!geom || mouth_asymmetry_val < 0.0 || !dominance_out) {
         return false;
     }
@@ -226,7 +226,7 @@ bool evaluate_keating_mouth_asymmetry_dominance(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_dominance(const teddy_geometry_t *geom, double eyebrow_asymmetry_val, double *dominance_out) {
+bool evaluate_keating_eyebrow_asymmetry_dominance(const teddy_bear_geometry_t *geom, double eyebrow_asymmetry_val, double *dominance_out) {
     if (!geom || eyebrow_asymmetry_val < 0.0 || !dominance_out) {
         return false;
     }
@@ -234,7 +234,7 @@ bool evaluate_keating_eyebrow_asymmetry_dominance(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness(const teddy_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out) {
+bool evaluate_keating_sclera_submissiveness(const teddy_bear_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out) {
     if (!geom || sclera_size_ratio < 0.0 || !submissiveness_out) {
         return false;
     }
@@ -242,7 +242,7 @@ bool evaluate_keating_sclera_submissiveness(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_trust(const teddy_geometry_t *geom, double eyebrow_asymmetry_val, double *trustworthiness_out) {
+bool evaluate_keating_eyebrow_asymmetry_trust(const teddy_bear_geometry_t *geom, double eyebrow_asymmetry_val, double *trustworthiness_out) {
     if (!geom || eyebrow_asymmetry_val < 0.0 || !trustworthiness_out) {
         return false;
     }
@@ -250,7 +250,7 @@ bool evaluate_keating_eyebrow_asymmetry_trust(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_keating_sclera_dominance(const teddy_geometry_t *geom, double sclera_size_ratio, double *dominance_out) {
+bool evaluate_keating_sclera_dominance(const teddy_bear_geometry_t *geom, double sclera_size_ratio, double *dominance_out) {
     if (!geom || sclera_size_ratio < 0.0 || !dominance_out) {
         return false;
     }
@@ -258,7 +258,7 @@ bool evaluate_keating_sclera_dominance(const teddy_geometry_t *geom, double scle
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
+bool evaluate_keating_eyebrow_asymmetry_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
     if (!geom || duration_sec < 0.0 || !decayed_trust_out) {
         return false;
     }
@@ -266,7 +266,7 @@ bool evaluate_keating_eyebrow_asymmetry_decay(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_mod(const teddy_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out) {
+bool evaluate_keating_sclera_submissiveness_mod(const teddy_bear_geometry_t *geom, double sclera_size_ratio, double *submissiveness_out) {
     if (!geom || sclera_size_ratio < 0.0 || !submissiveness_out) {
         return false;
     }
@@ -274,7 +274,7 @@ bool evaluate_keating_sclera_submissiveness_mod(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
     if (!geom || duration_sec < 0.0 || !decayed_dominance_out) {
         return false;
     }
@@ -282,7 +282,7 @@ bool evaluate_keating_eyebrow_asymmetry_dominance_decay(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_trust_decay_mod(const teddy_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
+bool evaluate_keating_eyebrow_asymmetry_trust_decay_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
     if (!geom || duration_sec < 0.0 || !decayed_trust_out) {
         return false;
     }
@@ -290,7 +290,7 @@ bool evaluate_keating_eyebrow_asymmetry_trust_decay_mod(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_variance(const teddy_geometry_t *geom, double sclera_size_ratio, double *submissiveness_variance_out) {
+bool evaluate_keating_sclera_submissiveness_variance(const teddy_bear_geometry_t *geom, double sclera_size_ratio, double *submissiveness_variance_out) {
     if (!geom || sclera_size_ratio < 0.0 || !submissiveness_variance_out) {
         return false;
     }
@@ -298,7 +298,7 @@ bool evaluate_keating_sclera_submissiveness_variance(const teddy_geometry_t *geo
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_variance(const teddy_geometry_t *geom, double sclera_size_ratio, double *dominance_variance_out) {
+bool evaluate_keating_sclera_dominance_variance(const teddy_bear_geometry_t *geom, double sclera_size_ratio, double *dominance_variance_out) {
     if (!geom || sclera_size_ratio < 0.0 || !dominance_variance_out) {
         return false;
     }
@@ -306,7 +306,7 @@ bool evaluate_keating_sclera_dominance_variance(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_keating_gaze_shift_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
+bool evaluate_keating_gaze_shift_dominance_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
     if (!geom || duration_sec < 0.0 || !decayed_dominance_out) {
         return false;
     }
@@ -314,7 +314,7 @@ bool evaluate_keating_gaze_shift_dominance_decay(const teddy_geometry_t *geom, d
     return true;
 }
 
-bool evaluate_keating_lip_compression_trust_variance(const teddy_geometry_t *geom, double compression_ratio, double *trust_variance_out) {
+bool evaluate_keating_lip_compression_trust_variance(const teddy_bear_geometry_t *geom, double compression_ratio, double *trust_variance_out) {
     if (!geom || compression_ratio < 0.0 || !trust_variance_out) {
         return false;
     }
@@ -322,7 +322,7 @@ bool evaluate_keating_lip_compression_trust_variance(const teddy_geometry_t *geo
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_submissiveness_out) {
+bool evaluate_keating_sclera_submissiveness_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_submissiveness_out) {
     if (!geom || duration_sec < 0.0 || !decayed_submissiveness_out) {
         return false;
     }
@@ -330,7 +330,7 @@ bool evaluate_keating_sclera_submissiveness_decay(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_keating_width_asymmetry_dominance_variance(const teddy_geometry_t *geom, double width_asymmetry_val, double *variance_out) {
+bool evaluate_keating_width_asymmetry_dominance_variance(const teddy_bear_geometry_t *geom, double width_asymmetry_val, double *variance_out) {
     if (!geom || width_asymmetry_val < 0.0 || !variance_out) {
         return false;
     }
@@ -338,7 +338,7 @@ bool evaluate_keating_width_asymmetry_dominance_variance(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
+bool evaluate_keating_sclera_dominance_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_dominance_out) {
     if (!geom || duration_sec < 0.0 || !decayed_dominance_out) {
         return false;
     }
@@ -346,7 +346,7 @@ bool evaluate_keating_sclera_dominance_decay(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *variance_out) {
+bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_bear_geometry_t *geom, double mouth_asymmetry_val, double *variance_out) {
     if (!geom || mouth_asymmetry_val < 0.0 || !variance_out) {
         return false;
     }
@@ -354,7 +354,7 @@ bool evaluate_keating_mouth_asymmetry_dominance_variance(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -362,7 +362,7 @@ bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance(const teddy_geo
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_trust_variance(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out) {
+bool evaluate_keating_mouth_asymmetry_trust_variance(const teddy_bear_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out) {
     if (!geom || mouth_asymmetry_val < 0.0 || !trust_variance_out) {
         return false;
     }
@@ -370,7 +370,7 @@ bool evaluate_keating_mouth_asymmetry_trust_variance(const teddy_geometry_t *geo
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_sclera_submissiveness_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -378,7 +378,7 @@ bool evaluate_keating_sclera_submissiveness_decay_variance(const teddy_geometry_
     return true;
 }
 
-bool evaluate_keating_width_asymmetry_trust_variance(const teddy_geometry_t *geom, double width_asymmetry_val, double *trust_variance_out) {
+bool evaluate_keating_width_asymmetry_trust_variance(const teddy_bear_geometry_t *geom, double width_asymmetry_val, double *trust_variance_out) {
     if (!geom || width_asymmetry_val < 0.0 || !trust_variance_out) {
         return false;
     }
@@ -386,7 +386,7 @@ bool evaluate_keating_width_asymmetry_trust_variance(const teddy_geometry_t *geo
     return true;
 }
 
-bool evaluate_keating_gaze_shift_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_gaze_shift_dominance_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -394,7 +394,7 @@ bool evaluate_keating_gaze_shift_dominance_decay_variance(const teddy_geometry_t
     return true;
 }
 
-bool evaluate_keating_lip_compression_trust_variance_mod(const teddy_geometry_t *geom, double lip_compression_val, double *trust_variance_out) {
+bool evaluate_keating_lip_compression_trust_variance_mod(const teddy_bear_geometry_t *geom, double lip_compression_val, double *trust_variance_out) {
     if (!geom || lip_compression_val < 0.0 || !trust_variance_out) {
         return false;
     }
@@ -402,7 +402,7 @@ bool evaluate_keating_lip_compression_trust_variance_mod(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -410,7 +410,7 @@ bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance(const teddy_geometr
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_variance_mod(const teddy_geometry_t *geom, double sclera_size_ratio, double *variance_out) {
+bool evaluate_keating_sclera_dominance_variance_mod(const teddy_bear_geometry_t *geom, double sclera_size_ratio, double *variance_out) {
     if (!geom || sclera_size_ratio < 0.0 || !variance_out) {
         return false;
     }
@@ -418,7 +418,7 @@ bool evaluate_keating_sclera_dominance_variance_mod(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_sclera_dominance_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -426,7 +426,7 @@ bool evaluate_keating_sclera_dominance_decay_variance(const teddy_geometry_t *ge
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_trust_variance_mod(const teddy_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out) {
+bool evaluate_keating_mouth_asymmetry_trust_variance_mod(const teddy_bear_geometry_t *geom, double mouth_asymmetry_val, double *trust_variance_out) {
     if (!geom || mouth_asymmetry_val < 0.0 || !trust_variance_out) {
         return false;
     }
@@ -434,7 +434,7 @@ bool evaluate_keating_mouth_asymmetry_trust_variance_mod(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_dominance_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_mouth_asymmetry_dominance_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -442,7 +442,7 @@ bool evaluate_keating_mouth_asymmetry_dominance_decay_variance(const teddy_geome
     return true;
 }
 
-bool evaluate_keating_width_asymmetry_trust_variance_mod(const teddy_geometry_t *geom, double width_asym_val, double *variance_out) {
+bool evaluate_keating_width_asymmetry_trust_variance_mod(const teddy_bear_geometry_t *geom, double width_asym_val, double *variance_out) {
     if (!geom || width_asym_val < 0.0 || !variance_out) {
         return false;
     }
@@ -450,7 +450,7 @@ bool evaluate_keating_width_asymmetry_trust_variance_mod(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_mouth_asymmetry_trust_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_mouth_asymmetry_trust_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -458,7 +458,7 @@ bool evaluate_keating_mouth_asymmetry_trust_decay_variance(const teddy_geometry_
     return true;
 }
 
-bool evaluate_keating_width_asymmetry_dominance_variance_mod(const teddy_geometry_t *geom, double width_asym_val, double *variance_out) {
+bool evaluate_keating_width_asymmetry_dominance_variance_mod(const teddy_bear_geometry_t *geom, double width_asym_val, double *variance_out) {
     if (!geom || width_asym_val < 0.0 || !variance_out) {
         return false;
     }
@@ -466,7 +466,7 @@ bool evaluate_keating_width_asymmetry_dominance_variance_mod(const teddy_geometr
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance_single(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -474,7 +474,7 @@ bool evaluate_keating_eyebrow_asymmetry_trust_decay_variance_single(const teddy_
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_variance_mod(const teddy_geometry_t *geom, double sclera_val, double *variance_out) {
+bool evaluate_keating_sclera_submissiveness_variance_mod(const teddy_bear_geometry_t *geom, double sclera_val, double *variance_out) {
     if (!geom || sclera_val < 0.0 || !variance_out) {
         return false;
     }
@@ -482,7 +482,7 @@ bool evaluate_keating_sclera_submissiveness_variance_mod(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_variance_mod_single(const teddy_geometry_t *geom, double sclera_val, double *variance_out) {
+bool evaluate_keating_sclera_dominance_variance_mod_single(const teddy_bear_geometry_t *geom, double sclera_val, double *variance_out) {
     if (!geom || sclera_val < 0.0 || !variance_out) {
         return false;
     }
@@ -490,7 +490,7 @@ bool evaluate_keating_sclera_dominance_variance_mod_single(const teddy_geometry_
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_dominance_variance_mod(const teddy_geometry_t *geom, double eyebrow_asym_val, double *variance_out) {
+bool evaluate_keating_eyebrow_asymmetry_dominance_variance_mod(const teddy_bear_geometry_t *geom, double eyebrow_asym_val, double *variance_out) {
     if (!geom || eyebrow_asym_val < 0.0 || !variance_out) {
         return false;
     }
@@ -498,7 +498,7 @@ bool evaluate_keating_eyebrow_asymmetry_dominance_variance_mod(const teddy_geome
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_trust_variance_mod_single(const teddy_geometry_t *geom, double eyebrow_asym_val, double *variance_out) {
+bool evaluate_keating_eyebrow_asymmetry_trust_variance_mod_single(const teddy_bear_geometry_t *geom, double eyebrow_asym_val, double *variance_out) {
     if (!geom || eyebrow_asym_val < 0.0 || !variance_out) {
         return false;
     }
@@ -506,7 +506,7 @@ bool evaluate_keating_eyebrow_asymmetry_trust_variance_mod_single(const teddy_ge
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_sclera_submissiveness_decay_variance_single(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -514,7 +514,7 @@ bool evaluate_keating_sclera_submissiveness_decay_variance_single(const teddy_ge
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_sclera_dominance_decay_variance_single(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -522,7 +522,7 @@ bool evaluate_keating_sclera_dominance_decay_variance_single(const teddy_geometr
     return true;
 }
 
-bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -530,7 +530,7 @@ bool evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single(const te
     return true;
 }
 
-bool evaluate_keating_sclera_submissiveness_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_sclera_submissiveness_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -538,7 +538,7 @@ bool evaluate_keating_sclera_submissiveness_decay_variance_mod(const teddy_geome
     return true;
 }
 
-bool evaluate_keating_sclera_dominance_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_keating_sclera_dominance_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -546,7 +546,7 @@ bool evaluate_keating_sclera_dominance_decay_variance_mod(const teddy_geometry_t
     return true;
 }
 
-bool evaluate_keating_cross_cultural_dominance_consensus(const teddy_geometry_t *geom, double gesture_prominence, double *consensus_out) {
+bool evaluate_keating_cross_cultural_dominance_consensus(const teddy_bear_geometry_t *geom, double gesture_prominence, double *consensus_out) {
     if (!geom || gesture_prominence < 0.0 || !consensus_out) {
         return false;
     }
@@ -554,7 +554,7 @@ bool evaluate_keating_cross_cultural_dominance_consensus(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_keating_gender_status_interaction(const teddy_geometry_t *geom, double status_cue, int observer_gender, double *dominance_out) {
+bool evaluate_keating_gender_status_interaction(const teddy_bear_geometry_t *geom, double status_cue, int observer_gender, double *dominance_out) {
     if (!geom || status_cue < 0.0 || !dominance_out) {
         return false;
     }
@@ -563,7 +563,7 @@ bool evaluate_keating_gender_status_interaction(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_keating_babyfacedness_attractiveness_decoupling(const teddy_geometry_t *geom, double babyface_index, int target_gender, double *attractiveness_out) {
+bool evaluate_keating_babyfacedness_attractiveness_decoupling(const teddy_bear_geometry_t *geom, double babyface_index, int target_gender, double *attractiveness_out) {
     if (!geom || babyface_index < 0.0 || !attractiveness_out) {
         return false;
     }
@@ -576,7 +576,7 @@ bool evaluate_keating_babyfacedness_attractiveness_decoupling(const teddy_geomet
     return true;
 }
 
-bool evaluate_keating_smile_status_congruence(const teddy_geometry_t *geom, double smile_intensity, double status_rank, double *trust_score_out) {
+bool evaluate_keating_smile_status_congruence(const teddy_bear_geometry_t *geom, double smile_intensity, double status_rank, double *trust_score_out) {
     if (!geom || smile_intensity < 0.0 || status_rank <= 0.0 || !trust_score_out) {
         return false;
     }
@@ -586,7 +586,7 @@ bool evaluate_keating_smile_status_congruence(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_keating_pitch_vocal_status_congruence(const teddy_geometry_t *geom, double pitch_variation, double status_rank, double *congruence_score_out) {
+bool evaluate_keating_pitch_vocal_status_congruence(const teddy_bear_geometry_t *geom, double pitch_variation, double status_rank, double *congruence_score_out) {
     if (!geom || pitch_variation < 0.0 || status_rank <= 0.0 || !congruence_score_out) {
         return false;
     }
@@ -596,7 +596,7 @@ bool evaluate_keating_pitch_vocal_status_congruence(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_keating_dynamic_pose_asymmetry_consensus(const teddy_geometry_t *geom, double posture_asymmetry, double group_size, double *consensus_score_out) {
+bool evaluate_keating_dynamic_pose_asymmetry_consensus(const teddy_bear_geometry_t *geom, double posture_asymmetry, double group_size, double *consensus_score_out) {
     if (!geom || posture_asymmetry < 0.0 || group_size <= 0.0 || !consensus_score_out) {
         return false;
     }
@@ -605,7 +605,7 @@ bool evaluate_keating_dynamic_pose_asymmetry_consensus(const teddy_geometry_t *g
     return true;
 }
 
-bool evaluate_keating_sclera_gaze_decoupling(const teddy_geometry_t *geom, double sclera_exposure, double aversion_speed, double *dominance_score_out) {
+bool evaluate_keating_sclera_gaze_decoupling(const teddy_bear_geometry_t *geom, double sclera_exposure, double aversion_speed, double *dominance_score_out) {
     if (!geom || sclera_exposure < 0.0 || aversion_speed < 0.0 || !dominance_score_out) {
         return false;
     }
@@ -613,7 +613,7 @@ bool evaluate_keating_sclera_gaze_decoupling(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_keating_smile_dominance_attenuation(const teddy_geometry_t *geom, double smile_intensity, int gender, double *attenuated_dominance_out) {
+bool evaluate_keating_smile_dominance_attenuation(const teddy_bear_geometry_t *geom, double smile_intensity, int gender, double *attenuated_dominance_out) {
     if (!geom || smile_intensity < 0.0 || !attenuated_dominance_out) {
         return false;
     }
@@ -622,7 +622,7 @@ bool evaluate_keating_smile_dominance_attenuation(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_keating_babyfacedness_leadership_decoupling(const teddy_geometry_t *geom, double babyface_index, double *leadership_score_out) {
+bool evaluate_keating_babyfacedness_leadership_decoupling(const teddy_bear_geometry_t *geom, double babyface_index, double *leadership_score_out) {
     if (!geom || babyface_index < 0.0 || !leadership_score_out) {
         return false;
     }
@@ -630,7 +630,7 @@ bool evaluate_keating_babyfacedness_leadership_decoupling(const teddy_geometry_t
     return true;
 }
 
-bool evaluate_keating_torso_asymmetry_status(const teddy_geometry_t *geom, double torso_asymmetry_val, double *status_score_out) {
+bool evaluate_keating_torso_asymmetry_status(const teddy_bear_geometry_t *geom, double torso_asymmetry_val, double *status_score_out) {
     if (!geom || torso_asymmetry_val < 0.0 || !status_score_out) {
         return false;
     }
@@ -638,7 +638,7 @@ bool evaluate_keating_torso_asymmetry_status(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_keating_smile_cooperation_modulator(const teddy_geometry_t *geom, double smile_intensity, double *cooperation_score_out) {
+bool evaluate_keating_smile_cooperation_modulator(const teddy_bear_geometry_t *geom, double smile_intensity, double *cooperation_score_out) {
     if (!geom || smile_intensity < 0.0 || !cooperation_score_out) {
         return false;
     }
@@ -646,7 +646,7 @@ bool evaluate_keating_smile_cooperation_modulator(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_keating_eyebrow_dominance_decoupling(const teddy_geometry_t *geom, double eyebrow_asymmetry, double fwhr_val, double *dominance_score_out) {
+bool evaluate_keating_eyebrow_dominance_decoupling(const teddy_bear_geometry_t *geom, double eyebrow_asymmetry, double fwhr_val, double *dominance_score_out) {
     if (!geom || eyebrow_asymmetry < 0.0 || fwhr_val < 0.0 || !dominance_score_out) {
         return false;
     }
@@ -654,7 +654,7 @@ bool evaluate_keating_eyebrow_dominance_decoupling(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_keating_jaw_attractiveness_interaction(const teddy_geometry_t *geom, double jaw_scale, int target_gender, double *attractiveness_score_out) {
+bool evaluate_keating_jaw_attractiveness_interaction(const teddy_bear_geometry_t *geom, double jaw_scale, int target_gender, double *attractiveness_score_out) {
     if (!geom || jaw_scale < 0.0 || !attractiveness_score_out) {
         return false;
     }

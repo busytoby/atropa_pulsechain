@@ -1,8 +1,8 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double playfulness_scale, double *hedonic_out) {
+bool evaluate_scarpi_hedonic_orientation(const teddy_bear_geometry_t *geom, double playfulness_scale, double *hedonic_out) {
     if (!geom || playfulness_scale < 0.0 || !hedonic_out) {
         return false;
     }
@@ -10,7 +10,7 @@ bool evaluate_scarpi_hedonic_orientation(const teddy_geometry_t *geom, double pl
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, double efficiency_scale, double *utilitarian_out) {
+bool evaluate_scarpi_utilitarian_orientation(const teddy_bear_geometry_t *geom, double efficiency_scale, double *utilitarian_out) {
     if (!geom || efficiency_scale < 0.0 || !utilitarian_out) {
         return false;
     }
@@ -18,7 +18,7 @@ bool evaluate_scarpi_utilitarian_orientation(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_trust, double *aesthetic_trust_out) {
+bool evaluate_scarpi_aesthetic_trust(const teddy_bear_geometry_t *geom, double base_trust, double *aesthetic_trust_out) {
     if (!geom || base_trust < 0.0 || !aesthetic_trust_out) {
         return false;
     }
@@ -26,7 +26,7 @@ bool evaluate_scarpi_aesthetic_trust(const teddy_geometry_t *geom, double base_t
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_decay(const teddy_geometry_t *geom, double interaction_duration_sec, double *decayed_efficiency_out) {
+bool evaluate_scarpi_utilitarian_decay(const teddy_bear_geometry_t *geom, double interaction_duration_sec, double *decayed_efficiency_out) {
     if (!geom || interaction_duration_sec < 0.0 || !decayed_efficiency_out) {
         return false;
     }
@@ -34,7 +34,7 @@ bool evaluate_scarpi_utilitarian_decay(const teddy_geometry_t *geom, double inte
     return true;
 }
 
-bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfulness_scale, double novelty_index, double *arousal_out) {
+bool evaluate_scarpi_hedonic_arousal(const teddy_bear_geometry_t *geom, double playfulness_scale, double novelty_index, double *arousal_out) {
     if (!geom || playfulness_scale < 0.0 || novelty_index < 0.0 || !arousal_out) {
         return false;
     }
@@ -42,7 +42,7 @@ bool evaluate_scarpi_hedonic_arousal(const teddy_geometry_t *geom, double playfu
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double stability_index, double *quality_rating_out) {
+bool evaluate_scarpi_utilitarian_quality(const teddy_bear_geometry_t *geom, double stability_index, double *quality_rating_out) {
     if (!geom || stability_index < 0.0 || !quality_rating_out) {
         return false;
     }
@@ -50,7 +50,7 @@ bool evaluate_scarpi_utilitarian_quality(const teddy_geometry_t *geom, double st
     return true;
 }
 
-bool evaluate_scarpi_hedonic_arousal_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_arousal_out) {
+bool evaluate_scarpi_hedonic_arousal_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_arousal_out) {
     if (!geom || duration_sec < 0.0 || !decayed_arousal_out) {
         return false;
     }
@@ -58,7 +58,7 @@ bool evaluate_scarpi_hedonic_arousal_decay(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_loyalty(const teddy_geometry_t *geom, double success_rate, double *loyalty_out) {
+bool evaluate_scarpi_utilitarian_loyalty(const teddy_bear_geometry_t *geom, double success_rate, double *loyalty_out) {
     if (!geom || success_rate < 0.0 || !loyalty_out) {
         return false;
     }
@@ -66,7 +66,7 @@ bool evaluate_scarpi_utilitarian_loyalty(const teddy_geometry_t *geom, double su
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double base_playfulness, double *playfulness_out) {
+bool evaluate_scarpi_hedonic_playfulness(const teddy_bear_geometry_t *geom, double base_playfulness, double *playfulness_out) {
     if (!geom || base_playfulness < 0.0 || !playfulness_out) {
         return false;
     }
@@ -74,7 +74,7 @@ bool evaluate_scarpi_hedonic_playfulness(const teddy_geometry_t *geom, double ba
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safety_margin, double *operational_trust_out) {
+bool evaluate_scarpi_utilitarian_trust(const teddy_bear_geometry_t *geom, double safety_margin, double *operational_trust_out) {
     if (!geom || safety_margin < 0.0 || !operational_trust_out) {
         return false;
     }
@@ -82,7 +82,7 @@ bool evaluate_scarpi_utilitarian_trust(const teddy_geometry_t *geom, double safe
     return true;
 }
 
-bool evaluate_scarpi_hedonic_arousal_mod(const teddy_geometry_t *geom, double novelty_shift, double brow_gesture_val, double *arousal_out) {
+bool evaluate_scarpi_hedonic_arousal_mod(const teddy_bear_geometry_t *geom, double novelty_shift, double brow_gesture_val, double *arousal_out) {
     if (!geom || novelty_shift < 0.0 || brow_gesture_val < 0.0 || !arousal_out) {
         return false;
     }
@@ -90,7 +90,7 @@ bool evaluate_scarpi_hedonic_arousal_mod(const teddy_geometry_t *geom, double no
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality_control(const teddy_geometry_t *geom, double spatial_alignment, double *quality_control_out) {
+bool evaluate_scarpi_utilitarian_quality_control(const teddy_bear_geometry_t *geom, double spatial_alignment, double *quality_control_out) {
     if (!geom || spatial_alignment < 0.0 || !quality_control_out) {
         return false;
     }
@@ -98,7 +98,7 @@ bool evaluate_scarpi_utilitarian_quality_control(const teddy_geometry_t *geom, d
     return true;
 }
 
-bool evaluate_scarpi_hedonic_aesthetic_quality(const teddy_geometry_t *geom, double aesthetic_alignment, double *quality_out) {
+bool evaluate_scarpi_hedonic_aesthetic_quality(const teddy_bear_geometry_t *geom, double aesthetic_alignment, double *quality_out) {
     if (!geom || aesthetic_alignment < 0.0 || !quality_out) {
         return false;
     }
@@ -106,7 +106,7 @@ bool evaluate_scarpi_hedonic_aesthetic_quality(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency(const teddy_geometry_t *geom, double consistency_score, double *consistency_mod_out) {
+bool evaluate_scarpi_utilitarian_consistency(const teddy_bear_geometry_t *geom, double consistency_score, double *consistency_mod_out) {
     if (!geom || consistency_score < 0.0 || !consistency_mod_out) {
         return false;
     }
@@ -114,7 +114,7 @@ bool evaluate_scarpi_utilitarian_consistency(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_scarpi_hedonic_interface_trust(const teddy_geometry_t *geom, double aesthetic_trust_val, double *interface_trust_out) {
+bool evaluate_scarpi_hedonic_interface_trust(const teddy_bear_geometry_t *geom, double aesthetic_trust_val, double *interface_trust_out) {
     if (!geom || aesthetic_trust_val < 0.0 || !interface_trust_out) {
         return false;
     }
@@ -122,7 +122,7 @@ bool evaluate_scarpi_hedonic_interface_trust(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_operational_trust_mod(const teddy_geometry_t *geom, double efficiency_val, double *operational_trust_out) {
+bool evaluate_scarpi_utilitarian_operational_trust_mod(const teddy_bear_geometry_t *geom, double efficiency_val, double *operational_trust_out) {
     if (!geom || efficiency_val < 0.0 || !operational_trust_out) {
         return false;
     }
@@ -130,7 +130,7 @@ bool evaluate_scarpi_utilitarian_operational_trust_mod(const teddy_geometry_t *g
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_engagement(const teddy_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_out) {
+bool evaluate_scarpi_hedonic_playful_engagement(const teddy_bear_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_out) {
     if (!geom || novelty_scale < 0.0 || aesthetic_alignment < 0.0 || !engagement_out) {
         return false;
     }
@@ -138,7 +138,7 @@ bool evaluate_scarpi_hedonic_playful_engagement(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_consistency_out) {
+bool evaluate_scarpi_utilitarian_consistency_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_consistency_out) {
     if (!geom || duration_sec < 0.0 || !decayed_consistency_out) {
         return false;
     }
@@ -146,7 +146,7 @@ bool evaluate_scarpi_utilitarian_consistency_decay(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_arousal_variance(const teddy_geometry_t *geom, double novelty_shift, double brow_gesture_val, double *arousal_variance_out) {
+bool evaluate_scarpi_hedonic_playful_arousal_variance(const teddy_bear_geometry_t *geom, double novelty_shift, double brow_gesture_val, double *arousal_variance_out) {
     if (!geom || novelty_shift < 0.0 || brow_gesture_val < 0.0 || !arousal_variance_out) {
         return false;
     }
@@ -154,7 +154,7 @@ bool evaluate_scarpi_hedonic_playful_arousal_variance(const teddy_geometry_t *ge
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_operational_trust_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_operational_trust_out) {
+bool evaluate_scarpi_utilitarian_operational_trust_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_operational_trust_out) {
     if (!geom || duration_sec < 0.0 || !decayed_operational_trust_out) {
         return false;
     }
@@ -162,7 +162,7 @@ bool evaluate_scarpi_utilitarian_operational_trust_decay(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency_variance(const teddy_geometry_t *geom, double consistency_score, double *variance_out) {
+bool evaluate_scarpi_utilitarian_consistency_variance(const teddy_bear_geometry_t *geom, double consistency_score, double *variance_out) {
     if (!geom || consistency_score < 0.0 || !variance_out) {
         return false;
     }
@@ -170,7 +170,7 @@ bool evaluate_scarpi_utilitarian_consistency_variance(const teddy_geometry_t *ge
     return true;
 }
 
-bool evaluate_scarpi_hedonic_interface_trust_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
+bool evaluate_scarpi_hedonic_interface_trust_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_trust_out) {
     if (!geom || duration_sec < 0.0 || !decayed_trust_out) {
         return false;
     }
@@ -178,7 +178,7 @@ bool evaluate_scarpi_hedonic_interface_trust_decay(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_scarpi_hedonic_trust_variance(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_variance_out) {
+bool evaluate_scarpi_hedonic_trust_variance(const teddy_bear_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_variance_out) {
     if (!geom || aesthetic_rating < 0.0 || novelty_scale < 0.0 || !trust_variance_out) {
         return false;
     }
@@ -186,7 +186,7 @@ bool evaluate_scarpi_hedonic_trust_variance(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality_control_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_quality_out) {
+bool evaluate_scarpi_utilitarian_quality_control_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_quality_out) {
     if (!geom || duration_sec < 0.0 || !decayed_quality_out) {
         return false;
     }
@@ -194,7 +194,7 @@ bool evaluate_scarpi_utilitarian_quality_control_decay(const teddy_geometry_t *g
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_engagement_variance(const teddy_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_variance_out) {
+bool evaluate_scarpi_hedonic_playful_engagement_variance(const teddy_bear_geometry_t *geom, double novelty_scale, double aesthetic_alignment, double *engagement_variance_out) {
     if (!geom || novelty_scale < 0.0 || aesthetic_alignment < 0.0 || !engagement_variance_out) {
         return false;
     }
@@ -202,7 +202,7 @@ bool evaluate_scarpi_hedonic_playful_engagement_variance(const teddy_geometry_t 
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_utilitarian_consistency_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -210,7 +210,7 @@ bool evaluate_scarpi_utilitarian_consistency_decay_variance(const teddy_geometry
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_arousal_mod_variance(const teddy_geometry_t *geom, double novelty_scale, double design_symmetry, double *variance_out) {
+bool evaluate_scarpi_hedonic_playful_arousal_mod_variance(const teddy_bear_geometry_t *geom, double novelty_scale, double design_symmetry, double *variance_out) {
     if (!geom || novelty_scale < 0.0 || design_symmetry < 0.0 || !variance_out) {
         return false;
     }
@@ -218,7 +218,7 @@ bool evaluate_scarpi_hedonic_playful_arousal_mod_variance(const teddy_geometry_t
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality_control_variance(const teddy_geometry_t *geom, double complexity_level, double *variance_out) {
+bool evaluate_scarpi_utilitarian_quality_control_variance(const teddy_bear_geometry_t *geom, double complexity_level, double *variance_out) {
     if (!geom || complexity_level < 0.0 || !variance_out) {
         return false;
     }
@@ -226,7 +226,7 @@ bool evaluate_scarpi_utilitarian_quality_control_variance(const teddy_geometry_t
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_arousal_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_hedonic_playful_arousal_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -234,7 +234,7 @@ bool evaluate_scarpi_hedonic_playful_arousal_decay_variance(const teddy_geometry
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality_control_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_utilitarian_quality_control_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -242,7 +242,7 @@ bool evaluate_scarpi_utilitarian_quality_control_decay_variance(const teddy_geom
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_engagement_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_hedonic_playful_engagement_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -250,7 +250,7 @@ bool evaluate_scarpi_hedonic_playful_engagement_decay_variance(const teddy_geome
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency_variance_mod(const teddy_geometry_t *geom, double complexity_level, double *variance_out) {
+bool evaluate_scarpi_utilitarian_consistency_variance_mod(const teddy_bear_geometry_t *geom, double complexity_level, double *variance_out) {
     if (!geom || complexity_level < 0.0 || !variance_out) {
         return false;
     }
@@ -258,7 +258,7 @@ bool evaluate_scarpi_utilitarian_consistency_variance_mod(const teddy_geometry_t
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality_control_variance_mod(const teddy_geometry_t *geom, double complexity_level, double *variance_out) {
+bool evaluate_scarpi_utilitarian_quality_control_variance_mod(const teddy_bear_geometry_t *geom, double complexity_level, double *variance_out) {
     if (!geom || complexity_level < 0.0 || !variance_out) {
         return false;
     }
@@ -266,7 +266,7 @@ bool evaluate_scarpi_utilitarian_quality_control_variance_mod(const teddy_geomet
     return true;
 }
 
-bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out) {
+bool evaluate_scarpi_hedonic_trust(const teddy_bear_geometry_t *geom, double aesthetic_rating, double novelty_scale, double *trust_out) {
     if (!geom || aesthetic_rating < 0.0 || novelty_scale < 0.0 || !trust_out) {
         return false;
     }
@@ -274,7 +274,7 @@ bool evaluate_scarpi_hedonic_trust(const teddy_geometry_t *geom, double aestheti
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_efficiency(const teddy_geometry_t *geom, double latency_sec, double *efficiency_out) {
+bool evaluate_scarpi_utilitarian_efficiency(const teddy_bear_geometry_t *geom, double latency_sec, double *efficiency_out) {
     if (!geom || latency_sec < 0.0 || !efficiency_out) {
         return false;
     }
@@ -282,7 +282,7 @@ bool evaluate_scarpi_utilitarian_efficiency(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_arousal_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_hedonic_playful_arousal_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -290,7 +290,7 @@ bool evaluate_scarpi_hedonic_playful_arousal_decay_variance_mod(const teddy_geom
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_operational_trust_variance_mod(const teddy_geometry_t *geom, double trust_score, double *variance_out) {
+bool evaluate_scarpi_utilitarian_operational_trust_variance_mod(const teddy_bear_geometry_t *geom, double trust_score, double *variance_out) {
     if (!geom || trust_score < 0.0 || !variance_out) {
         return false;
     }
@@ -298,7 +298,7 @@ bool evaluate_scarpi_utilitarian_operational_trust_variance_mod(const teddy_geom
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_engagement_variance_mod(const teddy_geometry_t *geom, double engagement_score, double *variance_out) {
+bool evaluate_scarpi_hedonic_playful_engagement_variance_mod(const teddy_bear_geometry_t *geom, double engagement_score, double *variance_out) {
     if (!geom || engagement_score < 0.0 || !variance_out) {
         return false;
     }
@@ -306,7 +306,7 @@ bool evaluate_scarpi_hedonic_playful_engagement_variance_mod(const teddy_geometr
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency_variance_mod_single(const teddy_geometry_t *geom, double consistency_score, double *variance_out) {
+bool evaluate_scarpi_utilitarian_consistency_variance_mod_single(const teddy_bear_geometry_t *geom, double consistency_score, double *variance_out) {
     if (!geom || consistency_score < 0.0 || !variance_out) {
         return false;
     }
@@ -314,7 +314,7 @@ bool evaluate_scarpi_utilitarian_consistency_variance_mod_single(const teddy_geo
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_quality_control_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_utilitarian_quality_control_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -322,7 +322,7 @@ bool evaluate_scarpi_utilitarian_quality_control_decay_variance_mod(const teddy_
     return true;
 }
 
-bool evaluate_scarpi_hedonic_playful_engagement_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_hedonic_playful_engagement_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -330,7 +330,7 @@ bool evaluate_scarpi_hedonic_playful_engagement_decay_variance_mod(const teddy_g
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_consistency_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_utilitarian_consistency_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -338,7 +338,7 @@ bool evaluate_scarpi_utilitarian_consistency_decay_variance_mod(const teddy_geom
     return true;
 }
 
-bool evaluate_scarpi_utilitarian_operational_trust_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_utilitarian_operational_trust_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -346,7 +346,7 @@ bool evaluate_scarpi_utilitarian_operational_trust_decay_variance_mod(const tedd
     return true;
 }
 
-bool evaluate_scarpi_hedonic_interface_trust_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_scarpi_hedonic_interface_trust_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }

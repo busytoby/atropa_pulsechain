@@ -2,7 +2,7 @@ begin
   comment Auncient Dysnomia VM Master Grand Proof Theorems 1-30 Synthesis Prover;
   comment Unifies Foundational Telemetry, Protocols, Networks, Thermodynamics, LEED Physics, and Pixar RenderMan;
 
-  integer tpaBase, tier1, tier2, tier3, tier4, tier5, tier6, teddyValid, grandSeal;
+  integer tpaBase, tier1, tier2, tier3, tier4, tier5, tier6, teddy_bearValid, grandSeal;
 
   tpaBase := 256;
   tier1 := 1; comment Theorems 1-5: Injective Spatio-BIM, Liveness, Lyapunov Thermal, k-Anonymity, Rule 18 Parity;
@@ -11,10 +11,10 @@ begin
   tier4 := 1; comment Theorems 16-20: Heat Exchanger, CO2 Transfer, Stack Effect, TMR Voting, Granger Causality;
   tier5 := 1; comment Theorems 21-25: Daylight Harvesting, Carnot Reset, Psychrometric, Economizer, NC-30;
   tier6 := 1; comment Theorems 26-30: Pixar RenderMan RIB, BSDF Energy, DisplacementBound, BSSRDF, WinchesterMQ;
-  teddyValid := 1; comment Teddy Bear Heart USDA Participant Qualification;
+  teddy_bearValid := 1; comment Teddy Bear Heart USDA Participant Qualification;
 
   if tpaBase = 256 and tier1 = 1 and tier2 = 1 and tier3 = 1 and
-     tier4 = 1 and tier5 = 1 and tier6 = 1 and teddyValid = 1 then
+     tier4 = 1 and tier5 = 1 and tier6 = 1 and teddy_bearValid = 1 then
     grandSeal := 2025081800 + 301234567
   else
     grandSeal := 0

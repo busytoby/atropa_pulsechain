@@ -66,7 +66,7 @@ A secondary, high-resolution VLM sweep was conducted to interrogate the exact ph
 
 ### 2. The Sickness Mutation (The Missing Eye)
 *   **VLM Observation:** *"The green sickness in the image is not a glowing aura... It is a teddy bear with a missing eye."*
-*   **Architectural Mandate:** The VLM hallucinated a massive physical amputation. It did not perceive the sickness as a color overlay, but as a structural void. To satisfy the VLM logic, the C-Kernel must mathematically suppress or delete the Right Eye `TsfiTeddyEye` struct from the PM4 array during the sickness sequence, replacing it with a shadow primitive.
+*   **Architectural Mandate:** The VLM hallucinated a massive physical amputation. It did not perceive the sickness as a color overlay, but as a structural void. To satisfy the VLM logic, the C-Kernel must mathematically suppress or delete the Right Eye `TsfiTeddyBearEye` struct from the PM4 array during the sickness sequence, replacing it with a shadow primitive.
 
 ### 3. The Environmental Matrix (The Geometric Room)
 *   **VLM Observation:** *"The background environment... consists of a geometric patterned wall, which features a combination of squares and rectangles. The lighting in the room is quite dim..."*

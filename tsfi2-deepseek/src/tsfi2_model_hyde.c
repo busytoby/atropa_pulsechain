@@ -1,8 +1,8 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-bool evaluate_hyde_gaze_direction_index(const teddy_geometry_t *geom, double target_angle, double *gaze_alignment_out) {
+bool evaluate_hyde_gaze_direction_index(const teddy_bear_geometry_t *geom, double target_angle, double *gaze_alignment_out) {
     if (!geom || !gaze_alignment_out) {
         return false;
     }
@@ -10,7 +10,7 @@ bool evaluate_hyde_gaze_direction_index(const teddy_geometry_t *geom, double tar
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_variance(const teddy_geometry_t *geom, double vocal_tempo_bpm, double *vocal_uncanny_out) {
+bool evaluate_hyde_vocal_tempo_variance(const teddy_bear_geometry_t *geom, double vocal_tempo_bpm, double *vocal_uncanny_out) {
     if (!geom || vocal_tempo_bpm < 0.0 || !vocal_uncanny_out) {
         return false;
     }
@@ -18,7 +18,7 @@ bool evaluate_hyde_vocal_tempo_variance(const teddy_geometry_t *geom, double voc
     return true;
 }
 
-bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double lag_seconds, double *latency_uncanny_out) {
+bool evaluate_hyde_conversational_latency(const teddy_bear_geometry_t *geom, double lag_seconds, double *latency_uncanny_out) {
     if (!geom || lag_seconds < 0.0 || !latency_uncanny_out) {
         return false;
     }
@@ -26,7 +26,7 @@ bool evaluate_hyde_conversational_latency(const teddy_geometry_t *geom, double l
     return true;
 }
 
-bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out) {
+bool evaluate_hyde_vocal_size_mismatch(const teddy_bear_geometry_t *geom, double voice_pitch_hz, double *size_mismatch_out) {
     if (!geom || voice_pitch_hz < 0.0 || !size_mismatch_out) {
         return false;
     }
@@ -34,7 +34,7 @@ bool evaluate_hyde_vocal_size_mismatch(const teddy_geometry_t *geom, double voic
     return true;
 }
 
-bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out) {
+bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_bear_geometry_t *geom, double voice_amplitude_db, double *amplitude_mismatch_out) {
     if (!geom || voice_amplitude_db < 0.0 || !amplitude_mismatch_out) {
         return false;
     }
@@ -42,7 +42,7 @@ bool evaluate_hyde_vocal_amplitude_mismatch(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out) {
+bool evaluate_hyde_mouth_speed_synchrony(const teddy_bear_geometry_t *geom, double mouth_speed, double pitch_acceleration, double *sync_mismatch_out) {
     if (!geom || mouth_speed < 0.0 || !sync_mismatch_out) {
         return false;
     }
@@ -50,7 +50,7 @@ bool evaluate_hyde_mouth_speed_synchrony(const teddy_geometry_t *geom, double mo
     return true;
 }
 
-bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out) {
+bool evaluate_hyde_turn_interruption(const teddy_bear_geometry_t *geom, double overlap_duration_sec, double *interruption_uncanny_out) {
     if (!geom || overlap_duration_sec < 0.0 || !interruption_uncanny_out) {
         return false;
     }
@@ -58,7 +58,7 @@ bool evaluate_hyde_turn_interruption(const teddy_geometry_t *geom, double overla
     return true;
 }
 
-bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out) {
+bool evaluate_hyde_vocal_tremor_index(const teddy_bear_geometry_t *geom, double pitch_variance, double *tremor_uncanny_out) {
     if (!geom || pitch_variance < 0.0 || !tremor_uncanny_out) {
         return false;
     }
@@ -66,7 +66,7 @@ bool evaluate_hyde_vocal_tremor_index(const teddy_geometry_t *geom, double pitch
     return true;
 }
 
-bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out) {
+bool evaluate_hyde_tremor_frequency_sync(const teddy_bear_geometry_t *geom, double chin_vibration_hz, double audio_tremor_hz, double *sync_rating_out) {
     if (!geom || chin_vibration_hz < 0.0 || audio_tremor_hz < 0.0 || !sync_rating_out) {
         return false;
     }
@@ -74,7 +74,7 @@ bool evaluate_hyde_tremor_frequency_sync(const teddy_geometry_t *geom, double ch
     return true;
 }
 
-bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out) {
+bool evaluate_hyde_pitch_range_engagement(const teddy_bear_geometry_t *geom, double pitch_range_hz, double *engagement_rating_out) {
     if (!geom || pitch_range_hz < 0.0 || !engagement_rating_out) {
         return false;
     }
@@ -82,7 +82,7 @@ bool evaluate_hyde_pitch_range_engagement(const teddy_geometry_t *geom, double p
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out) {
+bool evaluate_hyde_vocal_warmth_pitch(const teddy_bear_geometry_t *geom, double average_pitch_hz, double *warmth_offset_out) {
     if (!geom || average_pitch_hz < 0.0 || !warmth_offset_out) {
         return false;
     }
@@ -90,7 +90,7 @@ bool evaluate_hyde_vocal_warmth_pitch(const teddy_geometry_t *geom, double avera
     return true;
 }
 
-bool evaluate_hyde_interruption_frequency(const teddy_geometry_t *geom, double collision_rate, double *aversion_rating_out) {
+bool evaluate_hyde_interruption_frequency(const teddy_bear_geometry_t *geom, double collision_rate, double *aversion_rating_out) {
     if (!geom || collision_rate < 0.0 || !aversion_rating_out) {
         return false;
     }
@@ -98,7 +98,7 @@ bool evaluate_hyde_interruption_frequency(const teddy_geometry_t *geom, double c
     return true;
 }
 
-bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latency_jitter_sec, double *naturalness_out) {
+bool evaluate_hyde_av_latency_jitter(const teddy_bear_geometry_t *geom, double latency_jitter_sec, double *naturalness_out) {
     if (!geom || latency_jitter_sec < 0.0 || !naturalness_out) {
         return false;
     }
@@ -106,7 +106,7 @@ bool evaluate_hyde_av_latency_jitter(const teddy_geometry_t *geom, double latenc
     return true;
 }
 
-bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double energy_variance, double *engagement_out) {
+bool evaluate_hyde_vocal_energy_variance(const teddy_bear_geometry_t *geom, double energy_variance, double *engagement_out) {
     if (!geom || energy_variance < 0.0 || !engagement_out) {
         return false;
     }
@@ -114,7 +114,7 @@ bool evaluate_hyde_vocal_energy_variance(const teddy_geometry_t *geom, double en
     return true;
 }
 
-bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double pitch_jitter, double *naturalness_out) {
+bool evaluate_hyde_vocal_jitter_naturalness(const teddy_bear_geometry_t *geom, double pitch_jitter, double *naturalness_out) {
     if (!geom || pitch_jitter < 0.0 || !naturalness_out) {
         return false;
     }
@@ -122,7 +122,7 @@ bool evaluate_hyde_vocal_jitter_naturalness(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_hyde_intonation_amplitude(const teddy_geometry_t *geom, double intonation_variance, double *engagement_out) {
+bool evaluate_hyde_intonation_amplitude(const teddy_bear_geometry_t *geom, double intonation_variance, double *engagement_out) {
     if (!geom || intonation_variance < 0.0 || !engagement_out) {
         return false;
     }
@@ -130,7 +130,7 @@ bool evaluate_hyde_intonation_amplitude(const teddy_geometry_t *geom, double int
     return true;
 }
 
-bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
+bool evaluate_hyde_dynamic_intonation(const teddy_bear_geometry_t *geom, double intonation_range, double brow_movement, double *intonation_out) {
     if (!geom || intonation_range < 0.0 || brow_movement < 0.0 || !intonation_out) {
         return false;
     }
@@ -138,7 +138,7 @@ bool evaluate_hyde_dynamic_intonation(const teddy_geometry_t *geom, double inton
     return true;
 }
 
-bool evaluate_hyde_intonation_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_intonation_out) {
+bool evaluate_hyde_intonation_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_intonation_out) {
     if (!geom || duration_sec < 0.0 || !decayed_intonation_out) {
         return false;
     }
@@ -146,7 +146,7 @@ bool evaluate_hyde_intonation_decay(const teddy_geometry_t *geom, double duratio
     return true;
 }
 
-bool evaluate_hyde_tempo_sync(const teddy_geometry_t *geom, double tempo_sync_val, double *rating_out) {
+bool evaluate_hyde_tempo_sync(const teddy_bear_geometry_t *geom, double tempo_sync_val, double *rating_out) {
     if (!geom || tempo_sync_val < 0.0 || !rating_out) {
         return false;
     }
@@ -154,7 +154,7 @@ bool evaluate_hyde_tempo_sync(const teddy_geometry_t *geom, double tempo_sync_va
     return true;
 }
 
-bool evaluate_hyde_tempo_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_jitter_out) {
+bool evaluate_hyde_tempo_jitter_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_jitter_out) {
     if (!geom || duration_sec < 0.0 || !decayed_jitter_out) {
         return false;
     }
@@ -162,7 +162,7 @@ bool evaluate_hyde_tempo_jitter_decay(const teddy_geometry_t *geom, double durat
     return true;
 }
 
-bool evaluate_hyde_tempo_range(const teddy_geometry_t *geom, double tempo_range_val, double brow_movement, double *tempo_range_out) {
+bool evaluate_hyde_tempo_range(const teddy_bear_geometry_t *geom, double tempo_range_val, double brow_movement, double *tempo_range_out) {
     if (!geom || tempo_range_val < 0.0 || brow_movement < 0.0 || !tempo_range_out) {
         return false;
     }
@@ -170,7 +170,7 @@ bool evaluate_hyde_tempo_range(const teddy_geometry_t *geom, double tempo_range_
     return true;
 }
 
-bool evaluate_hyde_tempo_range_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_range_out) {
+bool evaluate_hyde_tempo_range_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_range_out) {
     if (!geom || duration_sec < 0.0 || !decayed_range_out) {
         return false;
     }
@@ -178,7 +178,7 @@ bool evaluate_hyde_tempo_range_decay(const teddy_geometry_t *geom, double durati
     return true;
 }
 
-bool evaluate_hyde_vocal_size_sync(const teddy_geometry_t *geom, double tempo_sync_val, double size_mismatch, double *sync_out) {
+bool evaluate_hyde_vocal_size_sync(const teddy_bear_geometry_t *geom, double tempo_sync_val, double size_mismatch, double *sync_out) {
     if (!geom || tempo_sync_val < 0.0 || size_mismatch < 0.0 || !sync_out) {
         return false;
     }
@@ -186,7 +186,7 @@ bool evaluate_hyde_vocal_size_sync(const teddy_geometry_t *geom, double tempo_sy
     return true;
 }
 
-bool evaluate_hyde_vocal_size_jitter_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out) {
+bool evaluate_hyde_vocal_size_jitter_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out) {
     if (!geom || duration_sec < 0.0 || !decayed_size_jitter_out) {
         return false;
     }
@@ -194,7 +194,7 @@ bool evaluate_hyde_vocal_size_jitter_decay(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_hyde_vocal_size_pitch(const teddy_geometry_t *geom, double size_variance, double pitch_range, double *pitch_out) {
+bool evaluate_hyde_vocal_size_pitch(const teddy_bear_geometry_t *geom, double size_variance, double pitch_range, double *pitch_out) {
     if (!geom || size_variance < 0.0 || pitch_range < 0.0 || !pitch_out) {
         return false;
     }
@@ -202,7 +202,7 @@ bool evaluate_hyde_vocal_size_pitch(const teddy_geometry_t *geom, double size_va
     return true;
 }
 
-bool evaluate_hyde_vocal_size_pitch_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_pitch_out) {
+bool evaluate_hyde_vocal_size_pitch_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_size_pitch_out) {
     if (!geom || duration_sec < 0.0 || !decayed_size_pitch_out) {
         return false;
     }
@@ -210,7 +210,7 @@ bool evaluate_hyde_vocal_size_pitch_decay(const teddy_geometry_t *geom, double d
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_range(const teddy_geometry_t *geom, double pitch_range, double size_mismatch, double *warmth_range_out) {
+bool evaluate_hyde_vocal_warmth_range(const teddy_bear_geometry_t *geom, double pitch_range, double size_mismatch, double *warmth_range_out) {
     if (!geom || pitch_range < 0.0 || size_mismatch < 0.0 || !warmth_range_out) {
         return false;
     }
@@ -218,7 +218,7 @@ bool evaluate_hyde_vocal_warmth_range(const teddy_geometry_t *geom, double pitch
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_range_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_warmth_range_out) {
+bool evaluate_hyde_vocal_warmth_range_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_warmth_range_out) {
     if (!geom || duration_sec < 0.0 || !decayed_warmth_range_out) {
         return false;
     }
@@ -226,7 +226,7 @@ bool evaluate_hyde_vocal_warmth_range_decay(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
+bool evaluate_hyde_vocal_warmth_modulation(const teddy_bear_geometry_t *geom, double pitch_hz, double chin_curvature, double *warmth_out) {
     if (!geom || pitch_hz < 0.0 || chin_curvature < 0.0 || !warmth_out) {
         return false;
     }
@@ -234,7 +234,7 @@ bool evaluate_hyde_vocal_warmth_modulation(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double recovery_time_sec, double *recovery_rating_out) {
+bool evaluate_hyde_interruption_recovery(const teddy_bear_geometry_t *geom, double recovery_time_sec, double *recovery_rating_out) {
     if (!geom || recovery_time_sec < 0.0 || !recovery_rating_out) {
         return false;
     }
@@ -242,7 +242,7 @@ bool evaluate_hyde_interruption_recovery(const teddy_geometry_t *geom, double re
     return true;
 }
 
-bool evaluate_hyde_vocal_naturalness_variance(const teddy_geometry_t *geom, double vocal_jitter, double amplitude_mismatch, double *naturalness_variance_out) {
+bool evaluate_hyde_vocal_naturalness_variance(const teddy_bear_geometry_t *geom, double vocal_jitter, double amplitude_mismatch, double *naturalness_variance_out) {
     if (!geom || vocal_jitter < 0.0 || amplitude_mismatch < 0.0 || !naturalness_variance_out) {
         return false;
     }
@@ -250,7 +250,7 @@ bool evaluate_hyde_vocal_naturalness_variance(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_hyde_intonation_amplitude_decay(const teddy_geometry_t *geom, double duration_sec, double *decayed_amplitude_out) {
+bool evaluate_hyde_intonation_amplitude_decay(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_amplitude_out) {
     if (!geom || duration_sec < 0.0 || !decayed_amplitude_out) {
         return false;
     }
@@ -258,7 +258,7 @@ bool evaluate_hyde_intonation_amplitude_decay(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_sync_variance(const teddy_geometry_t *geom, double tempo_sync_val, double size_mismatch, double *sync_variance_out) {
+bool evaluate_hyde_vocal_tempo_sync_variance(const teddy_bear_geometry_t *geom, double tempo_sync_val, double size_mismatch, double *sync_variance_out) {
     if (!geom || tempo_sync_val < 0.0 || size_mismatch < 0.0 || !sync_variance_out) {
         return false;
     }
@@ -266,7 +266,7 @@ bool evaluate_hyde_vocal_tempo_sync_variance(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_hyde_vocal_size_jitter_decay_mod(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out) {
+bool evaluate_hyde_vocal_size_jitter_decay_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_size_jitter_out) {
     if (!geom || duration_sec < 0.0 || !decayed_size_jitter_out) {
         return false;
     }
@@ -274,7 +274,7 @@ bool evaluate_hyde_vocal_size_jitter_decay_mod(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_variance(const teddy_geometry_t *geom, double interruption_freq, double pitch_hz, double *warmth_variance_out) {
+bool evaluate_hyde_vocal_warmth_variance(const teddy_bear_geometry_t *geom, double interruption_freq, double pitch_hz, double *warmth_variance_out) {
     if (!geom || interruption_freq < 0.0 || pitch_hz < 0.0 || !warmth_variance_out) {
         return false;
     }
@@ -282,7 +282,7 @@ bool evaluate_hyde_vocal_warmth_variance(const teddy_geometry_t *geom, double in
     return true;
 }
 
-bool evaluate_hyde_vocal_size_pitch_decay_mod(const teddy_geometry_t *geom, double duration_sec, double *decayed_size_pitch_out) {
+bool evaluate_hyde_vocal_size_pitch_decay_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decayed_size_pitch_out) {
     if (!geom || duration_sec < 0.0 || !decayed_size_pitch_out) {
         return false;
     }
@@ -290,7 +290,7 @@ bool evaluate_hyde_vocal_size_pitch_decay_mod(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_range_variance(const teddy_geometry_t *geom, double tempo_range_val, double size_mismatch, double *range_variance_out) {
+bool evaluate_hyde_vocal_tempo_range_variance(const teddy_bear_geometry_t *geom, double tempo_range_val, double size_mismatch, double *range_variance_out) {
     if (!geom || tempo_range_val < 0.0 || size_mismatch < 0.0 || !range_variance_out) {
         return false;
     }
@@ -298,7 +298,7 @@ bool evaluate_hyde_vocal_tempo_range_variance(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_hyde_vocal_size_jitter_decay_mod_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_size_jitter_decay_mod_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -306,7 +306,7 @@ bool evaluate_hyde_vocal_size_jitter_decay_mod_variance(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_hyde_vocal_turn_interruption_variance(const teddy_geometry_t *geom, double interruption_freq, double *variance_out) {
+bool evaluate_hyde_vocal_turn_interruption_variance(const teddy_bear_geometry_t *geom, double interruption_freq, double *variance_out) {
     if (!geom || interruption_freq < 0.0 || !variance_out) {
         return false;
     }
@@ -314,7 +314,7 @@ bool evaluate_hyde_vocal_turn_interruption_variance(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_hyde_vocal_size_pitch_variance(const teddy_geometry_t *geom, double size_pitch_val, double pitch_range, double *variance_out) {
+bool evaluate_hyde_vocal_size_pitch_variance(const teddy_bear_geometry_t *geom, double size_pitch_val, double pitch_range, double *variance_out) {
     if (!geom || size_pitch_val < 0.0 || pitch_range < 0.0 || !variance_out) {
         return false;
     }
@@ -322,7 +322,7 @@ bool evaluate_hyde_vocal_size_pitch_variance(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_range_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_tempo_range_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -330,7 +330,7 @@ bool evaluate_hyde_vocal_tempo_range_decay_variance(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_hyde_vocal_size_sync_variance(const teddy_geometry_t *geom, double size_sync_val, double size_mismatch, double *variance_out) {
+bool evaluate_hyde_vocal_size_sync_variance(const teddy_bear_geometry_t *geom, double size_sync_val, double size_mismatch, double *variance_out) {
     if (!geom || size_sync_val < 0.0 || size_mismatch < 0.0 || !variance_out) {
         return false;
     }
@@ -338,7 +338,7 @@ bool evaluate_hyde_vocal_size_sync_variance(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_warmth_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -346,7 +346,7 @@ bool evaluate_hyde_vocal_warmth_decay_variance(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_sync_variance_mod(const teddy_geometry_t *geom, double tempo_sync_val, double *variance_out) {
+bool evaluate_hyde_vocal_tempo_sync_variance_mod(const teddy_bear_geometry_t *geom, double tempo_sync_val, double *variance_out) {
     if (!geom || tempo_sync_val < 0.0 || !variance_out) {
         return false;
     }
@@ -354,7 +354,7 @@ bool evaluate_hyde_vocal_tempo_sync_variance_mod(const teddy_geometry_t *geom, d
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_range_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_warmth_range_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -362,7 +362,7 @@ bool evaluate_hyde_vocal_warmth_range_decay_variance(const teddy_geometry_t *geo
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_modulation_variance_mod(const teddy_geometry_t *geom, double warmth_mod_val, double *variance_out) {
+bool evaluate_hyde_vocal_warmth_modulation_variance_mod(const teddy_bear_geometry_t *geom, double warmth_mod_val, double *variance_out) {
     if (!geom || warmth_mod_val < 0.0 || !variance_out) {
         return false;
     }
@@ -370,7 +370,7 @@ bool evaluate_hyde_vocal_warmth_modulation_variance_mod(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_range_variance_mod(const teddy_geometry_t *geom, double warmth_range_val, double *variance_out) {
+bool evaluate_hyde_vocal_warmth_range_variance_mod(const teddy_bear_geometry_t *geom, double warmth_range_val, double *variance_out) {
     if (!geom || warmth_range_val < 0.0 || !variance_out) {
         return false;
     }
@@ -378,7 +378,7 @@ bool evaluate_hyde_vocal_warmth_range_variance_mod(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_hyde_vocal_size_pitch_variance_mod(const teddy_geometry_t *geom, double size_pitch_val, double *variance_out) {
+bool evaluate_hyde_vocal_size_pitch_variance_mod(const teddy_bear_geometry_t *geom, double size_pitch_val, double *variance_out) {
     if (!geom || size_pitch_val < 0.0 || !variance_out) {
         return false;
     }
@@ -386,7 +386,7 @@ bool evaluate_hyde_vocal_size_pitch_variance_mod(const teddy_geometry_t *geom, d
     return true;
 }
 
-bool evaluate_hyde_vocal_size_jitter_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_size_jitter_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -394,7 +394,7 @@ bool evaluate_hyde_vocal_size_jitter_decay_variance(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_hyde_vocal_size_sync_variance_mod(const teddy_geometry_t *geom, double size_sync_val, double *variance_out) {
+bool evaluate_hyde_vocal_size_sync_variance_mod(const teddy_bear_geometry_t *geom, double size_sync_val, double *variance_out) {
     if (!geom || size_sync_val < 0.0 || !variance_out) {
         return false;
     }
@@ -402,7 +402,7 @@ bool evaluate_hyde_vocal_size_sync_variance_mod(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_variance_mod(const teddy_geometry_t *geom, double warmth_val, double *variance_out) {
+bool evaluate_hyde_vocal_warmth_variance_mod(const teddy_bear_geometry_t *geom, double warmth_val, double *variance_out) {
     if (!geom || warmth_val < 0.0 || !variance_out) {
         return false;
     }
@@ -410,7 +410,7 @@ bool evaluate_hyde_vocal_warmth_variance_mod(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_range_variance_mod(const teddy_geometry_t *geom, double tempo_range_val, double *variance_out) {
+bool evaluate_hyde_vocal_tempo_range_variance_mod(const teddy_bear_geometry_t *geom, double tempo_range_val, double *variance_out) {
     if (!geom || tempo_range_val < 0.0 || !variance_out) {
         return false;
     }
@@ -418,7 +418,7 @@ bool evaluate_hyde_vocal_tempo_range_variance_mod(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_hyde_vocal_size_jitter_variance_mod(const teddy_geometry_t *geom, double size_jitter_val, double *variance_out) {
+bool evaluate_hyde_vocal_size_jitter_variance_mod(const teddy_bear_geometry_t *geom, double size_jitter_val, double *variance_out) {
     if (!geom || size_jitter_val < 0.0 || !variance_out) {
         return false;
     }
@@ -426,7 +426,7 @@ bool evaluate_hyde_vocal_size_jitter_variance_mod(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_hyde_vocal_warmth_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_warmth_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -434,7 +434,7 @@ bool evaluate_hyde_vocal_warmth_decay_variance_mod(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_range_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_tempo_range_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -442,7 +442,7 @@ bool evaluate_hyde_vocal_tempo_range_decay_variance_mod(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_hyde_vocal_size_jitter_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_size_jitter_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -450,7 +450,7 @@ bool evaluate_hyde_vocal_size_jitter_decay_variance_mod(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_hyde_vocal_tempo_sync_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_tempo_sync_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -458,7 +458,7 @@ bool evaluate_hyde_vocal_tempo_sync_decay_variance_mod(const teddy_geometry_t *g
     return true;
 }
 
-bool evaluate_hyde_vocal_size_pitch_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_size_pitch_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -466,7 +466,7 @@ bool evaluate_hyde_vocal_size_pitch_decay_variance_mod(const teddy_geometry_t *g
     return true;
 }
 
-bool evaluate_hyde_vocal_size_sync_decay_variance_mod(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_hyde_vocal_size_sync_decay_variance_mod(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }

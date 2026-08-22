@@ -482,7 +482,7 @@ int main() {
     printf("[INFO] Press ESC in the terminal to securely terminate the window.\n"); fflush(stdout);
     
     int w = 1024, h = 1536, str = w * 4; size_t sz = str * h;
-    int mfd = memfd_create("tsfi_teddy", MFD_CLOEXEC);
+    int mfd = memfd_create("tsfi_teddy_bear", MFD_CLOEXEC);
     if (mfd < 0) return 1;
     if (ftruncate(mfd, sz) < 0) return 1;
     uint32_t *px = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, mfd, 0);

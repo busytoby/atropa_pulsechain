@@ -215,7 +215,7 @@ int main(void)
 	assert(run_prover("./tests/test_cpm_accumulator_space_charge_isolator_prover", "Phase 3 Non-Preferential Accumulator & Space-Charge Isolation Engine") == 0);
 	assert(run_prover("./tests/test_cpm_dynamic_zmm_contract_resolver_prover", "Phase 3 Dynamic Contract ZMM Hardware Resolution Engine") == 0);
 	assert(run_prover("./tests/test_cpm_soft_body_fet_discharge_isolator_prover", "Phase 3 Soft Body Physics FET Discharge Isolation Engine") == 0);
-	assert(run_prover("./tests/test_cpm_teddy_ssn_endowment_bridge_prover", "Phase 3 Teddy Bear SSN Endowment & SSA Hardware Bridge Engine") == 0);
+	assert(run_prover("./tests/test_cpm_teddy_bear_ssn_endowment_bridge_prover", "Phase 3 Teddy Bear SSN Endowment & SSA Hardware Bridge Engine") == 0);
 	assert(run_prover("./tests/test_cpm_quadtree_dat_bin_storage_prover", "Phase 3 Exclusive .dat.bin Quadtree Media Layout Storage Engine") == 0);
 	assert(run_prover("./tests/test_cpm_dynamic_pll_frequency_scaler_prover", "Phase 3 Dynamic Phase-Lock Frequency Scaling & Master Finalization Engine") == 0);
 	assert(run_prover("./tests/test_cpm_lfm_state_space_engine_prover", "Phase 4 LFM Continuous-Time State-Space Kernel Acceleration Engine") == 0);

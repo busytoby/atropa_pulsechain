@@ -27,7 +27,7 @@ GENOME = {
 
 ## 2. Thunks & C graphics Integration
 
-We replaced the static circle calculations in [test_wayland_teddy_standalone.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_wayland_teddy_standalone.c) with a complete C-based 4D Verlet particle solver using 13 particles and 12 constraints.
+We replaced the static circle calculations in [test_wayland_teddy_bear_standalone.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_wayland_teddy_bear_standalone.c) with a complete C-based 4D Verlet particle solver using 13 particles and 12 constraints.
 
 ### The 4D Verlet Update (Implicit Velocity)
 $$\vec{p}_{i, n+1} = \vec{p}_{i, n} + (\vec{p}_{i, n} - \vec{p}_{i, n-1}) + \vec{a} \cdot \Delta t^2$$

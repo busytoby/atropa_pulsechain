@@ -13,8 +13,8 @@ I observed and inspected the following project documents and files in the worksp
   > Tier 2: ≥20 test cases (5 per feature boundary/failure modes)
   > Tier 3: ≥4 pairwise feature combination tests
   > Tier 4: ≥5 real-world scenarios"
-- **`tsfi2-deepseek/Makefile`** (Lines 257-258): Defines compilation target `bin/test_vulkan_teddy`.
-- **`tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh`** (Lines 12-32): Runs make and executes `./bin/test_vulkan_teddy --benchmark`.
+- **`tsfi2-deepseek/Makefile`** (Lines 257-258): Defines compilation target `bin/test_vulkan_teddy_bear`.
+- **`tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh`** (Lines 12-32): Runs make and executes `./bin/test_vulkan_teddy_bear --benchmark`.
 - **`tsfi2-deepseek/benchmarks/profiler_suite/generate_report.py`**: A python script of 1333 lines that generates report HTML and handles fallback mock data if `benchmark_results.json` is missing/corrupted.
 
 ---

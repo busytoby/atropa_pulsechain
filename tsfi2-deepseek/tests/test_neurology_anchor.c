@@ -44,7 +44,7 @@ int main() {
     
     // 4. Kirchhoff Phase Gating (Weight Resonance)
     printf("[TEST] Testing K0Rn Weight Resonance Gating...\n");
-    K0RnStream *stream = tsfi_k0rn_compile_teddy();
+    K0RnStream *stream = tsfi_k0rn_compile_teddy_bear();
     TSFiResonanceAnalysis vis = {0};
     
     // Case A: Zero Root (Should be zero intensity/no mutation)

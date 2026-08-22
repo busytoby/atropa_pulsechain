@@ -36,7 +36,7 @@ int main(void)
 	printf("   ✓ Verified Isolation Layers 9-12: PASS.\n");
 
 	/* 4. Durability: Layers 13-16 Verification */
-	printf("4. Verifying Durability (Layers 13-16: Ring CRC32 Log, .dat.bin Layout, Host VRAM Sealing, Teddy SSN Endowment)...\n");
+	printf("4. Verifying Durability (Layers 13-16: Ring CRC32 Log, .dat.bin Layout, Host VRAM Sealing, TeddyBear SSN Endowment)...\n");
 	printf("   ✓ Verified Durability Layers 13-16: PASS.\n");
 
 	/* 5. Closing Engine */

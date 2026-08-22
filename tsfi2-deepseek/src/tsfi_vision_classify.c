@@ -177,7 +177,7 @@ int tsfi_vision_classify_thunk(void *obj) {
         // Identify the Original Teddy Bear K0Rn via structural signature
         if (s->op_count == 8 && s->ops[0].type == K0RN_OP_CAPSULE && 
             s->ops[1].type == K0RN_OP_SPHERE && s->ops[1].p1 == 0.2f) {
-            return TSFI_CLASS_TEDDY;
+            return TSFI_CLASS_TEDDY_BEAR;
         }
         // Generic fallback: If it has ops, it's a GLYPH phenotype source
         if (s->op_count > 0) return TSFI_CLASS_GLYPH;

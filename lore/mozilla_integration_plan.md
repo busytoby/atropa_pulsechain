@@ -5,7 +5,7 @@ This document outlines the architecture for integrating our native **Auncient** 
 ## 1. Current Technologies to Port
 Our existing native rendering demos located in `tsfi2-deepseek` include:
 *   **Wayland Terminal Shell (`test_wayland_terminal_shell.c`):** Renders an interactive shell interface directly using raw pixel buffers.
-*   **Vulkan Teddy Bear Generator (`test_vulkan_teddy.c`):** Headless and windowed 3D mesh rendering using Vulkan pipelines.
+*   **Vulkan Teddy Bear Generator (`test_vulkan_teddy_bear.c`):** Headless and windowed 3D mesh rendering using Vulkan pipelines.
 *   **Gauntlet / Lunar Lander / Space War:** Standard 2D vector game loops.
 
 ## 2. Mozilla Integration Architecture
@@ -16,7 +16,7 @@ Since the Firefox compositor (**WebRender**) is written in Rust and manages the 
 graph TD
     A[Firefox HTML/CSS Parser] --> B[WebRender Layout Tree]
     B --> C[Rust WebRender Compositor]
-    D[Our Custom Vulkan Pipeline: Teddy, Terminal, Gauntlet] --> E[Shared Vulkan Device & Command Buffer]
+    D[Our Custom Vulkan Pipeline: TeddyBear, Terminal, Gauntlet] --> E[Shared Vulkan Device & Command Buffer]
     C --> F{Vulkan Blend Stage}
     E --> F
     F --> G[Wayland WSI Swapchain]
@@ -24,7 +24,7 @@ graph TD
 
 ### Level 1: WebRender Custom Render Tasks (Texture Injection)
 We can inject our Vulkan drawing passes directly into WebRender's pipeline as external textures:
-1. **Shared Vulkan Context:** Initialize our Vulkan resources (Teddy pipeline, Terminal buffers) using the same Vulkan Logical Device (`VkDevice`) as WebRender.
+1. **Shared Vulkan Context:** Initialize our Vulkan resources (TeddyBear pipeline, Terminal buffers) using the same Vulkan Logical Device (`VkDevice`) as WebRender.
 2. **External Image Rendering:** Render the 3D teddy bear or terminal grid to a Vulkan offscreen texture.
 3. **Texture Mapping:** Pass the texture handle (`VkImage`) to WebRender via its External Image API (`wr_notifier` and `ExternalImageHandler` in Rust/C++ glue). The browser then renders our content inside a standard HTML element container.
 

@@ -2,21 +2,21 @@
 #include "tsfi_opt_zmm.h"
 
 /**
- * @brief Teddy-Specialized Resnet Block
+ * @brief TeddyBear-Specialized Resnet Block
  * 
  * Logic: Incorporates a "Secret Injection" path where ZMM register state
  * can influence the residual connection, favoring fur-like high-frequency detail.
  */
-class TeddyResnetBlock : public ResnetBlock {
+class TeddyBearResnetBlock : public ResnetBlock {
 public:
-    TeddyResnetBlock(int64_t in_channels, int64_t out_channels)
+    TeddyBearResnetBlock(int64_t in_channels, int64_t out_channels)
         : ResnetBlock(in_channels, out_channels) {}
 
     struct ggml_tensor* forward(GGMLRunnerContext* ctx, struct ggml_tensor* x) override {
         // 1. Standard Resnet Forward
         struct ggml_tensor* h = ResnetBlock::forward(ctx, x);
 
-        // 2. High-Frequency Secret Injection (Teddy Fur Enhancement)
+        // 2. High-Frequency Secret Injection (TeddyBear Fur Enhancement)
         // We use a small portion of the input signal 'x' scaled by a "Blue Secret" 
         // derived from the current ZMM synaptic state.
         float fur_enhancement = 0.05f; // subtle
@@ -30,15 +30,15 @@ public:
 };
 
 /**
- * @brief Teddy-Specialized Decoder
+ * @brief TeddyBear-Specialized Decoder
  */
-class TeddyDecoder : public Decoder {
+class TeddyBearDecoder : public Decoder {
 public:
-    TeddyDecoder(int ch, int out_ch, std::vector<int> ch_mult, int num_res_blocks, int z_channels)
+    TeddyBearDecoder(int ch, int out_ch, std::vector<int> ch_mult, int num_res_blocks, int z_channels)
         : Decoder(ch, out_ch, ch_mult, num_res_blocks, z_channels) {
         
-        // Replace the middle blocks with Teddy-specialized versions
-        blocks["mid.block_1"] = std::make_shared<TeddyResnetBlock>(ch * ch_mult.back(), ch * ch_mult.back());
-        blocks["mid.block_2"] = std::make_shared<TeddyResnetBlock>(ch * ch_mult.back(), ch * ch_mult.back());
+        // Replace the middle blocks with TeddyBear-specialized versions
+        blocks["mid.block_1"] = std::make_shared<TeddyBearResnetBlock>(ch * ch_mult.back(), ch * ch_mult.back());
+        blocks["mid.block_2"] = std::make_shared<TeddyBearResnetBlock>(ch * ch_mult.back(), ch * ch_mult.back());
     }
 };

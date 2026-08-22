@@ -10,7 +10,7 @@ Direct observations made during inspection:
   unset GIT_INDEX_FILE
   ```
 - **Benchmark & Report Invocation**: In `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`:
-  - Target compilation (line 32): `make bin/test_vulkan_teddy`
+  - Target compilation (line 32): `make bin/test_vulkan_teddy_bear`
   - Benchmark run (line 45): `./run_benchmarks.sh`
   - Report run (line 52): `python3 generate_report.py`
 - **Summary ASCII Table**: In `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit` (lines 96-104):
@@ -27,7 +27,7 @@ Direct observations made during inspection:
   ```
 - **Graceful Failure Handling**: In `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`, failed navigation or compilation runs `exit 0` after printing a warning, preventing git locks/blocks. For example (lines 32-35):
   ```bash
-  if ! make bin/test_vulkan_teddy; then
+  if ! make bin/test_vulkan_teddy_bear; then
       echo "[WARNING] Compilation of Vulkan benchmark failed."
       exit 0
   fi
@@ -50,7 +50,7 @@ Direct observations made during inspection:
 ## 2. Logic Chain
 
 1. The environment scrubbing correctly clears `GIT_DIR`, `GIT_WORK_TREE`, and `GIT_INDEX_FILE` (`Observation 1`), preventing git commands within the hook from executing in the wrong git directory/index context.
-2. The hook compiles the benchmark target using `make bin/test_vulkan_teddy` and invokes `run_benchmarks.sh` and `generate_report.py` (`Observation 2`).
+2. The hook compiles the benchmark target using `make bin/test_vulkan_teddy_bear` and invokes `run_benchmarks.sh` and `generate_report.py` (`Observation 2`).
 3. However, `run_benchmarks.sh` contains a hardcoded absolute workspace directory (`Observation 6`).
 4. In `real-build` E2E test mode, the hook executes `run_benchmarks.sh`, which shifts directory to the host's workspace instead of staying inside the sandbox repository (`Observation 6`). This violates sandbox isolation during `real-build` test execution and makes the pipeline non-portable on other machines.
 5. The statistics summary table prints on stdout using a clean ASCII format of 55-character wide columns (`Observation 3`).

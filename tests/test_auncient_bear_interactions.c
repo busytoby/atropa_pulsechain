@@ -16,7 +16,7 @@ typedef struct {
     uint64_t dna_seed;
     char ssn[12];
     bool is_registered;
-} teddy_participant_t;
+} teddy_bear_participant_t;
 
 // Emulated Hogan Bank Account
 typedef struct {
@@ -35,7 +35,7 @@ void auncient_bridge_dna_to_ssa(uint64_t dna_seed, char *ssn_out) {
 }
 
 // Emulates opening a Hogan account with endowment (Rule 16)
-bool open_hogan_account(const teddy_participant_t *participant, hogan_account_t *account_out) {
+bool open_hogan_account(const teddy_bear_participant_t *participant, hogan_account_t *account_out) {
     if (!participant || !participant->is_registered || !account_out) {
         return false;
     }
@@ -66,18 +66,18 @@ int main(void) {
     printf("=============================================================\n");
 
     // 1. Initialize registered teddy bear participants
-    teddy_participant_t registered_bear_a;
+    teddy_bear_participant_t registered_bear_a;
     registered_bear_a.dna_seed = 0xDEADBEEF12345678ULL;
     auncient_bridge_dna_to_ssa(registered_bear_a.dna_seed, registered_bear_a.ssn);
     registered_bear_a.is_registered = true;
 
-    teddy_participant_t registered_bear_b;
+    teddy_bear_participant_t registered_bear_b;
     registered_bear_b.dna_seed = 0xCAFEBABEBEEFFACEULL;
     auncient_bridge_dna_to_ssa(registered_bear_b.dna_seed, registered_bear_b.ssn);
     registered_bear_b.is_registered = true;
 
     // Initialize unregistered Ghost Bear
-    teddy_participant_t ghost_bear;
+    teddy_bear_participant_t ghost_bear;
     ghost_bear.dna_seed = 0;
     ghost_bear.is_registered = false;
     memset(ghost_bear.ssn, 0, sizeof(ghost_bear.ssn));
@@ -148,7 +148,7 @@ int main(void) {
     printf("   ✓ GOST transliteration verified successfully (Latin: SOVIET -> Cyrillic: %s)\n", cyrillic_out);
 
     printf("=============================================================\n");
-    printf("TEDDY INTERACTION SUITE COMPLETED SUCCESSFULLY\n");
+    printf("TEDDY_BEAR INTERACTION SUITE COMPLETED SUCCESSFULLY\n");
     printf("=============================================================\n");
     return 0;
 }

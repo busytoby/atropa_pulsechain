@@ -1,7 +1,7 @@
 #define _DEFAULT_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
-#include "hathitrust_teddy_bridge.h"
+#include "hathitrust_teddy_bear_bridge.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

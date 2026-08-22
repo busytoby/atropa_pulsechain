@@ -9,7 +9,7 @@ begin
   comment 4. Sub-Picosecond Multi-Sig Jitter Contraction: Contracts threshold verification jitter to delta_tau <= 0.12 ps under BMRC (gamma = 875/1000) across M in [1..16] signatory nodes,;
   comment 5. Zero-Loss Shadow Restoration: Insufficient signature weight or counterfeit token triggers LaSalle dynamic braking (u = 0) with delta_Saat_loss = 0.;
 
-  integer procedure verify_auncient_teddy_multisig_inher(
+  integer procedure verify_auncient_teddy_bear_multisig_inher(
     initial_multisig_jitter_ps,
     signatory_nodes_count_m,
     quorum_cycles_n,
@@ -21,7 +21,7 @@ begin
   integer initial_multisig_jitter_ps, signatory_nodes_count_m, quorum_cycles_n, cics_writer_id, simulate_quorum_breach_fault, k_param;
   begin
     comment Classification Ruling:
-            0 = QUALIFIED_ORBITAL_HANDSHAKE (Teddy Multi-Sig Inheritance Formally Proven)
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (TeddyBear Multi-Sig Inheritance Formally Proven)
             1 = INVALID_K_EXPONENT (k must be 3)
             2 = INVALID_MULTISIG_JITTER (initial jitter must be in [0..50000] picoseconds)
             3 = INVALID_SIGNATORY_NODES (nodes M must be in [1..16])
@@ -41,32 +41,32 @@ begin
 
     if k_param != 3 then
       begin
-        verify_auncient_teddy_multisig_inher := 1;
+        verify_auncient_teddy_bear_multisig_inher := 1;
         go to end_msig_proc;
       end;
 
     if initial_multisig_jitter_ps < 0 or initial_multisig_jitter_ps > 50000 then
       begin
-        verify_auncient_teddy_multisig_inher := 2;
+        verify_auncient_teddy_bear_multisig_inher := 2;
         go to end_msig_proc;
       end;
 
     if signatory_nodes_count_m < 1 or signatory_nodes_count_m > 16 then
       begin
-        verify_auncient_teddy_multisig_inher := 3;
+        verify_auncient_teddy_bear_multisig_inher := 3;
         go to end_msig_proc;
       end;
 
     if quorum_cycles_n < 1 or quorum_cycles_n > 64 then
       begin
-        verify_auncient_teddy_multisig_inher := 4;
+        verify_auncient_teddy_bear_multisig_inher := 4;
         go to end_msig_proc;
       end;
 
     comment Validate Qualifying CICS SSA Citizen (555=TeddyBear, 888=FederalWorker, 99=Agent99, 42=Agent42);
     if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
       begin
-        verify_auncient_teddy_multisig_inher := 5;
+        verify_auncient_teddy_bear_multisig_inher := 5;
         go to end_msig_proc;
       end;
 
@@ -80,7 +80,7 @@ begin
 
     if current_jitter > initial_multisig_jitter_ps then
       begin
-        verify_auncient_teddy_multisig_inher := 6;
+        verify_auncient_teddy_bear_multisig_inher := 6;
         go to end_msig_proc;
       end;
 
@@ -91,7 +91,7 @@ begin
     g_gate_factor := 875 + ((125 * (signatory_nodes_count_m - ((signatory_nodes_count_m / 8) * 8))) / 8);
     if g_gate_factor < 875 or g_gate_factor > 1000 then
       begin
-        verify_auncient_teddy_multisig_inher := 7;
+        verify_auncient_teddy_bear_multisig_inher := 7;
         go to end_msig_proc;
       end;
 
@@ -107,20 +107,20 @@ begin
     comment Assert Shadow Baseline Immutability Invariant (Durability & Consistency);
     if shadow_multisig_baseline != ((cics_writer_id * 1000000) + (quorum_cycles_n * 10000) + (signatory_nodes_count_m * 100) + (current_jitter / 16)) then
       begin
-        verify_auncient_teddy_multisig_inher := 8;
+        verify_auncient_teddy_bear_multisig_inher := 8;
         go to end_msig_proc;
       end;
 
     if simulate_quorum_breach_fault and committed_output != shadow_multisig_baseline then
       begin
-        verify_auncient_teddy_multisig_inher := 9;
+        verify_auncient_teddy_bear_multisig_inher := 9;
         go to end_msig_proc;
       end;
 
     disp_wrap := committed_output - ((committed_output / 256) * 256);
     if disp_wrap < 0 then disp_wrap := disp_wrap + 256;
 
-    verify_auncient_teddy_multisig_inher := 0;
+    verify_auncient_teddy_bear_multisig_inher := 0;
 
   end_msig_proc:
   end;

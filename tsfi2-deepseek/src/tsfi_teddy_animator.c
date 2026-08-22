@@ -12,7 +12,7 @@
 #include <time.h>
 
 #define SKELETON_NO_MAIN
-#include "tsfi_teddy_skeleton.c"
+#include "tsfi_teddy_bear_skeleton.c"
 #undef W
 #undef H
 
@@ -121,19 +121,19 @@ int main(int argc, char **argv) {
             // Fetch current ZMM Mass Density from firmware (simulated for now)
             float current_density = 1.0f; // Could be fw->manifold.count
 
-            float fitness = tsfi_eval_teddy_fitness(&vis, current_density);
+            float fitness = tsfi_eval_teddy_bear_fitness(&vis, current_density);
             
             LauTelemetryState *telem = lau_telemetry_get_state();
             if (telem) {
                 telem->recip_symmetry = fitness;
                 telem->zmm_val = (uint64_t)(current_density * 1000.0f);
-                snprintf((char*)telem->zmm_msg, 128, "Teddy Fitness: %.4f", fitness);
+                snprintf((char*)telem->zmm_msg, 128, "TeddyBear Fitness: %.4f", fitness);
             }
 
             // If the render is exceptional, save it to the permanent pipeline
             if (fitness > 0.85f) {
                 char render_id[64];
-                snprintf(render_id, sizeof(render_id), "teddy_gen_%ld_%04d", time(NULL), i);
+                snprintf(render_id, sizeof(render_id), "teddy_bear_gen_%ld_%04d", time(NULL), i);
                 tsfi_pipeline_archive_candidate(render_id, rgb, w * h * 3, last_latent, latent_sz, fitness);
             }
 

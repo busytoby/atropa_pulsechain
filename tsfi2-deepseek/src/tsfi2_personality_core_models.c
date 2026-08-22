@@ -1,15 +1,15 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-double evaluate_fw_threat_level(const teddy_geometry_t *geom) {
+double evaluate_fw_threat_level(const teddy_bear_geometry_t *geom) {
     if (!geom) return 0.0;
     double threat = (geom->head_fwhr * 1.5) + (geom->jaw_scale * 0.8) - (geom->symmetry * 0.3);
     if (threat < 0.0) threat = 0.0;
     return threat;
 }
 
-bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *mismatch_score) {
+bool evaluate_behavioral_threat_mismatch(const teddy_bear_geometry_t *geom, double *mismatch_score) {
     if (!geom || !mismatch_score) {
         return false;
     }
@@ -19,7 +19,7 @@ bool evaluate_behavioral_threat_mismatch(const teddy_geometry_t *geom, double *m
     return true;
 }
 
-double evaluate_reactive_mismatch_retaliation(const teddy_geometry_t *geom) {
+double evaluate_reactive_mismatch_retaliation(const teddy_bear_geometry_t *geom) {
     if (!geom) return 0.0;
     double physical_threat = evaluate_fw_threat_level(geom);
     double score = physical_threat * (1.0 + geom->behavioral_mismatch) * (0.5 + geom->status_aggression);
@@ -27,7 +27,7 @@ double evaluate_reactive_mismatch_retaliation(const teddy_geometry_t *geom) {
     return score;
 }
 
-bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double exposure_ms, double *perceived_threat_out) {
+bool evaluate_exposure_threat_consistency(const teddy_bear_geometry_t *geom, double exposure_ms, double *perceived_threat_out) {
     if (!geom || exposure_ms < 1.0 || !perceived_threat_out) {
         return false;
     }
@@ -40,7 +40,7 @@ bool evaluate_exposure_threat_consistency(const teddy_geometry_t *geom, double e
     return true;
 }
 
-bool evaluate_cooperative_cheating_risk(const teddy_geometry_t *geom, double social_trust_factor, double *cheating_risk_out) {
+bool evaluate_cooperative_cheating_risk(const teddy_bear_geometry_t *geom, double social_trust_factor, double *cheating_risk_out) {
     if (!geom || !cheating_risk_out) {
         return false;
     }
@@ -51,7 +51,7 @@ bool evaluate_cooperative_cheating_risk(const teddy_geometry_t *geom, double soc
     return true;
 }
 
-bool evaluate_rapid_threat_limit(const teddy_geometry_t *geom, double exposure_ms, double *detected_threat_out) {
+bool evaluate_rapid_threat_limit(const teddy_bear_geometry_t *geom, double exposure_ms, double *detected_threat_out) {
     if (!geom || exposure_ms < 0.0 || !detected_threat_out) {
         return false;
     }
@@ -64,7 +64,7 @@ bool evaluate_rapid_threat_limit(const teddy_geometry_t *geom, double exposure_m
     return true;
 }
 
-bool evaluate_reactive_retaliation_profile(const teddy_geometry_t *geom, double provocation_intensity, double *retaliation_out) {
+bool evaluate_reactive_retaliation_profile(const teddy_bear_geometry_t *geom, double provocation_intensity, double *retaliation_out) {
     if (!geom || provocation_intensity < 0.0 || !retaliation_out) {
         return false;
     }
@@ -73,7 +73,7 @@ bool evaluate_reactive_retaliation_profile(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_provocation_aggression_threshold(const teddy_geometry_t *geom, double base_provocation, double *aggression_threshold_out) {
+bool evaluate_provocation_aggression_threshold(const teddy_bear_geometry_t *geom, double base_provocation, double *aggression_threshold_out) {
     if (!geom || base_provocation < 0.0 || !aggression_threshold_out) {
         return false;
     }
@@ -84,7 +84,7 @@ bool evaluate_provocation_aggression_threshold(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool evaluate_exposure_adjusted_threat_threshold(const teddy_geometry_t *geom, double exposure_ms, double *adjusted_threat_threshold_out) {
+bool evaluate_exposure_adjusted_threat_threshold(const teddy_bear_geometry_t *geom, double exposure_ms, double *adjusted_threat_threshold_out) {
     if (!geom || exposure_ms < 0.0 || !adjusted_threat_threshold_out) {
         return false;
     }
@@ -94,7 +94,7 @@ bool evaluate_exposure_adjusted_threat_threshold(const teddy_geometry_t *geom, d
     return true;
 }
 
-bool evaluate_status_dominance_provocation(const teddy_geometry_t *geom, double provocation_scale, double *dominance_threat_out) {
+bool evaluate_status_dominance_provocation(const teddy_bear_geometry_t *geom, double provocation_scale, double *dominance_threat_out) {
     if (!geom || provocation_scale < 0.0 || !dominance_threat_out) {
         return false;
     }
@@ -103,7 +103,7 @@ bool evaluate_status_dominance_provocation(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_threat_replication_consistency(const teddy_geometry_t *geom, const double *threat_observations, int count, double *consistency_out) {
+bool evaluate_threat_replication_consistency(const teddy_bear_geometry_t *geom, const double *threat_observations, int count, double *consistency_out) {
     if (!geom || !threat_observations || count < 1 || !consistency_out) {
         return false;
     }
@@ -118,7 +118,7 @@ bool evaluate_threat_replication_consistency(const teddy_geometry_t *geom, const
     return true;
 }
 
-bool evaluate_reactive_retaliation_boundary(const teddy_geometry_t *geom, double provocation_scale, double *retaliation_boundary_out) {
+bool evaluate_reactive_retaliation_boundary(const teddy_bear_geometry_t *geom, double provocation_scale, double *retaliation_boundary_out) {
     if (!geom || provocation_scale < 0.0 || !retaliation_boundary_out) {
         return false;
     }
@@ -128,7 +128,7 @@ bool evaluate_reactive_retaliation_boundary(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_retaliation_aggression_scaling(const teddy_geometry_t *geom, double baseline_aggression, double *scaled_aggression_out) {
+bool evaluate_retaliation_aggression_scaling(const teddy_bear_geometry_t *geom, double baseline_aggression, double *scaled_aggression_out) {
     if (!geom || baseline_aggression < 0.0 || !scaled_aggression_out) {
         return false;
     }
@@ -137,7 +137,7 @@ bool evaluate_retaliation_aggression_scaling(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_retaliation_threshold_decay(const teddy_geometry_t *geom, double exposure_ms, double *decayed_threshold_out) {
+bool evaluate_retaliation_threshold_decay(const teddy_bear_geometry_t *geom, double exposure_ms, double *decayed_threshold_out) {
     if (!geom || exposure_ms < 0.0 || !decayed_threshold_out) {
         return false;
     }
@@ -147,7 +147,7 @@ bool evaluate_retaliation_threshold_decay(const teddy_geometry_t *geom, double e
     return true;
 }
 
-bool evaluate_provocation_exposure_decay(const teddy_geometry_t *geom, double provocation_scale, double exposure_ms, double *decayed_threat_out) {
+bool evaluate_provocation_exposure_decay(const teddy_bear_geometry_t *geom, double provocation_scale, double exposure_ms, double *decayed_threat_out) {
     if (!geom || provocation_scale < 0.0 || exposure_ms < 0.0 || !decayed_threat_out) {
         return false;
     }
@@ -158,7 +158,7 @@ bool evaluate_provocation_exposure_decay(const teddy_geometry_t *geom, double pr
     return true;
 }
 
-bool evaluate_retaliation_aggression_ceiling(const teddy_geometry_t *geom, double provocation_scale, double *aggression_ceiling_out) {
+bool evaluate_retaliation_aggression_ceiling(const teddy_bear_geometry_t *geom, double provocation_scale, double *aggression_ceiling_out) {
     if (!geom || provocation_scale < 0.0 || !aggression_ceiling_out) {
         return false;
     }
@@ -167,7 +167,7 @@ bool evaluate_retaliation_aggression_ceiling(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_status_dominance_multiplier(const teddy_geometry_t *geom, double provocation_scale, double *multiplier_out) {
+bool evaluate_status_dominance_multiplier(const teddy_bear_geometry_t *geom, double provocation_scale, double *multiplier_out) {
     if (!geom || provocation_scale < 0.0 || !multiplier_out) {
         return false;
     }
@@ -176,7 +176,7 @@ bool evaluate_status_dominance_multiplier(const teddy_geometry_t *geom, double p
     return true;
 }
 
-bool evaluate_cheating_threat_index(const teddy_geometry_t *geom, double provocation_scale, double *cheating_threat_out) {
+bool evaluate_cheating_threat_index(const teddy_bear_geometry_t *geom, double provocation_scale, double *cheating_threat_out) {
     if (!geom || provocation_scale < 0.0 || !cheating_threat_out) {
         return false;
     }
@@ -188,7 +188,7 @@ bool evaluate_cheating_threat_index(const teddy_geometry_t *geom, double provoca
     return true;
 }
 
-bool evaluate_provocation_replication_consistency(const teddy_geometry_t *geom, double replication_scale, double *consistency_out) {
+bool evaluate_provocation_replication_consistency(const teddy_bear_geometry_t *geom, double replication_scale, double *consistency_out) {
     if (!geom || replication_scale < 0.0 || !consistency_out) {
         return false;
     }
@@ -197,7 +197,7 @@ bool evaluate_provocation_replication_consistency(const teddy_geometry_t *geom, 
     return true;
 }
 
-bool evaluate_provocation_rapid_threat_limit(const teddy_geometry_t *geom, double provocation_scale, double *limit_out) {
+bool evaluate_provocation_rapid_threat_limit(const teddy_bear_geometry_t *geom, double provocation_scale, double *limit_out) {
     if (!geom || provocation_scale < 0.0 || !limit_out) {
         return false;
     }
@@ -206,7 +206,7 @@ bool evaluate_provocation_rapid_threat_limit(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_provocation_retaliation_boundary(const teddy_geometry_t *geom, double exposure_ms, double *boundary_out) {
+bool evaluate_provocation_retaliation_boundary(const teddy_bear_geometry_t *geom, double exposure_ms, double *boundary_out) {
     if (!geom || exposure_ms < 0.0 || !boundary_out) {
         return false;
     }
@@ -218,7 +218,7 @@ bool evaluate_provocation_retaliation_boundary(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncanny_score_out) {
+bool evaluate_uncanny_mismatch_index(const teddy_bear_geometry_t *geom, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
     }
@@ -231,7 +231,7 @@ bool evaluate_uncanny_mismatch_index(const teddy_geometry_t *geom, double *uncan
     return true;
 }
 
-bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement_stiffness, double *motion_uncanny_out) {
+bool evaluate_motion_uncanny_index(const teddy_bear_geometry_t *geom, double movement_stiffness, double *motion_uncanny_out) {
     if (!geom || !motion_uncanny_out) {
         return false;
     }
@@ -242,7 +242,7 @@ bool evaluate_motion_uncanny_index(const teddy_geometry_t *geom, double movement
     return true;
 }
 
-bool evaluate_expression_jitter_uncanny(const teddy_geometry_t *geom, double jitter_frequency, double *uncanny_score_out) {
+bool evaluate_expression_jitter_uncanny(const teddy_bear_geometry_t *geom, double jitter_frequency, double *uncanny_score_out) {
     if (!geom || !uncanny_score_out) {
         return false;
     }
@@ -253,7 +253,7 @@ bool evaluate_expression_jitter_uncanny(const teddy_geometry_t *geom, double jit
     return true;
 }
 
-bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+bool evaluate_exposure_decay_uncanny(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
     }
@@ -264,7 +264,7 @@ bool evaluate_exposure_decay_uncanny(const teddy_geometry_t *geom, double exposu
     return true;
 }
 
-bool evaluate_freeze_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+bool evaluate_freeze_habituation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
     }
@@ -275,7 +275,7 @@ bool evaluate_freeze_habituation_decay(const teddy_geometry_t *geom, double expo
     return true;
 }
 
-bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double velocity_variance, double *uncanny_score_out) {
+bool evaluate_velocity_jitter_uncanny(const teddy_bear_geometry_t *geom, double velocity_variance, double *uncanny_score_out) {
     if (!geom || velocity_variance < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -285,7 +285,7 @@ bool evaluate_velocity_jitter_uncanny(const teddy_geometry_t *geom, double veloc
     return true;
 }
 
-bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double freeze_duration_sec, double *uncanny_score_out) {
+bool evaluate_expression_freeze_uncanny(const teddy_bear_geometry_t *geom, double freeze_duration_sec, double *uncanny_score_out) {
     if (!geom || freeze_duration_sec < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -296,7 +296,7 @@ bool evaluate_expression_freeze_uncanny(const teddy_geometry_t *geom, double fre
     return true;
 }
 
-bool evaluate_expression_freeze_frequency(const teddy_geometry_t *geom, double freeze_frequency_hz, double *uncanny_score_out) {
+bool evaluate_expression_freeze_frequency(const teddy_bear_geometry_t *geom, double freeze_frequency_hz, double *uncanny_score_out) {
     if (!geom || freeze_frequency_hz < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -306,7 +306,7 @@ bool evaluate_expression_freeze_frequency(const teddy_geometry_t *geom, double f
     return true;
 }
 
-bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out) {
+bool evaluate_expression_asymmetry_uncanny(const teddy_bear_geometry_t *geom, double asymmetry_deviation, double *uncanny_score_out) {
     if (!geom || asymmetry_deviation < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -316,7 +316,7 @@ bool evaluate_expression_asymmetry_uncanny(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_expression_asymmetry_duration(const teddy_geometry_t *geom, double asymmetry_duration_ms, double *uncanny_score_out) {
+bool evaluate_expression_asymmetry_duration(const teddy_bear_geometry_t *geom, double asymmetry_duration_ms, double *uncanny_score_out) {
     if (!geom || asymmetry_duration_ms < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -327,7 +327,7 @@ bool evaluate_expression_asymmetry_duration(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out) {
+bool evaluate_expression_sync_uncanny(const teddy_bear_geometry_t *geom, double sync_delay_ms, double *uncanny_score_out) {
     if (!geom || sync_delay_ms < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -338,7 +338,7 @@ bool evaluate_expression_sync_uncanny(const teddy_geometry_t *geom, double sync_
     return true;
 }
 
-bool evaluate_sync_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+bool evaluate_sync_habituation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
     }
@@ -349,7 +349,7 @@ bool evaluate_sync_habituation_decay(const teddy_geometry_t *geom, double exposu
     return true;
 }
 
-bool evaluate_acceleration_jitter_uncanny(const teddy_geometry_t *geom, double acceleration_variance, double *uncanny_score_out) {
+bool evaluate_acceleration_jitter_uncanny(const teddy_bear_geometry_t *geom, double acceleration_variance, double *uncanny_score_out) {
     if (!geom || acceleration_variance < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -359,7 +359,7 @@ bool evaluate_acceleration_jitter_uncanny(const teddy_geometry_t *geom, double a
     return true;
 }
 
-bool evaluate_acceleration_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+bool evaluate_acceleration_habituation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
     }
@@ -370,7 +370,7 @@ bool evaluate_acceleration_habituation_decay(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_animation_acceleration_jitter(const teddy_geometry_t *geom, double acceleration_jitter, double *uncanny_score_out) {
+bool evaluate_animation_acceleration_jitter(const teddy_bear_geometry_t *geom, double acceleration_jitter, double *uncanny_score_out) {
     if (!geom || acceleration_jitter < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -380,7 +380,7 @@ bool evaluate_animation_acceleration_jitter(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out) {
+bool evaluate_amplitude_jitter_uncanny(const teddy_bear_geometry_t *geom, double amplitude_variance, double *uncanny_score_out) {
     if (!geom || amplitude_variance < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -390,11 +390,11 @@ bool evaluate_amplitude_jitter_uncanny(const teddy_geometry_t *geom, double ampl
     return true;
 }
 
-bool evaluate_expression_amplitude_jitter(const teddy_geometry_t *geom, double amplitude_variance, double *uncanny_score_out) {
+bool evaluate_expression_amplitude_jitter(const teddy_bear_geometry_t *geom, double amplitude_variance, double *uncanny_score_out) {
     return evaluate_amplitude_jitter_uncanny(geom, amplitude_variance, uncanny_score_out);
 }
 
-bool evaluate_amplitude_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+bool evaluate_amplitude_habituation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
     }
@@ -405,7 +405,7 @@ bool evaluate_amplitude_habituation_decay(const teddy_geometry_t *geom, double e
     return true;
 }
 
-bool evaluate_vocal_visual_sync_uncanny(const teddy_geometry_t *geom, double audio_lag_ms, double *uncanny_score_out) {
+bool evaluate_vocal_visual_sync_uncanny(const teddy_bear_geometry_t *geom, double audio_lag_ms, double *uncanny_score_out) {
     if (!geom || audio_lag_ms < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -416,7 +416,7 @@ bool evaluate_vocal_visual_sync_uncanny(const teddy_geometry_t *geom, double aud
     return true;
 }
 
-bool evaluate_vocal_visual_acceleration_sync(const teddy_geometry_t *geom, double acceleration_delay_ms, double *uncanny_score_out) {
+bool evaluate_vocal_visual_acceleration_sync(const teddy_bear_geometry_t *geom, double acceleration_delay_ms, double *uncanny_score_out) {
     if (!geom || acceleration_delay_ms < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -427,7 +427,7 @@ bool evaluate_vocal_visual_acceleration_sync(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_pitch_velocity_mismatch(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out) {
+bool evaluate_pitch_velocity_mismatch(const teddy_bear_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out) {
     if (!geom || pitch_velocity_mismatch < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -437,11 +437,11 @@ bool evaluate_pitch_velocity_mismatch(const teddy_geometry_t *geom, double pitch
     return true;
 }
 
-bool evaluate_vocal_visual_pitch_mismatch(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out) {
+bool evaluate_vocal_visual_pitch_mismatch(const teddy_bear_geometry_t *geom, double pitch_velocity_mismatch, double *uncanny_score_out) {
     return evaluate_pitch_velocity_mismatch(geom, pitch_velocity_mismatch, uncanny_score_out);
 }
 
-bool evaluate_pitch_freeze_uncanny(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double freeze_duration_sec, double *uncanny_score_out) {
+bool evaluate_pitch_freeze_uncanny(const teddy_bear_geometry_t *geom, double pitch_velocity_mismatch, double freeze_duration_sec, double *uncanny_score_out) {
     if (!geom || pitch_velocity_mismatch < 0.0 || freeze_duration_sec < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -454,7 +454,7 @@ bool evaluate_pitch_freeze_uncanny(const teddy_geometry_t *geom, double pitch_ve
     return true;
 }
 
-bool evaluate_pitch_jitter_uncanny(const teddy_geometry_t *geom, double pitch_velocity_mismatch, double jitter_deviation, double *uncanny_score_out) {
+bool evaluate_pitch_jitter_uncanny(const teddy_bear_geometry_t *geom, double pitch_velocity_mismatch, double jitter_deviation, double *uncanny_score_out) {
     if (!geom || pitch_velocity_mismatch < 0.0 || jitter_deviation < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -467,7 +467,7 @@ bool evaluate_pitch_jitter_uncanny(const teddy_geometry_t *geom, double pitch_ve
     return true;
 }
 
-bool evaluate_motion_acceleration_mismatch(const teddy_geometry_t *geom, double acceleration_mismatch, double *uncanny_score_out) {
+bool evaluate_motion_acceleration_mismatch(const teddy_bear_geometry_t *geom, double acceleration_mismatch, double *uncanny_score_out) {
     if (!geom || acceleration_mismatch < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -475,7 +475,7 @@ bool evaluate_motion_acceleration_mismatch(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_motion_freeze_uncanny(const teddy_geometry_t *geom, double motion_mismatch, double freeze_duration_sec, double *uncanny_score_out) {
+bool evaluate_motion_freeze_uncanny(const teddy_bear_geometry_t *geom, double motion_mismatch, double freeze_duration_sec, double *uncanny_score_out) {
     if (!geom || motion_mismatch < 0.0 || freeze_duration_sec < 0.0 || !uncanny_score_out) {
         return false;
     }
@@ -488,7 +488,7 @@ bool evaluate_motion_freeze_uncanny(const teddy_geometry_t *geom, double motion_
     return true;
 }
 
-bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
+bool evaluate_pitch_mismatch_habituation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_uncanny_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_uncanny_out) {
         return false;
     }
@@ -499,7 +499,7 @@ bool evaluate_pitch_mismatch_habituation_decay(const teddy_geometry_t *geom, dou
     return true;
 }
 
-bool evaluate_spatial_interaction_distance(const teddy_geometry_t *geom, double physical_distance_meters, double *interaction_uncanny_out) {
+bool evaluate_spatial_interaction_distance(const teddy_bear_geometry_t *geom, double physical_distance_meters, double *interaction_uncanny_out) {
     if (!geom || physical_distance_meters < 0.0 || !interaction_uncanny_out) {
         return false;
     }
@@ -511,7 +511,7 @@ bool evaluate_spatial_interaction_distance(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_dynamic_auditory_offset(const teddy_geometry_t *geom, double ambient_noise_db, double vocal_gain_db, double *auditory_offset_out) {
+bool evaluate_dynamic_auditory_offset(const teddy_bear_geometry_t *geom, double ambient_noise_db, double vocal_gain_db, double *auditory_offset_out) {
     if (!geom || ambient_noise_db < 0.0 || vocal_gain_db < 0.0 || !auditory_offset_out) {
         return false;
     }
@@ -520,7 +520,7 @@ bool evaluate_dynamic_auditory_offset(const teddy_geometry_t *geom, double ambie
     return true;
 }
 
-bool evaluate_geniole_provocation_aggression_limit(const teddy_geometry_t *geom, double provocation_scale, double *aggression_limit_out) {
+bool evaluate_geniole_provocation_aggression_limit(const teddy_bear_geometry_t *geom, double provocation_scale, double *aggression_limit_out) {
     if (!geom || provocation_scale < 0.0 || !aggression_limit_out) {
         return false;
     }
@@ -528,7 +528,7 @@ bool evaluate_geniole_provocation_aggression_limit(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_geniole_testosterone_modulator(const teddy_geometry_t *geom, double baseline_testosterone, double *modulator_out) {
+bool evaluate_geniole_testosterone_modulator(const teddy_bear_geometry_t *geom, double baseline_testosterone, double *modulator_out) {
     if (!geom || baseline_testosterone < 0.0 || !modulator_out) {
         return false;
     }
@@ -536,7 +536,7 @@ bool evaluate_geniole_testosterone_modulator(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double base_dilation, double *mapped_dilation_out) {
+bool evaluate_geniole_fwhr_dilation_map(const teddy_bear_geometry_t *geom, double base_dilation, double *mapped_dilation_out) {
     if (!geom || base_dilation < 0.0 || !mapped_dilation_out) {
         return false;
     }
@@ -544,7 +544,7 @@ bool evaluate_geniole_fwhr_dilation_map(const teddy_geometry_t *geom, double bas
     return true;
 }
 
-bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_jitter, double *mapped_jitter_out) {
+bool evaluate_geniole_fwhr_jitter_mod(const teddy_bear_geometry_t *geom, double base_jitter, double *mapped_jitter_out) {
     if (!geom || base_jitter < 0.0 || !mapped_jitter_out) {
         return false;
     }
@@ -552,7 +552,7 @@ bool evaluate_geniole_fwhr_jitter_mod(const teddy_geometry_t *geom, double base_
     return true;
 }
 
-bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double threshold_scale, double *mapped_boundary_out) {
+bool evaluate_geniole_fwhr_boundary_map(const teddy_bear_geometry_t *geom, double threshold_scale, double *mapped_boundary_out) {
     if (!geom || threshold_scale < 0.0 || !mapped_boundary_out) {
         return false;
     }
@@ -560,7 +560,7 @@ bool evaluate_geniole_fwhr_boundary_map(const teddy_geometry_t *geom, double thr
     return true;
 }
 
-bool evaluate_geniole_fwhr_retaliation_decay(const teddy_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out) {
+bool evaluate_geniole_fwhr_retaliation_decay(const teddy_bear_geometry_t *geom, double exposure_duration_sec, double *decayed_retaliation_out) {
     if (!geom || exposure_duration_sec < 0.0 || !decayed_retaliation_out) {
         return false;
     }

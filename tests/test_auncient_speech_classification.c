@@ -1,4 +1,4 @@
-#include "../tsfi2-deepseek/inc/auncient_teddy_personality.h"
+#include "../tsfi2-deepseek/inc/auncient_teddy_bear_personality.h"
 #include "../tsfi2-deepseek/inc/tsfi_speech_synth.h"
 #include <stdio.h>
 #include <assert.h>
@@ -46,7 +46,7 @@ int main(void) {
     printf("   ✓ Trustworthy Spectral Centroid: %.2f Hz\n", centroid_trust);
     assert(centroid_trust > 200.0);
     
-    teddy_personality_t class_trust = tsfi_speech_classify_pitch(model.base_frequency);
+    teddy_bear_personality_t class_trust = tsfi_speech_classify_pitch(model.base_frequency);
     assert(class_trust == PERSONALITY_TRUSTWORTHY);
     printf("   ✓ Trustworthy speech synthesis and classification verified.\n");
 
@@ -65,7 +65,7 @@ int main(void) {
     printf("   ✓ Aggressive Spectral Centroid: %.2f Hz\n", centroid_aggr);
     assert(centroid_aggr < 5000.0);
     
-    teddy_personality_t class_aggr = tsfi_speech_classify_pitch(model.base_frequency);
+    teddy_bear_personality_t class_aggr = tsfi_speech_classify_pitch(model.base_frequency);
     assert(class_aggr == PERSONALITY_AGGRESSIVE);
     printf("   ✓ Aggressive speech synthesis and classification verified.\n");
 
@@ -77,7 +77,7 @@ int main(void) {
     assert(tsfi_speech_synth_generate(&model, 0.5, 44100, buffer, buffer_size));
     
     // Verify classification
-    teddy_personality_t class_skept = tsfi_speech_classify_pitch(model.base_frequency);
+    teddy_bear_personality_t class_skept = tsfi_speech_classify_pitch(model.base_frequency);
     assert(class_skept == PERSONALITY_SKEPTICAL);
     printf("   ✓ Skeptical speech synthesis and classification verified.\n");
 

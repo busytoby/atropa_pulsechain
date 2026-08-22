@@ -2,8 +2,8 @@
     }
 }
 
-static TSFiClassification g_last_classification = { .class_id = TSFI_CLASS_TEDDY, .confidence = 0.85f };
-static char g_last_query[128] = "teddy";
+static TSFiClassification g_last_classification = { .class_id = TSFI_CLASS_TEDDY_BEAR, .confidence = 0.85f };
+static char g_last_query[128] = "teddy_bear";
 
 static void run_visual_verification(const char *query, TSFiClassification *out_class) {
     TSFiResonanceAnalysis analysis = {0};
@@ -18,7 +18,7 @@ static void run_visual_verification(const char *query, TSFiClassification *out_c
         analysis.baseline_similarity = 0.88f;
         analysis.target_correlation = 0.89f;
         analysis.symmetry_stability = 0.85f;
-        out_class->class_id = TSFI_CLASS_TEDDY;
+        out_class->class_id = TSFI_CLASS_TEDDY_BEAR;
         out_class->confidence = 0.89f;
     } else if (strcasestr(query, "tree") || strcasestr(query, "plant") || strcasestr(query, "forest")) {
         analysis.baseline_similarity = 0.91f;
@@ -30,7 +30,7 @@ static void run_visual_verification(const char *query, TSFiClassification *out_c
         analysis.baseline_similarity = 0.82f;
         analysis.target_correlation = 0.85f;
         analysis.symmetry_stability = 0.80f;
-        out_class->class_id = TSFI_CLASS_TEDDY;
+        out_class->class_id = TSFI_CLASS_TEDDY_BEAR;
         out_class->confidence = 0.85f;
     }
     

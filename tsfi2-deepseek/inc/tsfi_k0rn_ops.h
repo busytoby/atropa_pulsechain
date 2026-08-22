@@ -38,6 +38,6 @@ DEFINE_MAPPED_STRUCT(K0RnStream,
 K0RnStream* tsfi_k0rn_interpolate(K0RnStream *a, K0RnStream *b, float t);
 K0RnStream* tsfi_k0rn_merge_streams(K0RnStream **streams, int count);
 K0RnStream* tsfi_k0rn_compile_char(uint32_t c);
-K0RnStream* tsfi_k0rn_compile_teddy(void);
+K0RnStream* tsfi_k0rn_compile_teddy_bear(void);
 
 #endif

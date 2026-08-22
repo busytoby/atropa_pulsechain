@@ -33,7 +33,7 @@ typedef struct {
 } CapstanShaftState;
 
 typedef struct {
-    TeddyBearHeartUsdaAsset *teddy;
+    TeddyBearHeartUsdaAsset *teddy_bear;
     Via6522State via;
     CapstanShaftState capstan;
     uint64_t total_diyat_fees_charged_saat;
@@ -45,7 +45,7 @@ typedef struct {
     uint32_t rule18_parity_checksum;
 } HoganDiyatVia6522Engine;
 
-void auncient_hogan_diyat_init(HoganDiyatVia6522Engine *engine, TeddyBearHeartUsdaAsset *teddy);
+void auncient_hogan_diyat_init(HoganDiyatVia6522Engine *engine, TeddyBearHeartUsdaAsset *teddy_bear);
 bool auncient_hogan_diyat_charge_fee(HoganDiyatVia6522Engine *engine, uint64_t fee_saat);
 bool auncient_via6522_execute_port_io(HoganDiyatVia6522Engine *engine, uint8_t port_a_val, uint8_t port_b_val);
 bool auncient_capstan_seek(HoganDiyatVia6522Engine *engine, float distance_meters);

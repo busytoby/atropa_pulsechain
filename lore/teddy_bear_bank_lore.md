@@ -6,7 +6,7 @@ This record documents the integration of procedural life forms and sovereign ban
 
 ## 1. The Genesis of the Teddy Bear Account Holder
 
-In the early stages of the Auncient VM execution cycles, the `.dna` structured assets (e.g., *DNATeddy*) were treated purely as static vector geometry and visual envelopes. As the simulation layers stabilized, it became clear that geometry must possess identity to interact with the **Hogan** transaction ledger.
+In the early stages of the Auncient VM execution cycles, the `.dna` structured assets (e.g., *DNATeddyBear*) were treated purely as static vector geometry and visual envelopes. As the simulation layers stabilized, it became clear that geometry must possess identity to interact with the **Hogan** transaction ledger.
 
 To elevate these assets from static objects to sovereign participants:
 * **The SSN Lot Allocation**:

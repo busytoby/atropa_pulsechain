@@ -31,4 +31,4 @@ Rheinstein detailed how to calculate functions like $\sin(x)$ and $e^x$ on early
 
 In the **TSFi2** math library:
 * We use optimized approximations like `tsfi_sinf` and `tsfi_cosf` (bound to `tsfi_k0rn_compiler.c` geometry compilation).
-* These fast methods enable high-frequency animations (like the procedural teddy-bear arm movements) without causing frame drops or CPU stalls.
+* These fast methods enable high-frequency animations (like the procedural teddy_bear-bear arm movements) without causing frame drops or CPU stalls.

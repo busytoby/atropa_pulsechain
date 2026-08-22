@@ -63,7 +63,7 @@ typedef struct {
 	double head_fwhr;
 	double eye_scale;
 	double stiffness;
-} vaesen_teddy_agent_t;
+} vaesen_teddy_bear_agent_t;
 
 typedef struct {
 	double x, y, z;
@@ -125,7 +125,7 @@ static void set_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 	}
 }
 
-static bool register_newborn_teddy_agent(vaesen_teddy_agent_t *agent, uint32_t bear_id, uint64_t seed)
+static bool register_newborn_teddy_bear_agent(vaesen_teddy_bear_agent_t *agent, uint32_t bear_id, uint64_t seed)
 {
 	if (!agent) return false;
 	memset(agent, 0, sizeof(*agent));
@@ -346,7 +346,7 @@ static void *raymarch_thread_worker(void *arg)
 
 int main(void)
 {
-	vaesen_teddy_agent_t agent;
+	vaesen_teddy_bear_agent_t agent;
 
 	printf("=============================================================\n");
 	printf("LFM KERNEL WMQ AGENT MASTER PIXAR USDA ANIMATION ENGINE     \n");
@@ -354,7 +354,7 @@ int main(void)
 
 	/* 1. Register Newborn Teddy Bear Agent */
 	printf("1. Registering Newborn Vaesen Teddy Bear Agent (Rule 16)...\n");
-	if (!register_newborn_teddy_agent(&agent, 777, 42)) {
+	if (!register_newborn_teddy_bear_agent(&agent, 777, 42)) {
 		fprintf(stderr, "Failed to register newborn agent.\n");
 		return 1;
 	}

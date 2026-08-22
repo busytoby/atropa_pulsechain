@@ -8,14 +8,14 @@ begin
   comment 1. ARTIFACT_TEDDY_BEAR (Type 1): Plush stuffed teddy bear entity with biological heartbeat and tactile ears/paws,;
   comment 2. ARTIFACT_ACRYLIC_STAND (Type 2): Rigid acrylic figure stand with optical perspective alignment,;
   comment 3. ARTIFACT_ITA_BAG_BADGE (Type 3): Wearable pin/badge display with IMU kinematics and vibration motor,;
-  comment 4. ARTIFACT_NONTEDDY_PUPPET (Type 4): Non-teddy finger puppet, jointed resin doll, or PVC mascot figurine.;
+  comment 4. ARTIFACT_NONTEDDY_BEAR_PUPPET (Type 4): Non-teddy_bear finger puppet, jointed resin doll, or PVC mascot figurine.;
   comment Formally proves:;
   comment 1. Tangible Artifact Sensor Binding Latency: RFID/NFC/BLE anchor binding latency in [10..50] ms,;
   comment 2. Multi-Modal Physical Synchrony Ratio: Sensor-to-avatar kinematic coupling fidelity in [850..1000] milli-units,;
   comment 3. Tangible Detachment Recovery Latency: State restoration latency in [50..200] ms upon physical unmount/remount,;
   comment 4. Embodiment Archetype Validation: Archetype identifier strictly in [1..4] with type-specific physical calibration,;
   comment 5. Non-Preferential Momentum Flux Conservation across Z_P^x without space-charge decay (Rule 12),;
-  comment 6. Qualifying Participant Sovereign Authority (Teddy & Non-Teddy) with 1,000,000 Saat baseline (Rule 16),;
+  comment 6. Qualifying Participant Sovereign Authority (TeddyBear & Non-TeddyBear) with 1,000,000 Saat baseline (Rule 16),;
   comment 7. Zero-Loss ReBAR Shadow Rollback: Any sensor desync or unmount glitch restores shadow baseline (delta_Saat = 0).;
 
   integer procedure verify_shared_physical_anchoring(
@@ -33,7 +33,7 @@ begin
     comment Classification Ruling:
             0 = QUALIFIED_ORBITAL_HANDSHAKE (Shared Physical Anchoring Formally Proven)
             1 = INVALID_K_EXPONENT (k must be 3)
-            2 = EMBODIMENT_TYPE_UNKNOWN (type must be 1=TEDDY, 2=ACRYLIC, 3=ITA_BADGE, 4=NONTEDDY_PUPPET)
+            2 = EMBODIMENT_TYPE_UNKNOWN (type must be 1=TEDDY_BEAR, 2=ACRYLIC, 3=ITA_BADGE, 4=NONTEDDY_BEAR_PUPPET)
             3 = BINDING_LATENCY_OUT_OF_BOUNDS (binding latency must be in [10..50] ms)
             4 = PHYSICAL_SYNCHRONY_LOW (synchrony must be in [850..1000] milli-units)
             5 = RECOVERY_LATENCY_OUT_OF_BOUNDS (recovery latency must be in [50..200] ms)

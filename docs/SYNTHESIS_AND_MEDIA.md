@@ -13,10 +13,10 @@ The repository contains emulators and oscillators for historical and customized 
 * **Description**: Formant-based phonetic voice model reproducing human vocal paths and vowel frequencies using resonant filter sweep bands.
 * **Output**: Produces speech waves (e.g. `bionika_syrinx_speech.wav`).
 
-### B. Teddy 303 Acid Synthesizer
+### B. TeddyBear 303 Acid Synthesizer
 * **Scripts**: [scripts/generate_tb303_wav.js](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/generate_tb303_wav.js), [scripts/generate_acid_beat_wav.js](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/generate_acid_beat_wav.js)
 * **Description**: Emulates the classic Roland TB-303 transistor ladder filter decay and slide parameters.
-* **Output**: Produces acid baseline loops (e.g. `teddy303_acid_synthesis.wav`).
+* **Output**: Produces acid baseline loops (e.g. `teddy_bear303_acid_synthesis.wav`).
 
 ### C. 808 & Booty Bass Generators
 * **Scripts**: [scripts/generate_808_wav.js](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/generate_808_wav.js), [scripts/generate_booty_bass_wav.js](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/generate_booty_bass_wav.js)

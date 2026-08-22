@@ -13,8 +13,8 @@
 // Render a single frame using AVX-512 density fields
 #include "../inc/tsfi_ccx_pool.h"
 
-static TSFiCCXPool g_teddy_ccx_pool;
-static bool g_teddy_ccx_pool_initialized = false;
+static TSFiCCXPool g_teddy_bear_ccx_pool;
+static bool g_teddy_bear_ccx_pool_initialized = false;
 
 typedef struct {
     int start_y;
@@ -22,10 +22,10 @@ typedef struct {
     uint8_t *frame_buffer;
     float time_val;
     float arm_wave;
-} TeddyWorkerArg;
+} TeddyBearWorkerArg;
 
 static void render_bear_worker(void *arg) {
-    TeddyWorkerArg *a = (TeddyWorkerArg *)arg;
+    TeddyBearWorkerArg *a = (TeddyBearWorkerArg *)arg;
     float arm_wave = a->arm_wave;
     uint8_t *frame_buffer = a->frame_buffer;
     for (int y = a->start_y; y < a->end_y; y++) {
@@ -118,16 +118,16 @@ void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
     float time_val = f_idx * (1.0f / 30.0f);
     float arm_wave = sinf(time_val * M_PI * 1.5f);
  
-    if (!g_teddy_ccx_pool_initialized) {
-        tsfi_ccx_pool_init(&g_teddy_ccx_pool, 0, 4);
-        g_teddy_ccx_pool_initialized = true;
+    if (!g_teddy_bear_ccx_pool_initialized) {
+        tsfi_ccx_pool_init(&g_teddy_bear_ccx_pool, 0, 4);
+        g_teddy_bear_ccx_pool_initialized = true;
     }
  
-    int num_threads = g_teddy_ccx_pool.num_threads;
+    int num_threads = g_teddy_bear_ccx_pool.num_threads;
     int rows_per_thread = HEIGHT / num_threads;
     if (rows_per_thread < 1) rows_per_thread = 1;
  
-    TeddyWorkerArg args[MAX_CCX_THREADS];
+    TeddyBearWorkerArg args[MAX_CCX_THREADS];
     for (int i = 0; i < num_threads; i++) {
         int start = i * rows_per_thread;
         if (start >= HEIGHT) break;
@@ -140,9 +140,9 @@ void render_bear_frame(uint8_t *frame_buffer, int f_idx) {
         args[i].time_val = time_val;
         args[i].arm_wave = arm_wave;
  
-        tsfi_ccx_pool_enqueue(&g_teddy_ccx_pool, render_bear_worker, &args[i]);
+        tsfi_ccx_pool_enqueue(&g_teddy_bear_ccx_pool, render_bear_worker, &args[i]);
     }
-    tsfi_ccx_pool_wait(&g_teddy_ccx_pool);
+    tsfi_ccx_pool_wait(&g_teddy_bear_ccx_pool);
 }
 
 int main() {
@@ -152,7 +152,7 @@ int main() {
     if (!frame_buffer) return 1;
     
     // Open an absolute direct pipe to FFmpeg, completely skipping intermediate file writes
-    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -vcodec rawvideo -s 512x512 -pix_fmt rgb24 -r 30 -i - -c:v libx264 -preset ultrafast -pix_fmt yuv420p native_zmm_teddy.mp4 2>/dev/null", "w");
+    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -vcodec rawvideo -s 512x512 -pix_fmt rgb24 -r 30 -i - -c:v libx264 -preset ultrafast -pix_fmt yuv420p native_zmm_teddy_bear.mp4 2>/dev/null", "w");
     if (!ffmpeg_pipe) {
         printf("[FRACTURE] Failed to open FFmpeg pipe.\\n");
         free(frame_buffer);
@@ -171,7 +171,7 @@ int main() {
     pclose(ffmpeg_pipe);
     free(frame_buffer);
     
-    printf("\\n[SUCCESS] 10-Second 30 FPS video rendered directly to native_zmm_teddy.mp4\\n");
+    printf("\\n[SUCCESS] 10-Second 30 FPS video rendered directly to native_zmm_teddy_bear.mp4\\n");
     printf("[SPEED] Achieved >>10x realtime generation due to pure C AVX-512 Density Math.\\n");
     
     return 0;

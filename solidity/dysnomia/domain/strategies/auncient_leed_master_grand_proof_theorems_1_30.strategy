@@ -11,7 +11,7 @@
             05  WS-TIER4-PROVED             PIC 9(01) VALUE 1.
             05  WS-TIER5-PROVED             PIC 9(01) VALUE 1.
             05  WS-TIER6-PROVED             PIC 9(01) VALUE 1.
-            05  WS-TEDDY-HEART-QUALIFIED    PIC 9(01) VALUE 1.
+            05  WS-TEDDY_BEAR-HEART-QUALIFIED    PIC 9(01) VALUE 1.
             05  WS-GRAND-WITNESS-SEAL       PIC 9(01) VALUE 0.
         PROCEDURE DIVISION.
         0000-MAIN-LOGIC.
@@ -25,7 +25,7 @@
                WS-TIER4-PROVED = 1 AND
                WS-TIER5-PROVED = 1 AND
                WS-TIER6-PROVED = 1 AND
-               WS-TEDDY-HEART-QUALIFIED = 1
+               WS-TEDDY_BEAR-HEART-QUALIFIED = 1
                 MOVE 1 TO WS-GRAND-WITNESS-SEAL
             ELSE
                 MOVE 0 TO WS-GRAND-WITNESS-SEAL.

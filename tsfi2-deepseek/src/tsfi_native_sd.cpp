@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     params.wtype = SD_TYPE_F16;
     params.rng_type = STD_DEFAULT_RNG;
     params.sampler_rng_type = STD_DEFAULT_RNG;
-    params.use_teddy_vae = true; 
+    params.use_teddy_bear_vae = true; 
     int threads = 16;
     if (const char* env_threads = getenv("SD_THREADS")) {
         threads = atoi(env_threads);

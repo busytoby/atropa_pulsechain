@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TEDDY_DEFAULT_ENDOWMENT_SAAT 1000000ULL
+#define TEDDY_BEAR_DEFAULT_ENDOWMENT_SAAT 1000000ULL
 #define CPM_TPA_BASE 0x0100
 
 typedef struct {

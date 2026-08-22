@@ -3044,7 +3044,7 @@ void render_frame(TsfiAb4hMat *canvas, int frame) {
 
     // Header Text
     Ab4hPixel text_title = make_ab4h_pixel(0.8f, 0.3f, 1.0f, 1.0f); // Neon Violet
-    draw_string_ab4h(canvas, "TSFI TEDDY GENERATOR & LLM INTERFACE", 820, 30, text_title);
+    draw_string_ab4h(canvas, "TSFI TEDDY_BEAR GENERATOR & LLM INTERFACE", 820, 30, text_title);
 
     // Render 3 Steampunk Vaesen Valves
     float v0_intensity = track_trigger_env[0] > track_trigger_env[3] ? track_trigger_env[0] : track_trigger_env[3];
@@ -3586,7 +3586,7 @@ void validate_rendering_via_object_recognition(TsfiAb4hMat *canvas) {
     if (valid) {
         float confidence = 0.5f + (analysis.glyph_symmetry - 0.65f) * 1.5f;
         if (confidence > 0.99f) confidence = 0.99f;
-        printf("  [PASS] Object recognized: TSFI_CLASS_TEDDY (Confidence: %.2f)\n", confidence);
+        printf("  [PASS] Object recognized: TSFI_CLASS_TEDDY_BEAR (Confidence: %.2f)\n", confidence);
         printf("         Symmetry: %.4f, Coverage: %.4f, Complexity: %.4f, Avg Intensity: %.4f\n",
                analysis.glyph_symmetry, analysis.coverage, analysis.complexity, analysis.avg_intensity);
         printf("         Contrast: %.4f, Grain: %.4f, Center X: %.4f, Center Y: %.4f\n",
@@ -3786,7 +3786,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
             } else if (mouse_y >= 530 && mouse_y <= 560 && mouse_x >= 960 && mouse_x <= 1200) {
                 selected_vlm = (selected_vlm + 1) % 6;
                 char run_cmd[512];
-                snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
+                snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_bear_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
                          vlm_names[selected_vlm], generator_names[selected_generator]);
                 int ret = system(run_cmd);
                 if (ret == 0) {
@@ -3797,7 +3797,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
             } else if (mouse_y >= 570 && mouse_y <= 600 && mouse_x >= 960 && mouse_x <= 1200) {
                 selected_generator = (selected_generator + 1) % 6;
                 char run_cmd[512];
-                snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
+                snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_bear_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
                          vlm_names[selected_vlm], generator_names[selected_generator]);
                 int ret = system(run_cmd);
                 if (ret == 0) {
@@ -3849,7 +3849,7 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer, uin
             } else if (mouse_y >= 605 && mouse_y <= 630) {
                 if (mouse_x >= 850 && mouse_x <= 1020) {
                     char run_cmd[512];
-                    snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
+                    snprintf(run_cmd, sizeof(run_cmd), "python3 ../scripts/genetic_teddy_bear_optimizer.py \"golden\" --vlm %s --generator %s > /tmp/vulkan_optimizer.log 2>&1 &", 
                              vlm_names[selected_vlm], generator_names[selected_generator]);
                     int ret = system(run_cmd);
                     if (ret == 0) {
@@ -4031,7 +4031,7 @@ typedef struct {
     uint8_t light_angle_deg;
     uint8_t breathing_freq;
     uint8_t twitch_intensity;
-} TsfiTeddyDna;
+} TsfiTeddyBearDna;
 
 extern bool g_gguf_acab_found;
 extern uint8_t g_gguf_acab_root[32];
@@ -4040,8 +4040,8 @@ bool tsfi_load_gguf_weights(const char* filepath, float* outWeights, uint32_t ma
 static void reload_genome() {
     FILE *df = fopen("assets/bear_genome.dna", "rb");
     if (df) {
-        TsfiTeddyDna dna;
-        if (fread(&dna, sizeof(TsfiTeddyDna), 1, df) == 1) {
+        TsfiTeddyBearDna dna;
+        if (fread(&dna, sizeof(TsfiTeddyBearDna), 1, df) == 1) {
             fur_length = (float)dna.base_fur_length / 1000.0f;
             scale_val = (float)dna.base_scale / 100.0f;
             light_angle_deg = (float)dna.light_angle_deg / 255.0f * 360.0f;
@@ -4576,7 +4576,7 @@ int main(int argc, char *argv[]) {
 
     // Wayland shared memory buffer is 32-bit ARGB (4 bytes per pixel)
     size_t argb_sz = W * H * sizeof(uint32_t);
-    mfd = memfd_create("tsfi_teddy_shm", MFD_CLOEXEC);
+    mfd = memfd_create("tsfi_teddy_bear_shm", MFD_CLOEXEC);
     if (mfd < 0 || ftruncate(mfd, argb_sz) < 0) {
         printf("[ERROR] Failed to allocate shared memory fd.\n");
         free(offscreen_buf);

@@ -1,8 +1,8 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <stdio.h>
 #include <math.h>
 
-bool evaluate_wang_geigel_character_warmth(const teddy_geometry_t *geom, double gaze_shift_freq, double head_tilt_val, double *warmth_score_out) {
+bool evaluate_wang_geigel_character_warmth(const teddy_bear_geometry_t *geom, double gaze_shift_freq, double head_tilt_val, double *warmth_score_out) {
     if (!geom || gaze_shift_freq < 0.0 || head_tilt_val < 0.0 || !warmth_score_out) {
         return false;
     }
@@ -10,7 +10,7 @@ bool evaluate_wang_geigel_character_warmth(const teddy_geometry_t *geom, double 
     return true;
 }
 
-bool evaluate_wang_geigel_competence_projection(const teddy_geometry_t *geom, double posture_pitch, double dominance_cue_val, double *competence_score_out) {
+bool evaluate_wang_geigel_competence_projection(const teddy_bear_geometry_t *geom, double posture_pitch, double dominance_cue_val, double *competence_score_out) {
     if (!geom || posture_pitch < 0.0 || dominance_cue_val < 0.0 || !competence_score_out) {
         return false;
     }
@@ -18,7 +18,7 @@ bool evaluate_wang_geigel_competence_projection(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_wang_geigel_emotional_contagion(const teddy_geometry_t *geom, double expression_intensity, double pupil_dilation_sync, double *contagion_score_out) {
+bool evaluate_wang_geigel_emotional_contagion(const teddy_bear_geometry_t *geom, double expression_intensity, double pupil_dilation_sync, double *contagion_score_out) {
     if (!geom || expression_intensity < 0.0 || pupil_dilation_sync < 0.0 || !contagion_score_out) {
         return false;
     }
@@ -26,7 +26,7 @@ bool evaluate_wang_geigel_emotional_contagion(const teddy_geometry_t *geom, doub
     return true;
 }
 
-bool evaluate_wang_geigel_warmth_attenuation(const teddy_geometry_t *geom, double gaze_erraticness, double *attenuated_warmth_out) {
+bool evaluate_wang_geigel_warmth_attenuation(const teddy_bear_geometry_t *geom, double gaze_erraticness, double *attenuated_warmth_out) {
     if (!geom || gaze_erraticness < 0.0 || !attenuated_warmth_out) {
         return false;
     }
@@ -34,7 +34,7 @@ bool evaluate_wang_geigel_warmth_attenuation(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_wang_geigel_gaze_dominance_modulator(const teddy_geometry_t *geom, double direct_gaze_ratio, double *dominance_score_out) {
+bool evaluate_wang_geigel_gaze_dominance_modulator(const teddy_bear_geometry_t *geom, double direct_gaze_ratio, double *dominance_score_out) {
     if (!geom || direct_gaze_ratio < 0.0 || !dominance_score_out) {
         return false;
     }
@@ -42,7 +42,7 @@ bool evaluate_wang_geigel_gaze_dominance_modulator(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_geometry_t *geom, double realism_index, double expression_intensity, double *attraction_score_out) {
+bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_bear_geometry_t *geom, double realism_index, double expression_intensity, double *attraction_score_out) {
     if (!geom || realism_index < 0.0 || expression_intensity < 0.0 || !attraction_score_out) {
         return false;
     }
@@ -51,7 +51,7 @@ bool evaluate_wang_geigel_realism_attraction_congruence(const teddy_geometry_t *
     return true;
 }
 
-bool evaluate_wang_geigel_gaze_competence_modulator(const teddy_geometry_t *geom, double direct_gaze_ratio, double aversion_speed, double *competence_score_out) {
+bool evaluate_wang_geigel_gaze_competence_modulator(const teddy_bear_geometry_t *geom, double direct_gaze_ratio, double aversion_speed, double *competence_score_out) {
     if (!geom || direct_gaze_ratio < 0.0 || aversion_speed < 0.0 || !competence_score_out) {
         return false;
     }
@@ -59,7 +59,7 @@ bool evaluate_wang_geigel_gaze_competence_modulator(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_wang_geigel_contagion_arousal(const teddy_geometry_t *geom, double pupil_dilation_sync, double head_tilt_val, double *arousal_score_out) {
+bool evaluate_wang_geigel_contagion_arousal(const teddy_bear_geometry_t *geom, double pupil_dilation_sync, double head_tilt_val, double *arousal_score_out) {
     if (!geom || pupil_dilation_sync < 0.0 || head_tilt_val < 0.0 || !arousal_score_out) {
         return false;
     }
@@ -67,7 +67,7 @@ bool evaluate_wang_geigel_contagion_arousal(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_wang_geigel_realism_trust_congruence(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *trustworthiness_out) {
+bool evaluate_wang_geigel_realism_trust_congruence(const teddy_bear_geometry_t *geom, double realism_index, double smile_intensity, double *trustworthiness_out) {
     if (!geom || realism_index < 0.0 || smile_intensity < 0.0 || !trustworthiness_out) {
         return false;
     }
@@ -76,7 +76,7 @@ bool evaluate_wang_geigel_realism_trust_congruence(const teddy_geometry_t *geom,
     return true;
 }
 
-bool evaluate_wang_geigel_emotional_contagion_decay(const teddy_geometry_t *geom, double initial_contagion, double duration_sec, double *decayed_contagion_out) {
+bool evaluate_wang_geigel_emotional_contagion_decay(const teddy_bear_geometry_t *geom, double initial_contagion, double duration_sec, double *decayed_contagion_out) {
     if (!geom || initial_contagion < 0.0 || duration_sec < 0.0 || !decayed_contagion_out) {
         return false;
     }
@@ -84,7 +84,7 @@ bool evaluate_wang_geigel_emotional_contagion_decay(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_wang_geigel_competence_decay_variance(const teddy_geometry_t *geom, double duration_sec, double *decay_variance_out) {
+bool evaluate_wang_geigel_competence_decay_variance(const teddy_bear_geometry_t *geom, double duration_sec, double *decay_variance_out) {
     if (!geom || duration_sec < 0.0 || !decay_variance_out) {
         return false;
     }
@@ -92,7 +92,7 @@ bool evaluate_wang_geigel_competence_decay_variance(const teddy_geometry_t *geom
     return true;
 }
 
-bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_geometry_t *geom, double gaze_shift_freq, double realism_index, double *mismatch_score_out) {
+bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_bear_geometry_t *geom, double gaze_shift_freq, double realism_index, double *mismatch_score_out) {
     if (!geom || gaze_shift_freq < 0.0 || realism_index < 0.0 || !mismatch_score_out) {
         return false;
     }
@@ -100,7 +100,7 @@ bool evaluate_wang_geigel_gaze_realism_mismatch(const teddy_geometry_t *geom, do
     return true;
 }
 
-bool evaluate_wang_geigel_avatar_blink_trust(const teddy_geometry_t *geom, double blink_rate, double *trust_score_out) {
+bool evaluate_wang_geigel_avatar_blink_trust(const teddy_bear_geometry_t *geom, double blink_rate, double *trust_score_out) {
     if (!geom || blink_rate < 0.0 || !trust_score_out) {
         return false;
     }
@@ -110,7 +110,7 @@ bool evaluate_wang_geigel_avatar_blink_trust(const teddy_geometry_t *geom, doubl
     return true;
 }
 
-bool evaluate_wang_geigel_avatar_head_shake(const teddy_geometry_t *geom, double head_shake_intensity, double *negativity_score_out) {
+bool evaluate_wang_geigel_avatar_head_shake(const teddy_bear_geometry_t *geom, double head_shake_intensity, double *negativity_score_out) {
     if (!geom || head_shake_intensity < 0.0 || !negativity_score_out) {
         return false;
     }
@@ -118,7 +118,7 @@ bool evaluate_wang_geigel_avatar_head_shake(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_geometry_t *geom, double averted_gaze_ratio, double posture_pitch, double *submissiveness_score_out) {
+bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_bear_geometry_t *geom, double averted_gaze_ratio, double posture_pitch, double *submissiveness_score_out) {
     if (!geom || averted_gaze_ratio < 0.0 || posture_pitch < 0.0 || !submissiveness_score_out) {
         return false;
     }
@@ -126,7 +126,7 @@ bool evaluate_wang_geigel_avatar_gaze_submissiveness(const teddy_geometry_t *geo
     return true;
 }
 
-bool evaluate_wang_geigel_avatar_smile_attractiveness(const teddy_geometry_t *geom, double smile_intensity, double head_tilt_val, double *attractiveness_score_out) {
+bool evaluate_wang_geigel_avatar_smile_attractiveness(const teddy_bear_geometry_t *geom, double smile_intensity, double head_tilt_val, double *attractiveness_score_out) {
     if (!geom || smile_intensity < 0.0 || head_tilt_val < 0.0 || !attractiveness_score_out) {
         return false;
     }
@@ -134,7 +134,7 @@ bool evaluate_wang_geigel_avatar_smile_attractiveness(const teddy_geometry_t *ge
     return true;
 }
 
-bool evaluate_wang_geigel_avatar_eyebrow_furrow_threat(const teddy_geometry_t *geom, double furrow_intensity, double direct_gaze_ratio, double *threat_score_out) {
+bool evaluate_wang_geigel_avatar_eyebrow_furrow_threat(const teddy_bear_geometry_t *geom, double furrow_intensity, double direct_gaze_ratio, double *threat_score_out) {
     if (!geom || furrow_intensity < 0.0 || direct_gaze_ratio < 0.0 || !threat_score_out) {
         return false;
     }
@@ -142,7 +142,7 @@ bool evaluate_wang_geigel_avatar_eyebrow_furrow_threat(const teddy_geometry_t *g
     return true;
 }
 
-bool evaluate_wang_geigel_avatar_realism_warmth_interaction(const teddy_geometry_t *geom, double realism_index, double smile_intensity, double *warmth_score_out) {
+bool evaluate_wang_geigel_avatar_realism_warmth_interaction(const teddy_bear_geometry_t *geom, double realism_index, double smile_intensity, double *warmth_score_out) {
     if (!geom || realism_index < 0.0 || smile_intensity < 0.0 || !warmth_score_out) {
         return false;
     }

@@ -52,8 +52,8 @@
  **[9] Non-Preferential ACCUMULATOR*| Harvard Mark I/II Modernization:   | `lyapunov_accumulatory.algol61`
        *AUNCIENT-STD-0008*         | Continuous Flux $\dot{A} = S_t$ (Rule 12)| `lyapunov_accumulatory.strategy`
 -----------------------------------+-------------------------------------+----------------------------------------------
- **[10] Symplectic Vaesen Person.**| ANKH GGUF Empathy & Teddy Genesis   | `vaesen_teddy_genesis_prover.algol61`
-        *AUNCIENT-STD-0009*        | Closed-Loop Ear Quench & Trauma Rollback| `vaesen_teddy_genesis.strategy`
+ **[10] Symplectic Vaesen Person.**| ANKH GGUF Empathy & TeddyBear Genesis   | `vaesen_teddy_bear_genesis_prover.algol61`
+        *AUNCIENT-STD-0009*        | Closed-Loop Ear Quench & Trauma Rollback| `vaesen_teddy_bear_genesis.strategy`
 -----------------------------------+-------------------------------------+----------------------------------------------
  **[11] Multi-Instance & Transducers| ReBAR Co-State Invariance ($M \le 16$),| `lyapunov_multi_instance_costate.algol61`
         *AUNCIENT-STD-0010 & 0011* | Kermit Transport, Coax TEM Line,   | `lyapunov_coaxial_line_prover.algol61`

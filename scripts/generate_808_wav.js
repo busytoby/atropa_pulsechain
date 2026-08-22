@@ -59,7 +59,7 @@ function main() {
     }
 
     // Write combined WAV file
-    const wavPath = path.join(__dirname, "../teddy808_kick_synthesis.wav");
+    const wavPath = path.join(__dirname, "../teddy_bear808_kick_synthesis.wav");
     const buffer = writeWavFile(audioBuffer);
     fs.writeFileSync(wavPath, buffer);
     console.log(`Standalone 808 WAV successfully generated at: ${wavPath}`);

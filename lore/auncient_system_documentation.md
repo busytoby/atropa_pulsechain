@@ -9,44 +9,44 @@ This document compiles the architectural specifications, register mappings, and 
 We wanna list the single-variance and single-decay-variance personality modulators successfully implemented across the VM suite:
 
 ### Keating Suite (Caroline F. Keating Visual Trust/Dominance Models)
-*   [evaluate_keating_sclera_dominance_decay_variance_single](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L826): Models the variance in decay rates of sclera dominance ratings.
-*   [evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L829): Models the variance in decay rates of eyebrow asymmetry dominance ratings.
-*   [evaluate_keating_sclera_submissiveness_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L838): Models the variance in decay rates of sclera submissiveness under dynamic symmetry variations.
-*   [evaluate_keating_sclera_dominance_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L841): Models the variance in decay rates of sclera dominance under dynamic symmetry variations.
+*   [evaluate_keating_sclera_dominance_decay_variance_single](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L826): Models the variance in decay rates of sclera dominance ratings.
+*   [evaluate_keating_eyebrow_asymmetry_dominance_decay_variance_single](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L829): Models the variance in decay rates of eyebrow asymmetry dominance ratings.
+*   [evaluate_keating_sclera_submissiveness_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L838): Models the variance in decay rates of sclera submissiveness under dynamic symmetry variations.
+*   [evaluate_keating_sclera_dominance_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L841): Models the variance in decay rates of sclera dominance under dynamic symmetry variations.
 
 ### Scarpi Suite (Antonio Scarpi Hedonic/Utilitarian Modulators)
-*   [evaluate_scarpi_utilitarian_quality_control_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L970): Models the variance in decay rates of quality control ratings based on prolonged tracking intervals.
-*   [evaluate_scarpi_hedonic_playful_engagement_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L973): Models the variance in decay rates of playful engagement ratings.
-*   [evaluate_scarpi_utilitarian_consistency_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L976): Models the variance in decay rates of operational consistency.
-*   [evaluate_scarpi_utilitarian_operational_trust_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L979): Models the variance in decay rates of operational trust.
-*   [evaluate_scarpi_hedonic_interface_trust_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L982): Models the variance in decay rates of interface trust.
+*   [evaluate_scarpi_utilitarian_quality_control_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L970): Models the variance in decay rates of quality control ratings based on prolonged tracking intervals.
+*   [evaluate_scarpi_hedonic_playful_engagement_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L973): Models the variance in decay rates of playful engagement ratings.
+*   [evaluate_scarpi_utilitarian_consistency_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L976): Models the variance in decay rates of operational consistency.
+*   [evaluate_scarpi_utilitarian_operational_trust_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L979): Models the variance in decay rates of operational trust.
+*   [evaluate_scarpi_hedonic_interface_trust_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L982): Models the variance in decay rates of interface trust.
 
 ### Cellarius Suite (Andreas Cellarius Celestial Cartography Models)
-*   [evaluate_cellarius_constellation_scale_variance_mod_single](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L688): Models the variance in constellation scale modulator ratings under dynamic layout symmetry variations.
-*   [evaluate_cellarius_epicycle_radius_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L691): Models the variance in decay rates of epicycle orbital radius ratings based on prolonged tracking intervals.
+*   [evaluate_cellarius_constellation_scale_variance_mod_single](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L688): Models the variance in constellation scale modulator ratings under dynamic layout symmetry variations.
+*   [evaluate_cellarius_epicycle_radius_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L691): Models the variance in decay rates of epicycle orbital radius ratings based on prolonged tracking intervals.
 
 ### Hyde Suite (Speech Acoustics and Conversational Timing Models)
-*   [evaluate_hyde_vocal_warmth_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1045): Models the variance in decay rates of vocal warmth modulator ratings.
-*   [evaluate_hyde_vocal_tempo_range_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1048): Models the variance in decay rates of conversational synchronization ratings based on speech tempo range decay variations.
-*   [evaluate_hyde_vocal_size_jitter_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1051): Models the variance in decay rates of vocal size jitter ratings.
-*   [evaluate_hyde_vocal_tempo_sync_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1054): Models the variance in decay rates of conversational synchronization ratings based on speech tempo sync decay variations.
-*   [evaluate_hyde_vocal_size_pitch_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1057): Models the variance in decay rates of vocal size pitch ratings.
-*   [evaluate_hyde_vocal_size_sync_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1060): Models the variance in decay rates of conversational synchronization ratings based on speech size sync decay variations.
+*   [evaluate_hyde_vocal_warmth_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1045): Models the variance in decay rates of vocal warmth modulator ratings.
+*   [evaluate_hyde_vocal_tempo_range_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1048): Models the variance in decay rates of conversational synchronization ratings based on speech tempo range decay variations.
+*   [evaluate_hyde_vocal_size_jitter_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1051): Models the variance in decay rates of vocal size jitter ratings.
+*   [evaluate_hyde_vocal_tempo_sync_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1054): Models the variance in decay rates of conversational synchronization ratings based on speech tempo sync decay variations.
+*   [evaluate_hyde_vocal_size_pitch_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1057): Models the variance in decay rates of vocal size pitch ratings.
+*   [evaluate_hyde_vocal_size_sync_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1060): Models the variance in decay rates of conversational synchronization ratings based on speech size sync decay variations.
 
 ### Castle Suite (Diplomatic Policy Models)
-*   [evaluate_castle_diplomatic_alignment_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1192): Models the variance in decay rates of diplomatic alignment modulator ratings.
-*   [evaluate_castle_diplomatic_trust_bounds_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1195): Models the variance in decay rates of diplomatic trust bounds modulator ratings.
-*   [evaluate_castle_policy_target_engagement_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1198): Models the variance in decay rates of policy target engagement modulator ratings.
+*   [evaluate_castle_diplomatic_alignment_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1192): Models the variance in decay rates of diplomatic alignment modulator ratings.
+*   [evaluate_castle_diplomatic_trust_bounds_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1195): Models the variance in decay rates of diplomatic trust bounds modulator ratings.
+*   [evaluate_castle_policy_target_engagement_decay_variance_mod](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1198): Models the variance in decay rates of policy target engagement modulator ratings.
 
 ### Kramer-Ward Suite (Facial Width-to-Height Ratio Models)
-*   [evaluate_kramer_ward_fwhr_dominance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1233): Models the relationship between facial width-to-height ratio variations and social dominance ratings.
-*   [evaluate_kramer_ward_fwhr_trustworthiness](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1236): Models the relationship between facial width-to-height ratio variations and trustworthiness ratings.
-*   [evaluate_kramer_ward_fwhr_dominance_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1239): Models the variance in decay rates of FWHR dominance modulator ratings.
-*   [evaluate_kramer_ward_fwhr_trustworthiness_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1242): Models the variance in decay rates of FWHR trustworthiness modulator ratings.
-*   [evaluate_kramer_ward_fwhr_threat](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1245): Models the relationship between facial width-to-height ratio variations and perceived threat ratings.
-*   [evaluate_kramer_ward_fwhr_cooperation](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1248): Models the relationship between facial width-to-height ratio variations and expected cooperation ratings.
-*   [evaluate_kramer_ward_fwhr_threat_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1251): Models the variance in decay rates of FWHR threat modulator ratings.
-*   [evaluate_kramer_ward_fwhr_cooperation_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_personality.h#L1254): Models the variance in decay rates of FWHR cooperation modulator ratings.
+*   [evaluate_kramer_ward_fwhr_dominance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1233): Models the relationship between facial width-to-height ratio variations and social dominance ratings.
+*   [evaluate_kramer_ward_fwhr_trustworthiness](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1236): Models the relationship between facial width-to-height ratio variations and trustworthiness ratings.
+*   [evaluate_kramer_ward_fwhr_dominance_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1239): Models the variance in decay rates of FWHR dominance modulator ratings.
+*   [evaluate_kramer_ward_fwhr_trustworthiness_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1242): Models the variance in decay rates of FWHR trustworthiness modulator ratings.
+*   [evaluate_kramer_ward_fwhr_threat](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1245): Models the relationship between facial width-to-height ratio variations and perceived threat ratings.
+*   [evaluate_kramer_ward_fwhr_cooperation](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1248): Models the relationship between facial width-to-height ratio variations and expected cooperation ratings.
+*   [evaluate_kramer_ward_fwhr_threat_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1251): Models the variance in decay rates of FWHR threat modulator ratings.
+*   [evaluate_kramer_ward_fwhr_cooperation_decay_variance](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/include/auncient_teddy_bear_personality.h#L1254): Models the variance in decay rates of FWHR cooperation modulator ratings.
 
 ---
 

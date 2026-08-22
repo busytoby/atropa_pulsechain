@@ -8,24 +8,24 @@ This report presents a read-only investigation and analysis of the TSFi componen
 
 ### A. Teddy Bear Editor
 The "teddy bear editor" functionality is implemented in two distinct binaries:
-1. **`bin/tsfi_teddy_editor`** (Source: `src/tsfi_teddy_editor.c`):
+1. **`bin/tsfi_teddy_bear_editor`** (Source: `src/tsfi_teddy_bear_editor.c`):
    - The primary interactive application. It initializes Wayland and Vulkan contexts, setting up a window titled "TSFi Teddy Bear Editor".
    - It manages puppet states in Shared Memory (SHM) buffers and loops continuously, rendering the animated teddy bear to a paint buffer which is subsequently displayed using Vulkan.
-2. **`bin/test_vulkan_teddy`** (Source: `tests/test_vulkan_teddy.c`):
+2. **`bin/test_vulkan_teddy_bear`** (Source: `tests/test_vulkan_teddy_bear.c`):
    - A standalone Vulkan developer tool. It includes offscreen/headless rendering modes, self-tests, rendering validation, and a GUI workspace layout incorporating a tool palette, an ammeter/voltmeter HUD, and a built-in step sequencer.
 
 ### B. Drum Sequencer
 The "drum sequencer" exists in two forms:
 1. **`bin/test_wayland_terminal_shell`** (Source: `tests/test_wayland_terminal_shell.c`):
    - Implements a simulated terminal shell containing a utility called **"RHYTHMIC BITS (Step Sequencer Drum Machine)"**. This is a text-based, terminal-rendered 4-track by 8-step sequencer.
-2. **`bin/test_vulkan_teddy`** (Source: `tests/test_vulkan_teddy.c`):
+2. **`bin/test_vulkan_teddy_bear`** (Source: `tests/test_vulkan_teddy_bear.c`):
    - Integrates a 7-track by 8-step graphic/audio drum sequencer on the GUI canvas. This sequencer plays physical synthesized drum sounds via ALSA.
 
 ---
 
 ## 2. Rendering Loop Structure (Teddy Bear Editor)
 
-### A. Loop Structure in `tsfi_teddy_editor.c`
+### A. Loop Structure in `tsfi_teddy_bear_editor.c`
 The rendering loop (lines 197–221) is structured as an interactive Wayland event loop:
 ```c
 while (s->running && !g_force_quit) {
@@ -44,7 +44,7 @@ while (s->running && !g_force_quit) {
     if (g_dirty || true) {
         uint32_t *px = (uint32_t*)s->paint_buffer->data;
         int W = s->paint_buffer->width, H = s->paint_buffer->height;
-        render_teddy(px, W, H, shm_depth, shm_pose);
+        render_teddy_bear(px, W, H, shm_depth, shm_pose);
         draw_frame(s);
         g_dirty = false;
     }
@@ -53,7 +53,7 @@ while (s->running && !g_force_quit) {
 ```
 * **Headless / Non-Interactive Options**: None. This binary ignores CLI arguments (`(void)argc; (void)argv;`) and requires a running Wayland compositor.
 
-### B. Loop Structure in `test_vulkan_teddy.c`
+### B. Loop Structure in `test_vulkan_teddy_bear.c`
 This binary handles CLI arguments to support headless mode:
 - **CLI Parsing** (lines 3345–3349): It iterates through arguments checking for `--headless` or `--render-once`. If either is matched, it sets `headless = true`. If Wayland environment variables are missing or display connection fails, it automatically falls back to headless mode.
 - **Headless Pipeline** (lines 3360–3370):
@@ -74,8 +74,8 @@ This binary handles CLI arguments to support headless mode:
 - **Interactive Pipeline** (lines 3445–3536): Runs a `while (window_running)` loop at ~30 FPS (`usleep(33000)`), dispatches Wayland events, processes mouse/keyboard interactions, advances the sequencer, calls `render_frame(&canvas, frame)`, and maps the offscreen canvas to a shared-memory Wayland framebuffer via `present_ab4h_to_argb()`.
 
 ### C. Hooking for Profiling (FPS & Loop Iteration Times)
-- **`tsfi_teddy_editor`**: Hooks should be added at the top of the loop (line 197) and at the bottom (line 220), measuring active frame processing time (excluding `usleep`) and overall cycle time (including `usleep` for FPS calculation).
-- **`test_vulkan_teddy`**:
+- **`tsfi_teddy_bear_editor`**: Hooks should be added at the top of the loop (line 197) and at the bottom (line 220), measuring active frame processing time (excluding `usleep`) and overall cycle time (including `usleep` for FPS calculation).
+- **`test_vulkan_teddy_bear`**:
   - For **interactive mode**, hooks should be placed inside `while (window_running)` (line 3445), before dispatching Wayland events and after committing the surface (line 3532).
   - For **headless mode**, we can wrap the single `render_frame(&canvas, 0)` call (line 3365) to measure raw rendering time.
 
@@ -87,7 +87,7 @@ This binary handles CLI arguments to support headless mode:
 - **Structure**: Operates as a 4-track by 8-step sequencer representation in a text terminal. The step cursor is advanced every 180 ms in `update_drum_seq()` using monotonic time deltas.
 - **Audio Output**: **No PCM audio output is produced**. It does not initialize ALSA or load sound buffers. It updates the terminal characters inside the virtual video memory buffer `g_vram` (`X` for active, `.` for inactive steps). The only audio reference is the standard ASCII Bell sequence `printf("\x07");` used for a terminal beep in another game mode.
 
-### B. Synthesizer Drum Sequencer in `test_vulkan_teddy.c`
+### B. Synthesizer Drum Sequencer in `test_vulkan_teddy_bear.c`
 - **Structure**: Uses a 7-track by 8-step grid `seq_grid[7][8]` representing Kick, Snare, Toms, Hats, Ride, Clap, and Snap. In the main rendering thread, the step advances every 15 frames (~500 ms at 30 FPS). When an active step is hit, it triggers playback via `play_synth_sound(<track_name>)`.
 - **ALSA Initialization**:
   - `start_audio_mixer()` starts a dedicated background thread running `audio_mixer_thread()`.
@@ -119,7 +119,7 @@ Measuring the latency from sequencer trigger to PCM write/playback involves two 
 1. **Queueing Latency (Software Delay)**:
    - The delay between the sequencer thread registering a play event and the mixer thread writing that sample block to ALSA.
    - **Method**:
-     - Extend `struct Voice` in `test_vulkan_teddy.c` to include a `struct timespec trigger_time` field.
+     - Extend `struct Voice` in `test_vulkan_teddy_bear.c` to include a `struct timespec trigger_time` field.
      - In `play_synth_sound()`, record the time: `clock_gettime(CLOCK_MONOTONIC, &g_voices[i].trigger_time)`.
      - In the mixer thread, when a voice is first mixed (`g_voices[v].pos == 0`), read the current time `write_time` and calculate:
        $$\text{Queue Latency} = \text{write\_time} - \text{trigger\_time}$$
@@ -142,12 +142,12 @@ Measuring the latency from sequencer trigger to PCM write/playback involves two 
 
 The codebase contains several diagnostic tools and hooks:
 - **Profiling Benchmarks**:
-  - `tests/test_teddy_benchmark.c`: Simulates a mock rendering loop for the teddy bear.
-  - `tests/test_teddy_benchmark_avx.c` & `tests/test_teddy_benchmark_avx_fast.c`: Benchmarks AVX-512 (ZMM vector registers) procedural rendering pipelines over 1000 frames.
+  - `tests/test_teddy_bear_benchmark.c`: Simulates a mock rendering loop for the teddy bear.
+  - `tests/test_teddy_bear_benchmark_avx.c` & `tests/test_teddy_bear_benchmark_avx_fast.c`: Benchmarks AVX-512 (ZMM vector registers) procedural rendering pipelines over 1000 frames.
   - `tests/benchmark_font_throughput.c`, `tests/benchmark_neuro_activation.c`, `tests/benchmark_neuro_backprop.c`, `tests/benchmark_topography_latency.c`: Use high-resolution monotonic clocks to profile rendering throughput and cryptographic reduction speeds.
 - **Telemetry Hooks**:
   - `test_wayland_terminal_shell.c` utilizes a local `log_telemetry(const char *event_name)` function which writes events to `stdout` and pokes strings into the virtual ZMM Yul CPU memory (starting at address `0xF000` with length at `0xF100`).
-  - `test_vulkan_teddy.c` displays visual telemetry (HUD) in the viewport, printing live ammeter and voltmeter readings: `Telem: A=%.2fA V=%.1fV | DJ: ...`.
+  - `test_vulkan_teddy_bear.c` displays visual telemetry (HUD) in the viewport, printing live ammeter and voltmeter readings: `Telem: A=%.2fA V=%.1fV | DJ: ...`.
   - `inc/lau_telemetry.h` and `tsfi_types.h` contain definitions for structured firmware telemetry mapping.
 - **Orchestration / Test Generators**:
   - `tools/kr0wz_infinite_benchmark_engine.py`: A Python automation tool using `llama_cpp` to interface with `DeepSeek-Coder-6.7B.gguf` to autonomously parse C code, generate observational JSON benchmark tests, run compilation passes, and record audits.
@@ -160,11 +160,11 @@ The codebase contains several diagnostic tools and hooks:
 To reconcile rendering throughput (FPS) and audio latency (ALSA delay), we propose a unified **TSFi Benchmark Engine** implemented as follows:
 
 1. **Headless Execution with Variable Frame Bounds**:
-   - Extend the `--headless` argument in `test_vulkan_teddy` to accept frame count limits (e.g. `--headless --benchmark-frames 1000`).
+   - Extend the `--headless` argument in `test_vulkan_teddy_bear` to accept frame count limits (e.g. `--headless --benchmark-frames 1000`).
    - Run the rendering loop without throttle sleeps (`usleep`) to record the maximum raw frame-rate potential of the GPU/Vulkan rasterizer.
 
 2. **Instrumented Timing Hooks**:
-   - Embed macro-based timers around the main pipelines in `test_vulkan_teddy`:
+   - Embed macro-based timers around the main pipelines in `test_vulkan_teddy_bear`:
      - **Frame Render Time**: Wrapped around `render_frame()`.
      - **Swap/Present Time**: Wrapped around `present_ab4h_to_argb()`.
      - **Audio Trigger Latency**: Record the nanosecond difference from sequencer step triggers to ALSA writes.
@@ -177,7 +177,7 @@ To reconcile rendering throughput (FPS) and audio latency (ALSA delay), we propo
    - At the conclusion of a benchmark run, serialize the metrics into a structured JSON file (e.g., in a `benchmarks/` output folder):
      ```json
      {
-       "component": "teddy_vulkan_sequencer",
+       "component": "teddy_bear_vulkan_sequencer",
        "timestamp": 1781432400,
        "render": {
          "frames": 1000,
@@ -192,4 +192,4 @@ To reconcile rendering throughput (FPS) and audio latency (ALSA delay), we propo
        }
      }
      ```
-   - This structured file can then be parsed by optimization scripts (such as `deepseek_teddy_optimizer.py`) to systematically tune rendering options, thread allocations, and audio buffer sizing.
+   - This structured file can then be parsed by optimization scripts (such as `deepseek_teddy_bear_optimizer.py`) to systematically tune rendering options, thread allocations, and audio buffer sizing.

@@ -88,7 +88,7 @@ static int algol61_verify_coaxial_mesh(
 }
 
 int main(int argc, char **argv) {
-    const char *default_bins[] = {"hello.bin", "tune_channel.bin", "teddy_endow.bin"};
+    const char *default_bins[] = {"hello.bin", "tune_channel.bin", "teddy_bear_endow.bin"};
     int bin_count = (argc > 1) ? (argc - 1) : 3;
     if (bin_count > 16) bin_count = 16;
 

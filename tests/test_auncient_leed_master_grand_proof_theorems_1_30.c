@@ -7,7 +7,7 @@
 #include "cpm_tomie_annsim_reviewer.h"
 #include "auncient_teddy_bear_heart_usda.h"
 #include "auncient_clayscape_usda_digital_twin.h"
-#include "auncient_teddy_pageturner_bridge.h"
+#include "auncient_teddy_bear_pageturner_bridge.h"
 #include "auncient_renderman_usda_rib_prover.h"
 #include <stdio.h>
 #include <stdbool.h>
@@ -28,10 +28,10 @@ int main(void) {
     cpm_tomie_review_result_free(rev);
 
     /* Tier 2 & 3: Participant Profile & USDA Clayscape Asset */
-    TeddyBearHeartUsdaAsset teddy;
-    auncient_teddy_bear_heart_init(&teddy, 0x1234ABCD);
-    assert(teddy.profile.ssa_qualification_verified);
-    assert(teddy.profile.hogan_account_saat == 1000000ULL);
+    TeddyBearHeartUsdaAsset teddy_bear;
+    auncient_teddy_bear_heart_init(&teddy_bear, 0x1234ABCD);
+    assert(teddy_bear.profile.ssa_qualification_verified);
+    assert(teddy_bear.profile.hogan_account_saat == 1000000ULL);
     printf(" [PARTICIPANT PROFILE]   Teddy Bear Heart (Hogan 1M):  QUALIFIED\n");
 
     /* Tier 4 & 5 (Theorems 21-25): Generalized Clayscape Asset LEED Verification */
@@ -49,7 +49,7 @@ int main(void) {
     /* Tier 6 (Theorems 26-30): Pixar RenderMan RIB & Bxdf Synthesis */
     RenderManRibState rib;
     auncient_renderman_rib_init(&rib);
-    bool rib_ok = auncient_renderman_verify_theorems_26_30(&rib, &teddy);
+    bool rib_ok = auncient_renderman_verify_theorems_26_30(&rib, &teddy_bear);
     assert(rib_ok);
     assert(rib.energy_conservation_verified);
     assert(rib.crack_free_tessellation_verified);
@@ -58,9 +58,9 @@ int main(void) {
     printf(" [TIER 6: THEOREMS 26-30] Pixar RenderMan RIB Shading:  PROVED\n");
 
     /* Viscoelastic Dynamic Bridge Integration */
-    AuncientTeddyPageTurnerBridge bridge;
-    auncient_teddy_pageturner_bridge_init(&bridge, 0x1234ABCD);
-    bool bridge_ok = auncient_teddy_pageturner_bridge_step(&bridge, 0.05f, 22.0f, 48.0f, 450.0f, 0.50f);
+    AuncientTeddyBearPageTurnerBridge bridge;
+    auncient_teddy_bear_pageturner_bridge_init(&bridge, 0x1234ABCD);
+    bool bridge_ok = auncient_teddy_bear_pageturner_bridge_step(&bridge, 0.05f, 22.0f, 48.0f, 450.0f, 0.50f);
     assert(bridge_ok);
     assert(bridge.framebuffer.width == 320 && bridge.framebuffer.height == 240);
     assert(bridge.bridge_rule18_checksum > 0);

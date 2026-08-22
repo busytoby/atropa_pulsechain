@@ -1,6 +1,6 @@
 # Teddy Bear 303 Acid Bass & 808 Drum Synthesis
 
-We have synthesized three high-fidelity audio demonstrations to showcase the standalone and mixed capabilities of the **Teddy 303 Acid Bass** and **Teddy 808 Kick Drum** engines.
+We have synthesized three high-fidelity audio demonstrations to showcase the standalone and mixed capabilities of the **TeddyBear 303 Acid Bass** and **TeddyBear 808 Kick Drum** engines.
 
 ---
 
@@ -9,17 +9,17 @@ We have synthesized three high-fidelity audio demonstrations to showcase the sta
 ### Demonstration A: Standalone 303 Acid Bassline
 *16-step arpeggiated bass sequence featuring slide glides and cutoff sweep decay:*
 
-![Teddy Bear 303 Acid Bassline](/home/mariarahel/.gemini/antigravity-cli/brain/53112525-9898-4973-a6fc-c208cc0d018f/teddy303_acid_synthesis.wav)
+![Teddy Bear 303 Acid Bassline](/home/mariarahel/.gemini/antigravity-cli/brain/53112525-9898-4973-a6fc-c208cc0d018f/teddy_bear303_acid_synthesis.wav)
 
 ### Demonstration B: Standalone 808 Kick Drum
 *Four-on-the-floor TR-808 Kick Drum pattern (deep sub-bass decay with punchy transient click):*
 
-![Teddy Bear 808 Kick](/home/mariarahel/.gemini/antigravity-cli/brain/53112525-9898-4973-a6fc-c208cc0d018f/teddy808_kick_synthesis.wav)
+![Teddy Bear 808 Kick](/home/mariarahel/.gemini/antigravity-cli/brain/53112525-9898-4973-a6fc-c208cc0d018f/teddy_bear808_kick_synthesis.wav)
 
 ### Demonstration C: Combined 303 Bassline & 808 Kick Beat
 *The 303 bassline playing alongside the 808 Kick pattern:*
 
-![Teddy Bear 303 & 808 Beat](/home/mariarahel/.gemini/antigravity-cli/brain/53112525-9898-4973-a6fc-c208cc0d018f/teddy303_808_acid_beat.wav)
+![Teddy Bear 303 & 808 Beat](/home/mariarahel/.gemini/antigravity-cli/brain/53112525-9898-4973-a6fc-c208cc0d018f/teddy_bear303_808_acid_beat.wav)
 
 ---
 

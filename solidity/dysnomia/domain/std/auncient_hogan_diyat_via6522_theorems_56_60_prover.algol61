@@ -5,7 +5,7 @@ begin
   integer tpaBase, th56, th57, th58, th59, th60, masterWitness;
 
   tpaBase := 256;
-  th56 := 1; comment Theorem 56: Direct Saat Fee Debit Atomicity on Teddy Hogan Account;
+  th56 := 1; comment Theorem 56: Direct Saat Fee Debit Atomicity on TeddyBear Hogan Account;
   th57 := 1; comment Theorem 57: Capstan Shaft Kinetic Energy Diyat Scaling;
   th58 := 1; comment Theorem 58: VIA 6522 Hardware Register I/O & Interrupt Fee Invariance;
   th59 := 1; comment Theorem 59: Insufficient Balance Reversion & State Rollback;

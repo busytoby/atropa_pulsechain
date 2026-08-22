@@ -10,11 +10,11 @@
 typedef struct {
     uint32_t active_competing_teddy_bears;     /* 64 qualified teddy bear participants with verified .dna/SSN (Rule 16) */
     uint32_t bound_tournament_match_banks;     /* 32 hardware competitive duel tournament banks in .dat.bin */
-    uint64_t default_teddy_endowment_saat;     /* 1,000,000 Saat endowment per qualifying teddy bear (Rule 16) */
+    uint64_t default_teddy_bear_endowment_saat;     /* 1,000,000 Saat endowment per qualifying teddy bear (Rule 16) */
     float    tournament_match_fidelity;        /* 1.000 (Exact in-silicon competitive barrel shift tournament fidelity) */
     float    competitive_shift_latency_ns;     /* Sub-microsecond duel latency (< 1000.0 ns - Rule 11) */
     float    displacement_tournament_phase;    /* Synchronized with DisplacementShader (Rule 14) */
-    bool     is_teddy_tournament_certified;
+    bool     is_teddy_bear_tournament_certified;
 } TeddyBearBarrelTournamentState;
 
 typedef struct {
@@ -28,10 +28,10 @@ typedef struct {
     bool     tournament_lossless_saat_verified;   /* Theorem 1244: 1.245B Saat Commutation Flow */
     bool     grand_1245_parity_closure_verified; /* Theorem 1245: Grand Master Parity Seal */
     uint32_t rule18_parity_checksum;
-} TeddyTournamentBeyond1240State;
+} TeddyBearTournamentBeyond1240State;
 
-void auncient_teddy_tournament_init(TeddyTournamentBeyond1240State *state);
-bool auncient_teddy_tournament_verify_theorems_1241_1245(TeddyTournamentBeyond1240State *state);
-uint32_t auncient_teddy_tournament_compute_rule18(const TeddyTournamentBeyond1240State *state);
+void auncient_teddy_bear_tournament_init(TeddyBearTournamentBeyond1240State *state);
+bool auncient_teddy_bear_tournament_verify_theorems_1241_1245(TeddyBearTournamentBeyond1240State *state);
+uint32_t auncient_teddy_bear_tournament_compute_rule18(const TeddyBearTournamentBeyond1240State *state);
 
 #endif /* AUNCIENT_TEDDY_BEAR_BARREL_TOURNAMENT_THEOREMS_1241_1245_H */

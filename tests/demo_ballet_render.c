@@ -94,7 +94,7 @@ int main(void) {
     system("mkdir -p tests/frames");
 
     // Open FFmpeg pipe
-    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - -an -vcodec libx264 -pix_fmt yuv420p bin/teddy_ballet_demo.mp4", "w");
+    FILE *ffmpeg_pipe = popen("ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1280x720 -r 30 -i - -an -vcodec libx264 -pix_fmt yuv420p bin/teddy_bear_ballet_demo.mp4", "w");
     if (!ffmpeg_pipe) {
         printf("[RENDER ERROR] Failed to open FFmpeg pipeline.\n");
         auncient_stl_free_mesh(&head_mesh);
@@ -111,7 +111,7 @@ int main(void) {
     }
 
     // 3. Render Loop
-    printf("[RENDER] Compiling %d pose frames into bin/teddy_ballet_demo.mp4...\n", FRAMES);
+    printf("[RENDER] Compiling %d pose frames into bin/teddy_bear_ballet_demo.mp4...\n", FRAMES);
     for (int f = 0; f < FRAMES; f++) {
         float t = (float)f / 30.0f;
 
@@ -442,6 +442,6 @@ int main(void) {
     auncient_stl_free_mesh(&joint_mesh);
     auncient_stl_free_mesh(&torso_mesh);
 
-    printf("[SUCCESS] Ballet animation successfully rendered to bin/teddy_ballet_demo.mp4\n");
+    printf("[SUCCESS] Ballet animation successfully rendered to bin/teddy_bear_ballet_demo.mp4\n");
     return 0;
 }

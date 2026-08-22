@@ -56,7 +56,7 @@ Verifies that all core features function correctly under normal operating condit
 5. `test_hook_triggers_on_amend`: Amending a commit (`git commit --amend`) triggers hook execution.
 
 #### Feature 2: Benchmark Execution
-6. `test_benchmark_compilation_triggered`: Verifies `make bin/test_vulkan_teddy` is called.
+6. `test_benchmark_compilation_triggered`: Verifies `make bin/test_vulkan_teddy_bear` is called.
 7. `test_benchmark_script_triggered`: Verifies `run_benchmarks.sh` is executed.
 8. `test_benchmark_results_created`: Verifies `benchmark_results.json` is generated.
 9. `test_benchmark_invoked_with_flag`: Verifies that the binary is executed with the `--benchmark` argument.
@@ -142,20 +142,20 @@ To keep the E2E tests extremely fast (execution within milliseconds per test cas
 In mock mode, the test runner populates the sandbox with mock assets:
 - **Mock Makefile**:
   ```make
-  bin/test_vulkan_teddy:
+  bin/test_vulkan_teddy_bear:
   	mkdir -p bin
-  	echo '#!/bin/sh' > bin/test_vulkan_teddy
-  	echo 'echo "GIT_DIR=$$GIT_DIR" >> env_check.log' >> bin/test_vulkan_teddy
-  	echo 'echo "GIT_WORK_TREE=$$GIT_WORK_TREE" >> env_check.log' >> bin/test_vulkan_teddy
-  	echo 'echo "GIT_INDEX_FILE=$$GIT_INDEX_FILE" >> env_check.log' >> bin/test_vulkan_teddy
+  	echo '#!/bin/sh' > bin/test_vulkan_teddy_bear
+  	echo 'echo "GIT_DIR=$$GIT_DIR" >> env_check.log' >> bin/test_vulkan_teddy_bear
+  	echo 'echo "GIT_WORK_TREE=$$GIT_WORK_TREE" >> env_check.log' >> bin/test_vulkan_teddy_bear
+  	echo 'echo "GIT_INDEX_FILE=$$GIT_INDEX_FILE" >> env_check.log' >> bin/test_vulkan_teddy_bear
   	cat ../mock_results_normal.json > benchmarks/profiler_suite/benchmark_results.json
-  	chmod +x bin/test_vulkan_teddy
+  	chmod +x bin/test_vulkan_teddy_bear
   ```
 - **Mock `run_benchmarks.sh`**:
   ```bash
   #!/bin/bash
   cd ../..
-  make bin/test_vulkan_teddy
+  make bin/test_vulkan_teddy_bear
   ```
 - **Real `generate_report.py`**: The E2E runner copies the actual `generate_report.py` from the project workspace into the sandbox (since it is a Python script that runs instantly and needs to be verified directly).
 
@@ -254,7 +254,7 @@ We recommend the following four-phase plan for the implementer:
 3. Setup the skeleton test cases using Python's `unittest` library.
 
 ### Phase 3: Implement post-commit Hook and Verify Tiers 1-3
-1. Implement the post-commit hook script (or its template) unsetting the Git environment variables and executing `make bin/test_vulkan_teddy`, `./run_benchmarks.sh`, and `generate_report.py`.
+1. Implement the post-commit hook script (or its template) unsetting the Git environment variables and executing `make bin/test_vulkan_teddy_bear`, `./run_benchmarks.sh`, and `generate_report.py`.
 2. Implement the stdout ASCII table formatter in the hook script.
 3. Run `python3 tests/e2e/run_e2e_tests.py` in mock mode. Fix issues until Tier 1, 2, and 3 tests pass 100%.
 

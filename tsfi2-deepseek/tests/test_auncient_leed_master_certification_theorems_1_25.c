@@ -6,7 +6,7 @@
 
 #include "auncient_teddy_bear_heart_usda.h"
 #include "auncient_clayscape_usda_digital_twin.h"
-#include "auncient_teddy_pageturner_bridge.h"
+#include "auncient_teddy_bear_pageturner_bridge.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -17,10 +17,10 @@ int main(void) {
     printf("=================================================================\n");
 
     /* 1. Teddy Bear Heart USDA Qualification */
-    TeddyBearHeartUsdaAsset teddy;
-    auncient_teddy_bear_heart_init(&teddy, 0x1A2B3C4D);
-    assert(teddy.profile.ssa_qualification_verified);
-    assert(teddy.profile.hogan_account_saat == 1000000ULL);
+    TeddyBearHeartUsdaAsset teddy_bear;
+    auncient_teddy_bear_heart_init(&teddy_bear, 0x1A2B3C4D);
+    assert(teddy_bear.profile.ssa_qualification_verified);
+    assert(teddy_bear.profile.hogan_account_saat == 1000000ULL);
     printf(" [QUALIFICATION] Teddy Bear Heart Participant:  VERIFIED (1,000,000 Saat)\n");
 
     /* 2. Generalized Clayscape USDA Asset & Theorems 21-25 */
@@ -36,9 +36,9 @@ int main(void) {
     printf(" [TIER 5] Theorems 21-25 (Lighting, Carnot, RH, Economizer, NC-30): PROVED\n");
 
     /* 3. Live Teddy Bear PageTurner RenderMan Dynamic Bridge */
-    AuncientTeddyPageTurnerBridge bridge;
-    auncient_teddy_pageturner_bridge_init(&bridge, 0x1A2B3C4D);
-    bool bridge_ok = auncient_teddy_pageturner_bridge_step(&bridge, 0.10f, 22.5f, 50.0f, 500.0f, 0.45f);
+    AuncientTeddyBearPageTurnerBridge bridge;
+    auncient_teddy_bear_pageturner_bridge_init(&bridge, 0x1A2B3C4D);
+    bool bridge_ok = auncient_teddy_bear_pageturner_bridge_step(&bridge, 0.10f, 22.5f, 50.0f, 500.0f, 0.45f);
     assert(bridge_ok);
     assert(bridge.framebuffer.width == 320 && bridge.framebuffer.height == 240);
     assert(bridge.bridge_rule18_checksum > 0);

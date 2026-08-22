@@ -10,7 +10,7 @@ This document records the official performance metrics of the **Auncient** virtu
 * **Search Time**: `283,496,840 ns`
 * *Details*: Measures multi-pattern searching overhead and packed memory array indexing latency.
 
-### 2. Headless Vulkan Teddy Renderer
+### 2. Headless Vulkan TeddyBear Renderer
 * **Drawing Throughput**: `6,552.08 FPS`
 * **Render Latency**: `0.000153 seconds/frame`
 * *Details*: Measures GPU rasterization performance on standard OBJ structures.

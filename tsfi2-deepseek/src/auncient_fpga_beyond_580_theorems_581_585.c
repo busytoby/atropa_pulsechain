@@ -28,7 +28,7 @@ bool auncient_fpga_beyond_580_verify_theorems_581_585(FpgaBeyond580State *state)
     leaf1.is_leaf = true;
     leaf1.hex_key_low.raw = 0x15; /* 010101: Alternating Black/Red */
     leaf1.payload_low.payload_size = 16;
-    snprintf((char*)leaf1.payload_low.payload_bytes, 64, "TEDDY_BOND_SAAT");
+    snprintf((char*)leaf1.payload_low.payload_bytes, 64, "TEDDY_BEAR_BOND_SAAT");
 
     leaf2.is_leaf = true;
     leaf2.hex_key_low.raw = 0x2A; /* 101010: Inverted Alternating */
@@ -42,7 +42,7 @@ bool auncient_fpga_beyond_580_verify_theorems_581_585(FpgaBeyond580State *state)
     root.child[1] = &leaf2;
 
     /* Verify payload retrieval through 2-3 tree traversal */
-    bool retrieved_ok = (strcmp((char*)root.child[0]->payload_low.payload_bytes, "TEDDY_BOND_SAAT") == 0 &&
+    bool retrieved_ok = (strcmp((char*)root.child[0]->payload_low.payload_bytes, "TEDDY_BEAR_BOND_SAAT") == 0 &&
                          strcmp((char*)root.child[1]->payload_low.payload_bytes, "LEED_STC_ESCROW") == 0);
 
     /* Theorem 581: In-Silicon Universal 2-3 Tree Node Hexagram Attachment Invariance */

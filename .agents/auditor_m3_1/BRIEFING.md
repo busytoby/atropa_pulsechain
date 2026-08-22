@@ -28,7 +28,7 @@ Verify the integrity of the PulseChain dashboard metrics querying implementation
 - **Phase**: reporting
 - **Checks completed**:
   - Source code analysis of 4 modified HTML files (dynamic querying validation)
-  - C code analysis of `tsfi2-deepseek/tests/test_vulkan_teddy.c` (benchmarking implementation validation)
+  - C code analysis of `tsfi2-deepseek/tests/test_vulkan_teddy_bear.c` (benchmarking implementation validation)
   - Python code analysis of `tests/e2e/test_dashboard_container.py` (E2E assertions validation)
 - **Checks remaining**:
   - Write handoff.md

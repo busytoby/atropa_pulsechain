@@ -1,7 +1,7 @@
 # Victory Audit Handoff Report
 
 ## 1. Observation
-- **Benchmark engine hooks**: Located at `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy.c`.
+- **Benchmark engine hooks**: Located at `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`.
   - Parsed CLI argument: `strcmp(argv[idx], "--benchmark") == 0` (lines 3410–3413) sets `benchmark = true` and `headless = true`.
   - 500-frame rendering loop: Iterates 500 times, records monotonic times per frame (lines 3433–3453).
   - Audio latency recording: Measures software queue delay inside audio mixer thread loop using monotonic clocks (lines 534–539):
@@ -13,7 +13,7 @@
     ```
   - Outputs results directly to JSON at `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/benchmark_results.json` (lines 3456–3507).
   - Includes a headless/CI fallback to mock ALSA if the sound card device cannot be opened (lines 484–492).
-- **Benchmark runner script**: Located at `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh`. Correctly automates compilation and running of `./bin/test_vulkan_teddy --benchmark`.
+- **Benchmark runner script**: Located at `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh`. Correctly automates compilation and running of `./bin/test_vulkan_teddy_bear --benchmark`.
 - **Report generator script**: Located at `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/generate_report.py`.
   - Correctly reads `benchmark_results.json` and writes to `benchmark_report.html` (lines 1280–1329).
   - Formats JS variable `const BENCHMARK_DATA = {serialized_data};` using python string interpolation (line 470).
@@ -26,7 +26,7 @@
 
 ## 2. Logic Chain
 - The requirements in `ORIGINAL_REQUEST.md` require timing hooks in the C codebase, an automation script, a Python visual report generator, and a self-contained, interactive HTML Canvas report.
-- Visual inspection of `test_vulkan_teddy.c` confirms timing hooks compute frame render times and audio thread latency, writing them dynamically to a JSON file.
+- Visual inspection of `test_vulkan_teddy_bear.c` confirms timing hooks compute frame render times and audio thread latency, writing them dynamically to a JSON file.
 - Visual inspection of `run_benchmarks.sh` confirms it compiles and runs the benchmark target.
 - Visual inspection of `generate_report.py` confirms it reads the JSON results and generates a self-contained HTML file.
 - Grep checks confirm no external CDNs or resources are loaded in `benchmark_report.html`.

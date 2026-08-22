@@ -620,7 +620,7 @@ function renderSynthHardwareDeck() {
                 topology: "4-Pole Diode-Ladder Lowpass Filter Cascade",
                 saturation: "Triode Valve emulation / non-linear tanhf saturation",
                 features: "Exponential RC slide glide loop & VCA decay envelope",
-                status: "ACTIVE (TEDDY 303)",
+                status: "ACTIVE (TEDDY_BEAR 303)",
                 glow: "#32ff6a",
                 desc: "Models individual capacitor discharge loops and internal diode forward resistance to replicate authentic 24dB/oct acid resonance."
             },

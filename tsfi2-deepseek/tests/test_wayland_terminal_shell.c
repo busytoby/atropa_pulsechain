@@ -1067,7 +1067,7 @@ static inline float smin(float a, float b, float k) {
     return fminf(a, b) - h * h * k * 0.25f;
 }
 
-static float sdf_teddy(float x, float y, float z) {
+static float sdf_teddy_bear(float x, float y, float z) {
     float d_body = sqrtf(x*x*1.2f + y*y*0.8f + z*z*1.2f) - 0.35f;
     float d_head = sqrtf(x*x + (y - 0.35f)*(y - 0.35f) + z*z) - 0.25f;
     float ex = fabsf(x) - 0.2f, ey = y - 0.55f, ez = z;
@@ -1151,7 +1151,7 @@ static float eval_sdf(const char *query, float x, float y, float z) {
     } else if (strcasestr(query, "car") || strcasestr(query, "drive") || strcasestr(query, "vehicle")) {
         return sdf_car(x, y, z);
     } else {
-        return sdf_teddy(x, y, z);
+        return sdf_teddy_bear(x, y, z);
     }
 }
 

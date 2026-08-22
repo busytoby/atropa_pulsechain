@@ -1161,11 +1161,11 @@ void render_terminal_display(void) {
         } else if (gp.type == GFX_PMG_PLAYER) {
             int pidx = gp.r;
             int dx = 0, dy = 0;
-            const char *q_name = "teddy";
+            const char *q_name = "teddy_bear";
             if (pidx == 0) {
                 dx = (int)vm_peek(&vm, 55051);
                 dy = (int)vm_peek(&vm, 55052);
-                q_name = "teddy";
+                q_name = "teddy_bear";
             } else if (pidx == 1) {
                 dx = (int)vm_peek(&vm, 55055);
                 dy = (int)vm_peek(&vm, 55056);

@@ -21,7 +21,7 @@ Instead of computing all details mathematically, we use standard texture maps:
 ---
 
 ## 🧬 3. Mapping DNA to the 3D Model
-We map our 12-byte `TsfiTeddyDna` genome directly to the skeleton bone transforms and material properties in real-time:
+We map our 12-byte `TsfiTeddyBearDna` genome directly to the skeleton bone transforms and material properties in real-time:
 
 | DNA Gene | 3D Engine Mapping | Implementation Method |
 | :--- | :--- | :--- |
@@ -40,7 +40,7 @@ The rendering engine is updated to support standard 3D structures:
 graph TD
     A[glTF Asset File] -->|cgltf Parser| B[Mesh, Skeleton & Texture Data]
     B -->|Vertex Buffer| C[Vulkan GPU Buffers]
-    D[TsfiTeddyDna Genome] -->|Bone Matrix Compute| E[Uniform Buffer Object]
+    D[TsfiTeddyBearDna Genome] -->|Bone Matrix Compute| E[Uniform Buffer Object]
     C --> F[Vulkan Vertex Shader]
     E --> F
     F -->|Skeletal Skinning + Fur Extrusion| G[Vulkan Fragment Shader]

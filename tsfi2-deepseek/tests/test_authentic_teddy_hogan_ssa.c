@@ -32,7 +32,7 @@ int main(void) {
     auncient_bridge_dna_to_ssa(&newborn_material, ssn_out, site_out, sizeof(site_out));
 
     printf("1. Authentic SSA Registration (auncient_bridge_dna_to_ssa):\n");
-    printf("   Teddy DNA Seed:     %lu\n", (unsigned long)newborn_material.seed);
+    printf("   TeddyBear DNA Seed:     %lu\n", (unsigned long)newborn_material.seed);
     printf("   SSN Issued:         %s\n", ssn_out);
     printf("   Regional SSA Site:  %s\n", site_out);
 
@@ -64,7 +64,7 @@ int main(void) {
     // Maintain: Execute statutory overnight batch reconciliation & persistence to .dat.bin
     printf("   ✓ Running Hogan overnight GL reconciliation epoch transition (Epoch %u -> %u)...\n",
            hogan_sys.current_epoch, hogan_sys.current_epoch + 1);
-    assert(tsfi_hogan_overnight_reconciliation(&hogan_sys, "teddy_hogan_lfs.dat.bin") == 0);
+    assert(tsfi_hogan_overnight_reconciliation(&hogan_sys, "teddy_bear_hogan_lfs.dat.bin") == 0);
     assert(hogan_sys.current_epoch == 2);
 
     // Verify post-settlement balances and conservation within the Hogan software system
@@ -75,7 +75,7 @@ int main(void) {
     printf("   ✓ Double-entry balance conservation verified (Total Supply = 1,500,000 Saat).\n");
 
     // Clean up temporary LFS file
-    remove("teddy_hogan_lfs.dat.bin");
+    remove("teddy_bear_hogan_lfs.dat.bin");
 
     // 4. Record and Seal Resolution on Chancery Docket
     printf("\n3. Recording Resolution on Chancery Docket:\n");

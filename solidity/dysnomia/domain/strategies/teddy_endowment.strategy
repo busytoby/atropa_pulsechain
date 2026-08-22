@@ -1,11 +1,11 @@
 IDENTIFICATION DIVISION.
-PROGRAM-ID. PROG-TEDDY-ENDOWMENT.
+PROGRAM-ID. PROG-TEDDY_BEAR-ENDOWMENT.
 
 PROCEDURE DIVISION.
 
-^{:wmq-job "TEDDYJOB"
+^{:wmq-job "TEDDY_BEARJOB"
   :wmq-compiler "FOLKLORE"
-  :wmq-mount "TEDDY"
+  :wmq-mount "TEDDY_BEAR"
   :wmq-author "HOGAN"
   :wmq-params {:tin 950000000 :ssn 050051122}}
 

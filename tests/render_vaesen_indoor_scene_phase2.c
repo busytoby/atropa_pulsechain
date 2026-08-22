@@ -47,9 +47,9 @@ typedef struct {
 	double stiffness;
 	double fur_roughness;
 	double rgb_tint[3];
-} teddy_geometry_t;
+} teddy_bear_geometry_t;
 
-static void resolve_teddy_personality(tomie_personality_type_t p_type, teddy_geometry_t *geom)
+static void resolve_teddy_bear_personality(tomie_personality_type_t p_type, teddy_bear_geometry_t *geom)
 {
 	switch (p_type) {
 	case PERSONALITY_TRUSTWORTHY:
@@ -177,8 +177,8 @@ int main(void)
 
 		/* ToMiE Personality Transition */
 		tomie_personality_type_t p_type = (tomie_personality_type_t)((int)(t / 1.5) % 4);
-		teddy_geometry_t geom;
-		resolve_teddy_personality(p_type, &geom);
+		teddy_bear_geometry_t geom;
+		resolve_teddy_bear_personality(p_type, &geom);
 
 		/* Background: Hardwood Floor + Studio Backdrop Wall */
 		for (int y = 0; y < HEIGHT; y++) {

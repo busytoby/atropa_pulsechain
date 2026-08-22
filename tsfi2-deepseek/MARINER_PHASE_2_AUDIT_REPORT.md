@@ -32,7 +32,7 @@ During the Phase 2 execution cycle, the system has advanced beyond static negati
 * **Audit Result**: 
   - Newborn Teddy Bear DNA seed (`42`) deterministically resolved via `auncient_bridge_dna_to_ssa` to SSN `007-12-3456` and Regional IMF Site `Maine`.
   - Provisioned and validated directly within the live `hogan_umbrella_system` state machine.
-  - Executed compliant multi-VM transactions (250,000 Saat transfer) and statutory overnight GL batch reconciliation (`teddy_hogan_lfs.dat.bin`), verifying 100% balance conservation ($1,500,000\text{ Saat}$ total).
+  - Executed compliant multi-VM transactions (250,000 Saat transfer) and statutory overnight GL batch reconciliation (`teddy_bear_hogan_lfs.dat.bin`), verifying 100% balance conservation ($1,500,000\text{ Saat}$ total).
 * **Chancery Filing**: Settled under Docket #7003.
 
 ### C. vDSO Zero-Context-Switch Working Stack (Rule 11)
@@ -65,7 +65,7 @@ During the Phase 2 execution cycle, the system has advanced beyond static negati
 
 1. **Child-Langmuir Space-Charge Ban (Rule 12)**: 0 empirical power laws introduced; continuous non-preferential accumulator models enforced.
 2. **Prohibited Terminology Ban (Rule 18)**: 0 occurrences of prohibited terms in active operational paths; all replaced by non-preferential 3-term orthogonal recurrences.
-3. **No Mocking Mandate (Rule 7)**: All test suites (`test_authentic_teddy_hogan_ssa`, `test_zorse_vdso_hogan_units`, `test_motzkin_recurrence_handshake`) execute against live system structures and real TLS sockets.
+3. **No Mocking Mandate (Rule 7)**: All test suites (`test_authentic_teddy_bear_hogan_ssa`, `test_zorse_vdso_hogan_units`, `test_motzkin_recurrence_handshake`) execute against live system structures and real TLS sockets.
 
 ---
 

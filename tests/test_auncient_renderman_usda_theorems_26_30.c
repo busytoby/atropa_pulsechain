@@ -21,14 +21,14 @@ int main(void) {
     printf("TEST PROVER: PIXAR RENDERMAN USDA THEOREMS 26 THROUGH 30        \n");
     printf("=================================================================\n");
 
-    TeddyBearHeartUsdaAsset teddy;
-    auncient_teddy_bear_heart_init(&teddy, 0xFEEDBEEF);
-    auncient_teddy_bear_heart_update_environment(&teddy, 23.0f, 50.0f, 500.0f, 0.15f);
+    TeddyBearHeartUsdaAsset teddy_bear;
+    auncient_teddy_bear_heart_init(&teddy_bear, 0xFEEDBEEF);
+    auncient_teddy_bear_heart_update_environment(&teddy_bear, 23.0f, 50.0f, 500.0f, 0.15f);
 
     RenderManRibState rib;
     auncient_renderman_rib_init(&rib);
 
-    bool ok = auncient_renderman_verify_theorems_26_30(&rib, &teddy);
+    bool ok = auncient_renderman_verify_theorems_26_30(&rib, &teddy_bear);
     assert(ok);
 
     /* Theorem 26 Verification */

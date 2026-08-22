@@ -7,7 +7,7 @@ Building complex 3D stuffed teddy bear geometries (evaluating millions of hair/f
 
 * **Genome Indexing:** Each bear genome is hashed and mapped to a coordinate leaf in the ACAB.
 * **Cache Attributes:** The coordinate stores cached shader details, bounding box calculations, and pre-computed shell counts.
-* **Fast-Path Loading:** The Vulkan renderer (`test_vulkan_teddy.c`) queries the ACAB cache. If a matching genome signature is found, the system loads the cached variables instantly, bypassing geometry recalculation and reducing frame render times.
+* **Fast-Path Loading:** The Vulkan renderer (`test_vulkan_teddy_bear.c`) queries the ACAB cache. If a matching genome signature is found, the system loads the cached variables instantly, bypassing geometry recalculation and reducing frame render times.
 
 ## 2. Preference Ranking System
 To assist users in rapidly selecting complex bears from millions of variations, the system maintains a decentralized, proof-of-activity ranking registry:

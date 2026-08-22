@@ -2,15 +2,15 @@ begin
   comment Auncient Teddy Bear Heart to RenderMan PageTurner Bridge Formal Prover;
   comment Asserts Live Cardiac Pulsation Coupling, Viscoelastic Page Curl Modulation, and Rasterization Parity;
 
-  integer tpaBase, teddyHeartOk, rendermanOk, cardiacBound, rasterOk, bridgeWitness;
+  integer tpaBase, teddy_bearHeartOk, rendermanOk, cardiacBound, rasterOk, bridgeWitness;
 
   tpaBase := 256;
-  teddyHeartOk := 1;
+  teddy_bearHeartOk := 1;
   rendermanOk := 1;
   cardiacBound := 1;
   rasterOk := 1;
 
-  if tpaBase = 256 and teddyHeartOk = 1 and rendermanOk = 1 and cardiacBound = 1 and rasterOk = 1 then
+  if tpaBase = 256 and teddy_bearHeartOk = 1 and rendermanOk = 1 and cardiacBound = 1 and rasterOk = 1 then
     bridgeWitness := 1000777000 + 320240
   else
     bridgeWitness := 0

@@ -9,7 +9,7 @@ The system represents the teddy bear character as a unified Pixar USD `SkelRoot`
 
 ```usd
 def SkelRoot "TeddyBearSkelCharacter" (
-    inherits = </AuncientTeddySchema>
+    inherits = </AuncientTeddyBearSchema>
 )
 ```
 
@@ -42,7 +42,7 @@ Joint transforms are written out as time-sampled coordinates mapping to the anim
 * **Translation Samples**: `double3 xformOp:translate.timeSamples`
 * **Rotation Samples**: `double3 xformOp:rotateXYZ.timeSamples`
 
-The walking geometry ([generate_usd_teddy_walk.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/generate_usd_teddy_walk.py)) calculates these samples using periodic sine/cosine transformations to simulate joint swings, torso rolls, and knee bends over a 24-second cycle.
+The walking geometry ([generate_usd_teddy_bear_walk.py](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/scripts/generate_usd_teddy_bear_walk.py)) calculates these samples using periodic sine/cosine transformations to simulate joint swings, torso rolls, and knee bends over a 24-second cycle.
 
 ---
 

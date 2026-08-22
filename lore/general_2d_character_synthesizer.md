@@ -9,7 +9,7 @@ The procedural DNA structures established in the **Dragon's Lair** pipeline prov
 
 To support a wide range of character archetypes, the 31-byte DNA record is interpreted polymorphically depending on the active **Character Profile**:
 
-| Offset | Standard DNA Field | Red Dragon Profile | Teddy Knight Profile | Cave Beast Profile |
+| Offset | Standard DNA Field | Red Dragon Profile | TeddyBear Knight Profile | Cave Beast Profile |
 | :--- | :--- | :--- | :--- | :--- |
 | **0** | `g_x` (float) | Horizontal displacement | Running/crouching offset | Charging velocity |
 | **4** | `g_y` (float) | Vertical breath bobbing | Jump height/leap altitude | Heavy stomp vibration |

@@ -25,14 +25,14 @@ To perform E2E testing of Git commit hooks without polluting or introducing side
 To ensure test isolation, rapid feedback (milliseconds vs. minutes), and ease of boundary-case injection, the test runner must support two execution modes:
 
 - **Mock Build Mode (Default)**:
-  - Writes a mock `Makefile` into `<sandbox>/tsfi2-deepseek/Makefile`. The target `bin/test_vulkan_teddy` compiles a small mock executable or copies a shell script.
+  - Writes a mock `Makefile` into `<sandbox>/tsfi2-deepseek/Makefile`. The target `bin/test_vulkan_teddy_bear` compiles a small mock executable or copies a shell script.
   - Writes a mock `run_benchmarks.sh` that checks environment variables, outputs a predefined `benchmark_results.json`, and appends environment states to `env_check.log`.
   - Copy or symlink the real `generate_report.py` (since it is a Python script that runs instantly and handles missing JSON files gracefully by entering fallback mode).
   - Enables injecting compile errors (by forcing mock `make` to exit with status 2) and benchmark crashes (by forcing the mock binary to exit with status 139).
 
 - **Real Build Mode (`--real-build` flag)**:
   - Symlinks or copies the real directories (`src/`, `inc/`, `plugins/`, `tests/`, `assets/`, `tsfi2-deepseek/`) from the current workspace into the sandbox.
-  - Uses the real compiler and Vulkan build dependencies to build `bin/test_vulkan_teddy` and run the full benchmark.
+  - Uses the real compiler and Vulkan build dependencies to build `bin/test_vulkan_teddy_bear` and run the full benchmark.
 
 ---
 
@@ -48,7 +48,7 @@ To ensure test isolation, rapid feedback (milliseconds vs. minutes), and ease of
 5. `test_hook_triggers_on_amend`: Amend a commit and verify the hook triggers.
 
 #### Feature 2: Benchmark Execution
-6. `test_benchmark_compilation_triggered`: Verify that `make bin/test_vulkan_teddy` is executed during the hook run.
+6. `test_benchmark_compilation_triggered`: Verify that `make bin/test_vulkan_teddy_bear` is executed during the hook run.
 7. `test_benchmark_script_triggered`: Verify that `run_benchmarks.sh` is executed.
 8. `test_benchmark_creates_json_output`: Verify that `benchmark_results.json` is generated in `tsfi2-deepseek/benchmarks/profiler_suite/`.
 9. `test_benchmark_binary_arguments`: Verify that the binary is invoked with the `--benchmark` flag.
@@ -82,7 +82,7 @@ To ensure test isolation, rapid feedback (milliseconds vs. minutes), and ease of
 #### Feature 2: Benchmark Execution
 6. `test_compilation_failure_graceful`: Mock a compilation failure (e.g. `make` exits with status 2). Verify that the commit is NOT aborted (post-commit cannot abort, but verify it returns cleanly and doesn't block the user's shell/process).
 7. `test_compilation_failure_logs`: Verify that compilation errors are logged/printed to stderr or a log file for debugging.
-8. `test_benchmark_crash_graceful`: Mock `bin/test_vulkan_teddy` crashing (exits with non-zero status). Verify the hook handles it gracefully, prints a warning, and continues.
+8. `test_benchmark_crash_graceful`: Mock `bin/test_vulkan_teddy_bear` crashing (exits with non-zero status). Verify the hook handles it gracefully, prints a warning, and continues.
 9. `test_benchmark_results_json_unwritable`: Make the directory for JSON read-only or remove permissions. Verify that the hook handles the write failure gracefully.
 10. `test_missing_make_utility`: Mock `make` missing from the system (or not executable). Verify the hook reports this but does not crash the commit workflow.
 
@@ -201,14 +201,14 @@ class GitSandbox:
     def _setup_mock_project(self):
         # Create mock Makefile
         makefile_content = (
-            "bin/test_vulkan_teddy:\n"
+            "bin/test_vulkan_teddy_bear:\n"
             "\tmkdir -p bin\n"
-            "\techo '#!/bin/sh' > bin/test_vulkan_teddy\n"
-            "\techo 'echo \"GIT_DIR=$GIT_DIR\" >> env_check.log' >> bin/test_vulkan_teddy\n"
-            "\techo 'echo \"GIT_WORK_TREE=$GIT_WORK_TREE\" >> env_check.log' >> bin/test_vulkan_teddy\n"
-            "\techo 'echo \"GIT_INDEX_FILE=$GIT_INDEX_FILE\" >> env_check.log' >> bin/test_vulkan_teddy\n"
+            "\techo '#!/bin/sh' > bin/test_vulkan_teddy_bear\n"
+            "\techo 'echo \"GIT_DIR=$GIT_DIR\" >> env_check.log' >> bin/test_vulkan_teddy_bear\n"
+            "\techo 'echo \"GIT_WORK_TREE=$GIT_WORK_TREE\" >> env_check.log' >> bin/test_vulkan_teddy_bear\n"
+            "\techo 'echo \"GIT_INDEX_FILE=$GIT_INDEX_FILE\" >> env_check.log' >> bin/test_vulkan_teddy_bear\n"
             "\tcat ../mock_results_normal.json > benchmarks/profiler_suite/benchmark_results.json\n"
-            "\tchmod +x bin/test_vulkan_teddy\n"
+            "\tchmod +x bin/test_vulkan_teddy_bear\n"
         )
         with open(self.sandbox_path / "tsfi2-deepseek/Makefile", "w") as f:
             f.write(makefile_content)
@@ -217,7 +217,7 @@ class GitSandbox:
         run_benchmarks_content = (
             "#!/bin/bash\n"
             "cd ../..\n"
-            "make bin/test_vulkan_teddy\n"
+            "make bin/test_vulkan_teddy_bear\n"
         )
         run_benchmarks_path = self.sandbox_path / "tsfi2-deepseek/benchmarks/profiler_suite/run_benchmarks.sh"
         with open(run_benchmarks_path, "w") as f:
@@ -268,7 +268,7 @@ unset GIT_INDEX_FILE
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT/tsfi2-deepseek" || exit 1
 
-make bin/test_vulkan_teddy > compile.log 2>&1
+make bin/test_vulkan_teddy_bear > compile.log 2>&1
 if [ $? -ne 0 ]; then
     echo "[ERROR] Compilation failed."
     exit 0
@@ -317,7 +317,7 @@ class TestTier2Boundaries(unittest.TestCase):
     def test_compilation_failure_graceful(self):
         with GitSandbox() as sandbox:
             # Inject compilation failure in Makefile
-            bad_makefile = "bin/test_vulkan_teddy:\n\treturn 2\n"
+            bad_makefile = "bin/test_vulkan_teddy_bear:\n\treturn 2\n"
             with open(sandbox.sandbox_path / "tsfi2-deepseek/Makefile", "w") as f:
                 f.write(bad_makefile)
             

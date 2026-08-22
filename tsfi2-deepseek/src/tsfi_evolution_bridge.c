@@ -53,7 +53,7 @@ void tsfi_resolve_fault_autonomous(void *manifold_shm, VulkanContext *vk) {
             tsfi_evolve_auncient_fault(manifold_shm, current_energy);
         } else {
             // 3. Perform K0Rn Evolutionary Step for general SVDAGs
-            K0RnStream *genome = tsfi_k0rn_compile_teddy(); 
+            K0RnStream *genome = tsfi_k0rn_compile_teddy_bear(); 
             if (genome) {
                 uint64_t fault_sig = *(uint64_t*)(leaf502 + 40);
                 float aggressiveness = (float)(fault_sig % 100) / 100.0f;

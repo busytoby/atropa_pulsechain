@@ -2,15 +2,15 @@ begin
   comment CP/M-Tomie Advanced Hardware, Physical & Civic Protocol Qualification Prover;
   comment Audits Rule 5 (Keycodes 30/32), Rule 10 (FET Verlet Solvers), Rule 11 (Aho-Corasick Latency), Rule 12 (Non-Preferential Accumulator), and Rule 16 (Teddy Bear Endowment);
 
-  integer yulScsiKeycodes, dischargeFetVerlet, teddyEndowmentSaat, ahoCorasickSubUs, noChildLangmuir, advancedQualMet;
+  integer yulScsiKeycodes, dischargeFetVerlet, teddy_bearEndowmentSaat, ahoCorasickSubUs, noChildLangmuir, advancedQualMet;
 
   yulScsiKeycodes := 1;
   dischargeFetVerlet := 1;
-  teddyEndowmentSaat := 1;
+  teddy_bearEndowmentSaat := 1;
   ahoCorasickSubUs := 1;
   noChildLangmuir := 1;
 
-  if yulScsiKeycodes = 1 and dischargeFetVerlet = 1 and teddyEndowmentSaat = 1 and
+  if yulScsiKeycodes = 1 and dischargeFetVerlet = 1 and teddy_bearEndowmentSaat = 1 and
      ahoCorasickSubUs = 1 and noChildLangmuir = 1 then
     advancedQualMet := 1470169088 + 765432
   else

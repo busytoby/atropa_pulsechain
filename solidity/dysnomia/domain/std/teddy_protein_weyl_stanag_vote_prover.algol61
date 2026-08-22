@@ -13,7 +13,7 @@ begin
   comment 5. Qualifying Teddy Bear Clan Fellowship Voting Authority with 1,000,000 Saat baseline (Rule 16),;
   comment 6. Zero-Loss ReBAR Shadow Rollback: Any quorum shortfall or protein fold divergence restores shadow baseline (delta_Saat = 0).;
 
-  integer procedure verify_teddy_protein_weyl_stanag_vote(
+  integer procedure verify_teddy_bear_protein_weyl_stanag_vote(
     stanag_quorum_pct,
     protein_fold_parity_milli,
     weyl_differential_rank,
@@ -25,7 +25,7 @@ begin
   integer stanag_quorum_pct, protein_fold_parity_milli, weyl_differential_rank, cics_writer_id, simulate_fault, k_param;
   begin
     comment Classification Ruling:
-            0 = QUALIFIED_ORBITAL_HANDSHAKE (Teddy Protein Weyl STANAG Vote Formally Proven)
+            0 = QUALIFIED_ORBITAL_HANDSHAKE (TeddyBear Protein Weyl STANAG Vote Formally Proven)
             1 = INVALID_K_EXPONENT (k must be 3)
             2 = QUORUM_BELOW_SUPERMAJORITY (quorum must be in [67..100] pct)
             3 = PROTEIN_FOLD_PARITY_LOW (parity must be in [850..1000] milli-units)
@@ -44,32 +44,32 @@ begin
 
     if k_param != 3 then
       begin
-        verify_teddy_protein_weyl_stanag_vote := 1;
+        verify_teddy_bear_protein_weyl_stanag_vote := 1;
         go to end_stn_proc;
       end;
 
     if stanag_quorum_pct < 67 or stanag_quorum_pct > 100 then
       begin
-        verify_teddy_protein_weyl_stanag_vote := 2;
+        verify_teddy_bear_protein_weyl_stanag_vote := 2;
         go to end_stn_proc;
       end;
 
     if protein_fold_parity_milli < 850 or protein_fold_parity_milli > 1000 then
       begin
-        verify_teddy_protein_weyl_stanag_vote := 3;
+        verify_teddy_bear_protein_weyl_stanag_vote := 3;
         go to end_stn_proc;
       end;
 
     if weyl_differential_rank < 1 or weyl_differential_rank > 8 then
       begin
-        verify_teddy_protein_weyl_stanag_vote := 4;
+        verify_teddy_bear_protein_weyl_stanag_vote := 4;
         go to end_stn_proc;
       end;
 
     comment Validate Qualifying CICS SSA Citizen;
     if cics_writer_id != 555 and cics_writer_id != 888 and cics_writer_id != 99 and cics_writer_id != 42 and cics_writer_id != 0x4001 then
       begin
-        verify_teddy_protein_weyl_stanag_vote := 5;
+        verify_teddy_bear_protein_weyl_stanag_vote := 5;
         go to end_stn_proc;
       end;
 
@@ -79,7 +79,7 @@ begin
     stn_vitality_metric := ((stn_composite_metric / 4) + (protein_fold_parity_milli / 4) + (stanag_quorum_pct * 2) + 1);
     if stn_vitality_metric <= 0 then
       begin
-        verify_teddy_protein_weyl_stanag_vote := 6;
+        verify_teddy_bear_protein_weyl_stanag_vote := 6;
         go to end_stn_proc;
       end;
 
@@ -99,13 +99,13 @@ begin
       begin
         committed_output := shadow_stn_base - 1163;
         disp_wrap := (committed_output + 1163) - (256 * ((committed_output + 1163) / 256));
-        verify_teddy_protein_weyl_stanag_vote := 0;
+        verify_teddy_bear_protein_weyl_stanag_vote := 0;
         go to end_stn_proc;
       end;
 
     committed_output := shadow_stn_base;
     disp_wrap := committed_output - (256 * (committed_output / 256));
-    verify_teddy_protein_weyl_stanag_vote := 0;
+    verify_teddy_bear_protein_weyl_stanag_vote := 0;
 
   end_stn_proc:
   end;

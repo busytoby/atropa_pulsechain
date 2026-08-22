@@ -337,7 +337,7 @@ function main() {
         }
     }
 
-    const wavPath = path.join(__dirname, "../teddy303_808_booty_bass.wav");
+    const wavPath = path.join(__dirname, "../teddy_bear303_808_booty_bass.wav");
     const buffer = writeWavFile(audioBuffer);
     fs.writeFileSync(wavPath, buffer);
     console.log(`✓ Structured Booty Bass track successfully generated at: ${wavPath}`);

@@ -29,7 +29,7 @@ Operating across our **4 Hermetic Closed-Grid Boundaries** and **8-Layer CP/M-To
 |                            [ SOURCE COMPILED BINARIES (.bin) ]                        |
 |  - hello.bin (26 B)        --> b_1 = 592,805,205,854,186                              |
 |  - tune_channel.bin (74 B) --> b_2 = 497,251,479,899,672                              |
-|  - teddy_endow.bin (102 B) --> b_3 =  50,665,982,771,221                              |
+|  - teddy_bear_endow.bin (102 B) --> b_3 =  50,665,982,771,221                              |
 +=======================================================================================+
                                            |
                                 (Coaxial Cable Ingestion)

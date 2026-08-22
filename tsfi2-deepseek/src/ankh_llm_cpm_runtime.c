@@ -93,7 +93,7 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
         .fourcc_str = "CPT8",
         .opcode_signature = 0x43505438,
-        .title = "CPMTOMIE-TEDDY-SUPER8-AUTONOMOUS-CORPS",
+        .title = "CPMTOMIE-TEDDY_BEAR-SUPER8-AUTONOMOUS-CORPS",
         .theorem_descriptions = {
             "Autonomous Kinematic Camera Chassis Assembly Invariance",
             "Spring-Wound Clockwork Shutter & Claw Mechanism Invariance",
@@ -1137,7 +1137,7 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
         .fourcc_str = "CPHT",
         .opcode_signature = 0x43504854,
-        .title = "CPMTOMIE-HOGAN-SSA-TEDDY-CORPS",
+        .title = "CPMTOMIE-HOGAN-SSA-TEDDY_BEAR-CORPS",
         .theorem_descriptions = {
             "DNA Seed to SSA Deterministic SSN Bridge",
             "Hogan Bank Account & 1,000,000 Saat Endowment",
@@ -1761,7 +1761,7 @@ static const AnkhCpmEntryDef g_cpm_entries[] = {
     {
         .fourcc_str = "TEDY",
         .opcode_signature = 0x54454459,
-        .title = "ANKH-LLM-TEDDY-BEAR-ENDOWMENT-CORPS",
+        .title = "ANKH-LLM-TEDDY_BEAR-BEAR-ENDOWMENT-CORPS",
         .theorem_descriptions = {
             "Newborn Teddy Bear DNA Bridge Mapping",
             "Deterministic SSN SSA Verification",

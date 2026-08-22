@@ -75,7 +75,7 @@ This document indexes, counts, and provides minimal documentation for **all 46 g
 ### 1.14 🧸 3D Teddy Bear Tournament Visualizer
 * **Description**: Visual system check mapping 3D coordinate matrices and movement sequences.
 * **Emulation Hook**: Computes position transformations and frame loop updates.
-* **Source**: [test_wayland_teddy.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_wayland_teddy.c) / [test_wayland_teddy_standalone.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_wayland_teddy_standalone.c)
+* **Source**: [test_wayland_teddy_bear.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_wayland_teddy_bear.c) / [test_wayland_teddy_bear_standalone.c](file:///home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_wayland_teddy_bear_standalone.c)
 
 ---
 

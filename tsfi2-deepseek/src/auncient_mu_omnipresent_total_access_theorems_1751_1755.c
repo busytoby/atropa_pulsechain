@@ -40,7 +40,7 @@ bool auncient_mu_omnipresent_total_access_verify_theorems_1751_1755(MuLlmOmnipre
     otas.profile.total_access_polyphase_stator = true;
     otas.profile.total_access_deepseek_mla = true;
     otas.profile.total_access_kermit_vsen = true;
-    otas.profile.total_access_teddy_hogan = true;
+    otas.profile.total_access_teddy_bear_hogan = true;
     otas.profile.canonical_yi_hexagram_nodes = 64;
     otas.profile.nonpref_accumulator_partitions = 32768;
     otas.profile.io1_formal_pass_verified = true;
@@ -56,7 +56,7 @@ bool auncient_mu_omnipresent_total_access_verify_theorems_1751_1755(MuLlmOmnipre
                     otas.profile.total_access_polyphase_stator &&
                     otas.profile.total_access_deepseek_mla &&
                     otas.profile.total_access_kermit_vsen &&
-                    otas.profile.total_access_teddy_hogan &&
+                    otas.profile.total_access_teddy_bear_hogan &&
                     otas.profile.canonical_yi_hexagram_nodes == 64 &&
                     otas.profile.nonpref_accumulator_partitions >= 32768 &&
                     otas.profile.io1_formal_pass_verified &&

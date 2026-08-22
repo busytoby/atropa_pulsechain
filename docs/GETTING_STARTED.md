@@ -47,7 +47,7 @@ To generate compiled genomic binary assets (e.g. for character animations in the
 ```bash
 python3 compile_dna.py
 ```
-* **Options**: Modify the active preset by updating the `ACTIVE_PRESET` parameter in `compile_dna.py` (options: `slugcat` or `teddy`).
+* **Options**: Modify the active preset by updating the `ACTIVE_PRESET` parameter in `compile_dna.py` (options: `slugcat` or `teddy_bear`).
 * **Output**: Writes the binary file `tsfi2-deepseek/assets/atropa.dna` (334,816 bytes) containing a 16-byte header followed by 10,800 frames of packed coordinates.
 
 ---

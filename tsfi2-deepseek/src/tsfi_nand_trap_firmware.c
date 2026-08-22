@@ -68,9 +68,9 @@ typedef struct {
     float body_y, body_r;
     float ear_y, ear_r, ear_x_off;
     float stretch_k, gx_k;
-} TeddyGenome;
+} TeddyBearGenome;
 
-static const TeddyGenome GENOMES[4] = {
+static const TeddyBearGenome GENOMES[4] = {
     {0.4f, 0.6f, 0.02f, 0.045f, 0.5f, 0.2f, 0.75f, 0.25f, 0.25f, 0.075f, 0.15f, 0.1f, 0.05f},
     {0.45f, 0.65f, 0.02f, 0.045f, 0.55f, 0.2f, 0.8f, 0.25f, 0.3f, 0.075f, 0.15f, 0.2f, 0.1f},
     {0.3f, 0.5f, 0.02f, 0.045f, 0.4f, 0.2f, 0.7f, 0.3f, 0.2f, 0.075f, 0.15f, 0.05f, 0.02f},
@@ -82,7 +82,7 @@ static inline float smin(float a, float b, float k) {
     return fminf(a, b) - h * h * k * 0.25f;
 }
 
-static inline float ricci_density_field(float px, float py, float pz, const TeddyGenome *g, float c, float s) {
+static inline float ricci_density_field(float px, float py, float pz, const TeddyBearGenome *g, float c, float s) {
     // 16-inch Scale Normalization
     float dx = px - 0.5f, dy = py - g->body_y, dz = pz;
     
@@ -109,9 +109,9 @@ static inline float ricci_density_field(float px, float py, float pz, const Tedd
     return res;
 }
 
-void render_nand_trap_teddy(uint32_t *pixels, int frame, int genome_idx, const NandTrapState *state) {
+void render_nand_trap_teddy_bear(uint32_t *pixels, int frame, int genome_idx, const NandTrapState *state) {
     (void)state;
-    const TeddyGenome *g = &GENOMES[genome_idx % 4];
+    const TeddyBearGenome *g = &GENOMES[genome_idx % 4];
     float u = (float)frame * 0.01f, cornu_c = internal_fresnel_c(u), cornu_s = internal_fresnel_s(u);
     for (int y = 0; y < 256; y++) {
         for (int x = 0; x < 256; x++) {
@@ -185,7 +185,7 @@ void generate_nand_trap_frame(uint8_t* out, int frame, int genome, const uint8_t
     tsfi_nand_trap_autonomous_step(st, 0.05f); NandTrapState s; tsfi_nand_trap_restore(st, &s);
     
     // 2. High-Speed Geometry Updates
-    render_nand_trap_teddy(q1, frame, genome, &s); 
+    render_nand_trap_teddy_bear(q1, frame, genome, &s); 
     render_ricci_skeleton(q2, &s); 
     render_kinematic_heatmap(q3, frame, genome);
     

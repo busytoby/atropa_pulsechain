@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-float tsfi_eval_teddy_fitness(const TSFiResonanceAnalysis *vision, float mass_density);
+float tsfi_eval_teddy_bear_fitness(const TSFiResonanceAnalysis *vision, float mass_density);
 bool tsfi_pipeline_archive_candidate(const char *id, void *pixels, size_t pix_size, void *latents, size_t lat_size, float score);
 
 // Autonomy: Fault-to-Evolution Bridge

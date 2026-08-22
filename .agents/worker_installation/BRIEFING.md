@@ -20,11 +20,11 @@ Install the git post-commit hook and verify the benchmark CI pipeline.
 - Updated: 2026-06-14T16:53:30Z
 
 ## Task Summary
-- **What to build**: Install git post-commit hook, run mock E2E tests, build `test_vulkan_teddy`, run real build E2E tests, trigger/simulate post-commit hook and verify output.
+- **What to build**: Install git post-commit hook, run mock E2E tests, build `test_vulkan_teddy_bear`, run real build E2E tests, trigger/simulate post-commit hook and verify output.
 - **Success criteria**:
   - `post-commit` copied and made executable.
   - Mock E2E tests pass (49 tests).
-  - `test_vulkan_teddy` compiles.
+  - `test_vulkan_teddy_bear` compiles.
   - Real build E2E tests pass/compile/execute successfully.
   - Post-commit hook executes successfully and outputs the statistics summary table on stdout.
 - **Interface contracts**: git post-commit hook interface, test run command interfaces

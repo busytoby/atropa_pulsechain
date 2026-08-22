@@ -94,7 +94,7 @@ CORE_OBJS = $(OBJ_DIR)/tsfi_wire_firmware.o $(OBJ_DIR)/tsfi_logic.o $(OBJ_DIR)/t
             $(OBJ_DIR)/tsfi_path_tracer.o \
             $(OBJ_DIR)/tsfi_montecarlo.o \
             $(OBJ_DIR)/tsfi_lnr_solvers.o \
-            $(OBJ_DIR)/auncient_teddy_personality.o \
+            $(OBJ_DIR)/auncient_teddy_bear_personality.o \
             $(OBJ_DIR)/tsfi_pbr.o \
             $(OBJ_DIR)/tsfi_hair.o \
             $(OBJ_DIR)/tsfi_merkle_fast.o $(OBJ_DIR)/tsfi_scramble_fast.o $(OBJ_DIR)/tsfi_jpeg_encoder.o \
@@ -360,7 +360,7 @@ VULKAN_PLUGIN_OBJS = $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/vulkan_main.o $(OBJ_DIR
 
 .PHONY: all clean test
 
-all: tsfi2 bin/tsfi_video_renderer bin/tsfi_paint_app bin/tsfi_mcp_server bin/tsfi_mcp_worker bin/tsfi_sd_worker bin/test_sd_thunk_execution bin/tsfi_dna_crossover tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/test_active_window_ocr bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_space_war tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_zmm_tape_verification tests/test_zmm_mvs_certification tests/test_zmm_mystery_house tests/test_shadow_registers tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator tests/test_compuserve tests/test_speech_c_controller bin/benchmark_neuro_backprop bin/benchmark_neuro_activation bin/test_wave512_asm bin/test_walsh bin/test_walsh_audio bin/test_steiner_evi bin/test_nebula bin/test_divider bin/test_serge_usg bin/test_dtl_core bin/test_delay_line bin/test_rtl_latch bin/test_shaft_encoder bin/test_core_plane bin/test_tunnel_latch bin/test_thin_film bin/test_integrated_circuit bin/test_core_rope bin/test_ttl_gate bin/test_parametron bin/test_slt bin/test_cla bin/test_plated_wire bin/test_mema bin/test_sar_adc bin/test_schmitt bin/test_diode_matrix bin/test_byte_issue21 bin/test_byte_issue22 bin/test_byte_issue23 bin/test_byte_issue24 bin/test_oregon_trail bin/test_elektuur_issue25 bin/test_prophecy_synthesis bin/test_yang_synthesis tests/test_rooted_browser_zmm tests/test_rooted_browser_wmq tests/test_rooted_browser_wmq_collision tests/test_base0_protocol tests/test_dilemma_synthesizer tests/test_bessel_zener_trapping bin/test_zmm_teddy_render bin/test_sort bin/test_graph_select tests/test_folklore_select tests/benchmark_neuro_folklore tests/test_qing_bst tests/test_qing_graph tests/test_qing_nesting tests/test_speech_trie tests/test_trie_routers tests/test_trie_to_bst tests/benchmark_neurology bin/test_formant_filter_c_rpc bin/test_ring_modulator_c_rpc bin/test_equa_amplifier_c_rpc bin/test_mostronome_c_rpc bin/test_gyrator_drum_c_rpc bin/test_germanium_stage_c_rpc bin/test_steam_whistle_c_rpc bin/rhythm_generator_c_rpc bin/compander_c_rpc bin/hysteresis_limiter_c_rpc bin/piezo_limiter_c_rpc bin/zener_dither_c_rpc bin/subharmonic_divider_c_rpc bin/wien_bridge_notch_c_rpc bin/bionika_reflex_c_rpc bin/tape_saturation_c_rpc bin/thermal_half_life_c_rpc bin/axonal_delay_c_rpc bin/vactrol_limiter_c_rpc bin/germanium_coax_string_c_rpc bin/zmm_disk_mount_c_rpc bin/test_ramac_layout bin/test_ramac_extended bin/test_ramac_extended_part2 bin/generate_mainframe_ramac_demo bin/test_mainframe_decnet bin/test_hogan_integration tests/test_nsa_tempest tests/test_mainframe_computerworld tests/test_wmq_tso_redundancy tests/test_coax_vtam_redundancy tests/test_xpl_skeleton_integration bin/test_stanag_mcp_redbox bin/test_listening_ears_security_suites bin/test_stanag4607_encoder bin/test_zmm_stanag_rollback bin/test_listening_ears_advanced_df bin/test_via6522_tdoa_fdoa bin/test_via_zmm_helmholtz_integration bin/test_stanag_mcp_spontaneous
+all: tsfi2 bin/tsfi_video_renderer bin/tsfi_paint_app bin/tsfi_mcp_server bin/tsfi_mcp_worker bin/tsfi_sd_worker bin/test_sd_thunk_execution bin/tsfi_dna_crossover tests/test_ahoy_issue1_resonance bin/test_wayland_terminal_shell bin/test_active_window_ocr bin/tsfi_font_editor bin/test_spider_registry_reap bin/test_spider_120f_reap tests/test_wayland_lunar_lander tests/test_wayland_space_war tests/test_wayland_gauntlet tests/test_wayland_yars_revenge tests/test_yars_revenge_features tests/test_zmm_cpu6502 tests/test_zmm_tape_verification tests/test_zmm_mvs_certification tests/test_zmm_mystery_house tests/test_shadow_registers tests/test_epyx_opcodes tests/test_aub_complete tests/test_wayland_sprite_editor tests/test_lode_runner tests/test_karateka tests/test_choplifter tests/test_cannonball bin/tsfi_sprite_generator tests/test_compuserve tests/test_speech_c_controller bin/benchmark_neuro_backprop bin/benchmark_neuro_activation bin/test_wave512_asm bin/test_walsh bin/test_walsh_audio bin/test_steiner_evi bin/test_nebula bin/test_divider bin/test_serge_usg bin/test_dtl_core bin/test_delay_line bin/test_rtl_latch bin/test_shaft_encoder bin/test_core_plane bin/test_tunnel_latch bin/test_thin_film bin/test_integrated_circuit bin/test_core_rope bin/test_ttl_gate bin/test_parametron bin/test_slt bin/test_cla bin/test_plated_wire bin/test_mema bin/test_sar_adc bin/test_schmitt bin/test_diode_matrix bin/test_byte_issue21 bin/test_byte_issue22 bin/test_byte_issue23 bin/test_byte_issue24 bin/test_oregon_trail bin/test_elektuur_issue25 bin/test_prophecy_synthesis bin/test_yang_synthesis tests/test_rooted_browser_zmm tests/test_rooted_browser_wmq tests/test_rooted_browser_wmq_collision tests/test_base0_protocol tests/test_dilemma_synthesizer tests/test_bessel_zener_trapping bin/test_zmm_teddy_bear_render bin/test_sort bin/test_graph_select tests/test_folklore_select tests/benchmark_neuro_folklore tests/test_qing_bst tests/test_qing_graph tests/test_qing_nesting tests/test_speech_trie tests/test_trie_routers tests/test_trie_to_bst tests/benchmark_neurology bin/test_formant_filter_c_rpc bin/test_ring_modulator_c_rpc bin/test_equa_amplifier_c_rpc bin/test_mostronome_c_rpc bin/test_gyrator_drum_c_rpc bin/test_germanium_stage_c_rpc bin/test_steam_whistle_c_rpc bin/rhythm_generator_c_rpc bin/compander_c_rpc bin/hysteresis_limiter_c_rpc bin/piezo_limiter_c_rpc bin/zener_dither_c_rpc bin/subharmonic_divider_c_rpc bin/wien_bridge_notch_c_rpc bin/bionika_reflex_c_rpc bin/tape_saturation_c_rpc bin/thermal_half_life_c_rpc bin/axonal_delay_c_rpc bin/vactrol_limiter_c_rpc bin/germanium_coax_string_c_rpc bin/zmm_disk_mount_c_rpc bin/test_ramac_layout bin/test_ramac_extended bin/test_ramac_extended_part2 bin/generate_mainframe_ramac_demo bin/test_mainframe_decnet bin/test_hogan_integration tests/test_nsa_tempest tests/test_mainframe_computerworld tests/test_wmq_tso_redundancy tests/test_coax_vtam_redundancy tests/test_xpl_skeleton_integration bin/test_stanag_mcp_redbox bin/test_listening_ears_security_suites bin/test_stanag4607_encoder bin/test_zmm_stanag_rollback bin/test_listening_ears_advanced_df bin/test_via6522_tdoa_fdoa bin/test_via_zmm_helmholtz_integration bin/test_stanag_mcp_spontaneous
 
 
 
@@ -503,7 +503,7 @@ bin/test_hogan_integration: tests/test_hogan_integration.c $(CORE_OBJS) $(OBJ_DI
 bin/test_sovereign_saat_hogan_bridge: tests/test_sovereign_saat_hogan_bridge.c src/tsfi_frejlich_domain_governance.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bin/test_authentic_teddy_hogan_ssa: tests/test_authentic_teddy_hogan_ssa.c src/tsfi_chancery_docket.c src/auncient_cloth_material_bridge.c src/cloth_simulator.c src/auncient_timeline_autodin.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+bin/test_authentic_teddy_bear_hogan_ssa: tests/test_authentic_teddy_bear_hogan_ssa.c src/tsfi_chancery_docket.c src/auncient_cloth_material_bridge.c src/cloth_simulator.c src/auncient_timeline_autodin.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_zorse_vdso_hogan_units: tests/test_zorse_vdso_hogan_units.c src/tsfi_chancery_docket.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
@@ -886,7 +886,7 @@ bin/test_active_window_ocr: tests/test_active_window_ocr.c $(CORE_OBJS) $(VULKAN
 bin/test_aerial_llm_bridge: tests/test_aerial_llm_bridge.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o | $(BIN_DIR)
+bin/test_vulkan_teddy_bear: tests/test_vulkan_teddy_bear.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_vulkan_terminal: tests/test_vulkan_terminal.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
@@ -1089,14 +1089,14 @@ bin/tsfi_font_editor: src/tsfi_font_editor.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 bin/tsfi_paint_app: src/tsfi_paint_app.c $(OBJ_DIR)/tsfi_paint.o $(OBJ_DIR)/tsfi_dom.o $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bin/tsfi_teddy_editor: src/tsfi_teddy_editor.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+bin/tsfi_teddy_bear_editor: src/tsfi_teddy_bear_editor.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bin/tsfi_teddy_skeleton: src/tsfi_teddy_skeleton.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+bin/tsfi_teddy_bear_skeleton: src/tsfi_teddy_bear_skeleton.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 
-bin/tsfi_teddy_animator: src/tsfi_teddy_animator.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
+bin/tsfi_teddy_bear_animator: src/tsfi_teddy_bear_animator.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/tsfi_mcp_server: src/tsfi_mcp_server.c $(CORE_OBJS) $(OBJ_DIR)/tsfi_zmm_rpc.o $(OBJ_DIR)/vulkan_init.o $(OBJ_DIR)/tsfi_block_monitor.o | $(BIN_DIR)
@@ -1229,7 +1229,7 @@ tests/validate_youtube_layout: tests/validate_youtube_layout.c $(OBJ_DIR)/tsfi_m
 	$(CC) $(CFLAGS) -I/home/mariarahel/src/pkgs/chromium-142.0.7444.175/third_party/ffmpeg -o $@ $^ $(LDFLAGS) /usr/lib/x86_64-linux-gnu/libavformat.so.62 -lavcodec -lavutil
 
 
-bin/test_zmm_teddy_render: tests/test_zmm_teddy_render.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
+bin/test_zmm_teddy_bear_render: tests/test_zmm_teddy_bear_render.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 bin/test_verlet_poppy: tests/test_verlet_poppy.c $(CORE_OBJS) $(OBJ_DIR)/vulkan_init.o | $(BIN_DIR)
@@ -1392,8 +1392,8 @@ clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) tsfi2 src/firmware/*_rtl.*
 
 .PHONY: generate_artifacts
-generate_artifacts: bin/test_vulkan_teddy
-	bin/test_vulkan_teddy --render-once
+generate_artifacts: bin/test_vulkan_teddy_bear
+	bin/test_vulkan_teddy_bear --render-once
 	convert /home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/scratch/photorealistic_teddy_bear.ppm /home/mariarahel/.gemini/antigravity-cli/brain/821a69ae-01ae-45c0-9773-e2e6e367181c/photorealistic_bear_final.png
 
 tests/test_ac_compositor_interop: tests/test_ac_compositor_interop.c tests/libmozilla_interop.c
@@ -1757,8 +1757,8 @@ bin/test_micro_focus_part2: bin/test_micro_focus
 	ln -sf test_micro_focus bin/test_micro_focus_part2
 
 
-test: bin/test_vulkan_teddy tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box tests/test_computel_red_box tests/test_computel_yellow_box tests/test_pdp11_mounts tests/test_pdp11_encrypted_tunnel tests/test_mcp_tcp_proxy tests/test_mcp_multiplexed_encrypted_proxy tests/test_level_up_scheduler
-	bin/test_vulkan_teddy --test
+test: bin/test_vulkan_teddy_bear tests/test_rooted_browser_wmq_collision tests/test_ac_compositor_interop tests/test_computel_carrier_monitor tests/test_computel_trunk_selector tests/test_computel_dtmf_decoder tests/test_computel_dtmf_loopback tests/test_computel_dtmf_sequencer tests/test_computel_yul_firewall tests/test_computel_dtmf_progress_tones tests/test_computel_rotary_decoder tests/test_computel_secure_kermit tests/test_computel_udp_mcp tests/test_computel_advanced_kermit tests/test_computel_controller_thunk tests/test_computel_dmt_udp_benchmark tests/test_computel_fsk_modulator tests/test_computel_secure_tty tests/test_computel_blue_box tests/test_computel_red_box tests/test_computel_yellow_box tests/test_pdp11_mounts tests/test_pdp11_encrypted_tunnel tests/test_mcp_tcp_proxy tests/test_mcp_multiplexed_encrypted_proxy tests/test_level_up_scheduler
+	bin/test_vulkan_teddy_bear --test
 	./tests/test_rooted_browser_wmq_collision
 	./tests/test_ac_compositor_interop
 	./tests/test_computel_carrier_monitor

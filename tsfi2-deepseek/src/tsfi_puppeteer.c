@@ -11,7 +11,7 @@
  */
 
 void usage(const char *prog) {
-    fprintf(stderr, "Usage: %s <id> <type: teddy|alligator|crow|poppy> <action: fly|sit|speak|sick> [param]\n", prog);
+    fprintf(stderr, "Usage: %s <id> <type: teddy_bear|alligator|crow|poppy> <action: fly|sit|speak|sick> [param]\n", prog);
 }
 
 int main(int argc, char **argv) {
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     p->active = 1;
     p->scale = 0.6f;
 
-    if (strcmp(type_str, "teddy") == 0) p->animal_type = PUPPET_TYPE_TEDDY;
+    if (strcmp(type_str, "teddy_bear") == 0) p->animal_type = PUPPET_TYPE_TEDDY_BEAR;
     else if (strcmp(type_str, "alligator") == 0) p->animal_type = PUPPET_TYPE_ALLIGATOR;
     else if (strcmp(type_str, "crow") == 0) p->animal_type = PUPPET_TYPE_CROW;
     else if (strcmp(type_str, "poppy") == 0) p->animal_type = PUPPET_TYPE_POPPY;
@@ -66,14 +66,14 @@ int main(int argc, char **argv) {
         p->sickness = 0.0f;
     }
 
-    if (p->animal_type == PUPPET_TYPE_TEDDY) {
+    if (p->animal_type == PUPPET_TYPE_TEDDY_BEAR) {
         if (strcmp(action, "sick") == 0) {
             p->sickness = param > 0.0f ? param : 1.0f; // Default to full sickness if no param
-            printf("[PUPPET] Teddy %d: SYMPATHY active. Sickness=%.2f.\n", id, p->sickness);
+            printf("[PUPPET] TeddyBear %d: SYMPATHY active. Sickness=%.2f.\n", id, p->sickness);
         } else if (strcmp(action, "sit") == 0) {
-            printf("[PUPPET] Teddy %d: Sitting.\n", id);
+            printf("[PUPPET] TeddyBear %d: Sitting.\n", id);
         }
-        // Always initialize structural defaults for Teddy if not already set
+        // Always initialize structural defaults for TeddyBear if not already set
         if (p->stuffing == 0.0f) {
             p->stuffing = 1.0f;
             p->arm_length = 1.0f;

@@ -2,7 +2,7 @@
 
 ## 1. Observation
 
-Directly observed the source code modifications across 4 HTML files and `test_vulkan_teddy.c` in the repository, along with the E2E tests in `test_dashboard_container.py`.
+Directly observed the source code modifications across 4 HTML files and `test_vulkan_teddy_bear.c` in the repository, along with the E2E tests in `test_dashboard_container.py`.
 
 ### A. Iframe Query Method (`onDiagnosticsIframeLoad`)
 In the following 4 files:
@@ -69,7 +69,7 @@ The JavaScript function `onDiagnosticsIframeLoad()` reads the values dynamically
         }
 ```
 
-### B. Benchmark Source Code (`tsfi2-deepseek/tests/test_vulkan_teddy.c`)
+### B. Benchmark Source Code (`tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`)
 In C source code (lines 3425-3510), the engine tracks frame times using `clock_gettime(CLOCK_MONOTONIC, ...)` and audio latency values directly, and outputs them dynamically to the JSON results path:
 ```c
             const char *json_path = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/benchmark_results.json";

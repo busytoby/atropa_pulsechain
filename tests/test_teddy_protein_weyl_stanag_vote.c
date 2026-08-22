@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
-static int verify_teddy_protein_weyl_stanag_vote_c(
+static int verify_teddy_bear_protein_weyl_stanag_vote_c(
     int stanag_quorum_pct,
     int protein_fold_parity_milli,
     int weyl_differential_rank,
@@ -55,16 +55,16 @@ static int verify_teddy_protein_weyl_stanag_vote_c(
 
 int main(void) {
     printf("=============================================================\n");
-    printf("FORMAL PROOF TEST: TEDDY PROTEIN WEYL STANAG VOTE PROVER     \n");
+    printf("FORMAL PROOF TEST: TEDDY_BEAR PROTEIN WEYL STANAG VOTE PROVER     \n");
     printf("=============================================================\n");
 
     uint64_t out = 0;
     int disp = 0;
 
     /* Pass 1: Clean Execution (Quorum=85%, Parity=0.960 [960], Weyl Rank=2) */
-    int r1 = verify_teddy_protein_weyl_stanag_vote_c(85, 960, 2, 555, 0, 3, &out, &disp);
+    int r1 = verify_teddy_bear_protein_weyl_stanag_vote_c(85, 960, 2, 555, 0, 3, &out, &disp);
     assert(r1 == 0);
-    printf("   ✓ Clean Teddy Protein Weyl STANAG Vote verified (Ruling=0, Out=%lu, DispMod=%d).\n", out, disp);
+    printf("   ✓ Clean TeddyBear Protein Weyl STANAG Vote verified (Ruling=0, Out=%lu, DispMod=%d).\n", out, disp);
 
     /* Pass 2: Parameter Sweeps across Quorum (68..98%), Parity (860..990), and Weyl Rank (1..8) */
     for (int q = 68; q <= 98; q += 6) {
@@ -72,7 +72,7 @@ int main(void) {
             for (int r = 1; r <= 8; r += 2) {
                 uint64_t sweep_out = 0;
                 int sweep_disp = 0;
-                int r_sweep = verify_teddy_protein_weyl_stanag_vote_c(q, p, r, 555, 0, 3, &sweep_out, &sweep_disp);
+                int r_sweep = verify_teddy_bear_protein_weyl_stanag_vote_c(q, p, r, 555, 0, 3, &sweep_out, &sweep_disp);
                 assert(r_sweep == 0);
             }
         }
@@ -82,20 +82,20 @@ int main(void) {
     /* Pass 3: Fault Isolation and ReBAR Shadow Rollback */
     uint64_t rollback_out = 0;
     int rollback_disp = 0;
-    int r_fault = verify_teddy_protein_weyl_stanag_vote_c(85, 960, 2, 555, 1, 3, &rollback_out, &rollback_disp);
+    int r_fault = verify_teddy_bear_protein_weyl_stanag_vote_c(85, 960, 2, 555, 1, 3, &rollback_out, &rollback_disp);
     assert(r_fault == 0);
     printf("   ✓ STANAG Vote Fault Isolation Rollback verified (Ruling=0, Rollback=%lu, DispMod=%d).\n", rollback_out, rollback_disp);
 
     /* Pass 4: Guard Gate Classification (All 5 Invalid Cases Intercepted) */
-    assert(verify_teddy_protein_weyl_stanag_vote_c(85, 960, 2, 555, 0, 2, NULL, NULL) == 1);
-    assert(verify_teddy_protein_weyl_stanag_vote_c(50, 960, 2, 555, 0, 3, NULL, NULL) == 2); // Quorum 50 < 67%!
-    assert(verify_teddy_protein_weyl_stanag_vote_c(85, 800, 2, 555, 0, 3, NULL, NULL) == 3); // Parity 800 < 850m!
-    assert(verify_teddy_protein_weyl_stanag_vote_c(85, 960, 10, 555, 0, 3, NULL, NULL) == 4); // Weyl Rank 10 > 8!
-    assert(verify_teddy_protein_weyl_stanag_vote_c(85, 960, 2, 777, 0, 3, NULL, NULL) == 5);
+    assert(verify_teddy_bear_protein_weyl_stanag_vote_c(85, 960, 2, 555, 0, 2, NULL, NULL) == 1);
+    assert(verify_teddy_bear_protein_weyl_stanag_vote_c(50, 960, 2, 555, 0, 3, NULL, NULL) == 2); // Quorum 50 < 67%!
+    assert(verify_teddy_bear_protein_weyl_stanag_vote_c(85, 800, 2, 555, 0, 3, NULL, NULL) == 3); // Parity 800 < 850m!
+    assert(verify_teddy_bear_protein_weyl_stanag_vote_c(85, 960, 10, 555, 0, 3, NULL, NULL) == 4); // Weyl Rank 10 > 8!
+    assert(verify_teddy_bear_protein_weyl_stanag_vote_c(85, 960, 2, 777, 0, 3, NULL, NULL) == 5);
     printf("   ✓ Classification and Guard Gates verified (5/5 invalid cases intercepted).\n");
 
     printf("=============================================================\n");
-    printf("ALL TEDDY PROTEIN WEYL STANAG VOTE PROOFS PASSED (4/4)       \n");
+    printf("ALL TEDDY_BEAR PROTEIN WEYL STANAG VOTE PROOFS PASSED (4/4)       \n");
     printf("=============================================================\n");
     return 0;
 }

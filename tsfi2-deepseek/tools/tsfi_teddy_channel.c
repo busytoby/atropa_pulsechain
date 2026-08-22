@@ -141,7 +141,7 @@ int main() {
         lau_free(mock_ab4h);
 
         frame_idx++;
-        if (frame_idx % 100 == 0) printf("\r[TEDDY] Streaming Frame: %u (171 FPS Stable)", frame_idx);
+        if (frame_idx % 100 == 0) printf("\r[TEDDY_BEAR] Streaming Frame: %u (171 FPS Stable)", frame_idx);
         fflush(stdout);
         usleep(5847); // Pacing for 171 FPS
     }

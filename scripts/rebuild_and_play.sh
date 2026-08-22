@@ -4,7 +4,7 @@
 set -e
 
 echo "[REBUILD] Purging old video files..."
-rm -f bin/teddy_ballet_demo.mp4
+rm -f bin/teddy_bear_ballet_demo.mp4
 
 echo "[REBUILD] Compiling render binary..."
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc \
@@ -18,4 +18,4 @@ echo "[REBUILD] Generating clean progressive ballet animation..."
 ./tests/demo_ballet_render
 
 echo "[REBUILD] Clean build complete. Output size:"
-ls -lh bin/teddy_ballet_demo.mp4
+ls -lh bin/teddy_bear_ballet_demo.mp4

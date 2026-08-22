@@ -17,7 +17,7 @@ This standard formalizes the clean-room, pure C architecture for the Living Lab 
 | **DisplacementShader Bridge** | Vertex Microfacet Shading Scaling | `tsfi2-deepseek/src/tsfi_displacementshader.c` | $\|\Delta \vec{v}\|_\infty \le \delta_{\text{clamp}}$ |
 | **Depth Scanline Presenter** | $320 \times 240$ FrameBuffer Rasterizer | `tsfi2-deepseek/src/cpm_tomie_renderman_pageturner_presenter.c` | `.dat.bin` Storage (Rule 13) |
 | **Teddy Bear Heart USDA Asset** | Embodied Living Lab Participant & LEED Comfort | `tsfi2-deepseek/src/auncient_teddy_bear_heart_usda.c` | Rule 16 SSA & 1M Saat Hogan Endowment |
-| **Teddy PageTurner Bridge** | Cardiac Pulse to RenderMan Coupling | `tsfi2-deepseek/src/auncient_teddy_pageturner_bridge.c` | Live Phase Plasticity Modulation |
+| **TeddyBear PageTurner Bridge** | Cardiac Pulse to RenderMan Coupling | `tsfi2-deepseek/src/auncient_teddy_bear_pageturner_bridge.c` | Live Phase Plasticity Modulation |
 | **Generalized USDA Digital Twin** | Multi-Thematic LEED Certification | `tsfi2-deepseek/src/auncient_clayscape_usda_digital_twin.c` | Theorems 21–25 Verification |
 | **Pixar RenderMan RIB Prover** | Scenegraph Bytestream & Bxdf Shading | `tsfi2-deepseek/src/auncient_renderman_usda_rib_prover.c` | Theorems 26–30 Verification |
 
@@ -237,7 +237,7 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
 30. **Tier 30 (Theorems 146–150: Grand Sesquicentennial Unification & Universal Closure across 150 Theorems)**:
     * Theorem 146: Universal Thermodynamics-to-BIM Homomorphism (bijective energy conservation).
     * Theorem 147: BSDF Radiative Conservation and Hogan Saat Solvency Equivalence ($\int_{\Omega} f_r \cos\theta \, d\omega \le 1.0 \equiv \sum \text{Debits} = \sum \text{Credits}$).
-    * Theorem 148: Complete Closed-Loop Living Lab Epistemic Unification (ENoLL + LEED + Teddy Heart closed group).
+    * Theorem 148: Complete Closed-Loop Living Lab Epistemic Unification (ENoLL + LEED + TeddyBear Heart closed group).
     * Theorem 149: Rule 18 Non-Preferential 3-Term Recurrence Universal Invariance ($0\text{x00007AE6}$).
     * Theorem 150: Grand Sesquicentennial Master Witness Seal ($2040000000$ unified master seal across all 150 formal theorems).
 

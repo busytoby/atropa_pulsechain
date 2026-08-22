@@ -1,7 +1,7 @@
 # Handoff Report
 
 ## 1. Observation
-- **Hook Script Location & Implementation**: Located at `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`. It performs environment scrubbing (`unset GIT_DIR`, `unset GIT_WORK_TREE`, `unset GIT_INDEX_FILE`), navigates to `tsfi2-deepseek/`, runs compilation (`make bin/test_vulkan_teddy`), triggers benchmarks (`./run_benchmarks.sh`), runs report generation (`python3 generate_report.py`), and parses results via an inline Python script:
+- **Hook Script Location & Implementation**: Located at `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`. It performs environment scrubbing (`unset GIT_DIR`, `unset GIT_WORK_TREE`, `unset GIT_INDEX_FILE`), navigates to `tsfi2-deepseek/`, runs compilation (`make bin/test_vulkan_teddy_bear`), triggers benchmarks (`./run_benchmarks.sh`), runs report generation (`python3 generate_report.py`), and parses results via an inline Python script:
   ```python
   path = 'benchmark_results.json'
   with open(path, 'r') as f:
@@ -16,14 +16,14 @@
   import sys
   ```
   It has fallback logic (`is_mock = True`) to load simulated data when the results file is invalid or missing.
-- **Benchmark Source Code**: Located at `tsfi2-deepseek/tests/test_vulkan_teddy.c`. When run with `--benchmark`, it measures frame times via monotonic clock timing and writes results to the configured JSON file path:
+- **Benchmark Source Code**: Located at `tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`. When run with `--benchmark`, it measures frame times via monotonic clock timing and writes results to the configured JSON file path:
   ```c
   const char *json_path = "/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/benchmark_results.json";
   ```
 - **E2E Test Runner**: Located at `tests/e2e/run_e2e_tests.py`. It runs 49 test cases spanning 4 tiers using standard `unittest`. It defines mock setups for tests that verify resilience (like broken makefiles or truncated JSON files), and provides a `--real-build` flag to run tests using the actual codebase.
 
 ## 2. Logic Chain
-- Since `test_vulkan_teddy.c` timing loop uses `clock_gettime(CLOCK_MONOTONIC, ...)` for each frame render and writes these values to the results file, the benchmark values are computed dynamically and are not hardcoded.
+- Since `test_vulkan_teddy_bear.c` timing loop uses `clock_gettime(CLOCK_MONOTONIC, ...)` for each frame render and writes these values to the results file, the benchmark values are computed dynamically and are not hardcoded.
 - Since the post-commit hook reads the metrics file dynamically using python's `json` library, formatting and printing them to stdout, it is not a facade.
 - Since `generate_report.py` relies only on standard Python libraries, validates the input JSON structure dynamically, and writes standard HTML containing custom JavaScript/Canvas rendering (without third-party plotting frameworks), it conforms entirely to the Benchmark Mode constraints.
 - Since `run_e2e_tests.py` verifies both hook installation, trigger behavior, error resilience (boundary/failure cases), and dynamic parsing formatting through isolated temporary Git sandboxes, the E2E test suite genuinely tests the pipeline.
@@ -40,7 +40,7 @@ The Git post-commit hook pipeline and E2E test suite are fully implemented, robu
 - **Static Inspection**: Read the following files to verify the absence of cheats or hardcoded results:
   - `tsfi2-deepseek/benchmarks/git_ci_pipeline/post-commit`
   - `tsfi2-deepseek/benchmarks/profiler_suite/generate_report.py`
-  - `tsfi2-deepseek/tests/test_vulkan_teddy.c`
+  - `tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`
   - `tests/e2e/run_e2e_tests.py`
 - **Dynamic Execution**: Execute the E2E test runner in both mock and real build mode to verify integration correctness:
   ```bash

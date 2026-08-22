@@ -14,7 +14,7 @@ typedef struct {
 } TsfiJoint;
 
 typedef enum {
-    PUPPET_TYPE_TEDDY = 0,
+    PUPPET_TYPE_TEDDY_BEAR = 0,
     PUPPET_TYPE_ALLIGATOR = 1,
     PUPPET_TYPE_CROW = 2,
     PUPPET_TYPE_POPPY = 3

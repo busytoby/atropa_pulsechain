@@ -1,7 +1,7 @@
-#include "auncient_teddy_personality.h"
+#include "auncient_teddy_bear_personality.h"
 #include <math.h>
 
-int evaluate_ordinal_link_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_link_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -14,7 +14,7 @@ int evaluate_ordinal_link_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-bool evaluate_profile_likelihood_bounds(const teddy_geometry_t *geom, int category, double *lower_bound, double *upper_bound) {
+bool evaluate_profile_likelihood_bounds(const teddy_bear_geometry_t *geom, int category, double *lower_bound, double *upper_bound) {
     if (!geom || category < 1 || category > 7 || !lower_bound || !upper_bound) {
         return false;
     }
@@ -28,7 +28,7 @@ bool evaluate_profile_likelihood_bounds(const teddy_geometry_t *geom, int catego
     return true;
 }
 
-int evaluate_ordinal_scale_rating(const teddy_geometry_t *geom, double scale_multiplier) {
+int evaluate_ordinal_scale_rating(const teddy_bear_geometry_t *geom, double scale_multiplier) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double scale = exp(geom->vocal_visual_mismatch * scale_multiplier);
@@ -43,7 +43,7 @@ int evaluate_ordinal_scale_rating(const teddy_geometry_t *geom, double scale_mul
     return 7;
 }
 
-int evaluate_ordinal_nominal_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_nominal_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
     double nominal_coefficients[6] = {0.1, 0.3, 0.6, 1.0, 1.5, 2.0};
@@ -58,7 +58,7 @@ int evaluate_ordinal_nominal_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance_out) {
+bool evaluate_hessian_diagnostics(const teddy_bear_geometry_t *geom, double *variance_out) {
     if (!geom || !variance_out) {
         return false;
     }
@@ -69,7 +69,7 @@ bool evaluate_hessian_diagnostics(const teddy_geometry_t *geom, double *variance
     return true;
 }
 
-bool evaluate_parameter_covariance(const teddy_geometry_t *geom, double *covariance_matrix_out) {
+bool evaluate_parameter_covariance(const teddy_bear_geometry_t *geom, double *covariance_matrix_out) {
     if (!geom || !covariance_matrix_out) {
         return false;
     }
@@ -89,7 +89,7 @@ bool evaluate_parameter_covariance(const teddy_geometry_t *geom, double *covaria
     return true;
 }
 
-int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_cloglog_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -102,7 +102,7 @@ int evaluate_ordinal_cloglog_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-int evaluate_ordinal_cloglog_scale_rating(const teddy_geometry_t *geom, double scale_covariate) {
+int evaluate_ordinal_cloglog_scale_rating(const teddy_bear_geometry_t *geom, double scale_covariate) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double scale = exp(scale_covariate * 0.5);
@@ -116,7 +116,7 @@ int evaluate_ordinal_cloglog_scale_rating(const teddy_geometry_t *geom, double s
     return 7;
 }
 
-int evaluate_ordinal_probit_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_probit_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -130,7 +130,7 @@ int evaluate_ordinal_probit_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-int evaluate_ordinal_loglog_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_loglog_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -143,7 +143,7 @@ int evaluate_ordinal_loglog_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-int evaluate_ordinal_cauchy_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_cauchy_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -156,7 +156,7 @@ int evaluate_ordinal_cauchy_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-int evaluate_ordinal_loggamma_rating(const teddy_geometry_t *geom, double lambda) {
+int evaluate_ordinal_loggamma_rating(const teddy_bear_geometry_t *geom, double lambda) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -174,7 +174,7 @@ int evaluate_ordinal_loggamma_rating(const teddy_geometry_t *geom, double lambda
     return 7;
 }
 
-int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom) {
+int evaluate_ordinal_gumbel_rating(const teddy_bear_geometry_t *geom) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -187,7 +187,7 @@ int evaluate_ordinal_gumbel_rating(const teddy_geometry_t *geom) {
     return 7;
 }
 
-int evaluate_ordinal_gumbel_scale_rating(const teddy_geometry_t *geom, double scale_covariate) {
+int evaluate_ordinal_gumbel_scale_rating(const teddy_bear_geometry_t *geom, double scale_covariate) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double scale = exp(scale_covariate * 0.5);
@@ -269,7 +269,7 @@ bool evaluate_ordinal_mixture_expectation_se(const double *probabilities, const 
     return true;
 }
 
-bool evaluate_ordinal_link_loglik(const teddy_geometry_t *geom, const int *observed_ratings, int count, double *loglik_out) {
+bool evaluate_ordinal_link_loglik(const teddy_bear_geometry_t *geom, const int *observed_ratings, int count, double *loglik_out) {
     if (!geom || !observed_ratings || count < 1 || !loglik_out) {
         return false;
     }
@@ -289,7 +289,7 @@ bool evaluate_ordinal_link_loglik(const teddy_geometry_t *geom, const int *obser
     return true;
 }
 
-int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_mixture_weight) {
+int evaluate_ordinal_flexible_rating(const teddy_bear_geometry_t *geom, double link_mixture_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -307,7 +307,7 @@ int evaluate_ordinal_flexible_rating(const teddy_geometry_t *geom, double link_m
     return 7;
 }
 
-int evaluate_ordinal_cauchy_gumbel_mixture(const teddy_geometry_t *geom, double cauchy_weight) {
+int evaluate_ordinal_cauchy_gumbel_mixture(const teddy_bear_geometry_t *geom, double cauchy_weight) {
     if (!geom) return 1;
     double latent = (geom->head_fwhr * 2.5) - (geom->feature_vertical_offset * 1.5) + (geom->jaw_scale * 1.0);
     double thresholds[6] = {0.5, 1.2, 2.0, 2.8, 3.5, 4.2};
@@ -325,7 +325,7 @@ int evaluate_ordinal_cauchy_gumbel_mixture(const teddy_geometry_t *geom, double 
     return 7;
 }
 
-bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolerance, double *spacing_error) {
+bool evaluate_threshold_equidistancy(const teddy_bear_geometry_t *geom, double tolerance, double *spacing_error) {
     if (!geom || !spacing_error) {
         return false;
     }
@@ -345,7 +345,7 @@ bool evaluate_threshold_equidistancy(const teddy_geometry_t *geom, double tolera
     return (*spacing_error <= tolerance);
 }
 
-bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_scale_bound, double *upper_scale_bound) {
+bool evaluate_scale_profile_bounds(const teddy_bear_geometry_t *geom, double *lower_scale_bound, double *upper_scale_bound) {
     if (!geom || !lower_scale_bound || !upper_scale_bound) {
         return false;
     }
@@ -358,7 +358,7 @@ bool evaluate_scale_profile_bounds(const teddy_geometry_t *geom, double *lower_s
     return true;
 }
 
-bool evaluate_scale_structured_covariates(const teddy_geometry_t *geom, double age_covariate, double *scale_out) {
+bool evaluate_scale_structured_covariates(const teddy_bear_geometry_t *geom, double age_covariate, double *scale_out) {
     if (!geom || !scale_out) {
         return false;
     }
@@ -369,7 +369,7 @@ bool evaluate_scale_structured_covariates(const teddy_geometry_t *geom, double a
     return true;
 }
 
-bool evaluate_scale_nominal_effects(const teddy_geometry_t *geom, const double *nominal_covariates, int df, double *effects_out) {
+bool evaluate_scale_nominal_effects(const teddy_bear_geometry_t *geom, const double *nominal_covariates, int df, double *effects_out) {
     if (!geom || !nominal_covariates || df < 1 || !effects_out) {
         return false;
     }
@@ -381,7 +381,7 @@ bool evaluate_scale_nominal_effects(const teddy_geometry_t *geom, const double *
     return true;
 }
 
-bool evaluate_threshold_profile_bounds(const teddy_geometry_t *geom, int threshold_index, double *lower_bound, double *upper_bound) {
+bool evaluate_threshold_profile_bounds(const teddy_bear_geometry_t *geom, int threshold_index, double *lower_bound, double *upper_bound) {
     if (!geom || threshold_index < 0 || threshold_index >= 6 || !lower_bound || !upper_bound) {
         return false;
     }
@@ -405,7 +405,7 @@ bool evaluate_lrt_nested_models(double null_loglik, double alt_loglik, int df_di
     return true;
 }
 
-bool evaluate_predicted_probability_bounds(const teddy_geometry_t *geom, int category, double *prob_out, double *lower_prob_bound, double *upper_prob_bound) {
+bool evaluate_predicted_probability_bounds(const teddy_bear_geometry_t *geom, int category, double *prob_out, double *lower_prob_bound, double *upper_prob_bound) {
     if (!geom || category < 1 || category > 7 || !prob_out || !lower_prob_bound || !upper_prob_bound) {
         return false;
     }
@@ -440,7 +440,7 @@ bool evaluate_wald_nominal_test(const double *beta_vector, const double *covaria
     return true;
 }
 
-bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out) {
+bool evaluate_surrogate_residuals(const teddy_bear_geometry_t *geom, int observed_rating, double *residual_out) {
     if (!geom || observed_rating < 1 || observed_rating > 7 || !residual_out) {
         return false;
     }
@@ -451,7 +451,7 @@ bool evaluate_surrogate_residuals(const teddy_geometry_t *geom, int observed_rat
     return true;
 }
 
-bool evaluate_nominal_surrogate_residuals(const teddy_geometry_t *geom, int observed_rating, double *residual_out) {
+bool evaluate_nominal_surrogate_residuals(const teddy_bear_geometry_t *geom, int observed_rating, double *residual_out) {
     if (!geom || observed_rating < 1 || observed_rating > 7 || !residual_out) {
         return false;
     }
@@ -572,7 +572,7 @@ bool evaluate_mixture_link_nominal_wald(const double *beta_vector, const double 
     return true;
 }
 
-bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
+bool evaluate_information_criteria(const teddy_bear_geometry_t *geom, int param_count, int sample_size, double *aic_out, double *bic_out) {
     if (!geom || param_count < 1 || sample_size < 2 || !aic_out || !bic_out) {
         return false;
     }
@@ -583,7 +583,7 @@ bool evaluate_information_criteria(const teddy_geometry_t *geom, int param_count
     return true;
 }
 
-bool evaluate_ordinal_flexible_mixture_link(const teddy_geometry_t *geom, double mixture_weight, int *rating_out) {
+bool evaluate_ordinal_flexible_mixture_link(const teddy_bear_geometry_t *geom, double mixture_weight, int *rating_out) {
     if (!geom || mixture_weight < 0.0 || mixture_weight > 1.0 || !rating_out) {
         return false;
     }
@@ -594,7 +594,7 @@ bool evaluate_ordinal_flexible_mixture_link(const teddy_geometry_t *geom, double
     return true;
 }
 
-bool evaluate_ordinal_mixture_nominal_thresholds(const teddy_geometry_t *geom, double mixture_weight, const double *nominal_covariates, double *thresholds_out) {
+bool evaluate_ordinal_mixture_nominal_thresholds(const teddy_bear_geometry_t *geom, double mixture_weight, const double *nominal_covariates, double *thresholds_out) {
     if (!geom || mixture_weight < 0.0 || mixture_weight > 1.0 || !nominal_covariates || !thresholds_out) {
         return false;
     }

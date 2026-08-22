@@ -5,23 +5,23 @@ This report documents the exploration of the ATROPA PulseChain codebase with res
 
 ---
 
-## 1. Build Process for `test_vulkan_teddy`
-- **Source File Path**: `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy.c`
-- **Output Binary Path**: `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/bin/test_vulkan_teddy`
+## 1. Build Process for `test_vulkan_teddy_bear`
+- **Source File Path**: `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/tests/test_vulkan_teddy_bear.c`
+- **Output Binary Path**: `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/bin/test_vulkan_teddy_bear`
 - **Makefile Path**: `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/Makefile`
-- **Build Target**: `bin/test_vulkan_teddy`
+- **Build Target**: `bin/test_vulkan_teddy_bear`
 
 ### Compilation Command
-To build `test_vulkan_teddy`, run the following command:
+To build `test_vulkan_teddy_bear`, run the following command:
 ```bash
 cd /home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek
-make bin/test_vulkan_teddy
+make bin/test_vulkan_teddy_bear
 ```
 
 ### Makefile Build Rule
 The rule defining the target compilation is located in `tsfi2-deepseek/Makefile` on lines 257-258:
 ```make
-bin/test_vulkan_teddy: tests/test_vulkan_teddy.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
+bin/test_vulkan_teddy_bear: tests/test_vulkan_teddy_bear.c $(CORE_OBJS) $(VULKAN_PLUGIN_OBJS) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 ```
 
@@ -39,8 +39,8 @@ cd /home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profil
 
 ### Execution Details
 1. Navigates to `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek`.
-2. Re-compiles `test_vulkan_teddy` with `make bin/test_vulkan_teddy`.
-3. Runs `./bin/test_vulkan_teddy --benchmark`, executing a headless benchmark for 500 frames.
+2. Re-compiles `test_vulkan_teddy_bear` with `make bin/test_vulkan_teddy_bear`.
+3. Runs `./bin/test_vulkan_teddy_bear --benchmark`, executing a headless benchmark for 500 frames.
 4. Outputs raw performance metrics to `/home/mariarahel/src/tsfi2/atropa_pulsechain/tsfi2-deepseek/benchmarks/profiler_suite/benchmark_results.json`.
 5. Prints the JSON summary block (using `jq` if available, or a fallback grep/cat block).
 
@@ -114,9 +114,9 @@ echo "========================================="
 # 1. Navigate to deepseek folder
 cd "${DEEPSEEK_DIR}" || exit 1
 
-# 2. Build test_vulkan_teddy
-echo "[CI] Compiling test_vulkan_teddy..."
-make bin/test_vulkan_teddy > /dev/null
+# 2. Build test_vulkan_teddy_bear
+echo "[CI] Compiling test_vulkan_teddy_bear..."
+make bin/test_vulkan_teddy_bear > /dev/null
 if [ $? -ne 0 ]; then
     echo "[CI ERROR] Compilation failed! Skipping benchmark." >&2
     exit 0

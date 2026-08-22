@@ -355,27 +355,27 @@ int main(void) {
 
     remove(gost_bin);
 
-    // [ALU Test] Compile and Execute the transitioned teddy_endowment strategy closure
-    printf("\n[ALU Test] Loading transitioned teddy_endowment strategy from disk...\n");
-    FILE *tf = fopen("solidity/dysnomia/domain/strategies/teddy_endowment.strategy", "r");
+    // [ALU Test] Compile and Execute the transitioned teddy_bear_endowment strategy closure
+    printf("\n[ALU Test] Loading transitioned teddy_bear_endowment strategy from disk...\n");
+    FILE *tf = fopen("solidity/dysnomia/domain/strategies/teddy_bear_endowment.strategy", "r");
     assert(tf != NULL);
-    char teddy_source[1024];
-    size_t teddy_bytes = fread(teddy_source, 1, sizeof(teddy_source) - 1, tf);
-    teddy_source[teddy_bytes] = '\0';
+    char teddy_bear_source[1024];
+    size_t teddy_bear_bytes = fread(teddy_bear_source, 1, sizeof(teddy_bear_source) - 1, tf);
+    teddy_bear_source[teddy_bear_bytes] = '\0';
     fclose(tf);
 
-    uint8_t teddy_bytecode[256];
-    size_t teddy_bytecode_len = 0;
-    ok = tsfi2_compile(teddy_source, teddy_bytecode, sizeof(teddy_bytecode), &teddy_bytecode_len);
+    uint8_t teddy_bear_bytecode[256];
+    size_t teddy_bear_bytecode_len = 0;
+    ok = tsfi2_compile(teddy_bear_source, teddy_bear_bytecode, sizeof(teddy_bear_bytecode), &teddy_bear_bytecode_len);
     assert(ok == true);
 
-    const char *teddy_bin = "/tmp/teddy_strategy_alu.dat.bin";
-    ok = tsfi2_compile_to_dat_bin_ext(teddy_bin, 0x1000, 1, "TIN", "950000000", teddy_bytecode, teddy_bytecode_len);
+    const char *teddy_bear_bin = "/tmp/teddy_bear_strategy_alu.dat.bin";
+    ok = tsfi2_compile_to_dat_bin_ext(teddy_bear_bin, 0x1000, 1, "TIN", "950000000", teddy_bear_bytecode, teddy_bear_bytecode_len);
     assert(ok == true);
 
-    printf("[ALU Test] Executing compiled teddy_endowment strategy closure...\n");
+    printf("[ALU Test] Executing compiled teddy_bear_endowment strategy closure...\n");
     memset(&cpu, 0, sizeof(cpu));
-    ok = tsfi2_load_and_execute(teddy_bin, &cpu);
+    ok = tsfi2_load_and_execute(teddy_bear_bin, &cpu);
     assert(ok == true);
     assert(cpu.halted == true);
     assert(cpu.exit_code == 1000000);

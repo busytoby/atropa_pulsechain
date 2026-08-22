@@ -7,7 +7,7 @@ This document analyzes the mapping of the **Teddy Bear** rendering complexity as
 ## 1. The $\beta$-Dependent Teddy Bear Variable
 *   **Physical Mapping**: The current gain ($\beta$) determined by the **Beta Resistor** ($R_\beta$ at the **PNP-Epibar**) controls the charge carrier density and flow speed.
 *   **Complexity Scaling**: We define the rendering complexity, geometric vertex density, and generation speed of the Vulkan "Teddy Bear" benchmark as a direct function of $\beta$:
-    $$Vertices_{teddy} \propto \beta = f(R_\beta)$$
+    $$Vertices_{teddy_bear} \propto \beta = f(R_\beta)$$
 *   **Conduction Influence**: As $R_\beta$ decreases (increasing gain/$\beta$), carrier flow accelerates, providing the computational throughput required to synthesize more dense, high-fidelity geometry.
 
 ## 2. DeepSeek LLM Weight Traversal

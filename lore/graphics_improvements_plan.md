@@ -1,6 +1,6 @@
 # 🎨 Rendering & Graphics Optimization Plan (3D Studio Max & Dr. Dobb's Journal)
 
-This plan outlines high-performance rendering extensions and graphics optimization techniques derived from classic **3D Studio Max (DOS/R1-R4)** and **Dr. Dobb's Journal (Michael Abrash / André LaMothe)** to enhance our Vulkan-Teddy procedural pipeline.
+This plan outlines high-performance rendering extensions and graphics optimization techniques derived from classic **3D Studio Max (DOS/R1-R4)** and **Dr. Dobb's Journal (Michael Abrash / André LaMothe)** to enhance our Vulkan-TeddyBear procedural pipeline.
 
 ---
 
@@ -53,7 +53,7 @@ Where tangents $\mathbf{t}_i$ are adjusted dynamically to prevent overshooting u
 
 ## 4. Proposed Implementation Steps
 
-1. **Integrate Blinn-Phong Specular Lobe** directly in `test_vulkan_teddy.c`'s eye/highlights branch to add custom specular falloffs.
+1. **Integrate Blinn-Phong Specular Lobe** directly in `test_vulkan_teddy_bear.c`'s eye/highlights branch to add custom specular falloffs.
 2. **Add Procedural Noise Perturbation** to the ray-marched normals on the Teddy Bear body to simulate micro-fur or fabric texture details.
 3. **Incorporate Liang-Barsky Viewport Clipping** for line segments when rendering the sequencer grid lines or waveforms.
 

@@ -12,8 +12,8 @@ int main(void) {
     AuncientBalletBear bear = {0};
 
     // 1. Verify bear registration and deterministic SSA bridge mapping (Rule 16)
-    printf("[TEST] Registering newborn Teddy Bear 'Teddy_Giselle'...\n");
-    bool registered = auncient_ballet_register_bear("Teddy_Giselle", "BLOCK_SEED_9999", &bear);
+    printf("[TEST] Registering newborn Teddy Bear 'Teddy_Bear_Giselle'...\n");
+    bool registered = auncient_ballet_register_bear("Teddy_Bear_Giselle", "BLOCK_SEED_9999", &bear);
     assert(registered == true);
     assert(bear.verlet_charge_decay[0] == 1.0f);
     printf("   ✓ Bear successfully registered with SSN: %s\n", bear.ssn);

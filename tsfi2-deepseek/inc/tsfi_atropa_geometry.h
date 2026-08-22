@@ -13,7 +13,7 @@ typedef struct {
     uint32_t iris_radius;       // Baseline: 45
     uint32_t default_color;     // Baseline: 0x00FF00 (Kr0wZ Green)
     uint32_t fracture_color;    // Baseline: 0xFF0000 (Red)
-} TsfiTeddyEye;
+} TsfiTeddyBearEye;
 
 // Phase 2: The Neural Cavity (The Head)
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
     uint32_t right_ear_x;       // Offset +150
     uint32_t ear_y;             // Offset -150
     uint32_t ear_radius;        // Baseline: 75
-} TsfiTeddyHead;
+} TsfiTeddyBearHead;
 
 // Phase 3: The Sick Matrix (The Body)
 typedef struct {
@@ -39,7 +39,7 @@ typedef struct {
     uint32_t shadow_right_leg_x; // Base: 624
     uint32_t shadow_contact_y;   // Base: 1200 (Floor boundary)
     float shadow_spread_coefficient; // Controls the geometric branching
-} TsfiTeddyBody;
+} TsfiTeddyBearBody;
 
 // The TSFi Multi-LLM Neural State Registry (Proof of State)
 typedef struct {
@@ -50,7 +50,7 @@ typedef struct {
 } TsfiNeuralTelemetry;
 
 // The pure physical baseline geometry
-static const TsfiTeddyEye TSFI_BASELINE_EYE = {
+static const TsfiTeddyBearEye TSFI_BASELINE_EYE = {
     .origin_x = 512,
     .origin_y = 400,
     .pupil_radius = 20,
@@ -59,7 +59,7 @@ static const TsfiTeddyEye TSFI_BASELINE_EYE = {
     .fracture_color = 0xFF0000
 };
 
-static const TsfiTeddyHead TSFI_BASELINE_HEAD = {
+static const TsfiTeddyBearHead TSFI_BASELINE_HEAD = {
     .origin_x = 512,
     .origin_y = 400,
     .cranium_radius = 200,
@@ -69,7 +69,7 @@ static const TsfiTeddyHead TSFI_BASELINE_HEAD = {
     .ear_radius = 75
 };
 
-static const TsfiTeddyBody TSFI_BASELINE_BODY = {
+static const TsfiTeddyBearBody TSFI_BASELINE_BODY = {
     .origin_x = 512,
     .origin_y = 875,
     .body_radius_x = 250,
@@ -82,7 +82,7 @@ static const TsfiTeddyBody TSFI_BASELINE_BODY = {
 };
 
 // True Branching Shadow Physics (Bypassing AI Hallucination)
-static inline float compute_bifurcated_shadow(float x, float y, const TsfiTeddyBody* body) {
+static inline float compute_bifurcated_shadow(float x, float y, const TsfiTeddyBearBody* body) {
     float dist_left = hypotf(x - (float)body->shadow_left_leg_x, y - (float)body->shadow_contact_y);
     float dist_right = hypotf(x - (float)body->shadow_right_leg_x, y - (float)body->shadow_contact_y);
     

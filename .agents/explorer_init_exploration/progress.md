@@ -3,7 +3,7 @@
 Last visited: 2026-06-14T16:31:05Z
 
 - [x] Initialize ORIGINAL_REQUEST.md and BRIEFING.md
-- [x] Explore codebase for `test_vulkan_teddy` build process
+- [x] Explore codebase for `test_vulkan_teddy_bear` build process
 - [x] Explore benchmarks runner `run_benchmarks.sh`
 - [x] Explore HTML report generator script
 - [x] Explore Git hook setup

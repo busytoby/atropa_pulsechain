@@ -28,8 +28,8 @@ PHASE C — INDEPENDENT TEST EXECUTION:
 - **Git History / Patterns**: Timestamps and git hooks align with expected project layout constraints.
 
 ### Phase B: Integrity & Cheating Check
-- **No Hardcoded Test Results**: Checked if the C-benchmark binary `test_vulkan_teddy.c` or the pipeline hook script has any hardcoded metrics.
-  - The binary (`test_vulkan_teddy.c`) contains a genuine 500-frame render loop using offscreen rendering buffers. It measures frame times via `clock_gettime(CLOCK_MONOTONIC, ...)` and records audio triggers under a mutex (`g_latency_mutex`), then outputs the actual statistics dynamically into `benchmark_results.json`.
+- **No Hardcoded Test Results**: Checked if the C-benchmark binary `test_vulkan_teddy_bear.c` or the pipeline hook script has any hardcoded metrics.
+  - The binary (`test_vulkan_teddy_bear.c`) contains a genuine 500-frame render loop using offscreen rendering buffers. It measures frame times via `clock_gettime(CLOCK_MONOTONIC, ...)` and records audio triggers under a mutex (`g_latency_mutex`), then outputs the actual statistics dynamically into `benchmark_results.json`.
   - The Python generator `generate_report.py` reads, parses, and validates the dynamically generated JSON file. It only falls back to mock data if the JSON is missing or corrupted, which it flags with a prominent warning banner.
   - The post-commit script `.git/hooks/post-commit` unsets the Git environment variables (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`), compiles the code via `make`, runs the benchmarks script, updates the report, and prints an ASCII summary table formatted in real-time using python.
 - **No Facade Implementations**: Interfaces are fully implemented. 
