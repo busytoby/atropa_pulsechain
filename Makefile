@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-evas-smart-object-caustic-primitive-theorems-2491-2495:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495.c tsfi2-deepseek/src/auncient_evas_smart_object_caustic_primitive_theorems_2491_2495.c -o tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495 -lm
+	./tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495
+	@rm -f tests/test_auncient_evas_smart_object_caustic_primitive_theorems_2491_2495
+
 test-auncient-renderman-photon-mapping-caustics-theorems-2486-2490:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_photon_mapping_caustics_theorems_2486_2490.c tsfi2-deepseek/src/auncient_renderman_photon_mapping_caustics_theorems_2486_2490.c -o tests/test_auncient_renderman_photon_mapping_caustics_theorems_2486_2490 -lm
 	./tests/test_auncient_renderman_photon_mapping_caustics_theorems_2486_2490
