@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-radiosity-form-factors-theorems-2116-2120:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120.c tsfi2-deepseek/src/auncient_renderman_radiosity_form_factors_theorems_2116_2120.c -o tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120 -lm
+	./tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120
+	@rm -f tests/test_auncient_renderman_radiosity_form_factors_theorems_2116_2120
+
 test-auncient-renderman-photon-mapping-caustics-theorems-2111-2115:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_photon_mapping_caustics_theorems_2111_2115.c tsfi2-deepseek/src/auncient_renderman_photon_mapping_caustics_theorems_2111_2115.c -o tests/test_auncient_renderman_photon_mapping_caustics_theorems_2111_2115 -lm
 	./tests/test_auncient_renderman_photon_mapping_caustics_theorems_2111_2115
