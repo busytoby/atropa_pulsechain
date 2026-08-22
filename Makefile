@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-thacher-prover-thunk-bridge-theorems-2441-2445:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_thacher_prover_thunk_bridge_theorems_2441_2445.c tsfi2-deepseek/src/auncient_thacher_prover_thunk_bridge_theorems_2441_2445.c -o tests/test_auncient_thacher_prover_thunk_bridge_theorems_2441_2445 -lm
+	./tests/test_auncient_thacher_prover_thunk_bridge_theorems_2441_2445
+	@rm -f tests/test_auncient_thacher_prover_thunk_bridge_theorems_2441_2445
+
 test-auncient-vaesen-emotional-thunk-closure-theorems-2436-2440:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_vaesen_emotional_thunk_closure_theorems_2436_2440.c tsfi2-deepseek/src/auncient_vaesen_emotional_thunk_closure_theorems_2436_2440.c -o tests/test_auncient_vaesen_emotional_thunk_closure_theorems_2436_2440 -lm
 	./tests/test_auncient_vaesen_emotional_thunk_closure_theorems_2436_2440
