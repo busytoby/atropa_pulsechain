@@ -1622,6 +1622,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-1970 FULLY CERTIFIED!   "
 	@echo "================================================================="
 
+test-auncient-uiuc-timestar-sys-theorems-1971-1975:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_timestar_sys_theorems_1971_1975.c tsfi2-deepseek/src/auncient_uiuc_timestar_sys_theorems_1971_1975.c -o tests/test_auncient_uiuc_timestar_sys_theorems_1971_1975 -lm
+	./tests/test_auncient_uiuc_timestar_sys_theorems_1971_1975
+	@rm -f tests/test_auncient_uiuc_timestar_sys_theorems_1971_1975
+
 test-auncient-mosaic-cpmtomie-binary-unification-theorems-1966-1970:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970.c tsfi2-deepseek/src/auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970.c -o tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970 -lm
 	./tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970
