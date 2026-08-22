@@ -841,4 +841,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_vocal_purr_theorems_1911_1915
 rm -f tests/test_auncient_vsen_vocal_purr_theorems_1911_1915
 
+# Compile and run Auncient VSEn Paw Pad Surface Friction & Claw Articulation Animator (Theorems 1916-1920)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_paw_friction_theorems_1916_1920.c tsfi2-deepseek/src/auncient_vsen_paw_friction_theorems_1916_1920.c -o tests/test_auncient_vsen_paw_friction_theorems_1916_1920 -lm
+./tests/test_auncient_vsen_paw_friction_theorems_1916_1920
+rm -f tests/test_auncient_vsen_paw_friction_theorems_1916_1920
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

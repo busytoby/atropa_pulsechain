@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-paw-friction-theorems-1916-1920:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_paw_friction_theorems_1916_1920.c tsfi2-deepseek/src/auncient_vsen_paw_friction_theorems_1916_1920.c -o tests/test_auncient_vsen_paw_friction_theorems_1916_1920 -lm
+	./tests/test_auncient_vsen_paw_friction_theorems_1916_1920
+	@rm -f tests/test_auncient_vsen_paw_friction_theorems_1916_1920
+
 test-auncient-vsen-vocal-purr-theorems-1911-1915:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vocal_purr_theorems_1911_1915.c tsfi2-deepseek/src/auncient_vsen_vocal_purr_theorems_1911_1915.c -o tests/test_auncient_vsen_vocal_purr_theorems_1911_1915 -lm
 	./tests/test_auncient_vsen_vocal_purr_theorems_1911_1915
