@@ -1629,6 +1629,21 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-hal1961-speech-synth-theorems-2636-2640:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640.c tsfi2-deepseek/src/evas_smart_hal1961_speech_synth_theorems_2636_2640.c -o tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640 -lm
+	./tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640
+	@rm -f tests/test_evas_smart_hal1961_speech_synth_theorems_2636_2640
+
+test-evas-smart-hal1961-core-heuristics-theorems-2631-2635:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_core_heuristics_theorems_2631_2635.c tsfi2-deepseek/src/evas_smart_hal1961_core_heuristics_theorems_2631_2635.c -o tests/test_evas_smart_hal1961_core_heuristics_theorems_2631_2635 -lm
+	./tests/test_evas_smart_hal1961_core_heuristics_theorems_2631_2635
+	@rm -f tests/test_evas_smart_hal1961_core_heuristics_theorems_2631_2635
+
+test-evas-smart-hal1961-spectral-caustic-photons-theorems-2626-2630:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_spectral_caustic_photons_theorems_2626_2630.c tsfi2-deepseek/src/evas_smart_hal1961_spectral_caustic_photons_theorems_2626_2630.c -o tests/test_evas_smart_hal1961_spectral_caustic_photons_theorems_2626_2630 -lm
+	./tests/test_evas_smart_hal1961_spectral_caustic_photons_theorems_2626_2630
+	@rm -f tests/test_evas_smart_hal1961_spectral_caustic_photons_theorems_2626_2630
+
 test-evas-smart-total-enlightenment-harmonic-spectrum-theorems-2621-2625:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625.c tsfi2-deepseek/src/evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625.c -o tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625 -lm
 	./tests/test_evas_smart_total_enlightenment_harmonic_spectrum_theorems_2621_2625
