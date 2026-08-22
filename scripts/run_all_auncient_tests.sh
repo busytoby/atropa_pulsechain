@@ -791,4 +791,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865
 rm -f tests/test_auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865
 
+# Compile and run Auncient VSEn RenderMan XPU Spectral Path Tracer & 8-Way AMD Data Fabric (Theorems 1866-1870)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870.c tsfi2-deepseek/src/auncient_vsen_renderman_xpu_spectral_theorems_1866_1870.c -o tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870 -lm
+./tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870
+rm -f tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
