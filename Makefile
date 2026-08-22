@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-deformation-cage-theorems-1886-1890:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_deformation_cage_theorems_1886_1890.c tsfi2-deepseek/src/auncient_vsen_deformation_cage_theorems_1886_1890.c -o tests/test_auncient_vsen_deformation_cage_theorems_1886_1890 -lm
+	./tests/test_auncient_vsen_deformation_cage_theorems_1886_1890
+	@rm -f tests/test_auncient_vsen_deformation_cage_theorems_1886_1890
+
 test-auncient-vsen-procedural-animator-theorems-1881-1885:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_procedural_animator_theorems_1881_1885.c tsfi2-deepseek/src/auncient_vsen_procedural_animator_theorems_1881_1885.c -o tests/test_auncient_vsen_procedural_animator_theorems_1881_1885 -lm
 	./tests/test_auncient_vsen_procedural_animator_theorems_1881_1885
