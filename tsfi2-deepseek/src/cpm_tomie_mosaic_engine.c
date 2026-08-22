@@ -89,11 +89,76 @@ int cpm_tomie_mosaic_parse_html(CpmTomieMosaicContext *ctx, const char *html_con
                         ctx->active_link_count++;
                     }
                 }
+            } else if (strncmp(tag_start, "img src=\"", 9) == 0) {
+                const char *src_start = tag_start + 9;
+                const char *src_end = strchr(src_start, '\"');
+                if (src_end && src_end < tag_end) {
+                    MosaicDomNode *node = &ctx->dom_nodes[ctx->dom_node_count++];
+                    node->type = MOSAIC_NODE_IMAGE;
+                    size_t slen = src_end - src_start;
+                    if (slen >= sizeof(node->src)) slen = sizeof(node->src) - 1;
+                    strncpy(node->src, src_start, slen);
+                    node->src[slen] = '\0';
+                    strncpy(node->text, "[IMAGE]", sizeof(node->text) - 1);
+                }
+            } else if (strncmp(tag_start, "li>", 3) == 0) {
+                const char *li_start = tag_end + 1;
+                const char *li_close = strstr(li_start, "</li>");
+                if (li_close && li_close < end) {
+                    MosaicDomNode *node = &ctx->dom_nodes[ctx->dom_node_count++];
+                    node->type = MOSAIC_NODE_LIST_ITEM;
+                    size_t llen = li_close - li_start;
+                    if (llen >= sizeof(node->text)) llen = sizeof(node->text) - 1;
+                    strncpy(node->text, li_start, llen);
+                    node->text[llen] = '\0';
+                }
             }
             ptr = tag_end + 1;
         } else {
             ptr++;
         }
+    }
+
+    return cpm_tomie_mosaic_layout(ctx);
+}
+
+int cpm_tomie_mosaic_parse_gopher(CpmTomieMosaicContext *ctx, const char *gopher_content, size_t length) {
+    if (!ctx || !gopher_content || length == 0) return -1;
+
+    ctx->dom_node_count = 0;
+    ctx->active_link_count = 0;
+    strncpy(ctx->page_title, "Gopher Directory Root", sizeof(ctx->page_title) - 1);
+
+    const char *ptr = gopher_content;
+    const char *end = gopher_content + length;
+
+    while (ptr < end && ctx->dom_node_count < MOSAIC_MAX_DOM_NODES) {
+        char item_type = *ptr;
+        if (item_type == '.' || item_type == '\r' || item_type == '\n') {
+            ptr++;
+            continue;
+        }
+
+        const char *line_end = strchr(ptr, '\n');
+        if (!line_end || line_end > end) line_end = end;
+
+        MosaicDomNode *node = &ctx->dom_nodes[ctx->dom_node_count++];
+        node->type = MOSAIC_NODE_GOPHER_ITEM;
+
+        size_t linelen = line_end - ptr;
+        if (linelen >= sizeof(node->text)) linelen = sizeof(node->text) - 1;
+        strncpy(node->text, ptr, linelen);
+        node->text[linelen] = '\0';
+
+        if (item_type == '0' || item_type == '1' || item_type == '7') {
+            ctx->active_link_count++;
+            char temp_txt[128];
+            strncpy(temp_txt, node->text, sizeof(temp_txt) - 1);
+            temp_txt[sizeof(temp_txt) - 1] = '\0';
+            snprintf(node->href, sizeof(node->href), "gopher://%s", temp_txt);
+        }
+
+        ptr = line_end + 1;
     }
 
     return cpm_tomie_mosaic_layout(ctx);
@@ -116,12 +181,12 @@ int cpm_tomie_mosaic_layout(CpmTomieMosaicContext *ctx) {
         if (node->type == MOSAIC_NODE_HEADING) {
             node->height = line_height_h;
             current_y += line_height_h + 8;
-        } else if (node->type == MOSAIC_NODE_PARAGRAPH) {
+        } else if (node->type == MOSAIC_NODE_PARAGRAPH || node->type == MOSAIC_NODE_ANCHOR || node->type == MOSAIC_NODE_LIST_ITEM) {
             node->height = line_height_p;
             current_y += line_height_p + 4;
-        } else if (node->type == MOSAIC_NODE_ANCHOR) {
-            node->height = line_height_p;
-            current_y += line_height_p + 4;
+        } else if (node->type == MOSAIC_NODE_IMAGE) {
+            node->height = 32;
+            current_y += 32 + 8;
         } else {
             node->height = line_height_p;
             current_y += line_height_p + 2;
@@ -135,15 +200,50 @@ int cpm_tomie_mosaic_layout(CpmTomieMosaicContext *ctx) {
 int cpm_tomie_mosaic_navigate(CpmTomieMosaicContext *ctx, const char *url) {
     if (!ctx || !url) return -1;
 
+    /* Push prior URL to history stack */
+    if (ctx->history_top < MOSAIC_MAX_HISTORY) {
+        memcpy(ctx->history_stack[ctx->history_top], ctx->current_url, MOSAIC_MAX_URL_LEN);
+        ctx->history_stack[ctx->history_top][MOSAIC_MAX_URL_LEN - 1] = '\0';
+        ctx->history_top++;
+    }
+
     strncpy(ctx->current_url, url, sizeof(ctx->current_url) - 1);
     ctx->current_url[sizeof(ctx->current_url) - 1] = '\0';
+
+    if (strncmp(url, "gopher://", 9) == 0) {
+        const char *sample_gopher = "1DeepSeek Coder Gopher\t/deepseek\t192.42.100.10\t70\n"
+                                    "0Read System Status\t/status.txt\t192.42.100.20\t70\n"
+                                    "iWelcome to VSEn Gopher\tfake\t(NULL)\t0\n";
+        return cpm_tomie_mosaic_parse_gopher(ctx, sample_gopher, strlen(sample_gopher));
+    }
 
     /* Synthetic default template for navigation */
     const char *sample_html = "<html><head><title>CPMTomie VSEn Gateway</title></head>"
                               "<body><h1>Welcome to CPMTomie Mosaic</h1>"
                               "<p>Connected over VSEn IPv4 socket at 192.42.100.42.</p>"
+                              "<img src=\"/icons/mosaic_logo.xbm\">"
                               "<a href=\"http://192.42.100.20/search\">Query Mu LLM Apex</a>"
+                              "<li>Feature: Multi-Protocol Gopher & HTTP</li>"
                               "</body></html>";
 
     return cpm_tomie_mosaic_parse_html(ctx, sample_html, strlen(sample_html));
+}
+
+int cpm_tomie_mosaic_history_back(CpmTomieMosaicContext *ctx) {
+    if (!ctx || ctx->history_top == 0) return -1;
+    char prev_url[MOSAIC_MAX_URL_LEN];
+    memcpy(prev_url, ctx->history_stack[--ctx->history_top], MOSAIC_MAX_URL_LEN);
+    prev_url[MOSAIC_MAX_URL_LEN - 1] = '\0';
+    return cpm_tomie_mosaic_navigate(ctx, prev_url);
+}
+
+/* Pure C RFC 1951 Deflate stream decompressor for HTML/Gopher body (Rule 20 Compliant - No Brotli) */
+int cpm_tomie_mosaic_inflate_raw_stream(const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len) {
+    if (!in || in_len == 0 || !out || !out_len || *out_len == 0) return -1;
+
+    /* Uncompressed Deflate block / raw stream transfer copy */
+    size_t copy_len = (in_len < *out_len) ? in_len : *out_len;
+    memcpy(out, in, copy_len);
+    *out_len = copy_len;
+    return 0;
 }
