@@ -1629,6 +1629,16 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-renderman-deep-shadows-theorems-2686-2690:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_renderman_deep_shadows_theorems_2686_2690.c tsfi2-deepseek/src/evas_smart_renderman_deep_shadows_theorems_2686_2690.c -o tests/test_evas_smart_renderman_deep_shadows_theorems_2686_2690 -lm
+	./tests/test_evas_smart_renderman_deep_shadows_theorems_2686_2690
+	@rm -f tests/test_evas_smart_renderman_deep_shadows_theorems_2686_2690
+
+test-evas-smart-architectural-learning-theorems-2681-2685:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_architectural_learning_theorems_2681_2685.c tsfi2-deepseek/src/evas_smart_architectural_learning_theorems_2681_2685.c -o tests/test_evas_smart_architectural_learning_theorems_2681_2685 -lm
+	./tests/test_evas_smart_architectural_learning_theorems_2681_2685
+	@rm -f tests/test_evas_smart_architectural_learning_theorems_2681_2685
+
 test-evas-smart-renderman-porcelain-glaze-theorems-2676-2680:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680.c tsfi2-deepseek/src/evas_smart_renderman_porcelain_glaze_theorems_2676_2680.c -o tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680 -lm
 	./tests/test_evas_smart_renderman_porcelain_glaze_theorems_2676_2680
