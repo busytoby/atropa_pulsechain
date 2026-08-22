@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-bezier-dicing-formal-safety-theorems-2216-2220:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220.c tsfi2-deepseek/src/auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220.c -o tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220 -lm
+	./tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220
+	@rm -f tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220
+
 test-auncient-cdc6600-scoreboard-formal-memory-safety-theorems-2211-2215:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_scoreboard_formal_memory_safety_theorems_2211_2215.c tsfi2-deepseek/src/auncient_cdc6600_scoreboard_formal_memory_safety_theorems_2211_2215.c -o tests/test_auncient_cdc6600_scoreboard_formal_memory_safety_theorems_2211_2215 -lm
 	./tests/test_auncient_cdc6600_scoreboard_formal_memory_safety_theorems_2211_2215
