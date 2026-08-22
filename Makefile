@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-vaesen-reactive-event-theorems-1766-1770:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770.c tsfi2-deepseek/src/auncient_vsen_vaesen_reactive_event_theorems_1766_1770.c -o tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770 -lm
+	./tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
+	@rm -f tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
+
 test-auncient-vsen-vaesen-swarm-empathy-theorems-1761-1765:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765.c tsfi2-deepseek/src/auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765.c -o tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765 -lm
 	./tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765
