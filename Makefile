@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-cdc6600-eniac-scoreboard-hazard-managed-theorems-2206-2210:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_eniac_scoreboard_hazard_managed_theorems_2206_2210.c tsfi2-deepseek/src/auncient_cdc6600_eniac_scoreboard_hazard_managed_theorems_2206_2210.c -o tests/test_auncient_cdc6600_eniac_scoreboard_hazard_managed_theorems_2206_2210 -lm
+	./tests/test_auncient_cdc6600_eniac_scoreboard_hazard_managed_theorems_2206_2210
+	@rm -f tests/test_auncient_cdc6600_eniac_scoreboard_hazard_managed_theorems_2206_2210
+
 test-auncient-renderman-shadow-map-pcf-theorems-2201-2205:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_shadow_map_pcf_theorems_2201_2205.c tsfi2-deepseek/src/auncient_renderman_shadow_map_pcf_theorems_2201_2205.c -o tests/test_auncient_renderman_shadow_map_pcf_theorems_2201_2205 -lm
 	./tests/test_auncient_renderman_shadow_map_pcf_theorems_2201_2205
