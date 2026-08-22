@@ -564,6 +564,7 @@ frontend/compiled_yul.json
 *.jpeg
 *.png
 *.pdf
+!lore/RFC1117.pdf
 *.gif
 *.usda
 *.wav
