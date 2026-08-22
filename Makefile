@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-displacement-winchester-theorems-2336-2340:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340.c tsfi2-deepseek/src/auncient_renderman_displacement_winchester_theorems_2336_2340.c -o tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340 -lm
+	./tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340
+	@rm -f tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340
+
 test-auncient-renderman-shutter-aa-theorems-2331-2335:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_shutter_aa_theorems_2331_2335.c tsfi2-deepseek/src/auncient_renderman_shutter_aa_theorems_2331_2335.c -o tests/test_auncient_renderman_shutter_aa_theorems_2331_2335 -lm
 	./tests/test_auncient_renderman_shutter_aa_theorems_2331_2335
