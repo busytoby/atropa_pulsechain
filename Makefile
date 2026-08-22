@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-amd-data-fabric-zmm-theorems-1826-1830:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830.c tsfi2-deepseek/src/auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830.c -o tests/test_auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830 -lm
+	./tests/test_auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830
+	@rm -f tests/test_auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830
+
 test-auncient-vsen-strowger-pbx-switching-theorems-1821-1825:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825.c tsfi2-deepseek/src/auncient_vsen_strowger_pbx_switching_theorems_1821_1825.c -o tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825 -lm
 	./tests/test_auncient_vsen_strowger_pbx_switching_theorems_1821_1825
