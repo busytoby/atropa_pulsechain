@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-deep-shadow-maps-theorems-2091-2095:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_deep_shadow_maps_theorems_2091_2095.c tsfi2-deepseek/src/auncient_renderman_deep_shadow_maps_theorems_2091_2095.c -o tests/test_auncient_renderman_deep_shadow_maps_theorems_2091_2095 -lm
+	./tests/test_auncient_renderman_deep_shadow_maps_theorems_2091_2095
+	@rm -f tests/test_auncient_renderman_deep_shadow_maps_theorems_2091_2095
+
 test-auncient-renderman-subdiv-displacement-theorems-2086-2090:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_subdiv_displacement_theorems_2086_2090.c tsfi2-deepseek/src/auncient_renderman_subdiv_displacement_theorems_2086_2090.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_renderman_subdiv_displacement_theorems_2086_2090 -lm
 	./tests/test_auncient_renderman_subdiv_displacement_theorems_2086_2090
