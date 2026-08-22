@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-pbx-pmg-auncestral-spools-theorems-1811-1815:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815.c tsfi2-deepseek/src/auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815.c -o tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815 -lm
+	./tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815
+	@rm -f tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815
+
 test-auncient-vsen-attention-steering-mimetic-memory-theorems-1806-1810:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810.c tsfi2-deepseek/src/auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810.c -o tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810 -lm
 	./tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810

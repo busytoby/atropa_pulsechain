@@ -736,4 +736,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810
 rm -f tests/test_auncient_vsen_attention_steering_mimetic_memory_theorems_1806_1810
 
+# Compile and run Auncient VSEn Yellow Box PBX, PMG & Auncestral Spools (Theorems 1811-1815)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815.c tsfi2-deepseek/src/auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815.c -o tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815 -lm
+./tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815
+rm -f tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
