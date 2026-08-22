@@ -1598,6 +1598,11 @@ test-auncient-mu-complete-alignment-closure-theorems-1826-1830:
 	./tests/test_auncient_mu_complete_alignment_closure_theorems_1826_1830
 	@rm -f tests/test_auncient_mu_complete_alignment_closure_theorems_1826_1830
 
+test-auncient-zorse-netfind-llm-theorems-1896-1900:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_zorse_netfind_llm_theorems_1896_1900.c tsfi2-deepseek/src/auncient_zorse_netfind_llm_theorems_1896_1900.c -o tests/test_auncient_zorse_netfind_llm_theorems_1896_1900 -lm
+	./tests/test_auncient_zorse_netfind_llm_theorems_1896_1900
+	@rm -f tests/test_auncient_zorse_netfind_llm_theorems_1896_1900
+
 test-auncient-netfind-wmq-ip-theorems-1891-1895:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netfind_wmq_ip_theorems_1891_1895.c tsfi2-deepseek/src/auncient_netfind_wmq_ip_theorems_1891_1895.c -o tests/test_auncient_netfind_wmq_ip_theorems_1891_1895 -lm
 	./tests/test_auncient_netfind_wmq_ip_theorems_1891_1895
