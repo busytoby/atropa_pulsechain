@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-8way-fabric-animation-theorems-1856-1860:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860.c tsfi2-deepseek/src/auncient_vsen_8way_fabric_animation_theorems_1856_1860.c -o tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860 -lm
+	./tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860
+	@rm -f tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860
+
 test-auncient-vsen-hardware-animation-engine-theorems-1851-1855:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855.c tsfi2-deepseek/src/auncient_vsen_hardware_animation_engine_theorems_1851_1855.c -o tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855 -lm
 	./tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855

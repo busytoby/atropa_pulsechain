@@ -781,4 +781,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855
 rm -f tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855
 
+# Compile and run Auncient VSEn 8-Way AMD Data Fabric Animation Engine (Theorems 1856-1860)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860.c tsfi2-deepseek/src/auncient_vsen_8way_fabric_animation_theorems_1856_1860.c -o tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860 -lm
+./tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860
+rm -f tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
