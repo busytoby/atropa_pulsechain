@@ -796,4 +796,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870
 rm -f tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870
 
+# Compile and run Auncient VSEn 1:1 VAESEN Emotional Personality & 8-Way Data Fabric RenderMan (Theorems 1871-1875)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875.c tsfi2-deepseek/src/auncient_vsen_vaesen_renderman_personality_theorems_1871_1875.c -o tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875 -lm
+./tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875
+rm -f tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

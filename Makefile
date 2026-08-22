@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-vaesen-renderman-personality-theorems-1871-1875:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875.c tsfi2-deepseek/src/auncient_vsen_vaesen_renderman_personality_theorems_1871_1875.c -o tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875 -lm
+	./tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875
+	@rm -f tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875
+
 test-auncient-vsen-renderman-xpu-spectral-theorems-1866-1870:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870.c tsfi2-deepseek/src/auncient_vsen_renderman_xpu_spectral_theorems_1866_1870.c -o tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870 -lm
 	./tests/test_auncient_vsen_renderman_xpu_spectral_theorems_1866_1870
