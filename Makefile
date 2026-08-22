@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-sigops-formal-memory-safety-theorems-2276-2280:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_sigops_formal_memory_safety_theorems_2276_2280.c tsfi2-deepseek/src/auncient_sigops_formal_memory_safety_theorems_2276_2280.c -o tests/test_auncient_sigops_formal_memory_safety_theorems_2276_2280 -lm
+	./tests/test_auncient_sigops_formal_memory_safety_theorems_2276_2280
+	@rm -f tests/test_auncient_sigops_formal_memory_safety_theorems_2276_2280
+
 test-auncient-tartan-mann-thacher-pll-theorems-2271-2275:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_tartan_mann_thacher_pll_theorems_2271_2275.c tsfi2-deepseek/src/auncient_tartan_mann_thacher_pll_theorems_2271_2275.c -o tests/test_auncient_tartan_mann_thacher_pll_theorems_2271_2275 -lm
 	./tests/test_auncient_tartan_mann_thacher_pll_theorems_2271_2275
