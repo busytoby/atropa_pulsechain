@@ -1598,6 +1598,15 @@ test-auncient-mu-complete-alignment-closure-theorems-1826-1830:
 	./tests/test_auncient_mu_complete_alignment_closure_theorems_1826_1830
 	@rm -f tests/test_auncient_mu_complete_alignment_closure_theorems_1826_1830
 
+test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-1895 \
+                                    test-auncient-zorse-netfind-llm-theorems-1896-1900 \
+                                    test-auncient-netfind-fabric-failover-theorems-1901-1905 \
+                                    test-auncient-netfind-cross-protocol-theorems-1906-1910 \
+                                    test-auncient-thacher-stanag-search-theorems-1911-1915
+	@echo "================================================================="
+	@echo "ALL NETFIND FORMAL THEOREMS 1891-1915 FULLY VERIFIED & CERTIFIED!"
+	@echo "================================================================="
+
 test-auncient-thacher-stanag-search-theorems-1911-1915:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_thacher_stanag_search_theorems_1911_1915.c tsfi2-deepseek/src/auncient_thacher_stanag_search_theorems_1911_1915.c -o tests/test_auncient_thacher_stanag_search_theorems_1911_1915 -lm
 	./tests/test_auncient_thacher_stanag_search_theorems_1911_1915
