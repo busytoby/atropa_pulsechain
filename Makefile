@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-cpm-tomie-mosaic-efl-renderman-theorems-2371-2375:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375.c tsfi2-deepseek/src/auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375.c -o tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375 -lm
+	./tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375
+	@rm -f tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375
+
 test-auncient-hal-netsearch-ccso-hud-theorems-2366-2370:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370.c tsfi2-deepseek/src/auncient_hal_netsearch_ccso_hud_theorems_2366_2370.c -o tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370 -lm
 	./tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370
