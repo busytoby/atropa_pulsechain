@@ -1608,6 +1608,11 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
 	@echo "ALL NETFIND FORMAL THEOREMS 1891-1920 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
+test-auncient-mosaic-cpmtomie-theorems-1921-1925:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_mosaic_cpmtomie_theorems_1921_1925.c tsfi2-deepseek/src/auncient_mosaic_cpmtomie_theorems_1921_1925.c tsfi2-deepseek/src/cpm_tomie_mosaic_engine.c -o tests/test_auncient_mosaic_cpmtomie_theorems_1921_1925 -lm
+	./tests/test_auncient_mosaic_cpmtomie_theorems_1921_1925
+	@rm -f tests/test_auncient_mosaic_cpmtomie_theorems_1921_1925
+
 test-auncient-netfind-kvcache-search-theorems-1916-1920:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netfind_kvcache_search_theorems_1916_1920.c tsfi2-deepseek/src/auncient_netfind_kvcache_search_theorems_1916_1920.c -o tests/test_auncient_netfind_kvcache_search_theorems_1916_1920 -lm
 	./tests/test_auncient_netfind_kvcache_search_theorems_1916_1920
