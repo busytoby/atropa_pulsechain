@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-efl-edje-theme-shading-theorems-2171-2175:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175.c tsfi2-deepseek/src/auncient_efl_edje_theme_shading_theorems_2171_2175.c -o tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175 -lm
+	./tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175
+	@rm -f tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175
+
 test-auncient-efl-mosaic-renderman-integration-theorems-2166-2170:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170.c tsfi2-deepseek/src/auncient_efl_mosaic_renderman_integration_theorems_2166_2170.c -o tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170 -lm
 	./tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170
