@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-chinese-cpm-baai-tensor-theorems-2081-2085:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_chinese_cpm_baai_tensor_theorems_2081_2085.c tsfi2-deepseek/src/auncient_chinese_cpm_baai_tensor_theorems_2081_2085.c -o tests/test_auncient_chinese_cpm_baai_tensor_theorems_2081_2085 -lm
+	./tests/test_auncient_chinese_cpm_baai_tensor_theorems_2081_2085
+	@rm -f tests/test_auncient_chinese_cpm_baai_tensor_theorems_2081_2085
+
 test-auncient-edi-editor-rib-syntax-theorems-2076-2080:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080.c tsfi2-deepseek/src/auncient_edi_editor_rib_syntax_theorems_2076_2080.c -o tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080 -lm
 	./tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080
