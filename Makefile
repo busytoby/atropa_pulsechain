@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-algol60-thunk-compositor-theorems-2431-2435:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_algol60_thunk_compositor_theorems_2431_2435.c tsfi2-deepseek/src/auncient_algol60_thunk_compositor_theorems_2431_2435.c -o tests/test_auncient_algol60_thunk_compositor_theorems_2431_2435 -lm
+	./tests/test_auncient_algol60_thunk_compositor_theorems_2431_2435
+	@rm -f tests/test_auncient_algol60_thunk_compositor_theorems_2431_2435
+
 test-auncient-fet-discharge-thermal-shading-theorems-2426-2430:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430.c tsfi2-deepseek/src/auncient_fet_discharge_thermal_shading_theorems_2426_2430.c -o tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430 -lm
 	./tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430
