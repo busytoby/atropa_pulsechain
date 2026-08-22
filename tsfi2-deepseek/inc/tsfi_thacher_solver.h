@@ -33,4 +33,14 @@ int tsfi_thacher_cacm_algol_quadrature(
     double *integral_out
 );
 
+/* Non-Preferential 3-Term Recurrence Continued-Fraction Expansion */
+int tsfi_thacher_3term_recurrence_eval(
+    tsfi_thacher_solver_t *solver,
+    double x,
+    const double *a_coeffs,
+    const double *x_points,
+    size_t order,
+    double *result_out
+);
+
 #endif // TSFI_THACHER_SOLVER_H

@@ -36,11 +36,7 @@ int tsfi_thacher_rational_eval(
     double p = 0.357 * x + 0.125 * x * x;
     double q = 1.0 + 0.05 * x * x;
     *result_out = p / q;
-
     solver->evaluations_count++;
-    printf("[THACHER RATIONAL SOLVER] ID: %u | x: %.4f | R(x): %.6f | Gas: %u | File: %s\n",
-           solver->solver_id, x, *result_out, solver->evm_gas_units, solver->tape_dat_bin);
-
     return 0;
 }
 
@@ -57,8 +53,41 @@ int tsfi_thacher_cacm_algol_quadrature(
     *integral_out = (b - a) * (mid * mid + 1.0);
 
     solver->evaluations_count++;
-    printf("[THACHER CACM ALGOL QUADRATURE] Range: [%.2f, %.2f] | Integral: %.6f | Gas: %u\n",
-           a, b, *integral_out, solver->evm_gas_units);
+    return 0;
+}
 
+int tsfi_thacher_3term_recurrence_eval(
+    tsfi_thacher_solver_t *solver,
+    double x,
+    const double *a_coeffs,
+    const double *x_points,
+    size_t order,
+    double *result_out
+) {
+    if (!solver || !result_out || !a_coeffs || !x_points || order == 0) return -1;
+
+    double p_prev = 1.0;
+    double p_curr = a_coeffs[0];
+    double q_prev = 0.0;
+    double q_curr = 1.0;
+
+    for (size_t i = 1; i < order; ++i) {
+        double factor = a_coeffs[i] * (x - x_points[i - 1]);
+        double p_next = p_curr + factor * p_prev;
+        double q_next = q_curr + factor * q_prev;
+
+        p_prev = p_curr;
+        p_curr = p_next;
+        q_prev = q_curr;
+        q_curr = q_next;
+    }
+
+    if (fabs(q_curr) < 1e-15) {
+        *result_out = 0.0;
+        return -2;
+    }
+
+    *result_out = p_curr / q_curr;
+    solver->evaluations_count++;
     return 0;
 }
