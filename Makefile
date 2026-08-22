@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-microfacet-anisotropy-theorems-2416-2420:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420.c tsfi2-deepseek/src/auncient_renderman_microfacet_anisotropy_theorems_2416_2420.c -o tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420 -lm
+	./tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420
+	@rm -f tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420
+
 test-auncient-renderman-sss-porcelain-teapot-theorems-2411-2415:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_sss_porcelain_teapot_theorems_2411_2415.c tsfi2-deepseek/src/auncient_renderman_sss_porcelain_teapot_theorems_2411_2415.c -o tests/test_auncient_renderman_sss_porcelain_teapot_theorems_2411_2415 -lm
 	./tests/test_auncient_renderman_sss_porcelain_teapot_theorems_2411_2415
