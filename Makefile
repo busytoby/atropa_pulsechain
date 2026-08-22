@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-weyl-root-system-teapot-manifold-theorems-2306-2310:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_weyl_root_system_teapot_manifold_theorems_2306_2310.c tsfi2-deepseek/src/auncient_weyl_root_system_teapot_manifold_theorems_2306_2310.c -o tests/test_auncient_weyl_root_system_teapot_manifold_theorems_2306_2310 -lm
+	./tests/test_auncient_weyl_root_system_teapot_manifold_theorems_2306_2310
+	@rm -f tests/test_auncient_weyl_root_system_teapot_manifold_theorems_2306_2310
+
 test-auncient-weyl-closure-perimeter-theorems-2301-2305:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_weyl_closure_perimeter_theorems_2301_2305.c tsfi2-deepseek/src/auncient_weyl_closure_perimeter_theorems_2301_2305.c -o tests/test_auncient_weyl_closure_perimeter_theorems_2301_2305 -lm
 	./tests/test_auncient_weyl_closure_perimeter_theorems_2301_2305
