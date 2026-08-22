@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-hardware-animation-engine-theorems-1851-1855:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855.c tsfi2-deepseek/src/auncient_vsen_hardware_animation_engine_theorems_1851_1855.c -o tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855 -lm
+	./tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855
+	@rm -f tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855
+
 test-auncient-vsen-lspci-full-system-theorems-1846-1850:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850.c tsfi2-deepseek/src/auncient_vsen_lspci_full_system_theorems_1846_1850.c -o tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850 -lm
 	./tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850

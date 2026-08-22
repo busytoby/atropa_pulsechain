@@ -776,4 +776,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850
 rm -f tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850
 
+# Compile and run Auncient VSEn Hardware Animation Engine & Strowger Kinematics (Theorems 1851-1855)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855.c tsfi2-deepseek/src/auncient_vsen_hardware_animation_engine_theorems_1851_1855.c -o tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855 -lm
+./tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855
+rm -f tests/test_auncient_vsen_hardware_animation_engine_theorems_1851_1855
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
