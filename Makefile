@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-fet-discharge-thermal-shading-theorems-2426-2430:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430.c tsfi2-deepseek/src/auncient_fet_discharge_thermal_shading_theorems_2426_2430.c -o tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430 -lm
+	./tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430
+	@rm -f tests/test_auncient_fet_discharge_thermal_shading_theorems_2426_2430
+
 test-auncient-holographic-mosaic-reyes-teapot-theorems-2421-2425:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425.c tsfi2-deepseek/src/auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425.c -o tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425 -lm
 	./tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425
