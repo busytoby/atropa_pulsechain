@@ -881,4 +881,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_temporal_denoiser_theorems_1951_1955
 rm -f tests/test_auncient_vsen_temporal_denoiser_theorems_1951_1955
 
+# Compile and run Auncient VSEn Spectral Dispersion & Corneal Iridescence Animator (Theorems 1956-1960)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_spectral_dispersion_theorems_1956_1960.c tsfi2-deepseek/src/auncient_vsen_spectral_dispersion_theorems_1956_1960.c -o tests/test_auncient_vsen_spectral_dispersion_theorems_1956_1960 -lm
+./tests/test_auncient_vsen_spectral_dispersion_theorems_1956_1960
+rm -f tests/test_auncient_vsen_spectral_dispersion_theorems_1956_1960
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
