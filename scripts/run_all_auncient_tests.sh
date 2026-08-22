@@ -681,4 +681,19 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 tests/test_auncient_vppd_avail.c -o tests
 gcc -Wall -Wextra -Werror -std=c11 -O3 -Iinc -Isrc -Itsfi2-deepseek/inc tests/test_auncient_turtle_usd.c tsfi2-deepseek/src/auncient_turtle_usd.c tsfi2-deepseek/src/auncient_timeline_autodin.c tsfi2-deepseek/src/auncient_cloth_material_bridge.c tsfi2-deepseek/src/tsfi_cade_imf_nato.c tsfi2-deepseek/src/tsfi_riinterface.c tsfi2-deepseek/src/auncient_sdk.c tsfi2-deepseek/src/auncient_vulkan_materials.c tsfi2-deepseek/src/cloth_simulator.c tsfi2-deepseek/src/tsfi_usdshade.c tsfi2-deepseek/src/auncient_usd_stl_bridge.c -o tests/test_auncient_turtle_usd -lm -lrt -lssl -lcrypto
 ./tests/test_auncient_turtle_usd
 
+# Compile and run Auncient VSEn VFIO STANAG Spool Pipeline (Theorems 1756-1760)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760.c tsfi2-deepseek/src/auncient_vsen_vfio_stanag_spool_theorems_1756_1760.c -o tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760 -lm
+./tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760
+rm -f tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760
+
+# Compile and run Auncient VSEn VAESEN Swarm Empathy & FET Discharge (Theorems 1761-1765)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765.c tsfi2-deepseek/src/auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765.c -o tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765 -lm
+./tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765
+rm -f tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765
+
+# Compile and run Auncient VSEn VAESEN Reactive Event Loop & 4-Quadrant Dispatch (Theorems 1766-1770)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770.c tsfi2-deepseek/src/auncient_vsen_vaesen_reactive_event_theorems_1766_1770.c -o tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770 -lm
+./tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
+rm -f tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
