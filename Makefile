@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-corneal-saccade-theorems-1906-1910:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910.c tsfi2-deepseek/src/auncient_vsen_corneal_saccade_theorems_1906_1910.c -o tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910 -lm
+	./tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910
+	@rm -f tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910
+
 test-auncient-vsen-volumetric-gait-theorems-1901-1905:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905.c tsfi2-deepseek/src/auncient_vsen_volumetric_gait_theorems_1901_1905.c -o tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905 -lm
 	./tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905

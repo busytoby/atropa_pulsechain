@@ -831,4 +831,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905
 rm -f tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905
 
+# Compile and run Auncient VSEn Corneal Optics & Micro-Saccadic Ocular Animator (Theorems 1906-1910)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910.c tsfi2-deepseek/src/auncient_vsen_corneal_saccade_theorems_1906_1910.c -o tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910 -lm
+./tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910
+rm -f tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
