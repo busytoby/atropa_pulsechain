@@ -756,4 +756,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830
 rm -f tests/test_auncient_vsen_amd_data_fabric_zmm_theorems_1826_1830
 
+# Compile and run Auncient VSEn Vulkan, RenderMan & The Mann (Theorems 1831-1835)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835.c tsfi2-deepseek/src/auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835.c -o tests/test_auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835 -lm
+./tests/test_auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835
+rm -f tests/test_auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
