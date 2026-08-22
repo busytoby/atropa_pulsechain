@@ -1608,6 +1608,11 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
 	@echo "ALL NETFIND FORMAL THEOREMS 1891-1920 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
+test-auncient-cics-ccso-bayesian-theorems-1931-1935:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cics_ccso_bayesian_theorems_1931_1935.c tsfi2-deepseek/src/auncient_cics_ccso_bayesian_theorems_1931_1935.c -o tests/test_auncient_cics_ccso_bayesian_theorems_1931_1935 -lm
+	./tests/test_auncient_cics_ccso_bayesian_theorems_1931_1935
+	@rm -f tests/test_auncient_cics_ccso_bayesian_theorems_1931_1935
+
 test-auncient-ccso-grammar-filter-theorems-1926-1930:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ccso_grammar_filter_theorems_1926_1930.c tsfi2-deepseek/src/auncient_ccso_grammar_filter_theorems_1926_1930.c -o tests/test_auncient_ccso_grammar_filter_theorems_1926_1930 -lm
 	./tests/test_auncient_ccso_grammar_filter_theorems_1926_1930
