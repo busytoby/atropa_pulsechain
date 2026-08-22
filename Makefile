@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-cpmtomie-efl-desktop-binaries-theorems-2026-2030:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cpmtomie_efl_desktop_binaries_theorems_2026_2030.c tsfi2-deepseek/src/auncient_cpmtomie_efl_desktop_binaries_theorems_2026_2030.c -o tests/test_auncient_cpmtomie_efl_desktop_binaries_theorems_2026_2030 -lm
+	./tests/test_auncient_cpmtomie_efl_desktop_binaries_theorems_2026_2030
+	@rm -f tests/test_auncient_cpmtomie_efl_desktop_binaries_theorems_2026_2030
+
 test-auncient-efl-evas-ecore-renderman-theorems-2021-2025:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_efl_evas_ecore_renderman_theorems_2021_2025.c tsfi2-deepseek/src/auncient_efl_evas_ecore_renderman_theorems_2021_2025.c -o tests/test_auncient_efl_evas_ecore_renderman_theorems_2021_2025 -lm
 	./tests/test_auncient_efl_evas_ecore_renderman_theorems_2021_2025
