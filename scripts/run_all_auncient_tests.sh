@@ -786,4 +786,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860
 rm -f tests/test_auncient_vsen_8way_fabric_animation_theorems_1856_1860
 
+# Compile and run Auncient VSEn RenderMan RIS & 8-Way AMD Data Fabric (Theorems 1861-1865)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865.c tsfi2-deepseek/src/auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865.c -o tests/test_auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865 -lm
+./tests/test_auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865
+rm -f tests/test_auncient_vsen_renderman_ris_8way_fabric_theorems_1861_1865
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
