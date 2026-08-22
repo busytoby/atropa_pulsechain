@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-vsen-micropolygon-raster-mesh-theorems-2046-2050:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_vsen_micropolygon_raster_mesh_theorems_2046_2050.c tsfi2-deepseek/src/auncient_vsen_micropolygon_raster_mesh_theorems_2046_2050.c -o tests/test_auncient_vsen_micropolygon_raster_mesh_theorems_2046_2050 -lm
+	./tests/test_auncient_vsen_micropolygon_raster_mesh_theorems_2046_2050
+	@rm -f tests/test_auncient_vsen_micropolygon_raster_mesh_theorems_2046_2050
+
 test-auncient-vsen-ecore-pipe-ipc-teapot-theorems-2041-2045:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_vsen_ecore_pipe_ipc_teapot_theorems_2041_2045.c tsfi2-deepseek/src/auncient_vsen_ecore_pipe_ipc_teapot_theorems_2041_2045.c -o tests/test_auncient_vsen_ecore_pipe_ipc_teapot_theorems_2041_2045 -lm
 	./tests/test_auncient_vsen_ecore_pipe_ipc_teapot_theorems_2041_2045
