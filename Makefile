@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-vaesen-ilp-teapot-renderman-theorems-2321-2325:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_vaesen_ilp_teapot_renderman_theorems_2321_2325.c tsfi2-deepseek/src/auncient_vaesen_ilp_teapot_renderman_theorems_2321_2325.c -o tests/test_auncient_vaesen_ilp_teapot_renderman_theorems_2321_2325 -lm
+	./tests/test_auncient_vaesen_ilp_teapot_renderman_theorems_2321_2325
+	@rm -f tests/test_auncient_vaesen_ilp_teapot_renderman_theorems_2321_2325
+
 test-auncient-renderman-microcode-cdc6600-scoreboard-theorems-2316-2320:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2316_2320.c tsfi2-deepseek/src/auncient_renderman_microcode_cdc6600_scoreboard_theorems_2316_2320.c -o tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2316_2320 -lm
 	./tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2316_2320
