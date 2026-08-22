@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-illiac1-vsen-8way-fabric-theorems-2291-2295:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295.c tsfi2-deepseek/src/auncient_illiac1_vsen_8way_fabric_theorems_2291_2295.c -o tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295 -lm
+	./tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295
+	@rm -f tests/test_auncient_illiac1_vsen_8way_fabric_theorems_2291_2295
+
 test-auncient-illiac1-40bit-q39-bezier-theorems-2286-2290:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_illiac1_40bit_q39_bezier_theorems_2286_2290.c tsfi2-deepseek/src/auncient_illiac1_40bit_q39_bezier_theorems_2286_2290.c -o tests/test_auncient_illiac1_40bit_q39_bezier_theorems_2286_2290 -lm
 	./tests/test_auncient_illiac1_40bit_q39_bezier_theorems_2286_2290
