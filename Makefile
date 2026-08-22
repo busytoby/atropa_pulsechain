@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-vaesen-swarm-empathy-theorems-1761-1765:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765.c tsfi2-deepseek/src/auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765.c -o tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765 -lm
+	./tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765
+	@rm -f tests/test_auncient_vsen_vaesen_swarm_empathy_theorems_1761_1765
+
 test-auncient-vsen-vfio-stanag-spool-theorems-1756-1760:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760.c tsfi2-deepseek/src/auncient_vsen_vfio_stanag_spool_theorems_1756_1760.c -o tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760 -lm
 	./tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760
