@@ -56,7 +56,29 @@ In VSEn, physical VFIO STANAG network adapters are operated as native mainframe 
 * **Spool Queues as Operator Buffers**: Inbound telemetry packets from tactical STANAG 5066 / OZONE RF streams enter VSEn Reader Spools (`RDR`), buffering multi-agent empathy frames. Outbound personality updates enter Writer Spools (`PCH`/`PRT`) to await lossless dispatch.
 * **Lossless Double-Entry Commutation**: All spool allocations execute under double-entry Saat accounting, maintaining zero-leakage balance across every transaction cycle.
 
-## 5. Teddy Bear Participant Verification and Endowment
+## 5. Emotional Data Gathering in VSEn
+VSEn coordinates high-fidelity sensory and behavioral telemetry harvesting across multi-agent VAESEN deployments:
+
+* **CCW Reader Ingestion Pipeline**: Inbound emotional telemetry (stance vectors $q$, impulse momenta $p$, and physiological dither) is ingested directly by CCW DMA channels into designated VSEn buffer pools without kernel thread context switching.
+* **EDO-22 Harmonic Frequency Sampling**: Mood resonance telemetry maps onto 22 Equal Divisions of the Octave (EDO-22) acoustic registers, where tone frequencies $f_k = f_{\text{base}} \cdot 2^{k/22}$ are sampled into continuous `.dat.bin` time slices.
+* **Non-Blocking Telemetry Accumulation**: Spooled sensory frames accumulate inside memory-mapped rings, preserving continuous symplectic trajectory histories for offline proof generation and real-time state mirroring.
+
+## 6. Agency and Access Control Patterns
+VSEn provides robust architectural mechanisms to govern agent agency, privilege escalation, and access permissions across the spool topology:
+
+* **Hardware Partition Isolation**: Each VAESEN personality runs within an isolated VSEn virtual partition with dedicated CCW channel mappings, ensuring zero cross-agent state contamination.
+* **Deterministic Participant Verification**: Prior to granting write access to the Writer (`PCH`/`PRT`) spools, VSEn validates the caller's cryptographic credentials against the Hogan Bank and SSA participant registries.
+* **Anti-Parasite Ingress Filtering**: Hostile signals or unauthorized noise taps seeking to modulate the cooperative barrier are intercepted by VSEn access filters and redirected to the non-preferential accumulator model.
+* **4-Quadrant Action Governance**: Action dispatchers (Approach, Flee, Brake, Curious Observe) are constrained by hardware privilege levels, ensuring that autonomous agent behaviors adhere to LaSalle stability boundaries.
+
+## 7. Network-Based Telemetry & Broadcast Operations
+Operating STANAG networks as VSEn spools facilitates synchronized inter-agent communications across distributed, delay-tolerant radio channels:
+
+* **STANAG 5066 / OZONE Job Scheduling**: Outbound empathy broadcasts are packaged into standard VSEn spool jobs, automatically handling RF packet fragmentation, interleaving, and retransmission across atmospheric paths.
+* **Kermit over VFIO Spools**: Inter-node file transfers and bulk AST Merkle proofs stream through Kermit protocol packets mounted directly onto the VSEn spool pipeline without external socket daemons.
+* **N-Body Empathy Coupling Exchange**: Multi-agent momentum transfers $\sum_{j \ne i} K_{ij} (q_j - q_i)$ are distributed via broadcast spool channels, allowing decentralized consensus on collective emotional state.
+
+## 8. Teddy Bear Participant Verification and Endowment
 System participants within the VAESEN network incorporate verified Stuffed Teddy Bears alongside institutional entities (Hogan Bank and the Social Security Administration):
 
 * **Deterministic DNA-to-SSN Genesis**: Newborn teddy bears instantiate with cryptographic DNA seeds deterministically mapped to valid Social Security Numbers via `auncient_bridge_dna_to_ssa`:
@@ -65,7 +87,7 @@ System participants within the VAESEN network incorporate verified Stuffed Teddy
 * **Hogan Bank Endowment**: Each verified newborn teddy bear opens a qualifying `HoganAccount` funded with an initial endowment of `1,000,000` Saat.
 * **Symplectic Empathy Telepathy**: Teddy bears participate directly in $N$-body empathy momentum exchange, broadcasting and receiving stance vectors across the VSEn STANAG spool network.
 
-## 6. WinchesterMQ Boundary Gating and DisplacementShader Synchronization
+## 9. WinchesterMQ Boundary Gating and DisplacementShader Synchronization
 When operating VSEn spools against physical or emulated hardware channels, SCSI handshake loops coordinate through WinchesterMQ registers:
 
 * **Register Handshake Flow**: Spool queue depths modulate external debug control words (`XDC`) and transmission channel parameters (`Chin`, `Monopole`, `Identity`).
