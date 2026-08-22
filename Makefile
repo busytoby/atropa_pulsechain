@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-vfio-stanag-spool-theorems-1756-1760:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760.c tsfi2-deepseek/src/auncient_vsen_vfio_stanag_spool_theorems_1756_1760.c -o tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760 -lm
+	./tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760
+	@rm -f tests/test_auncient_vsen_vfio_stanag_spool_theorems_1756_1760
+
 test-auncient-fpga-vsen-ccw-dma-theorems-1026-1030:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_fpga_vsen_ccw_dma_theorems_1026_1030.c tsfi2-deepseek/src/auncient_fpga_vsen_ccw_dma_theorems_1026_1030.c -o tests/test_auncient_fpga_vsen_ccw_dma_theorems_1026_1030 -lm
 	./tests/test_auncient_fpga_vsen_ccw_dma_theorems_1026_1030
