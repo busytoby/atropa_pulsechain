@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-integrated-teapot-demo-theorems-2176-2180:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180.c tsfi2-deepseek/src/auncient_renderman_integrated_teapot_demo_theorems_2176_2180.c -o tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180 -lm
+	./tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180
+	@rm -f tests/test_auncient_renderman_integrated_teapot_demo_theorems_2176_2180
+
 test-auncient-efl-edje-theme-shading-theorems-2171-2175:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175.c tsfi2-deepseek/src/auncient_efl_edje_theme_shading_theorems_2171_2175.c -o tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175 -lm
 	./tests/test_auncient_efl_edje_theme_shading_theorems_2171_2175
