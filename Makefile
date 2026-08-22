@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-algorithm2-rootfinder-ilp-theorems-2341-2345:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_algorithm2_rootfinder_ilp_theorems_2341_2345.c tsfi2-deepseek/src/auncient_algorithm2_rootfinder_ilp_theorems_2341_2345.c -o tests/test_auncient_algorithm2_rootfinder_ilp_theorems_2341_2345 -lm
+	./tests/test_auncient_algorithm2_rootfinder_ilp_theorems_2341_2345
+	@rm -f tests/test_auncient_algorithm2_rootfinder_ilp_theorems_2341_2345
+
 test-auncient-renderman-displacement-winchester-theorems-2336-2340:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340.c tsfi2-deepseek/src/auncient_renderman_displacement_winchester_theorems_2336_2340.c -o tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340 -lm
 	./tests/test_auncient_renderman_displacement_winchester_theorems_2336_2340
