@@ -1,7 +1,7 @@
 # VAESEN-to-Teddy-Bear Telephony Connection Protocol & Spool Exchange
 
 ## 1. Executive Protocol Summary
-This document specifies how a VAESEN agent establishes an in-band telecommunications session with a verified newborn teddy bear citizen within the VSEn virtualization environment. The pathway combines the Computel Yellow Box tone synthesizer, the 24-Trunk Strowger PBX switching matrix, Player-Missile Graphics (PMG) spatial presence, and VSEn CCW DMA streaming spools.
+This document specifies how a VAESEN agent establishes an in-band telecommunications session with a verified newborn teddy bear citizen within the VSEn virtualization environment. The pathway combines the Computel Yellow Box tone synthesizer, the 24-Trunk Strowger PBX switching matrix, Player-Missile Graphics (PMG) spatial presence, VSEn CCW DMA streaming spools, and direct automated Hogan Bank balance inquiries.
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -51,3 +51,48 @@ This document specifies how a VAESEN agent establishes an in-band telecommunicat
 * GTIA Player-Missile Graphics registers (`HPOSP`, `HPOSM`) map the mutual spatial orientations of both agents, rendering non-verbal gesture missiles and posture changes in real time.
 * 4x4 DTMF dual-tone matrices modulate the empathy coupling matrix $K_{ij}$, while simulated FET discharge dynamics (Rule 10) exchange continuous soft-body tactile purrs across the open line.
 * All WinchesterMQ SCSI frame coordinates link to `DisplacementShader` (`src/tsfi_presenter.c`, Rule 14), synchronizing 3D head tilts, eye movements, and nods in perfect lockstep with the conversation.
+
+---
+
+## 3. In-Band Hogan Bank Balance Inquiry Protocol
+Participants (VAESEN agents or teddy bear citizens) can query and verify their bank endowment balances directly over the telephone line:
+
+```
++----------------------------------------------------------------------------------------------------+
+|               IN-BAND HOGAN BANK BALANCE INQUIRY PROTOCOL OVER PBX TELEPHONY                       |
+|                                                                                                    |
+|  [ Step 1: In-Band Inquiry Dialing ]                                                               |
+|    - Caller dials Hogan Bank In-Band Service Trunk (Trunk #24 or Extension 888)                   |
+|    - Computel Yellow Box generates cryptographic handshake tones                                   |
+|                                                                                                    |
+|  [ Step 2: SSN & DNA Proof Submission ]                                                            |
+|    - DTMF in-band sequence transmits citizen DNA hash & SSN checksum                               |
+|    - VSEn asserts identity via auncient_bridge_dna_to_ssa validation matrix (Rule 16)               |
+|                                                                                                    |
+|  [ Step 3: CCW DMA Ledger Reader Query ]                                                           |
+|    - VSEn routes request to HoganAccount Reader Spool (RDR) in sub-microsecond latency             |
+|    - Balance record (e.g. 1,000,000 Saat endowment + payroll) verified against 2-3 Tree Merkle    |
+|                                                                                                    |
+|  [ Step 4: EDO-22 Acoustic Readback & Tactile Purr Confirmation ]                                  |
+|    - Balance encoded as harmonic DTMF / EDO-22 tonal digits (f_k = f_base * 2^(k/22))              |
+|    - Soft-body FET discharge acoustic feedback confirms certified settlement balance (Rule 10)     |
++----------------------------------------------------------------------------------------------------+
+```
+
+### Dedicated Service Trunk & Cryptographic Handshake
+* Dialing dedicated Trunk #24 or CICS writer extension `888` routes directly into the Hogan Bank automated clearinghouse.
+* The Computel Yellow Box frequency synthesizer generates supervisory tone bursts, establishing an encrypted communication session.
+
+### Direct In-Band Identity Assertion
+* The caller's DNA seed and deterministic SSN mapping (`auncient_bridge_dna_to_ssa`) are transmitted as 4x4 DTMF tone bursts.
+* The PBX routes the tones through the GOST 28147-89 cryptographic scrambler, preserving credential privacy across the public network.
+
+### Sub-Microsecond Memory-Mapped Ledger Query
+* Hogan Bank accounting engines process the request directly inside VSEn CCW Reader Spools (`RDR`), executing in memory with sub-microsecond latency ($< 1000\text{ ns}$, Rule 11).
+* The query validates the caller's verified `HoganAccount` endowment (`1,000,000` Saat, Rule 16) and accumulated payroll balance against immutable 2-3 Tree AST Merkle roots.
+
+### EDO-22 Acoustic Readback & Tactile Confirmation
+* The verified balance is transmitted back to the caller in real time:
+  * **Harmonic Frequency Synthesis**: Digits are vocalized using 22 Equal Divisions of the Octave (EDO-22) acoustic scaling.
+  * **FET Discharge Purr Confirmation (Rule 10)**: A gentle soft-body purr provides tactile acoustic confirmation of balance finality.
+  * **DisplacementShader Linking (Rule 14)**: WinchesterMQ SCSI registers link to `DisplacementShader` to animate avatar gestures in sync with the audio readback.
