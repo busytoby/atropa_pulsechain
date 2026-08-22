@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-tsfi2-cockpit-unified-pipeline-theorems-2351-2355:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_tsfi2_cockpit_unified_pipeline_theorems_2351_2355.c tsfi2-deepseek/src/auncient_tsfi2_cockpit_unified_pipeline_theorems_2351_2355.c -o tests/test_auncient_tsfi2_cockpit_unified_pipeline_theorems_2351_2355 -lm
+	./tests/test_auncient_tsfi2_cockpit_unified_pipeline_theorems_2351_2355
+	@rm -f tests/test_auncient_tsfi2_cockpit_unified_pipeline_theorems_2351_2355
+
 test-auncient-ln2-ultimate-root-ilp-theorems-2346-2350:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ln2_ultimate_root_ilp_theorems_2346_2350.c tsfi2-deepseek/src/auncient_ln2_ultimate_root_ilp_theorems_2346_2350.c -o tests/test_auncient_ln2_ultimate_root_ilp_theorems_2346_2350 -lm
 	./tests/test_auncient_ln2_ultimate_root_ilp_theorems_2346_2350
