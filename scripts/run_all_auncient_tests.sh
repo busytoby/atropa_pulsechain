@@ -856,4 +856,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_tripartite_llm_animator_theorems_1926_1930
 rm -f tests/test_auncient_vsen_tripartite_llm_animator_theorems_1926_1930
 
+# Compile and run Auncient VSEn Closed-Loop Symplectic Audio-Gestural Feedback Animator (Theorems 1931-1935)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935.c tsfi2-deepseek/src/auncient_vsen_symplectic_feedback_theorems_1931_1935.c -o tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935 -lm
+./tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935
+rm -f tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
