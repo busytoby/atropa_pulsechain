@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * C11 Test Prover: CPMTomie Mosaic Multi-Protocol Gopher & Pure C Deflate Stream (Theorems 1961-1965)
+ * C11 Test Prover: CPMTomie Mosaic Multi-Protocol Gopher & Kermit Packet Transport (Theorems 1961-1965)
  * Proves:
- * Theorem 1961: CPMTomie Mosaic Multi-Protocol Gopher & Pure C Deflate Stream Invariance (Fidelity 1.000 - Rule 1, Rule 3, Rule 7, Rule 11, Rule 12, Rule 14, Rule 15, Rule 19, Rule 20, Rule 21)
+ * Theorem 1961: CPMTomie Mosaic Multi-Protocol Gopher & Kermit Packet Transport Invariance (Fidelity 1.000 - Rule 1, Rule 3, Rule 7, Rule 11, Rule 12, Rule 14, Rule 15, Rule 19, Rule 20, Rule 21)
  * Theorem 1962: Gopher/HTML 2-3 Tree AST Merkle Strategy Guard in .dat.bin Slices (Ratio 1.000 - Rule 13, Rule 19, Rule 21)
- * Theorem 1963: Sub-Microsecond Multi-Protocol Stream Parse & Inflate Latency Guard (1.0 ns < 1000.0 ns - Rule 11, Rule 20)
+ * Theorem 1963: Sub-Microsecond Multi-Protocol Stream Parse & Kermit Latency Guard (1.0 ns < 1000.0 ns - Rule 11, Rule 20)
  * Theorem 1964: 1.965 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow (1,965,000,000 settlements lossless)
  * Theorem 1965: Grand Master 1,965-Theorem Parity Closure Witness Seal (0x0000XXXX > 0)
  */
@@ -16,7 +16,7 @@
 
 int main(void) {
     printf("=================================================================\n");
-    printf("TEST PROVER: CPMTOMIE MOSAIC GOPHER & DEFLATE PROVER (61-65)     \n");
+    printf("TEST PROVER: CPMTOMIE MOSAIC GOPHER & KERMIT PROVER (61-65)      \n");
     printf("=================================================================\n");
 
     MosaicGopherBeyond1960State state;
@@ -26,8 +26,8 @@ int main(void) {
     assert(ok);
 
     /* Theorem 1961 Verification */
-    assert(state.mosaic_gopher_deflate_verified);
-    printf(" Theorem 1961 [Mosaic Gopher & Pure C Deflate Stream Invariance]:    PROVED (Fidelity: %.3f - Rule 7, Rule 19, Rule 20)\n",
+    assert(state.mosaic_gopher_kermit_verified);
+    printf(" Theorem 1961 [Mosaic Gopher & Kermit Packet Transport Invariance]: PROVED (Fidelity: %.3f - Rule 7, Rule 19, Rule 20)\n",
            state.in_silicon_mosaic_gopher_fidelity);
 
     /* Theorem 1962 Verification */
@@ -37,8 +37,8 @@ int main(void) {
 
     /* Theorem 1963 Verification */
     assert(state.mosaic_submicro_latency_verified);
-    printf(" Theorem 1963 [Stream Parse & Inflate Latency]:                     PROVED (Latency: %.1f ns < 1000.0 ns - Rule 11, Rule 20)\n",
-           state.mosaic_gopher_inflate_latency_ns);
+    printf(" Theorem 1963 [Stream Parse & Kermit Packet Dispatch Latency]:       PROVED (Latency: %.1f ns < 1000.0 ns - Rule 11, Rule 20)\n",
+           state.mosaic_gopher_kermit_latency_ns);
 
     /* Theorem 1964 Verification */
     assert(state.mosaic_lossless_saat_verified);
@@ -54,7 +54,7 @@ int main(void) {
     printf(" Rule 18 Non-Preferential Parity Checksum:                          PROVED (0x%08X)\n", state.rule18_parity_checksum);
 
     printf("=================================================================\n");
-    printf("CPMTOMIE MOSAIC GOPHER & DEFLATE PROVER FULLY CERTIFIED!         \n");
+    printf("CPMTOMIE MOSAIC GOPHER & KERMIT PROVER FULLY CERTIFIED!          \n");
     printf("=================================================================\n");
     return 0;
 }

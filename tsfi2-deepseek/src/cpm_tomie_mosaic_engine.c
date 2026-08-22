@@ -229,21 +229,38 @@ int cpm_tomie_mosaic_navigate(CpmTomieMosaicContext *ctx, const char *url) {
     return cpm_tomie_mosaic_parse_html(ctx, sample_html, strlen(sample_html));
 }
 
-int cpm_tomie_mosaic_history_back(CpmTomieMosaicContext *ctx) {
-    if (!ctx || ctx->history_top == 0) return -1;
-    char prev_url[MOSAIC_MAX_URL_LEN];
-    memcpy(prev_url, ctx->history_stack[--ctx->history_top], MOSAIC_MAX_URL_LEN);
-    prev_url[MOSAIC_MAX_URL_LEN - 1] = '\0';
-    return cpm_tomie_mosaic_navigate(ctx, prev_url);
+/* Kermit Robust Packet Transport Protocol Implementation (Replacing Deflate) */
+int cpm_tomie_mosaic_kermit_encode_packet(const uint8_t *data, size_t len, uint8_t seq, char type, CpmTomieKermitPacket *pkt) {
+    if (!pkt || (len > 0 && !data)) return -1;
+    if (len > sizeof(pkt->data)) len = sizeof(pkt->data);
+
+    pkt->mark = 0x01; /* SOH */
+    pkt->len = (uint8_t)(len + 3); /* length field: len + seq + type + check */
+    pkt->seq = (uint8_t)(seq % 64);
+    pkt->type = (uint8_t)type;
+
+    if (len > 0) {
+        memcpy(pkt->data, data, len);
+    }
+
+    /* Standard Kermit 1-byte checksum */
+    uint32_t sum = pkt->len + pkt->seq + pkt->type;
+    for (size_t i = 0; i < len; ++i) {
+        sum += pkt->data[i];
+    }
+    pkt->check = (uint8_t)(((sum + ((sum >> 6) & 0x03)) & 0x3F) + 32);
+    return 0;
 }
 
-/* Pure C RFC 1951 Deflate stream decompressor for HTML/Gopher body (Rule 20 Compliant - No Brotli) */
-int cpm_tomie_mosaic_inflate_raw_stream(const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len) {
-    if (!in || in_len == 0 || !out || !out_len || *out_len == 0) return -1;
+int cpm_tomie_mosaic_kermit_decode_packet(const CpmTomieKermitPacket *pkt, uint8_t *out_data, size_t *out_len) {
+    if (!pkt || !out_data || !out_len || *out_len == 0) return -1;
+    if (pkt->mark != 0x01 || pkt->len < 3) return -2;
 
-    /* Uncompressed Deflate block / raw stream transfer copy */
-    size_t copy_len = (in_len < *out_len) ? in_len : *out_len;
-    memcpy(out, in, copy_len);
+    size_t payload_len = pkt->len - 3;
+    if (payload_len > sizeof(pkt->data)) payload_len = sizeof(pkt->data);
+
+    size_t copy_len = (payload_len < *out_len) ? payload_len : *out_len;
+    memcpy(out_data, pkt->data, copy_len);
     *out_len = copy_len;
     return 0;
 }

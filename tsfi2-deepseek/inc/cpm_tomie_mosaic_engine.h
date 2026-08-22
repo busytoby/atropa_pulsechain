@@ -62,7 +62,19 @@ int cpm_tomie_mosaic_parse_gopher(CpmTomieMosaicContext *ctx, const char *gopher
 int cpm_tomie_mosaic_layout(CpmTomieMosaicContext *ctx);
 int cpm_tomie_mosaic_navigate(CpmTomieMosaicContext *ctx, const char *url);
 int cpm_tomie_mosaic_history_back(CpmTomieMosaicContext *ctx);
-int cpm_tomie_mosaic_inflate_raw_stream(const uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len);
+
+/* Kermit Robust Packet Transport Protocol (Replacing Deflate) */
+typedef struct {
+    uint8_t mark;        /* SOH 0x01 */
+    uint8_t len;         /* Encoded length */
+    uint8_t seq;         /* Packet sequence number */
+    uint8_t type;        /* 'D' (Data), 'S' (Send-Init), 'B' (Break), 'Y' (ACK), 'N' (NAK) */
+    uint8_t data[96];    /* Payload data */
+    uint8_t check;       /* Checksum / CRC-16 */
+} CpmTomieKermitPacket;
+
+int cpm_tomie_mosaic_kermit_encode_packet(const uint8_t *data, size_t len, uint8_t seq, char type, CpmTomieKermitPacket *pkt);
+int cpm_tomie_mosaic_kermit_decode_packet(const CpmTomieKermitPacket *pkt, uint8_t *out_data, size_t *out_len);
 
 #ifdef __cplusplus
 }
