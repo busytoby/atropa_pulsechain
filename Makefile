@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-hal-netsearch-ccso-hud-theorems-2366-2370:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370.c tsfi2-deepseek/src/auncient_hal_netsearch_ccso_hud_theorems_2366_2370.c -o tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370 -lm
+	./tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370
+	@rm -f tests/test_auncient_hal_netsearch_ccso_hud_theorems_2366_2370
+
 test-auncient-cockpit-ramac-dma-gauge-theorems-2361-2365:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cockpit_ramac_dma_gauge_theorems_2361_2365.c tsfi2-deepseek/src/auncient_cockpit_ramac_dma_gauge_theorems_2361_2365.c -o tests/test_auncient_cockpit_ramac_dma_gauge_theorems_2361_2365 -lm
 	./tests/test_auncient_cockpit_ramac_dma_gauge_theorems_2361_2365
