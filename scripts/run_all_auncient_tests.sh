@@ -761,4 +761,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835
 rm -f tests/test_auncient_vsen_vulkan_renderman_the_mann_theorems_1831_1835
 
+# Compile and run Auncient VSEn AMD 600 Series Chipset PCIe Switch (Theorems 1836-1840)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840.c tsfi2-deepseek/src/auncient_vsen_amd600_pcie_switch_theorems_1836_1840.c -o tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840 -lm
+./tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840
+rm -f tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

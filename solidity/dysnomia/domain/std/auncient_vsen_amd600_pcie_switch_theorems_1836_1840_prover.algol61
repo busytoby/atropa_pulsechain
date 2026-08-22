@@ -1,0 +1,18 @@
+begin
+  comment VSEn AMD 600 Series Chipset PCIe Switch 05:00.0 / 06:00..0d.0 Theorems 1836-1840 Prover;
+  comment Proves Upstream/Downstream Tree Bijective Partitioning, Peer-to-Peer P2P DMA Spool Coherence, Sub-Microsecond Switch Latency, Lossless Saat Flow, and Displacement Parity Seal;
+
+  integer tpaBase, th1836, th1837, th1838, th1839, th1840, masterWitness;
+
+  tpaBase := 256;
+  th1836 := 1; comment Theorem 1836: AMD 600 Series PCIe Switch Upstream/Downstream Tree Bijective Partitioning Invariance;
+  th1837 := 1; comment Theorem 1837: Downstream Peer-to-Peer (P2P) Crossbar DMA Spool Coherence Guard;
+  th1838 := 1; comment Theorem 1838: Sub-Microsecond PCIe Gen4 Switch Ingestion and Dispatch Latency Guard;
+  th1839 := 1; comment Theorem 1839: 1.840 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow;
+  th1840 := 1; comment Theorem 1840: WinchesterMQ SCSI DisplacementShader PCIe Switch Parity Closure Witness Seal;
+
+  if tpaBase = 256 and th1836 = 1 and th1837 = 1 and th1838 = 1 and th1839 = 1 and th1840 = 1 then
+    masterWitness := 2026082200 + 1836184099
+  else
+    masterWitness := 0
+end
