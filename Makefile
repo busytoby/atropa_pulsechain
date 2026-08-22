@@ -1608,6 +1608,20 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
 	@echo "ALL NETFIND FORMAL THEOREMS 1891-1920 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
+test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorems-1921-1925 \
+                                          test-auncient-ccso-grammar-filter-theorems-1926-1930 \
+                                          test-auncient-cics-ccso-bayesian-theorems-1931-1935 \
+                                          test-auncient-ccso-mosaic-nav-theorems-1936-1940 \
+                                          test-auncient-plato-tutor-cpmtomie-theorems-1941-1945 \
+                                          test-auncient-ncsa-telnet-cpmtomie-theorems-1946-1950 \
+                                          test-auncient-ncsa-httpd-cgi-theorems-1951-1955 \
+                                          test-auncient-illiac-iv-simd-cpmtomie-theorems-1956-1960 \
+                                          test-auncient-mosaic-gopher-deflate-theorems-1961-1965 \
+                                          test-auncient-mosaic-cpmtomie-binary-unification-theorems-1966-1970
+	@echo "================================================================="
+	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-1970 FULLY CERTIFIED!   "
+	@echo "================================================================="
+
 test-auncient-mosaic-cpmtomie-binary-unification-theorems-1966-1970:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970.c tsfi2-deepseek/src/auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970.c -o tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970 -lm
 	./tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970
