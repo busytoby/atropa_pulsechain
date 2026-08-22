@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-colossus-permalight-renderman-theorems-2071-2075:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075.c tsfi2-deepseek/src/auncient_colossus_permalight_renderman_theorems_2071_2075.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075 -lm
+	./tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075
+	@rm -f tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075
+
 test-auncient-enlighten-fm-ast-browser-theorems-2066-2070:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070.c tsfi2-deepseek/src/auncient_enlighten_fm_ast_browser_theorems_2066_2070.c -o tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070 -lm
 	./tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070
