@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-hal1961-discovery-flight-deck-theorems-2651-2655:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655.c tsfi2-deepseek/src/evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655.c -o tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655 -lm
+	./tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655
+	@rm -f tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655
+
 test-evas-smart-hal1961-biotika-eye-of-the-tiger-theorems-2646-2650:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650.c tsfi2-deepseek/src/evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650.c -o tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650 -lm
 	./tests/test_evas_smart_hal1961_biotika_eye_of_the_tiger_theorems_2646_2650
