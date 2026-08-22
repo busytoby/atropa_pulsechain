@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-microcode-cdc6600-scoreboard-theorems-2196-2200:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2196_2200.c tsfi2-deepseek/src/auncient_renderman_microcode_cdc6600_scoreboard_theorems_2196_2200.c -o tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2196_2200 -lm
+	./tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2196_2200
+	@rm -f tests/test_auncient_renderman_microcode_cdc6600_scoreboard_theorems_2196_2200
+
 test-auncient-renderman-foundation-displacement-theorems-2191-2195:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195.c tsfi2-deepseek/src/auncient_renderman_foundation_displacement_theorems_2191_2195.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195 -lm
 	./tests/test_auncient_renderman_foundation_displacement_theorems_2191_2195
