@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-vsen-efl-cdc6600-renderman-theorems-2036-2040:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_vsen_efl_cdc6600_renderman_theorems_2036_2040.c tsfi2-deepseek/src/auncient_vsen_efl_cdc6600_renderman_theorems_2036_2040.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_vsen_efl_cdc6600_renderman_theorems_2036_2040 -lm
+	./tests/test_auncient_vsen_efl_cdc6600_renderman_theorems_2036_2040
+	@rm -f tests/test_auncient_vsen_efl_cdc6600_renderman_theorems_2036_2040
+
 test-auncient-edje-dynamic-state-displacement-theorems-2031-2035:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_edje_dynamic_state_displacement_theorems_2031_2035.c tsfi2-deepseek/src/auncient_edje_dynamic_state_displacement_theorems_2031_2035.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_edje_dynamic_state_displacement_theorems_2031_2035 -lm
 	./tests/test_auncient_edje_dynamic_state_displacement_theorems_2031_2035
