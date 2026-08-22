@@ -1607,6 +1607,11 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
 	@echo "ALL NETFIND FORMAL THEOREMS 1891-1915 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
+test-auncient-netfind-kvcache-search-theorems-1916-1920:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_netfind_kvcache_search_theorems_1916_1920.c tsfi2-deepseek/src/auncient_netfind_kvcache_search_theorems_1916_1920.c -o tests/test_auncient_netfind_kvcache_search_theorems_1916_1920 -lm
+	./tests/test_auncient_netfind_kvcache_search_theorems_1916_1920
+	@rm -f tests/test_auncient_netfind_kvcache_search_theorems_1916_1920
+
 test-auncient-thacher-stanag-search-theorems-1911-1915:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_thacher_stanag_search_theorems_1911_1915.c tsfi2-deepseek/src/auncient_thacher_stanag_search_theorems_1911_1915.c -o tests/test_auncient_thacher_stanag_search_theorems_1911_1915 -lm
 	./tests/test_auncient_thacher_stanag_search_theorems_1911_1915
