@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-thacher-soliton-topology-optimizer-theorems-2236-2240:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_thacher_soliton_topology_optimizer_theorems_2236_2240.c tsfi2-deepseek/src/auncient_thacher_soliton_topology_optimizer_theorems_2236_2240.c -o tests/test_auncient_thacher_soliton_topology_optimizer_theorems_2236_2240 -lm
+	./tests/test_auncient_thacher_soliton_topology_optimizer_theorems_2236_2240
+	@rm -f tests/test_auncient_thacher_soliton_topology_optimizer_theorems_2236_2240
+
 test-auncient-thacher-soliton-usda-improvement-theorems-2231-2235:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_thacher_soliton_usda_improvement_theorems_2231_2235.c tsfi2-deepseek/src/auncient_thacher_soliton_usda_improvement_theorems_2231_2235.c -o tests/test_auncient_thacher_soliton_usda_improvement_theorems_2231_2235 -lm
 	./tests/test_auncient_thacher_soliton_usda_improvement_theorems_2231_2235
