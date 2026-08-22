@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-sub-surface-scattering-theorems-2106-2110:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_sub_surface_scattering_theorems_2106_2110.c tsfi2-deepseek/src/auncient_renderman_sub_surface_scattering_theorems_2106_2110.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_renderman_sub_surface_scattering_theorems_2106_2110 -lm
+	./tests/test_auncient_renderman_sub_surface_scattering_theorems_2106_2110
+	@rm -f tests/test_auncient_renderman_sub_surface_scattering_theorems_2106_2110
+
 test-auncient-cics-zmachine-wmq-abi-services-theorems-2101-2105:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cics_zmachine_wmq_abi_services_theorems_2101_2105.c tsfi2-deepseek/src/auncient_cics_zmachine_wmq_abi_services_theorems_2101_2105.c -o tests/test_auncient_cics_zmachine_wmq_abi_services_theorems_2101_2105 -lm
 	./tests/test_auncient_cics_zmachine_wmq_abi_services_theorems_2101_2105
