@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-entice-view-interactive-teapot-theorems-2061-2065:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065.c tsfi2-deepseek/src/auncient_entice_view_interactive_teapot_theorems_2061_2065.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065 -lm
+	./tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065
+	@rm -f tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065
+
 test-auncient-terminology-vt100-renderman-overlay-theorems-2056-2060:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_terminology_vt100_renderman_overlay_theorems_2056_2060.c tsfi2-deepseek/src/auncient_terminology_vt100_renderman_overlay_theorems_2056_2060.c -o tests/test_auncient_terminology_vt100_renderman_overlay_theorems_2056_2060 -lm
 	./tests/test_auncient_terminology_vt100_renderman_overlay_theorems_2056_2060
