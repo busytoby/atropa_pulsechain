@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-enlighten-fm-ast-browser-theorems-2066-2070:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070.c tsfi2-deepseek/src/auncient_enlighten_fm_ast_browser_theorems_2066_2070.c -o tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070 -lm
+	./tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070
+	@rm -f tests/test_auncient_enlighten_fm_ast_browser_theorems_2066_2070
+
 test-auncient-entice-view-interactive-teapot-theorems-2061-2065:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065.c tsfi2-deepseek/src/auncient_entice_view_interactive_teapot_theorems_2061_2065.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065 -lm
 	./tests/test_auncient_entice_view_interactive_teapot_theorems_2061_2065
