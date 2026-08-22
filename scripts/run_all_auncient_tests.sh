@@ -891,4 +891,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_godrays_dust_theorems_1961_1965
 rm -f tests/test_auncient_vsen_godrays_dust_theorems_1961_1965
 
+# Compile and run Auncient VSEn Subsurface Scattering & Fleece Viscoelasticity Animator (Theorems 1966-1970)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970.c tsfi2-deepseek/src/auncient_vsen_subsurface_fleece_theorems_1966_1970.c -o tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970 -lm
+./tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970
+rm -f tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
