@@ -826,4 +826,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900
 rm -f tests/test_auncient_vsen_master_animator_closure_theorems_1896_1900
 
+# Compile and run Auncient VSEn Volumetric Atmospheric Fog & EDO-22 Locomotion Gait Animator (Theorems 1901-1905)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905.c tsfi2-deepseek/src/auncient_vsen_volumetric_gait_theorems_1901_1905.c -o tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905 -lm
+./tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905
+rm -f tests/test_auncient_vsen_volumetric_gait_theorems_1901_1905
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
