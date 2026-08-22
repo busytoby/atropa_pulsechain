@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-deep-shadow-formal-safety-theorems-2221-2225:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_deep_shadow_formal_safety_theorems_2221_2225.c tsfi2-deepseek/src/auncient_renderman_deep_shadow_formal_safety_theorems_2221_2225.c -o tests/test_auncient_renderman_deep_shadow_formal_safety_theorems_2221_2225 -lm
+	./tests/test_auncient_renderman_deep_shadow_formal_safety_theorems_2221_2225
+	@rm -f tests/test_auncient_renderman_deep_shadow_formal_safety_theorems_2221_2225
+
 test-auncient-renderman-bezier-dicing-formal-safety-theorems-2216-2220:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220.c tsfi2-deepseek/src/auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220.c -o tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220 -lm
 	./tests/test_auncient_renderman_bezier_dicing_formal_safety_theorems_2216_2220
