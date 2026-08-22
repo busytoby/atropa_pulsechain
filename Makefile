@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-holographic-mosaic-reyes-teapot-theorems-2421-2425:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425.c tsfi2-deepseek/src/auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425.c -o tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425 -lm
+	./tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425
+	@rm -f tests/test_auncient_holographic_mosaic_reyes_teapot_theorems_2421_2425
+
 test-auncient-renderman-microfacet-anisotropy-theorems-2416-2420:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420.c tsfi2-deepseek/src/auncient_renderman_microfacet_anisotropy_theorems_2416_2420.c -o tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420 -lm
 	./tests/test_auncient_renderman_microfacet_anisotropy_theorems_2416_2420
