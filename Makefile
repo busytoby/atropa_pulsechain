@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-shutter-aa-theorems-2331-2335:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_shutter_aa_theorems_2331_2335.c tsfi2-deepseek/src/auncient_renderman_shutter_aa_theorems_2331_2335.c -o tests/test_auncient_renderman_shutter_aa_theorems_2331_2335 -lm
+	./tests/test_auncient_renderman_shutter_aa_theorems_2331_2335
+	@rm -f tests/test_auncient_renderman_shutter_aa_theorems_2331_2335
+
 test-auncient-renderman-rebar-zerocopy-blender-theorems-2326-2330:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_rebar_zerocopy_blender_theorems_2326_2330.c tsfi2-deepseek/src/auncient_renderman_rebar_zerocopy_blender_theorems_2326_2330.c -o tests/test_auncient_renderman_rebar_zerocopy_blender_theorems_2326_2330 -lm
 	./tests/test_auncient_renderman_rebar_zerocopy_blender_theorems_2326_2330
