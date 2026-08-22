@@ -741,4 +741,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815
 rm -f tests/test_auncient_vsen_pbx_pmg_auncestral_spools_theorems_1811_1815
 
+# Compile and run Auncient VSEn DTMF, Tactile Purr & Gestural Trajectory (Theorems 1816-1820)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_dtmf_tactile_purr_theorems_1816_1820.c tsfi2-deepseek/src/auncient_vsen_dtmf_tactile_purr_theorems_1816_1820.c -o tests/test_auncient_vsen_dtmf_tactile_purr_theorems_1816_1820 -lm
+./tests/test_auncient_vsen_dtmf_tactile_purr_theorems_1816_1820
+rm -f tests/test_auncient_vsen_dtmf_tactile_purr_theorems_1816_1820
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
