@@ -1629,6 +1629,16 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-optical-star-gate-pll-membrane-theorems-2671-2675:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675.c tsfi2-deepseek/src/evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675.c -o tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675 -lm
+	./tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675
+	@rm -f tests/test_evas_smart_optical_star_gate_pll_membrane_theorems_2671_2675
+
+test-evas-smart-renderman-reyes-dicing-teapot-theorems-2666-2670:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_renderman_reyes_dicing_teapot_theorems_2666_2670.c tsfi2-deepseek/src/evas_smart_renderman_reyes_dicing_teapot_theorems_2666_2670.c -o tests/test_evas_smart_renderman_reyes_dicing_teapot_theorems_2666_2670 -lm
+	./tests/test_evas_smart_renderman_reyes_dicing_teapot_theorems_2666_2670
+	@rm -f tests/test_evas_smart_renderman_reyes_dicing_teapot_theorems_2666_2670
+
 test-evas-smart-hal1961-star-gate-transcendence-theorems-2661-2665:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665.c tsfi2-deepseek/src/evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665.c -o tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665 -lm
 	./tests/test_evas_smart_hal1961_star_gate_transcendence_theorems_2661_2665
