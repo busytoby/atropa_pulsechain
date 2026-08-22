@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-asmedia-asm4242-usb4-theorems-1841-1845:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845.c tsfi2-deepseek/src/auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845.c -o tests/test_auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845 -lm
+	./tests/test_auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845
+	@rm -f tests/test_auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845
+
 test-auncient-vsen-amd600-pcie-switch-theorems-1836-1840:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840.c tsfi2-deepseek/src/auncient_vsen_amd600_pcie_switch_theorems_1836_1840.c -o tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840 -lm
 	./tests/test_auncient_vsen_amd600_pcie_switch_theorems_1836_1840
