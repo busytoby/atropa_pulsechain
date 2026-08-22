@@ -1622,6 +1622,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-1970 FULLY CERTIFIED!   "
 	@echo "================================================================="
 
+test-auncient-uiuc-2000-grand-synthesis-theorems-1991-2000:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000.c tsfi2-deepseek/src/auncient_uiuc_2000_grand_synthesis_theorems_1991_2000.c -o tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000 -lm
+	./tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000
+	@rm -f tests/test_auncient_uiuc_2000_grand_synthesis_theorems_1991_2000
+
 test-auncient-ordvac-eniac-edsac-io1-theorems-1986-1990:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ordvac_eniac_edsac_io1_theorems_1986_1990.c tsfi2-deepseek/src/auncient_ordvac_eniac_edsac_io1_theorems_1986_1990.c -o tests/test_auncient_ordvac_eniac_edsac_io1_theorems_1986_1990 -lm
 	./tests/test_auncient_ordvac_eniac_edsac_io1_theorems_1986_1990
