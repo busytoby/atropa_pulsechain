@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-cbt-tape-spool-theorems-1936-1940:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940.c tsfi2-deepseek/src/auncient_vsen_cbt_tape_spool_theorems_1936_1940.c -o tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940 -lm
+	./tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940
+	@rm -f tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940
+
 test-auncient-vsen-symplectic-feedback-theorems-1931-1935:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935.c tsfi2-deepseek/src/auncient_vsen_symplectic_feedback_theorems_1931_1935.c -o tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935 -lm
 	./tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935

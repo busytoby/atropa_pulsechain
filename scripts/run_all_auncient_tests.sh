@@ -861,4 +861,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935
 rm -f tests/test_auncient_vsen_symplectic_feedback_theorems_1931_1935
 
+# Compile and run Auncient VSEn CBT Tape Spooling & Magnetic Media Animator (Theorems 1936-1940)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940.c tsfi2-deepseek/src/auncient_vsen_cbt_tape_spool_theorems_1936_1940.c -o tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940 -lm
+./tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940
+rm -f tests/test_auncient_vsen_cbt_tape_spool_theorems_1936_1940
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
