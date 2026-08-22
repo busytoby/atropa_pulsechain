@@ -886,4 +886,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_spectral_dispersion_theorems_1956_1960
 rm -f tests/test_auncient_vsen_spectral_dispersion_theorems_1956_1960
 
+# Compile and run Auncient VSEn Volumetric Rayleigh God Rays & Atmospheric Dust Animator (Theorems 1961-1965)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_godrays_dust_theorems_1961_1965.c tsfi2-deepseek/src/auncient_vsen_godrays_dust_theorems_1961_1965.c -o tests/test_auncient_vsen_godrays_dust_theorems_1961_1965 -lm
+./tests/test_auncient_vsen_godrays_dust_theorems_1961_1965
+rm -f tests/test_auncient_vsen_godrays_dust_theorems_1961_1965
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
