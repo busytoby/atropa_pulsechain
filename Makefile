@@ -1608,6 +1608,11 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
 	@echo "ALL NETFIND FORMAL THEOREMS 1891-1920 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
+test-auncient-mosaic-cpmtomie-binary-unification-theorems-1966-1970:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970.c tsfi2-deepseek/src/auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970.c -o tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970 -lm
+	./tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970
+	@rm -f tests/test_auncient_mosaic_cpmtomie_binary_unification_theorems_1966_1970
+
 test-auncient-mosaic-gopher-deflate-theorems-1961-1965:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_mosaic_gopher_deflate_theorems_1961_1965.c tsfi2-deepseek/src/auncient_mosaic_gopher_deflate_theorems_1961_1965.c tsfi2-deepseek/src/cpm_tomie_mosaic_engine.c -o tests/test_auncient_mosaic_gopher_deflate_theorems_1961_1965 -lm
 	./tests/test_auncient_mosaic_gopher_deflate_theorems_1961_1965
