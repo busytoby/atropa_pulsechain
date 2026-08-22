@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-cdc6600-renderman-shading-raster-theorems-2016-2020:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_renderman_shading_raster_theorems_2016_2020.c tsfi2-deepseek/src/auncient_cdc6600_renderman_shading_raster_theorems_2016_2020.c -o tests/test_auncient_cdc6600_renderman_shading_raster_theorems_2016_2020 -lm
+	./tests/test_auncient_cdc6600_renderman_shading_raster_theorems_2016_2020
+	@rm -f tests/test_auncient_cdc6600_renderman_shading_raster_theorems_2016_2020
+
 test-auncient-cdc6600-ppu-stream-shadow-maps-theorems-2011-2015:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_ppu_stream_shadow_maps_theorems_2011_2015.c tsfi2-deepseek/src/auncient_cdc6600_ppu_stream_shadow_maps_theorems_2011_2015.c -o tests/test_auncient_cdc6600_ppu_stream_shadow_maps_theorems_2011_2015 -lm
 	./tests/test_auncient_cdc6600_ppu_stream_shadow_maps_theorems_2011_2015
