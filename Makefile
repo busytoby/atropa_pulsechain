@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-efl-mosaic-renderman-integration-theorems-2166-2170:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170.c tsfi2-deepseek/src/auncient_efl_mosaic_renderman_integration_theorems_2166_2170.c -o tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170 -lm
+	./tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170
+	@rm -f tests/test_auncient_efl_mosaic_renderman_integration_theorems_2166_2170
+
 test-auncient-renderman-ccso-netsearch-theorems-2161-2165:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_ccso_netsearch_theorems_2161_2165.c tsfi2-deepseek/src/auncient_renderman_ccso_netsearch_theorems_2161_2165.c -o tests/test_auncient_renderman_ccso_netsearch_theorems_2161_2165 -lm
 	./tests/test_auncient_renderman_ccso_netsearch_theorems_2161_2165
