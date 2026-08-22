@@ -771,4 +771,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845
 rm -f tests/test_auncient_vsen_asmedia_asm4242_usb4_theorems_1841_1845
 
+# Compile and run Auncient VSEn Full-System 45-Device lspci Hardware Tree (Theorems 1846-1850)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850.c tsfi2-deepseek/src/auncient_vsen_lspci_full_system_theorems_1846_1850.c -o tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850 -lm
+./tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850
+rm -f tests/test_auncient_vsen_lspci_full_system_theorems_1846_1850
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
