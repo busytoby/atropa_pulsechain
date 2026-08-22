@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-edisplay-presentation-theorems-2156-2160:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_edisplay_presentation_theorems_2156_2160.c tsfi2-deepseek/src/auncient_renderman_edisplay_presentation_theorems_2156_2160.c -o tests/test_auncient_renderman_edisplay_presentation_theorems_2156_2160 -lm
+	./tests/test_auncient_renderman_edisplay_presentation_theorems_2156_2160
+	@rm -f tests/test_auncient_renderman_edisplay_presentation_theorems_2156_2160
+
 test-auncient-renderman-stochastic-motion-blur-theorems-2151-2155:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_stochastic_motion_blur_theorems_2151_2155.c tsfi2-deepseek/src/auncient_renderman_stochastic_motion_blur_theorems_2151_2155.c -o tests/test_auncient_renderman_stochastic_motion_blur_theorems_2151_2155 -lm
 	./tests/test_auncient_renderman_stochastic_motion_blur_theorems_2151_2155
