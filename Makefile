@@ -1617,9 +1617,15 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
                                           test-auncient-ncsa-httpd-cgi-theorems-1951-1955 \
                                           test-auncient-illiac-iv-simd-cpmtomie-theorems-1956-1960 \
                                           test-auncient-mosaic-gopher-deflate-theorems-1961-1965 \
-                                          test-auncient-mosaic-cpmtomie-binary-unification-theorems-1966-1970
+                                          test-auncient-mosaic-cpmtomie-binary-unification-theorems-1966-1970 \
+                                          test-auncient-uiuc-timestar-sys-theorems-1971-1975 \
+                                          test-auncient-uiuc-ordvac-math-theorems-1976-1980 \
+                                          test-auncient-ordvac-thacher-solver-theorems-1981-1985 \
+                                          test-auncient-ordvac-eniac-edsac-io1-theorems-1986-1990 \
+                                          test-auncient-uiuc-2000-grand-synthesis-theorems-1991-2000
 	@echo "================================================================="
-	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-1970 FULLY CERTIFIED!   "
+	@echo "ALL UIUC & MOSAIC CPMTOMIE THEOREMS 1921-2000 FULLY CERTIFIED!   "
+	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
 test-auncient-uiuc-2000-grand-synthesis-theorems-1991-2000:
