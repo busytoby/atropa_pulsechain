@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-renderman-deep-shadow-map-theorems-2376-2380:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_renderman_deep_shadow_map_theorems_2376_2380.c tsfi2-deepseek/src/auncient_renderman_deep_shadow_map_theorems_2376_2380.c -o tests/test_auncient_renderman_deep_shadow_map_theorems_2376_2380 -lm
+	./tests/test_auncient_renderman_deep_shadow_map_theorems_2376_2380
+	@rm -f tests/test_auncient_renderman_deep_shadow_map_theorems_2376_2380
+
 test-auncient-cpm-tomie-mosaic-efl-renderman-theorems-2371-2375:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375.c tsfi2-deepseek/src/auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375.c -o tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375 -lm
 	./tests/test_auncient_cpm_tomie_mosaic_efl_renderman_theorems_2371_2375
