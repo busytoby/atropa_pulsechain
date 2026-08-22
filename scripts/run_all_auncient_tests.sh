@@ -696,4 +696,24 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
 rm -f tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
 
+# Compile and run Auncient VSEn Anti-Parasite Ingress Firewall (Theorems 1771-1775)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775.c tsfi2-deepseek/src/auncient_vsen_anti_parasite_firewall_theorems_1771_1775.c -o tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775 -lm
+./tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775
+rm -f tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775
+
+# Compile and run Auncient VSEn GGUF Empathy & .dat.bin Slicing (Theorems 1776-1780)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780.c tsfi2-deepseek/src/auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780.c -o tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780 -lm
+./tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780
+rm -f tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780
+
+# Compile and run Auncient VSEn Teddy Bear SSA Genesis & Hogan Payroll (Theorems 1781-1785)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.c tsfi2-deepseek/src/auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.c -o tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785 -lm
+./tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785
+rm -f tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785
+
+# Compile and run Auncient VSEn STANAG Spool to Presenter Integration (Theorems 1786-1790)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790.c tsfi2-deepseek/src/auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790.c -o tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790 -lm
+./tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790
+rm -f tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

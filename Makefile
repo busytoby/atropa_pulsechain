@@ -2458,6 +2458,26 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-stanag-spool-to-presenter-integration-theorems-1786-1790:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790.c tsfi2-deepseek/src/auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790.c -o tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790 -lm
+	./tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790
+	@rm -f tests/test_auncient_vsen_stanag_spool_to_presenter_integration_theorems_1786_1790
+
+test-auncient-vsen-teddy-ssa-hogan-payroll-theorems-1781-1785:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.c tsfi2-deepseek/src/auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785.c -o tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785 -lm
+	./tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785
+	@rm -f tests/test_auncient_vsen_teddy_ssa_hogan_payroll_theorems_1781_1785
+
+test-auncient-vsen-gguf-empathy-datbin-slicing-theorems-1776-1780:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780.c tsfi2-deepseek/src/auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780.c -o tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780 -lm
+	./tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780
+	@rm -f tests/test_auncient_vsen_gguf_empathy_datbin_slicing_theorems_1776_1780
+
+test-auncient-vsen-anti-parasite-firewall-theorems-1771-1775:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775.c tsfi2-deepseek/src/auncient_vsen_anti_parasite_firewall_theorems_1771_1775.c -o tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775 -lm
+	./tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775
+	@rm -f tests/test_auncient_vsen_anti_parasite_firewall_theorems_1771_1775
+
 test-auncient-vsen-vaesen-reactive-event-theorems-1766-1770:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770.c tsfi2-deepseek/src/auncient_vsen_vaesen_reactive_event_theorems_1766_1770.c -o tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770 -lm
 	./tests/test_auncient_vsen_vaesen_reactive_event_theorems_1766_1770
