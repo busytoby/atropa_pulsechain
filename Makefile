@@ -1608,6 +1608,11 @@ test-auncient-netfind-unified-suite: test-auncient-netfind-wmq-ip-theorems-1891-
 	@echo "ALL NETFIND FORMAL THEOREMS 1891-1920 FULLY VERIFIED & CERTIFIED!"
 	@echo "================================================================="
 
+test-auncient-illiac-iv-simd-cpmtomie-theorems-1956-1960:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_illiac_iv_simd_cpmtomie_theorems_1956_1960.c tsfi2-deepseek/src/auncient_illiac_iv_simd_cpmtomie_theorems_1956_1960.c -o tests/test_auncient_illiac_iv_simd_cpmtomie_theorems_1956_1960 -lm
+	./tests/test_auncient_illiac_iv_simd_cpmtomie_theorems_1956_1960
+	@rm -f tests/test_auncient_illiac_iv_simd_cpmtomie_theorems_1956_1960
+
 test-auncient-ncsa-httpd-cgi-theorems-1951-1955:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ncsa_httpd_cgi_theorems_1951_1955.c tsfi2-deepseek/src/auncient_ncsa_httpd_cgi_theorems_1951_1955.c -o tests/test_auncient_ncsa_httpd_cgi_theorems_1951_1955 -lm
 	./tests/test_auncient_ncsa_httpd_cgi_theorems_1951_1955
