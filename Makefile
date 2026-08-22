@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-sna-appc-data-fabric-theorems-1876-1880:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880.c tsfi2-deepseek/src/auncient_vsen_sna_appc_data_fabric_theorems_1876_1880.c -o tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880 -lm
+	./tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880
+	@rm -f tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880
+
 test-auncient-vsen-vaesen-renderman-personality-theorems-1871-1875:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875.c tsfi2-deepseek/src/auncient_vsen_vaesen_renderman_personality_theorems_1871_1875.c -o tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875 -lm
 	./tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875

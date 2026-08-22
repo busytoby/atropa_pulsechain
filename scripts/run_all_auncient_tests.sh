@@ -801,4 +801,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875
 rm -f tests/test_auncient_vsen_vaesen_renderman_personality_theorems_1871_1875
 
+# Compile and run Auncient VSEn IBM SNA APPC LU 6.2 & 8-Way AMD Data Fabric (Theorems 1876-1880)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880.c tsfi2-deepseek/src/auncient_vsen_sna_appc_data_fabric_theorems_1876_1880.c -o tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880 -lm
+./tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880
+rm -f tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="

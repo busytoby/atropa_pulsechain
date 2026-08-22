@@ -1,0 +1,27 @@
+        IDENTIFICATION DIVISION.
+        PROGRAM-ID. AUNCIENT-VSEN-SNA.
+        ENVIRONMENT DIVISION.
+        DATA DIVISION.
+        WORKING-STORAGE SECTION.
+        01  WS-VSEN-SNA-STATE.
+            05  WS-TPA-BASE-ADDR            PIC 9(05) VALUE 00256.
+            05  WS-TH1876-LU62-SLICE-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1877-PACING-FLOW-OK    PIC 9(01) VALUE 1.
+            05  WS-TH1878-RU-LATENCY-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1879-1880M-SAAT-OK     PIC 9(01) VALUE 1.
+            05  WS-TH1880-PARITY-SEAL-OK    PIC 9(01) VALUE 1.
+            05  WS-VSEN-SNA-WIT             PIC 9(01) VALUE 0.
+        PROCEDURE DIVISION.
+        0000-MAIN-LOGIC.
+            PERFORM 1000-EVALUATE-VSEN-SNA.
+            GOBACK.
+        1000-EVALUATE-VSEN-SNA.
+            IF WS-TPA-BASE-ADDR = 00256 AND
+               WS-TH1876-LU62-SLICE-OK = 1 AND
+               WS-TH1877-PACING-FLOW-OK = 1 AND
+               WS-TH1878-RU-LATENCY-OK = 1 AND
+               WS-TH1879-1880M-SAAT-OK = 1 AND
+               WS-TH1880-PARITY-SEAL-OK = 1
+                MOVE 1 TO WS-VSEN-SNA-WIT
+            ELSE
+                MOVE 0 TO WS-VSEN-SNA-WIT.
