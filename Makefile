@@ -2458,6 +2458,11 @@ test-auncient-fpga-vsen-all-features-theorems-1031-1035:
 	./tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 	@rm -f tests/test_auncient_fpga_vsen_all_features_theorems_1031_1035
 
+test-auncient-vsen-cbt-12scene-demo-theorems-1971-1975:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975.c tsfi2-deepseek/src/auncient_vsen_cbt_12scene_demo_theorems_1971_1975.c -o tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975 -lm
+	./tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975
+	@rm -f tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975
+
 test-auncient-vsen-subsurface-fleece-theorems-1966-1970:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970.c tsfi2-deepseek/src/auncient_vsen_subsurface_fleece_theorems_1966_1970.c -o tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970 -lm
 	./tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970

@@ -896,4 +896,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970
 rm -f tests/test_auncient_vsen_subsurface_fleece_theorems_1966_1970
 
+# Compile and run Auncient VSEn CBT Tape 12-Scene 90-Second Demo & 7-Instrument .bio Soundtrack Animator (Theorems 1971-1975)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975.c tsfi2-deepseek/src/auncient_vsen_cbt_12scene_demo_theorems_1971_1975.c -o tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975 -lm
+./tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975
+rm -f tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
