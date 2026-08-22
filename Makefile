@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-ramac-barrel-shifter-dual-inc-theorems-2256-2260:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_ramac_barrel_shifter_dual_inc_theorems_2256_2260.c tsfi2-deepseek/src/auncient_ramac_barrel_shifter_dual_inc_theorems_2256_2260.c -o tests/test_auncient_ramac_barrel_shifter_dual_inc_theorems_2256_2260 -lm
+	./tests/test_auncient_ramac_barrel_shifter_dual_inc_theorems_2256_2260
+	@rm -f tests/test_auncient_ramac_barrel_shifter_dual_inc_theorems_2256_2260
+
 test-auncient-cdc6600-scoreboard-dual-increment-theorems-2251-2255:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_cdc6600_scoreboard_dual_increment_theorems_2251_2255.c tsfi2-deepseek/src/auncient_cdc6600_scoreboard_dual_increment_theorems_2251_2255.c -o tests/test_auncient_cdc6600_scoreboard_dual_increment_theorems_2251_2255 -lm
 	./tests/test_auncient_cdc6600_scoreboard_dual_increment_theorems_2251_2255
