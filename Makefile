@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-edi-editor-rib-syntax-theorems-2076-2080:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080.c tsfi2-deepseek/src/auncient_edi_editor_rib_syntax_theorems_2076_2080.c -o tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080 -lm
+	./tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080
+	@rm -f tests/test_auncient_edi_editor_rib_syntax_theorems_2076_2080
+
 test-auncient-colossus-permalight-renderman-theorems-2071-2075:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075.c tsfi2-deepseek/src/auncient_colossus_permalight_renderman_theorems_2071_2075.c tsfi2-deepseek/src/tsfi_displacementshader.c -o tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075 -lm
 	./tests/test_auncient_colossus_permalight_renderman_theorems_2071_2075
