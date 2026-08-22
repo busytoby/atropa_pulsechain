@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-evas-smart-hal1961-logic-core-shutdown-theorems-2656-2660:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660.c tsfi2-deepseek/src/evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660.c -o tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660 -lm
+	./tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660
+	@rm -f tests/test_evas_smart_hal1961_logic_core_shutdown_theorems_2656_2660
+
 test-evas-smart-hal1961-discovery-flight-deck-theorems-2651-2655:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655.c tsfi2-deepseek/src/evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655.c -o tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655 -lm
 	./tests/test_evas_smart_hal1961_discovery_flight_deck_theorems_2651_2655
