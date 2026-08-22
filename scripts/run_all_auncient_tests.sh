@@ -901,4 +901,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975
 rm -f tests/test_auncient_vsen_cbt_12scene_demo_theorems_1971_1975
 
+# Compile and run Auncient VSEn Photorealistic Multi-Lobe BxDF & Corneal Ray Tracing Animator (Theorems 1976-1980)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_photorealism_theorems_1976_1980.c tsfi2-deepseek/src/auncient_vsen_photorealism_theorems_1976_1980.c -o tests/test_auncient_vsen_photorealism_theorems_1976_1980 -lm
+./tests/test_auncient_vsen_photorealism_theorems_1976_1980
+rm -f tests/test_auncient_vsen_photorealism_theorems_1976_1980
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
