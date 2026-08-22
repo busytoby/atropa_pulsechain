@@ -1629,6 +1629,11 @@ test-auncient-uiuc-cpmtomie-unified-suite: test-auncient-mosaic-cpmtomie-theorem
 	@echo "HISTORIC 2,000-THEOREM DYSNOMIA VM MILESTONE ACHIEVED!           "
 	@echo "================================================================="
 
+test-auncient-autonomous-ilp-inference-theorems-2456-2460:
+	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460.c tsfi2-deepseek/src/auncient_autonomous_ilp_inference_theorems_2456_2460.c -o tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460 -lm
+	./tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460
+	@rm -f tests/test_auncient_autonomous_ilp_inference_theorems_2456_2460
+
 test-auncient-thacher-wmq-ramac-ilp-theorems-2451-2455:
 	gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src -Itsfi2-deepseek/inc tests/test_auncient_thacher_wmq_ramac_ilp_theorems_2451_2455.c tsfi2-deepseek/src/auncient_thacher_wmq_ramac_ilp_theorems_2451_2455.c -o tests/test_auncient_thacher_wmq_ramac_ilp_theorems_2451_2455 -lm
 	./tests/test_auncient_thacher_wmq_ramac_ilp_theorems_2451_2455
