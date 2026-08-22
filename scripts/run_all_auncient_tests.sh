@@ -806,4 +806,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880
 rm -f tests/test_auncient_vsen_sna_appc_data_fabric_theorems_1876_1880
 
+# Compile and run Auncient VSEn Procedural Fur Cloth & EDO-22 Lip-Sync Animator (Theorems 1881-1885)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_procedural_animator_theorems_1881_1885.c tsfi2-deepseek/src/auncient_vsen_procedural_animator_theorems_1881_1885.c -o tests/test_auncient_vsen_procedural_animator_theorems_1881_1885 -lm
+./tests/test_auncient_vsen_procedural_animator_theorems_1881_1885
+rm -f tests/test_auncient_vsen_procedural_animator_theorems_1881_1885
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
