@@ -836,4 +836,9 @@ gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_
 ./tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910
 rm -f tests/test_auncient_vsen_corneal_saccade_theorems_1906_1910
 
+# Compile and run Auncient VSEn Vocal Tract Acoustics & Tactile Purr Resonance Animator (Theorems 1911-1915)
+gcc -Wall -Wextra -Werror -std=c11 -O3 -Itsfi2-deepseek/src tests/test_auncient_vsen_vocal_purr_theorems_1911_1915.c tsfi2-deepseek/src/auncient_vsen_vocal_purr_theorems_1911_1915.c -o tests/test_auncient_vsen_vocal_purr_theorems_1911_1915 -lm
+./tests/test_auncient_vsen_vocal_purr_theorems_1911_1915
+rm -f tests/test_auncient_vsen_vocal_purr_theorems_1911_1915
+
 echo "=== ALL AUNCIENT SUITES PASSED SUCCESSFULLY ==="
