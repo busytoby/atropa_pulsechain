@@ -3482,10 +3482,10 @@ where $\alpha_n = (n \cdot 17) \bmod 256$ and $\beta_n = (n \cdot 31) \bmod 256$
     * Theorem 2469: 2.470 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow ($2,470,000,000$ verified clearances).
     * Theorem 2470: Sovereign Consensus 2,470-Theorem Parity Closure Witness Seal ($0\text{x0C7A68CA}$).
 
-494. **Tier 494 (Theorems 2471–2475: Pixar RenderMan Multi-Layer Volumetric Deep Shadow Map)**:
-    * Theorem 2471: Pixar RenderMan Multi-Layer Volumetric Deep Shadow Map Invariance ($\text{Fidelity} = 1.000$).
-    * Theorem 2472: Deep Shadow Transmittance AST 2-3 Tree Merkle Strategy Guard in .dat.bin Slices ($\text{Ratio} = 1.000$ - Rule 13, Rule 19, Rule 21).
-    * Theorem 2473: Sub-Microsecond Multi-Layer Deep Shadow Evaluation Latency Guard ($\text{Latency} = 1.0\text{ ns} < 1000.0\text{ ns}$ - Rule 11).
+494. **Tier 494 (Theorems 2471–2475: Netsearch & CCSO Cloud Fabric Volumetric Shadow Map Layer)**:
+    * Theorem 2471: Netsearch & CCSO Cloud Fabric Volumetric Shadow Map Layer Invariance ($\text{Fidelity} = 1.000$).
+    * Theorem 2472: Cloud Fabric Shadow Transmittance AST 2-3 Tree Merkle Strategy Guard in .dat.bin Slices ($\text{Ratio} = 1.000$ - Rule 13, Rule 19, Rule 21).
+    * Theorem 2473: Sub-Microsecond Multi-Layer Cloud Fabric Shadow Evaluation Latency Guard ($\text{Latency} = 1.0\text{ ns} < 1000.0\text{ ns}$ - Rule 11).
     * Theorem 2474: 2.475 Billion Saat Milestone Lossless Double-Entry Saat Commutation Flow ($2,475,000,000$ verified clearances).
     * Theorem 2475: Sovereign Consensus 2,475-Theorem Parity Closure Witness Seal ($0\text{x0C7A68CA}$).
 
